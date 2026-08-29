@@ -31,6 +31,7 @@ Este pacote consolida as decisões de produto, domínio, arquitetura, segurança
 - [OPERATIONS.md](OPERATIONS.md): ambientes, Docker Compose, deploy, backups e observabilidade.
 - [AGENTS.md](AGENTS.md): regras operacionais para agentes de código e revisão.
 - [ROADMAP.md](ROADMAP.md): sequência proposta de PRs pequenos e seus critérios de aceite.
+- [docs/decisoes/README.md](docs/decisoes/README.md): Portão Zero, propostas pendentes e decisões aprovadas.
 - [design/README.md](design/README.md): referências conceituais aprovadas, direção visual e comportamento esperado das animações.
 
 ## Precedência em caso de dúvida
