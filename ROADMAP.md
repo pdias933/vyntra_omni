@@ -1,0 +1,204 @@
+# Roadmap de PRs — Omnichannel V1
+
+## 1. Como executar
+
+- A numeração é a ordem preferencial de merge e também expressa dependências.
+- Trabalho independente pode ocorrer em paralelo, mas não deve ser integrado antes de sua fundação.
+- Cada PR tem um objetivo principal, critério de aceite observável, testes proporcionais ao risco e atualização documental.
+- Estado incompleto permanece atrás de controle de recurso desligado.
+- Toda migration de produção é aditiva/compatível.
+- Integrações usam simuladores até a caracterização real; nenhum DTO externo é inventado.
+- Segurança, autorização, auditoria, idempotência e eventos entram junto da funcionalidade, não apenas na revisão final de segurança.
+- O PR condicional de sessão de acesso pode ser adiado sem bloquear o piloto.
+
+## 2. Portão zero
+
+### PR 001 — ADRs e matriz de decisões
+
+Fechar visibilidade histórica entre filas/notas, matriz de risco por ação ERP, reabertura após encerramento pelo bot, retenção/LGPD e link público, senha/MFA, limites de mídia/QR/rate limit, contrato de disparo ERP e validade máxima da autorização offline.
+
+Aceite: decisões aprovadas e rastreáveis; lacuna não aprovada continua em default deny ou com recurso desligado.
+
+## 3. Fundação
+
+| PR | Objetivo | Aceite principal |
+|---:|---|---|
+| 002 | Monorepo TypeScript | API, web, mobile e pacotes compilam pela raiz; sem regra de negócio fictícia. |
+| 003 | CI e guardas | Lint, tipos, testes, build, dependências e varredura de segredos bloqueiam falha real. |
+| 004 | Docker Compose de desenvolvimento | API vazia, PostgreSQL, Redis e MinIO sobem com volumes e sem segredo versionado. |
+| 005 | Staging isolado mínimo | VM/ambiente, banco, Redis, storage e segredos próprios; nenhum dado bruto de produção. |
+| 006 | API base e OpenAPI | /api/v1, erros canônicos em português e cliente TypeScript gerado. |
+| 007 | Correlação, logs e saúde | correlacao_id, sanitização central, /saude/vivo e /saude/pronto testados. |
+| 008 | Auditoria imutável | Registro somente de acréscimo e serviço central; usuário e administrador não editam/apagam. |
+| 009 | Evento e Caixa de Saída Transacional | sequencia_evento, EventoDominio e ItemCaixaSaida no mesmo commit do agregado. |
+| 010 | Idempotência e operações recuperáveis | Chaves com escopo, concessão temporária, tentativas e reconciliação persistentes no PostgreSQL. |
+
+## 4. Identidade de funcionários e autorização
+
+| PR | Objetivo | Aceite principal |
+|---:|---|---|
+| 011 | Usuário, perfil, permissão e fila no schema | Papéis base e permissões granulares sem conceder acesso implícito. |
+| 012 | Serviço central de autorização | Sessão + permissão + fila + recurso + estado; IDOR/BOLA retorna negação sem vazamento. |
+| 013 | Login e sessão web | Cookie seguro, rotação/expiração e CSRF/origem cobertos. |
+| 014 | Limites de sessão web | Duas sessões; terceira exige confirmação; 12 h de inatividade; revogação auditada. |
+| 015 | Sessão e dispositivo mobile | Refresh rotativo, Keychain/Keystore e vínculo ao aparelho. |
+| 016 | Limites e revogação mobile | Dois aparelhos; terceiro revoga o mais antigo; servidor corta sincronização e WebSocket. |
+| 017 | Pareamento por QR | Token efêmero, uso único, validade curta, confirmação web e replay recusado. |
+| 018 | Controles de recurso e política de versão | Liberação gradual/desligamento emergencial auditados e versão mínima por plataforma. |
+
+## 5. Portas internas
+
+| PR | Objetivo | Aceite principal |
+|---:|---|---|
+| 019 | Porta de mensageria e simulador Meta | Domínio envia/recebe tipos internos; simulador cobre sucesso, falha e duplicidade. |
+| 020 | AdaptadorErp e simulador contratual | Consultas/escritas normalizadas; protocolo pendente e resposta perdida simulados. |
+| 021 | AdaptadorSessaoAcesso | Contrato separado, simulador e controle de recurso desligado; nenhuma inferência de sessão ATIVA. |
+
+## 6. Domínio principal
+
+| PR | Objetivo | Aceite principal |
+|---:|---|---|
+| 022 | ContaWhatsApp | Múltiplas contas, origem preservada e credenciais fora do domínio. |
+| 023 | Contato e IdentidadeWhatsApp | Identificador estável derivado de BSUID; nome de usuário e telefone opcionais. |
+| 024 | Alteração/alias de identidade | Evento anterior→atual preserva contato e timeline; caso incerto cria contato separado. |
+| 025 | VinculoCliente e ContextoAtendimento | Múltiplos clientes/contratos; contexto explícito e troca auditada. |
+| 026 | SnapshotCliente no PostgreSQL | Documento protegido, origem/idade e Redis descartável. |
+| 027 | Conversa única | Uma Conversa por Contato; contas diferentes compartilham timeline lógica e preservam origem. |
+| 028 | Atendimento e máquina de estado | Transições válidas, modo/motivo ortogonais e nenhuma conclusão por inatividade. |
+| 029 | Protocolo pendente | UUID interno sem número falso; simulador ERP atribui um único protocolo oficial. |
+| 030 | Filas e vínculos de usuário | Acesso à fila separado da permissão de ação. |
+| 031 | Disponibilidade manual | DISPONIVEL/INDISPONIVEL não deriva de app, heartbeat ou conexão. |
+| 032 | HistoricoAtribuicao | Intervalos de fila/responsável aptos a métricas e auditoria. |
+| 033 | Resgate atômico | Dois resgates concorrentes deixam um vencedor e incrementam versao_atribuicao. |
+| 034 | Transferência para fila | Limpa responsável, mantém protocolo/timeline/contexto e volta a AGUARDANDO. |
+| 035 | Transferência direta | Destinatário disponível, fila explícita e sem aceite; uma alteração atômica. |
+| 036 | Assunção por supervisor | Escopo por fila; responsável anterior perde autoridade imediatamente. |
+| 037 | Calendários | Conta/fila, múltiplos períodos, feriados, exceções, 24x7 e override auditado. |
+| 038 | SLA e escalonamento | Relógio começa na obrigação humana; alerta atendente→supervisor→admin sem transferência. |
+| 039 | Janela Meta | Estado por Contato + Conta, alertas 1 h/30 min/10 min e texto livre bloqueado. |
+| 040 | Timeline composta e NotaInterna | Mensagem, nota, evento, formulário e separador permanecem tipos distintos; nota nunca sai. |
+
+## 7. Mensageria Meta
+
+| PR | Objetivo | Aceite principal |
+|---:|---|---|
+| 041 | Mensagem e máquina de saída | NA_FILA→ENVIANDO→ENVIADA→ENTREGUE→LIDA; falha/cancelamento coerentes. |
+| 042 | Mídia e storage | Imagem, áudio, vídeo e PDF validados por MIME/assinatura e bucket privado. |
+| 043 | Caracterização real da Meta | Versão, BSUID, identidade, limites e capacidades da conta documentados com fixtures sanitizadas. |
+| 044 | Entrada do AdaptadorMetaCloud | Assinatura válida, deduplicação e persistência antes de automação/retorno. |
+| 045 | Saída do AdaptadorMetaCloud | ENVIADA somente após aceitação; falha temporária e definitiva separadas. |
+| 046 | Estados de entrega/leitura | Webhooks fora de ordem não retrocedem estado e duplicidade não cria evento novo indevido. |
+| 047 | Resposta citada, reação e prévia | Relações reais e fallback quando a capacidade não está habilitada. |
+| 048 | Templates | Catálogo sincronizado; idioma/aprovação válidos; template não reabre janela sozinho. |
+| 049 | Composição de segunda via | PDF, valor, vencimento, Pix, linha/código e link com fallback; sem processar pagamento. |
+| 050 | WhatsApp Flows e submissões | Identificação/cadastro comercial, dados protegidos e timeline estruturada sem JSON bruto. |
+| 051 | Disparo transacional pelo ERP | Autenticação máquina-a-máquina, consentimento, idempotência, NA_FILA na timeline e estados de retorno. |
+
+## 8. Sincronização e tempo real
+
+| PR | Objetivo | Aceite principal |
+|---:|---|---|
+| 052 | Projeções autorizadas de evento | Evento interno protegido vira payload mínimo distinto por audiência. |
+| 053 | Sincronização incremental | Cursor, paginação, ordem por sequencia_evento e aplicação idempotente. |
+| 054 | Ressincronização completa consistente | Snapshot e sequencia_base no mesmo ponto lógico; alteração concorrente entra inteira na recuperação posterior. |
+| 055 | SSE web sem lacuna | Last-Event-ID, assinatura bufferizada, marca d’água, backlog e modo ao vivo sem corrida. |
+| 056 | WebSocket mobile sem lacuna | Conecta com cursor, recupera eventos anteriores antes do vivo e retoma do último aplicado. |
+| 057 | Push | Payload mínimo, agrupamento e abertura seguida de sincronização; push não é fonte da verdade. |
+| 058 | Invalidação por permissão | Evento de escopo, fechamento da conexão e remoção do cache local não autorizado. |
+
+## 9. MK Solutions e sessão de acesso
+
+| PR | Objetivo | Aceite principal |
+|---:|---|---|
+| 059 | Caracterização real do MK | APIs/licenças, paginação, erros, DTOs e fixtures sanitizadas aprovados. |
+| 060 | Consultas de cliente/contrato | Busca e detalhes normalizados; módulos externos ao adaptador não conhecem MK. |
+| 061 | Financeiro e faturas em tempo real | Situação, documento, Pix/linha e origem explícita; resposta parcial validada. |
+| 062 | Sincronização do SnapshotCliente | Incremental, exclusão/tombstone ou reconciliação completa e obsolescência visível. |
+| 063 | Criação/reconciliação de protocolo | Timeout incerto consulta antes de repetir; protocolo oficial liga histórico uma vez. |
+| 064 | Elegibilidade de desbloqueio | Consulta em tempo real e política de 30 dias sem executar ação. |
+| 065 | Execução de desbloqueio | Confirmação, permissão, idempotência e auditoria; snapshot recusado. |
+| 066 | Ordem de serviço | Criar/atualizar com protocolo e contexto explícitos, uma operação por chave. |
+| 067 | Comentário, encerramento e link | Somente capacidades reais do MK; falha preserva atendimento e permite reconciliação. |
+| 068 | Provedor real de sessão de acesso — condicional | Fonte comprovada, consulta/desconexão autorizada e idempotente; se ausente, recurso continua desligado. |
+
+## 10. Motor de Fluxos
+
+| PR | Objetivo | Aceite principal |
+|---:|---|---|
+| 069 | Fluxo, VersaoFluxo e ponteiro publicado | Definição imutável após publicar e execuções fixadas à versão inicial. |
+| 070 | Publicação, arquivo e reversão | Troca atômica do ponteiro, auditoria e nenhum histórico reescrito. |
+| 071 | Validador de publicação | Início, referências, variáveis, ciclos, capacidades e saídas de falha validados. |
+| 072 | Máquina de ExecucaoFluxo | Estados/transições persistidos; terminais não retomam após reinício. |
+| 073 | Agendamento e recuperação | retomar_em e jobs reconstruíveis; worker nunca dorme aguardando. |
+| 074 | Nós de mensagem/lista | Envio por serviço de domínio e saídas de erro explícitas. |
+| 075 | Nós de condição/variável | Tipos controlados; sem expressão, segredo ou código arbitrário. |
+| 076 | Nós de espera/calendário | Timeout, tentativas e caminho fora do horário determinísticos. |
+| 077 | Nós de identidade/cliente/contrato | Matriz de risco e contexto explícito; nenhum vínculo inseguro automático. |
+| 078 | Nó de fatura | Consulta em tempo real, composição segura e saída ERP indisponível. |
+| 079 | Nó de WhatsApp Flow | Formulário pré-cadastrado, fallback e submissão idempotente. |
+| 080 | Nós de protocolo e OS | Operações idempotentes pelos serviços de domínio. |
+| 081 | Nó de desbloqueio | Verificação e execução separadas, com confirmação/política. |
+| 082 | Nós de fila e encerramento | Roteamento humano e encerramento explícito sem estado inválido. |
+| 083 | Corrida resgate×envio automático | NA_FILA automática é cancelada; só aceitação Meta anterior ao resgate permanece. |
+| 084 | Editor visual | Edição tipada, validação e publicação sem alterar produção ao salvar. |
+| 085 | Simulador | Dados fictícios, passos visíveis e nenhuma chamada Meta/MK real. |
+
+## 11. Web
+
+| PR | Objetivo | Aceite principal |
+|---:|---|---|
+| 086 | Shell e autenticação | Rotas, sessão, expiração e tratamento de atualização de escopo. |
+| 087 | Lista de atendimentos | Meus/Pendentes/Não lidos/SLA/Expirando; evento reordena sem atualização manual. |
+| 088 | Timeline e leitura | Paginação autorizada, separadores, notas e marcador pessoal não lido. |
+| 089 | Área de composição e respostas rápidas | Texto, templates e comando / pesquisável; janela expirada bloqueia antes do envio. |
+| 090 | Mídia, resposta citada e reação | Upload/download autorizados e fallbacks de capacidade. |
+| 091 | Busca e galeria | PostgreSQL, paginação e filtros aplicados no banco com autorização. |
+| 092 | Contato, contexto e ações ERP | Cliente/contrato explícitos, origem SNAPSHOT/TEMPO_REAL e confirmação por risco. |
+| 093 | Administração de usuários/RBAC | Perfis, permissões, filas, sessões e auditoria. |
+| 094 | Administração operacional | Contas WhatsApp, filas, calendários, SLA e integrações. |
+| 095 | Administração do Motor de Fluxos | Editor, versões, simulador e publicação/reversão autorizadas. |
+| 096 | Saúde, reprocessamento e releases | Componentes, falhas, Reprocessar agora, controles de recurso e política mobile. |
+
+## 12. Mobile
+
+| PR | Objetivo | Aceite principal |
+|---:|---|---|
+| 097 | Shell, login e biometria | iOS/Android reais, um código-base, tokens seguros e navegação principal. |
+| 098 | Política de versão | Bloqueio ATUALIZACAO_OBRIGATORIA e abertura da loja sem prometer publicar binário. |
+| 099 | SQLite e autorização offline | Réplica criptografada, autorização limitada e bloqueio ao expirar. |
+| 100 | Motor de sincronização | Lotes/cursor atômicos, ressincronização consistente e WebSocket sem lacuna. |
+| 101 | Lista de atendimentos | Filtros, reordenação, badges e estado de conexão. |
+| 102 | Timeline e detalhes | Paginação, posição, leitura, contato, cliente e contrato. |
+| 103 | Área de composição e respostas rápidas | Texto, /, rascunho e botão de ações quando vazio. |
+| 104 | Offline e reconciliação | AGUARDANDO_CONEXAO/REVISAO_NECESSARIA; enviar mesmo assim continua autorizado no backend. |
+| 105 | Mídia e ações ERP | Envio online, prévia/confirmação e origem dos dados; mídia offline avançada fica fora. |
+| 106 | Notificações | Cinco eventos aprovados, agrupamento por contato e navegação direta após sincronização. |
+| 107 | Revogação e perda de permissão | Limpeza ao conectar e exposição offline limitada pela autorização. |
+| 108 | Diagnóstico, acessibilidade e desempenho | Pacote sanitizado, Reduzir Movimento, listas virtualizadas e limites de cache. |
+
+## 13. Fechamento operacional
+
+| PR | Objetivo | Aceite principal |
+|---:|---|---|
+| 109 | Cópia segura do atendimento | Token imprevisível, só cliente↔empresa, política aprovada e nenhuma nota interna. |
+| 110 | Relatórios operacionais mínimos | Filas, SLA, mensagens, Motor de Fluxos e ERP com fórmulas documentadas. |
+| 111 | Observabilidade e alertas | Métricas/traces sanitizados e alertas acionáveis para dependências/backlogs. |
+| 112 | Produção e deploy compatível | Job único de migration, API pronta, drain de streams/workers e reversão de tráfego. |
+| 113 | Backups e restauração | Banco, chaves e mídia recuperáveis; RPO até 4 h e RTO medido em ambiente limpo. |
+| 114 | Testes integrados adversariais e de falha | IDOR, webhook falso, XSS, upload, Redis/worker/VM e corrida offline cobertos; complementa testes de cada PR. |
+| 115 | Checklist de produção | Segredos, WAF, monitor externo, lojas, runbooks, capacidade e decisões do PR 001 conferidos. |
+| 116 | Piloto controlado | Flags desligadas por padrão, usuários/números controlados, métricas, reversão e responsável de plantão. |
+
+## 14. Marcos
+
+| Marco | PRs | Resultado |
+|---|---:|---|
+| Fundação segura | 001–021 | Ambientes, contratos, acesso, auditoria, eventos e simuladores. |
+| Domínio confiável | 022–040 | Contato, timeline, atendimento, filas, protocolo, calendário e janela. |
+| Mensageria convergente | 041–058 | Meta, mídia, formulários, sincronização, SSE, WebSocket e push. |
+| ERP caracterizado | 059–068 | MK real, snapshot, protocolo, operações e sessão condicional. |
+| Automação configurável | 069–085 | Versões, executor, nós, resgate, editor e simulador. |
+| Interfaces operacionais | 086–108 | Web e mobile utilizáveis, inclusive offline/reconciliação. |
+| Piloto recuperável | 109–116 | Cópia segura, operação, deploy, backup, robustez e liberação gradual. |
+
+O roadmap é uma proposta de execução, não autorização para preencher lacunas externas. Se Meta, MK ou o provedor de sessão divergirem, atualize o adaptador, as fixtures e a documentação; não contamine o domínio com o contrato do fornecedor.
