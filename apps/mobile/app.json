@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Omnichannel V1",
+    "slug": "vyntra-omni",
+    "scheme": "vyntraomni",
+    "version": "0.0.0",
+    "platforms": ["ios", "android"],
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "predictiveBackGestureEnabled": true
+    }
+  }
+}

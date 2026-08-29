@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - packages/*
+
+engineStrict: true
+nodeLinker: hoisted
+pmOnFail: error
+saveExact: true
+sharedWorkspaceLockfile: true
+
+overrides:
+  react: 19.2.3
+  react-dom: 19.2.3

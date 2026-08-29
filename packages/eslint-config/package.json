@@ -1,0 +1,29 @@
+{
+  "name": "@vyntra/eslint-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./base": "./base.js",
+    "./node": "./node.js",
+    "./react": "./react.js",
+    "./react-native": "./react-native.js"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0"
+  },
+  "dependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.5",
+    "globals": "17.11.0",
+    "typescript-eslint": "8.68.0"
+  },
+  "devDependencies": {
+    "eslint": "10.9.1"
+  },
+  "peerDependencies": {
+    "eslint": "^10.0.0",
+    "typescript": ">=6.0.0 <6.1.0"
+  }
+}

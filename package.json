@@ -1,0 +1,23 @@
+{
+  "name": "vyntra-omni",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Fundação técnica do Omnichannel V1.",
+  "engines": {
+    "node": ">=24.15.0 <25",
+    "pnpm": "11.24.0"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "build": "node scripts/executar-turbo.mjs build",
+    "dev": "node scripts/executar-turbo.mjs dev",
+    "lint": "node scripts/executar-turbo.mjs lint && eslint scripts tests --max-warnings 0",
+    "test": "node scripts/executar-turbo.mjs test && node --test tests/estrutura-monorepo.test.mjs",
+    "typecheck": "node scripts/executar-turbo.mjs typecheck"
+  },
+  "devDependencies": {
+    "eslint": "10.9.1",
+    "turbo": "2.10.12",
+    "typescript": "6.0.3"
+  }
+}

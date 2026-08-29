@@ -1,0 +1,10 @@
+{
+  "extends": [
+    "expo/tsconfig.base",
+    "@vyntra/typescript-config/react-native.json"
+  ],
+  "compilerOptions": {
+    "strict": true
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "@vyntra/typescript-config",
+  "version": "0.0.0",
+  "private": true,
+  "files": ["*.json"],
+  "exports": {
+    "./base.json": "./base.json",
+    "./nest.json": "./nest.json",
+    "./react.json": "./react.json",
+    "./react-native.json": "./react-native.json"
+  }
+}

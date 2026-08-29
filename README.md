@@ -6,6 +6,27 @@ Origem: decisões consolidadas da conversa **NEXUS CHAT** até 29 de agosto de 2
 
 Este pacote consolida as decisões de produto, domínio, arquitetura, segurança, integrações, operação e desenvolvimento da V1. Ele é a fonte inicial para decompor o projeto em PRs pequenos; não substitui contratos reais da Meta ou do MK Solutions, nem dispensa validar essas APIs no ambiente contratado antes de congelar DTOs.
 
+## Fundação técnica
+
+O monorepo contém aplicações mínimas e compiláveis em `apps/api`, `apps/web` e `apps/mobile`. Elas ainda não representam uma funcionalidade da V1 e não possuem banco, endpoint de negócio, integração externa ou layout final.
+
+Baseline local:
+
+- Node.js 24 LTS, a partir de 24.15 e antes da 25; `.node-version` fixa 24.20.0 como referência reproduzível;
+- pnpm 11.24.0, versão que gerou o lockfile e está registrada em `packageManager`.
+
+Verificação completa:
+
+```text
+pnpm install --frozen-lockfile
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+As versões e a justificativa da superfície inicial estão em [docs/dependencias/PR-002.md](docs/dependencias/PR-002.md).
+
 ## Princípios congelados
 
 1. Uma instalação atende **uma única empresa**. Se o produto for comercializado, cada cliente recebe ambiente, banco, storage e credenciais isolados.
