@@ -1,0 +1,40 @@
+{
+  "excecoes": [
+    {
+      "id": "GHSA-w5hq-g745-h8pq",
+      "pacote": "uuid",
+      "severidade": "moderate",
+      "versoes": ["7.0.3"],
+      "raiz_caminho": "apps__mobile",
+      "entradas_caminho": ["expo", "expo-dev-client"],
+      "segmentos_caminho_permitidos": [
+        "apps__mobile",
+        "expo",
+        "expo-dev-client",
+        "expo-dev-launcher",
+        "expo-dev-menu",
+        "expo-dev-menu-interface",
+        "expo-manifests",
+        "@expo/cli",
+        "@expo/config",
+        "@expo/config-plugins",
+        "@expo/inline-modules",
+        "@expo/local-build-cache-provider",
+        "@expo/metro-config",
+        "@expo/prebuild-config",
+        "xcode",
+        "uuid"
+      ],
+      "sufixo_caminho": ["@expo/config-plugins", "xcode", "uuid"],
+      "ancestral_lockfile": {
+        "chave": "xcode@3.0.1",
+        "dependencia": "uuid",
+        "versao_dependencia": "7.0.3"
+      },
+      "dependencia_desenvolvimento": false,
+      "dependencia_opcional": false,
+      "expira_em": "2026-09-29",
+      "documento": "docs/dependencias/PR-002.md"
+    }
+  ]
+}

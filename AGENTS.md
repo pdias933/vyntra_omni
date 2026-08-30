@@ -273,10 +273,15 @@ Quando o monorepo estiver inicializado, a raiz deve fornecer:
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm verificar:dependencias
+pnpm verificar:expo
+pnpm verificar:segredos
 pnpm build
 ```
 
 Execute os comandos relevantes à mudança e o conjunto completo antes de declarar PR pronto. CI também executa scanner de dependências e secret scan.
+
+Scripts de instalação de dependências são default deny por `strictDepBuilds`, e comandos não podem disparar instalação implícita. Não use `dangerouslyAllowAllBuilds`; uma necessidade real exige revisão do pacote e entrada explícita, estreita e documentada em `allowBuilds`.
 
 Não invente comando alternativo silenciosamente; atualize scripts/documentação se a ferramenta mudar.
 

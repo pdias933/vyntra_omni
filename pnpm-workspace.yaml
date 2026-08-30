@@ -7,6 +7,8 @@ nodeLinker: hoisted
 pmOnFail: error
 saveExact: true
 sharedWorkspaceLockfile: true
+strictDepBuilds: true
+verifyDepsBeforeRun: error
 
 overrides:
   react: 19.2.3

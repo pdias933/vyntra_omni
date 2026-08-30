@@ -237,6 +237,8 @@ DEPLOY PRODUÇÃO
 
 Produção nunca recebe auto-deploy apenas por push/merge. O botão/ação de deploy é explícito e auditável.
 
+A integração contínua inicial implementa somente os portões anteriores a staging: qualidade, tipos, testes, dependências, segredos e build. Ela roda em pull requests, em alterações da `main` e semanalmente para detectar nova vulnerabilidade sem depender de outro commit. O workflow não recebe permissão de escrita, não persiste credencial do checkout, não publica artefato e não executa deploy.
+
 ## 11. Deploy sem interromper atendimento
 
 Sequência:

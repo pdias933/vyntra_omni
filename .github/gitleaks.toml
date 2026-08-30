@@ -1,0 +1,5 @@
+title = "Vyntra Omni — regras padrão do Gitleaks"
+minVersion = "8.30.0"
+
+[extend]
+useDefault = true

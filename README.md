@@ -19,13 +19,19 @@ Verificação completa:
 
 ```text
 pnpm install --frozen-lockfile
+pnpm verificar:expo
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm verificar:dependencias
 pnpm build
 ```
 
+Desenvolvedores com Gitleaks 8.30.0 instalado também podem examinar histórico, arquivos preparados e alterações rastreadas com `pnpm verificar:segredos`; arquivos novos devem ser preparados no Git para entrar nessa verificação local. Tanto o comando local quanto a CI fixam configuração e arquivo de exceções, ignoram comentários de liberação e exigem que um canário sintético seja detectado antes da varredura real.
+
 As versões e a justificativa da superfície inicial estão em [docs/dependencias/PR-002.md](docs/dependencias/PR-002.md).
+
+O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ## Princípios congelados
 

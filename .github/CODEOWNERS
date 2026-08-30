@@ -1,0 +1,11 @@
+/.github/ @pdias933
+/.node-version @pdias933
+/apps/*/package.json @pdias933
+/configuracao/excecoes-auditoria.json @pdias933
+/eslint.config.mjs @pdias933
+/package.json @pdias933
+/pnpm-lock.yaml @pdias933
+/pnpm-workspace.yaml @pdias933
+/scripts/ @pdias933
+/tests/ @pdias933
+/turbo.json @pdias933

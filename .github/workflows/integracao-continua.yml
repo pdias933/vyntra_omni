@@ -1,0 +1,159 @@
+name: Integração contínua
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '17 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integracao-continua-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: 'true'
+  DO_NOT_TRACK: '1'
+  EXPO_NO_TELEMETRY: '1'
+  NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+  PNPM_SHA256: 0a9b76dedb5fe8cc5e7f3a9fd70854181cfb08a487ebaf0c9cfb044dc860936c
+  PNPM_VERSION: 11.24.0
+  TURBO_TELEMETRY_DISABLED: '1'
+
+jobs:
+  qualidade:
+    name: Qualidade e build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Obter código sem persistir credencial
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Preparar pnpm com integridade verificada
+        run: |
+          set -euo pipefail
+          arquivo="$(mktemp)"
+          diretorio="$(mktemp -d)"
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+            --output "${arquivo}" \
+            "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linux-x64.tar.gz"
+          printf '%s  %s\n' "${PNPM_SHA256}" "${arquivo}" | sha256sum --check --strict
+          tar -xzf "${arquivo}" -C "${diretorio}"
+          test "$("${diretorio}/pnpm" --version)" = "${PNPM_VERSION}"
+          printf '%s\n' "${diretorio}" >> "${GITHUB_PATH}"
+
+      - name: Instalar pelo lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Verificar matriz do Expo
+        run: pnpm verificar:expo
+
+      - name: Verificar lint
+        run: pnpm lint
+
+      - name: Verificar tipos
+        run: pnpm typecheck
+
+      - name: Executar testes
+        run: pnpm test
+
+      - name: Compilar aplicações
+        run: pnpm build
+
+  dependencias:
+    name: Dependências
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Obter código sem persistir credencial
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Preparar pnpm com integridade verificada
+        run: |
+          set -euo pipefail
+          arquivo="$(mktemp)"
+          diretorio="$(mktemp -d)"
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+            --output "${arquivo}" \
+            "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linux-x64.tar.gz"
+          printf '%s  %s\n' "${PNPM_SHA256}" "${arquivo}" | sha256sum --check --strict
+          tar -xzf "${arquivo}" -C "${diretorio}"
+          test "$("${diretorio}/pnpm" --version)" = "${PNPM_VERSION}"
+          printf '%s\n' "${diretorio}" >> "${GITHUB_PATH}"
+
+      - name: Instalar parser sem executar scripts de dependências
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Auditar árvore completa
+        env:
+          PNPM_EXECUTAVEL: pnpm
+        run: node scripts/verificar-dependencias.mjs
+
+  segredos:
+    name: Segredos no histórico
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Obter histórico sem persistir credencial
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Baixar Gitleaks com integridade verificada
+        env:
+          GITLEAKS_SHA256: 79a3ab579b53f71efd634f3aaf7e04a0fa0cf206b7ed434638d1547a2470a66e
+          GITLEAKS_VERSION: 8.30.0
+        run: |
+          set -euo pipefail
+          arquivo="$(mktemp)"
+          diretorio="$(mktemp -d)"
+          fixture="$(mktemp)"
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+            --output "${arquivo}" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          printf '%s  %s\n' "${GITLEAKS_SHA256}" "${arquivo}" | sha256sum --check --strict
+          tar -xzf "${arquivo}" -C "${diretorio}" gitleaks
+          test "$("${diretorio}/gitleaks" version)" = "${GITLEAKS_VERSION}"
+          parte_um='Y7qP9mK2vR8sT4wX6z'
+          parte_dois='A3bC5dE1fG0hJ4nL8M'
+          printf 'token = "ghp_%s%s"\n' "${parte_um}" "${parte_dois}" > "${fixture}"
+          if "${diretorio}/gitleaks" dir "${fixture}" \
+            --config "${GITHUB_WORKSPACE}/.github/gitleaks.toml" \
+            --gitleaks-ignore-path "${GITHUB_WORKSPACE}/.github/gitleaksignore" \
+            --ignore-gitleaks-allow --redact --no-banner >/dev/null 2>&1
+          then
+            estado_canario=0
+          else
+            estado_canario=$?
+          fi
+          if [[ "${estado_canario}" -ne 1 ]]
+          then
+            echo '::error::O scanner não rejeitou corretamente o canário sintético.'
+            exit 1
+          fi
+          "${diretorio}/gitleaks" git "${GITHUB_WORKSPACE}" \
+            --config "${GITHUB_WORKSPACE}/.github/gitleaks.toml" \
+            --gitleaks-ignore-path "${GITHUB_WORKSPACE}/.github/gitleaksignore" \
+            --ignore-gitleaks-allow --redact --no-banner
