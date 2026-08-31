@@ -147,7 +147,7 @@ export class RepositorioAutenticacaoPrisma
   ): Promise<readonly SessaoWebListada[]> {
     const contexto = transacao ?? (await this.prisma.obterCliente());
     return contexto.sessaoWeb.findMany({
-      orderBy: [{ autenticadaEm: 'asc' }, { criadaEm: 'asc' }],
+      orderBy: [{ autenticadaEm: 'asc' }, { criadoEm: 'asc' }],
       select: {
         autenticadaEm: true,
         expiraEm: true,
