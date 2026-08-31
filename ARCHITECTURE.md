@@ -260,7 +260,13 @@ Na conclusão, o mesmo aparelho reapresenta comprovante, identificador da instal
 
 O fluxo HTTP possui contratos separados no SDK OpenAPI: criar/consultar/confirmar/cancelar na web e resgatar/consultar/concluir no mobile. Scanner e telas serão consumidores desses contratos; a API não depende de biblioteca de QR nem recebe imagem. Revogar a sessão web cancela pareamentos pendentes na mesma transação.
 
-### 6.1.4 Autorização central
+### 6.1.4 Controles de recurso e versão
+
+`ServicoReleases` consulta o PostgreSQL e devolve configuração efetiva, sem confiar em decisão do web/mobile. O desligamento emergencial antecede alvos e percentual; a faixa percentual é hash estável de código+usuário. Alterações administrativas serializam código ou plataforma, usam versão esperada e auditam na mesma transação. Redis não participa da autoridade.
+
+`ServicoAutenticacaoMobile` verifica a política em entrada, pareamento, emissão, autenticação e refresh. Assim, ocultar ou adulterar a tela obrigatória não contorna a mínima. A rota pública de avaliação permanece separada para permitir UX pré-login; configurações autenticadas acrescentam somente controles já autorizados.
+
+### 6.1.5 Autorização central
 
 ```text
 contexto de sessão autenticada

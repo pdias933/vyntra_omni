@@ -483,6 +483,8 @@ Controles de persistência obrigatórios:
 | Fluxo malicioso | Sem código/SQL/shell/HTTP arbitrário; capacidades controladas. |
 | Supply chain | Lockfile, dependência justificada, scanner e atualização controlada. |
 | Administrador malicioso | Auditoria imutável inclusive para administrador. |
+| Rollout ou versão manipulados | `ADMINISTRAR_RELEASES`, CSRF/origem, versão otimista, advisory lock, constraints e auditoria transacional; kill switch prevalece. |
+| App antigo ignora tela de atualização | Backend retorna `426` em login, pareamento, autenticação e renovação abaixo da mínima. |
 | Exportação em massa | Permissão específica, limites e auditoria. |
 | Token da transcrição descoberto | Recurso desligado sem política jurídica; quando liberado, entropia alta, HMAC, conteúdo sanitizado, 72 h padrão/7 dias máximo e revogação. |
 | Enumeração de cliente | Rate limit e resposta sem confirmação excessiva. |

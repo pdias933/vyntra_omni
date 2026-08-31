@@ -132,6 +132,79 @@ export type ResumoSessaoWebDto = {
     expira_em: string;
 };
 
+export type EntradaAvaliacaoVersaoMobileDto = {
+    plataforma: 'IOS' | 'ANDROID';
+    versao_aplicativo: string;
+};
+
+export type AvaliacaoPoliticaVersaoMobileDto = {
+    plataforma: 'IOS' | 'ANDROID';
+    versao_informada: string;
+    versao_minima: string;
+    versao_recomendada: string;
+    atualizacao_obrigatoria: boolean;
+    atualizacao_recomendada: boolean;
+    mensagem?: string;
+    url_loja?: string;
+};
+
+export type ConfiguracaoClienteMobileDto = {
+    politica: AvaliacaoPoliticaVersaoMobileDto;
+    controles_recurso: {
+        [key: string]: boolean;
+    };
+};
+
+export type ConfiguracaoClienteWebDto = {
+    controles_recurso: {
+        [key: string]: boolean;
+    };
+};
+
+export type ControleRecursoDto = {
+    id: string;
+    codigo: string;
+    estado: 'ATIVADO' | 'DESATIVADO';
+    desligado_emergencialmente: boolean;
+    liberar_administradores: boolean;
+    percentual_liberacao: number;
+    usuarios_alvo: Array<string>;
+    filas_alvo: Array<string>;
+    versao: number;
+};
+
+export type PoliticaVersaoMobileDto = {
+    plataforma: 'IOS' | 'ANDROID';
+    versao_minima: string;
+    versao_recomendada: string;
+    mensagem?: string;
+    url_loja?: string;
+    versao: number;
+};
+
+export type AdministracaoReleasesDto = {
+    controles: Array<ControleRecursoDto>;
+    politicas_mobile: Array<PoliticaVersaoMobileDto>;
+};
+
+export type EntradaAtualizacaoControleRecursoDto = {
+    estado: 'ATIVADO' | 'DESATIVADO';
+    desligado_emergencialmente: boolean;
+    liberar_administradores: boolean;
+    percentual_liberacao: number;
+    usuarios_alvo: Array<string>;
+    filas_alvo: Array<string>;
+    versao_esperada: number;
+};
+
+export type EntradaAtualizacaoPoliticaVersaoMobileDto = {
+    versao_minima: string;
+    versao_recomendada: string;
+    mensagem?: string;
+    url_loja?: string;
+    versao_esperada: number;
+};
+
 export type ObterInformacoesApiData = {
     body?: never;
     path?: never;
@@ -529,3 +602,95 @@ export type RevogarDispositivosMobileAdministrativamenteResponses = {
 };
 
 export type RevogarDispositivosMobileAdministrativamenteResponse = RevogarDispositivosMobileAdministrativamenteResponses[keyof RevogarDispositivosMobileAdministrativamenteResponses];
+
+export type AvaliarVersaoMobileData = {
+    body: EntradaAvaliacaoVersaoMobileDto;
+    path?: never;
+    query?: never;
+    url: '/api/v1/configuracao/mobile/avaliar';
+};
+
+export type AvaliarVersaoMobileResponses = {
+    200: AvaliacaoPoliticaVersaoMobileDto;
+};
+
+export type AvaliarVersaoMobileResponse = AvaliarVersaoMobileResponses[keyof AvaliarVersaoMobileResponses];
+
+export type ObterConfiguracaoMobileAtualData = {
+    body: EntradaAvaliacaoVersaoMobileDto;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/configuracao/mobile/atual';
+};
+
+export type ObterConfiguracaoMobileAtualResponses = {
+    200: ConfiguracaoClienteMobileDto;
+};
+
+export type ObterConfiguracaoMobileAtualResponse = ObterConfiguracaoMobileAtualResponses[keyof ObterConfiguracaoMobileAtualResponses];
+
+export type ObterConfiguracaoWebAtualData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/configuracao/web/atual';
+};
+
+export type ObterConfiguracaoWebAtualResponses = {
+    200: ConfiguracaoClienteWebDto;
+};
+
+export type ObterConfiguracaoWebAtualResponse = ObterConfiguracaoWebAtualResponses[keyof ObterConfiguracaoWebAtualResponses];
+
+export type ListarAdministracaoReleasesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/administracao/releases';
+};
+
+export type ListarAdministracaoReleasesResponses = {
+    200: AdministracaoReleasesDto;
+};
+
+export type ListarAdministracaoReleasesResponse = ListarAdministracaoReleasesResponses[keyof ListarAdministracaoReleasesResponses];
+
+export type AtualizarControleRecursoData = {
+    body: EntradaAtualizacaoControleRecursoDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        codigo: string;
+    };
+    query?: never;
+    url: '/api/v1/administracao/releases/controles-recurso/{codigo}';
+};
+
+export type AtualizarControleRecursoResponses = {
+    200: ControleRecursoDto;
+};
+
+export type AtualizarControleRecursoResponse = AtualizarControleRecursoResponses[keyof AtualizarControleRecursoResponses];
+
+export type AtualizarPoliticaVersaoMobileData = {
+    body: EntradaAtualizacaoPoliticaVersaoMobileDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        plataforma: string;
+    };
+    query?: never;
+    url: '/api/v1/administracao/releases/politicas-mobile/{plataforma}';
+};
+
+export type AtualizarPoliticaVersaoMobileResponses = {
+    200: PoliticaVersaoMobileDto;
+};
+
+export type AtualizarPoliticaVersaoMobileResponse = AtualizarPoliticaVersaoMobileResponses[keyof AtualizarPoliticaVersaoMobileResponses];

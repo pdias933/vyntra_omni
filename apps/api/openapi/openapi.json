@@ -876,6 +876,254 @@
           "autenticacao"
         ]
       }
+    },
+    "/api/v1/configuracao/mobile/avaliar": {
+      "post": {
+        "operationId": "avaliarVersaoMobile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaAvaliacaoVersaoMobileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvaliacaoPoliticaVersaoMobileDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Avalia a política pública de versão antes da autenticação",
+        "tags": [
+          "configuracao"
+        ]
+      }
+    },
+    "/api/v1/configuracao/mobile/atual": {
+      "post": {
+        "operationId": "obterConfiguracaoMobileAtual",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaAvaliacaoVersaoMobileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracaoClienteMobileDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Obtém política e controles efetivos do usuário mobile",
+        "tags": [
+          "configuracao"
+        ]
+      }
+    },
+    "/api/v1/configuracao/web/atual": {
+      "get": {
+        "operationId": "obterConfiguracaoWebAtual",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracaoClienteWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Obtém controles efetivos do usuário web",
+        "tags": [
+          "configuracao"
+        ]
+      }
+    },
+    "/api/v1/administracao/releases": {
+      "get": {
+        "operationId": "listarAdministracaoReleases",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdministracaoReleasesDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Lista controles e políticas mediante autorização administrativa",
+        "tags": [
+          "configuracao"
+        ]
+      }
+    },
+    "/api/v1/administracao/releases/controles-recurso/{codigo}": {
+      "put": {
+        "operationId": "atualizarControleRecurso",
+        "parameters": [
+          {
+            "name": "codigo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaAtualizacaoControleRecursoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControleRecursoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Cria ou altera rollout e desligamento emergencial",
+        "tags": [
+          "configuracao"
+        ]
+      }
+    },
+    "/api/v1/administracao/releases/politicas-mobile/{plataforma}": {
+      "put": {
+        "operationId": "atualizarPoliticaVersaoMobile",
+        "parameters": [
+          {
+            "name": "plataforma",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaAtualizacaoPoliticaVersaoMobileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoliticaVersaoMobileDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Atualiza versões mínima e recomendada de uma plataforma",
+        "tags": [
+          "configuracao"
+        ]
+      }
     }
   },
   "info": {
@@ -1415,6 +1663,288 @@
           "autenticada_em",
           "ultima_atividade_em",
           "expira_em"
+        ]
+      },
+      "EntradaAvaliacaoVersaoMobileDto": {
+        "type": "object",
+        "properties": {
+          "plataforma": {
+            "type": "string",
+            "enum": [
+              "IOS",
+              "ANDROID"
+            ]
+          },
+          "versao_aplicativo": {
+            "type": "string",
+            "example": "1.0.0",
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "plataforma",
+          "versao_aplicativo"
+        ]
+      },
+      "AvaliacaoPoliticaVersaoMobileDto": {
+        "type": "object",
+        "properties": {
+          "plataforma": {
+            "type": "string",
+            "enum": [
+              "IOS",
+              "ANDROID"
+            ]
+          },
+          "versao_informada": {
+            "type": "string"
+          },
+          "versao_minima": {
+            "type": "string"
+          },
+          "versao_recomendada": {
+            "type": "string"
+          },
+          "atualizacao_obrigatoria": {
+            "type": "boolean"
+          },
+          "atualizacao_recomendada": {
+            "type": "boolean"
+          },
+          "mensagem": {
+            "type": "string"
+          },
+          "url_loja": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "plataforma",
+          "versao_informada",
+          "versao_minima",
+          "versao_recomendada",
+          "atualizacao_obrigatoria",
+          "atualizacao_recomendada"
+        ]
+      },
+      "ConfiguracaoClienteMobileDto": {
+        "type": "object",
+        "properties": {
+          "politica": {
+            "$ref": "#/components/schemas/AvaliacaoPoliticaVersaoMobileDto"
+          },
+          "controles_recurso": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          }
+        },
+        "required": [
+          "politica",
+          "controles_recurso"
+        ]
+      },
+      "ConfiguracaoClienteWebDto": {
+        "type": "object",
+        "properties": {
+          "controles_recurso": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          }
+        },
+        "required": [
+          "controles_recurso"
+        ]
+      },
+      "ControleRecursoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "ATIVADO",
+              "DESATIVADO"
+            ]
+          },
+          "desligado_emergencialmente": {
+            "type": "boolean"
+          },
+          "liberar_administradores": {
+            "type": "boolean"
+          },
+          "percentual_liberacao": {
+            "type": "number"
+          },
+          "usuarios_alvo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "filas_alvo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "versao": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "codigo",
+          "estado",
+          "desligado_emergencialmente",
+          "liberar_administradores",
+          "percentual_liberacao",
+          "usuarios_alvo",
+          "filas_alvo",
+          "versao"
+        ]
+      },
+      "PoliticaVersaoMobileDto": {
+        "type": "object",
+        "properties": {
+          "plataforma": {
+            "type": "string",
+            "enum": [
+              "IOS",
+              "ANDROID"
+            ]
+          },
+          "versao_minima": {
+            "type": "string"
+          },
+          "versao_recomendada": {
+            "type": "string"
+          },
+          "mensagem": {
+            "type": "string"
+          },
+          "url_loja": {
+            "type": "string"
+          },
+          "versao": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "plataforma",
+          "versao_minima",
+          "versao_recomendada",
+          "versao"
+        ]
+      },
+      "AdministracaoReleasesDto": {
+        "type": "object",
+        "properties": {
+          "controles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ControleRecursoDto"
+            }
+          },
+          "politicas_mobile": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PoliticaVersaoMobileDto"
+            }
+          }
+        },
+        "required": [
+          "controles",
+          "politicas_mobile"
+        ]
+      },
+      "EntradaAtualizacaoControleRecursoDto": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "type": "string",
+            "enum": [
+              "ATIVADO",
+              "DESATIVADO"
+            ]
+          },
+          "desligado_emergencialmente": {
+            "type": "boolean"
+          },
+          "liberar_administradores": {
+            "type": "boolean"
+          },
+          "percentual_liberacao": {
+            "type": "number",
+            "maximum": 100,
+            "minimum": 0
+          },
+          "usuarios_alvo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "filas_alvo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "versao_esperada": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "estado",
+          "desligado_emergencialmente",
+          "liberar_administradores",
+          "percentual_liberacao",
+          "usuarios_alvo",
+          "filas_alvo",
+          "versao_esperada"
+        ]
+      },
+      "EntradaAtualizacaoPoliticaVersaoMobileDto": {
+        "type": "object",
+        "properties": {
+          "versao_minima": {
+            "type": "string",
+            "example": "1.0.0",
+            "maxLength": 40
+          },
+          "versao_recomendada": {
+            "type": "string",
+            "example": "1.1.0",
+            "maxLength": 40
+          },
+          "mensagem": {
+            "type": "string",
+            "maxLength": 240
+          },
+          "url_loja": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "versao_esperada": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "versao_minima",
+          "versao_recomendada",
+          "versao_esperada"
         ]
       }
     }

@@ -257,6 +257,8 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - Redis apagado;
 - worker retomando job;
 - migration compatível com versão anterior;
+- controle de recurso é decidido no backend/PostgreSQL; nunca liberar somente pela UI ou cache Redis;
+- versão mobile abaixo da mínima deve falhar no servidor com `ATUALIZACAO_OBRIGATORIA`, inclusive em login, pareamento e refresh;
 - health/readiness.
 
 Não use apenas mocks quando o risco está em constraint, transação ou concorrência do PostgreSQL.

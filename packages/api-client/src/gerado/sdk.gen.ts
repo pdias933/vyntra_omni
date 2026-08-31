@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CancelarPareamentoQrWebData, CancelarPareamentoQrWebResponses, ConcluirPareamentoQrMobileData, ConcluirPareamentoQrMobileResponses, ConfirmarPareamentoQrWebData, ConfirmarPareamentoQrWebResponses, ConsultarPareamentoQrMobileData, ConsultarPareamentoQrMobileResponses, ConsultarPareamentoQrWebData, ConsultarPareamentoQrWebResponses, EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, GerarPareamentoQrWebData, GerarPareamentoQrWebResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarSessoesWebData, ListarSessoesWebResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, ResgatarPareamentoQrMobileData, ResgatarPareamentoQrMobileResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
+import type { AtualizarControleRecursoData, AtualizarControleRecursoResponses, AtualizarPoliticaVersaoMobileData, AtualizarPoliticaVersaoMobileResponses, AvaliarVersaoMobileData, AvaliarVersaoMobileResponses, CancelarPareamentoQrWebData, CancelarPareamentoQrWebResponses, ConcluirPareamentoQrMobileData, ConcluirPareamentoQrMobileResponses, ConfirmarPareamentoQrWebData, ConfirmarPareamentoQrWebResponses, ConsultarPareamentoQrMobileData, ConsultarPareamentoQrMobileResponses, ConsultarPareamentoQrWebData, ConsultarPareamentoQrWebResponses, EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, GerarPareamentoQrWebData, GerarPareamentoQrWebResponses, ListarAdministracaoReleasesData, ListarAdministracaoReleasesResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarSessoesWebData, ListarSessoesWebResponses, ObterConfiguracaoMobileAtualData, ObterConfiguracaoMobileAtualResponses, ObterConfiguracaoWebAtualData, ObterConfiguracaoWebAtualResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, ResgatarPareamentoQrMobileData, ResgatarPareamentoQrMobileResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -295,4 +295,89 @@ export const revogarDispositivosMobileAdministrativamente = <ThrowOnError extend
         }],
     url: '/api/v1/autenticacao/web/usuarios/{usuarioId}/revogar-dispositivos-mobile',
     ...options
+});
+
+/**
+ * Avalia a política pública de versão antes da autenticação
+ */
+export const avaliarVersaoMobile = <ThrowOnError extends boolean = false>(options: Options<AvaliarVersaoMobileData, ThrowOnError>): RequestResult<AvaliarVersaoMobileResponses, unknown, ThrowOnError> => (options.client ?? client).post<AvaliarVersaoMobileResponses, unknown, ThrowOnError>({
+    url: '/api/v1/configuracao/mobile/avaliar',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Obtém política e controles efetivos do usuário mobile
+ */
+export const obterConfiguracaoMobileAtual = <ThrowOnError extends boolean = false>(options: Options<ObterConfiguracaoMobileAtualData, ThrowOnError>): RequestResult<ObterConfiguracaoMobileAtualResponses, unknown, ThrowOnError> => (options.client ?? client).post<ObterConfiguracaoMobileAtualResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/configuracao/mobile/atual',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Obtém controles efetivos do usuário web
+ */
+export const obterConfiguracaoWebAtual = <ThrowOnError extends boolean = false>(options?: Options<ObterConfiguracaoWebAtualData, ThrowOnError>): RequestResult<ObterConfiguracaoWebAtualResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ObterConfiguracaoWebAtualResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/configuracao/web/atual',
+    ...options
+});
+
+/**
+ * Lista controles e políticas mediante autorização administrativa
+ */
+export const listarAdministracaoReleases = <ThrowOnError extends boolean = false>(options?: Options<ListarAdministracaoReleasesData, ThrowOnError>): RequestResult<ListarAdministracaoReleasesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListarAdministracaoReleasesResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/administracao/releases',
+    ...options
+});
+
+/**
+ * Cria ou altera rollout e desligamento emergencial
+ */
+export const atualizarControleRecurso = <ThrowOnError extends boolean = false>(options: Options<AtualizarControleRecursoData, ThrowOnError>): RequestResult<AtualizarControleRecursoResponses, unknown, ThrowOnError> => (options.client ?? client).put<AtualizarControleRecursoResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/administracao/releases/controles-recurso/{codigo}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Atualiza versões mínima e recomendada de uma plataforma
+ */
+export const atualizarPoliticaVersaoMobile = <ThrowOnError extends boolean = false>(options: Options<AtualizarPoliticaVersaoMobileData, ThrowOnError>): RequestResult<AtualizarPoliticaVersaoMobileResponses, unknown, ThrowOnError> => (options.client ?? client).put<AtualizarPoliticaVersaoMobileResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/administracao/releases/politicas-mobile/{plataforma}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });

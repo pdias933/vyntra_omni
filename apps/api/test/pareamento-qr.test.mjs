@@ -140,6 +140,7 @@ function criarCenario(sobrescritas = {}) {
       chamadas.emissoes.push(argumentos);
       return { dispositivoNaoConfiavel: false, sessao: sessaoMobile };
     },
+    exigirVersaoPermitida: async () => undefined,
     normalizarDispositivo: () => dispositivoNormalizado,
   };
   const auditoria = {

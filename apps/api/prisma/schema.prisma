@@ -214,6 +214,13 @@ enum ResultadoTentativaResgateQr {
   @@map("resultado_tentativa_resgate_qr")
 }
 
+enum EstadoControleRecurso {
+  ATIVADO
+  DESATIVADO
+
+  @@map("estado_controle_recurso")
+}
+
 model RegistroAuditoria {
   id                         String          @id @db.Uuid
   tipoEvento                 String          @map("tipo_evento") @db.VarChar(100)
@@ -352,6 +359,7 @@ model Usuario {
   dispositivosMobile DispositivoMobile[]
   sessoesMobile SessaoMobile[]
   pareamentosQr PareamentoQr[]
+  liberacoesControlesRecurso LiberacaoControleRecursoUsuario[]
 
   @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
   @@index([perfilId], map: "usuario_perfil_idx")
@@ -560,6 +568,7 @@ model Fila {
   criadoEm        DateTime     @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm    DateTime     @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   acessosUsuarios AcessoUsuarioFila[]
+  liberacoesControlesRecurso LiberacaoControleRecursoFila[]
 
   @@index([estado, nome], map: "fila_estado_nome_idx")
   @@map("fila")
@@ -577,4 +586,57 @@ model AcessoUsuarioFila {
   @@id([usuarioId, filaId])
   @@index([filaId, estado, usuarioId], map: "acesso_usuario_fila_fila_estado_idx")
   @@map("acesso_usuario_fila")
+}
+
+model ControleRecurso {
+  id                          String                         @id @db.Uuid
+  codigo                      String                         @unique @db.VarChar(100)
+  estado                      EstadoControleRecurso          @default(DESATIVADO)
+  desligadoEmergencialmente   Boolean                        @default(false) @map("desligado_emergencialmente")
+  liberarAdministradores      Boolean                        @default(false) @map("liberar_administradores")
+  percentualLiberacao         Int                            @default(0) @map("percentual_liberacao")
+  versao                      Int                            @default(0)
+  criadoEm                    DateTime                       @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm               DateTime                       @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  usuarios                    LiberacaoControleRecursoUsuario[]
+  filas                       LiberacaoControleRecursoFila[]
+
+  @@index([estado, desligadoEmergencialmente, codigo], map: "controle_recurso_estado_emergencia_codigo_idx")
+  @@map("controle_recurso")
+}
+
+model LiberacaoControleRecursoUsuario {
+  controleRecursoId String           @map("controle_recurso_id") @db.Uuid
+  usuarioId         String           @map("usuario_id") @db.Uuid
+  criadoEm          DateTime         @default(now()) @map("criado_em") @db.Timestamptz(6)
+  controleRecurso   ControleRecurso  @relation(fields: [controleRecursoId], references: [id], onDelete: Restrict)
+  usuario           Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@id([controleRecursoId, usuarioId])
+  @@index([usuarioId, controleRecursoId], map: "liberacao_controle_recurso_usuario_idx")
+  @@map("liberacao_controle_recurso_usuario")
+}
+
+model LiberacaoControleRecursoFila {
+  controleRecursoId String           @map("controle_recurso_id") @db.Uuid
+  filaId            String           @map("fila_id") @db.Uuid
+  criadoEm          DateTime         @default(now()) @map("criado_em") @db.Timestamptz(6)
+  controleRecurso   ControleRecurso  @relation(fields: [controleRecursoId], references: [id], onDelete: Restrict)
+  fila              Fila             @relation(fields: [filaId], references: [id], onDelete: Restrict)
+
+  @@id([controleRecursoId, filaId])
+  @@index([filaId, controleRecursoId], map: "liberacao_controle_recurso_fila_idx")
+  @@map("liberacao_controle_recurso_fila")
+}
+
+model PoliticaVersaoMobile {
+  plataforma          PlataformaMobile @id
+  versaoMinima        String           @default("0.0.0") @map("versao_minima") @db.VarChar(40)
+  versaoRecomendada   String           @default("0.0.0") @map("versao_recomendada") @db.VarChar(40)
+  mensagem            String?          @db.VarChar(240)
+  urlLoja             String?          @map("url_loja") @db.VarChar(500)
+  versao              Int              @default(0)
+  atualizadoEm        DateTime         @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@map("politica_versao_mobile")
 }

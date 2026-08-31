@@ -226,6 +226,8 @@ No composer, `/` abre respostas rápidas pesquisáveis. O botão dedicado de aç
 - Ações ERP classificadas em risco baixo, médio ou alto; risco alto exige ERP em tempo real, contexto explícito, revalidação, prévia, confirmação, idempotência e auditoria.
 - Link público de transcrição e eliminação automática permanecem desligados até política jurídica/LGPD aprovada.
 - Feature flags e rollout controlados pelo backend.
+- Desligamento emergencial prevalece sobre liberação por administrador, usuário, fila ou percentual; mudanças exigem permissão administrativa e auditoria.
+- O app consulta mínima/recomendada por iOS/Android antes do login, mas o backend também bloqueia autenticação, pareamento e renovação abaixo da mínima.
 - Painel de saúde, logs estruturados, métricas, alertas e correlação.
 - Docker Compose, PostgreSQL, Redis e storage S3 externo.
 - DEV, STAGING e PRODUÇÃO isolados.

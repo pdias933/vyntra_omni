@@ -384,7 +384,14 @@ export class RepositorioAutenticacaoMobilePrisma
   private selecaoSessao() {
     return {
       acessoExpiraEm: true,
-      dispositivo: { select: { estado: true, segredoVinculoHash: true } },
+      dispositivo: {
+        select: {
+          estado: true,
+          plataforma: true,
+          segredoVinculoHash: true,
+          versaoAplicativo: true,
+        },
+      },
       dispositivoId: true,
       estado: true,
       id: true,
@@ -399,7 +406,12 @@ export class RepositorioAutenticacaoMobilePrisma
 
   private mapearSessao(sessao: {
     readonly acessoExpiraEm: Date;
-    readonly dispositivo: { readonly estado: string; readonly segredoVinculoHash: string };
+    readonly dispositivo: {
+      readonly estado: string;
+      readonly plataforma: 'ANDROID' | 'IOS';
+      readonly segredoVinculoHash: string;
+      readonly versaoAplicativo: string;
+    };
     readonly dispositivoId: string;
     readonly estado: string;
     readonly id: string;
@@ -417,12 +429,14 @@ export class RepositorioAutenticacaoMobilePrisma
       estado: sessao.estado === 'ATIVA' ? 'ATIVA' : 'REVOGADA',
       id: sessao.id,
       nomeExibicao: sessao.usuario.nomeExibicao,
+      plataforma: sessao.dispositivo.plataforma,
       refreshExpiraEm: sessao.refreshExpiraEm,
       segredoVinculoHash: sessao.dispositivo.segredoVinculoHash,
       tokenAcessoHash: sessao.tokenAcessoHash,
       tokenRefreshHash: sessao.tokenRefreshHash,
       usuarioAtivo: sessao.usuario.estado === 'ATIVO',
       usuarioId: sessao.usuarioId,
+      versaoAplicativo: sessao.dispositivo.versaoAplicativo,
       versao: sessao.versao,
     };
   }

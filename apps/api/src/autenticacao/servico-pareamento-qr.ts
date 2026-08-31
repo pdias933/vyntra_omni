@@ -296,6 +296,7 @@ export class ServicoPareamentoQr {
     this.validarSegredo(tokenQr);
     this.validarEnderecoIp(enderecoIp);
     const dispositivo = this.normalizarDispositivo(entrada);
+    await this.autenticacaoMobile.exigirVersaoPermitida(dispositivo);
     const tokenQrHash = hashHex(tokenQr);
     const comprovanteResgate = gerarSegredo();
     const agora = new Date();
@@ -526,6 +527,7 @@ export class ServicoPareamentoQr {
     this.validarUuid(pareamentoId);
     this.validarSegredo(comprovanteResgate);
     const dispositivo = this.normalizarDispositivo(entrada);
+    await this.autenticacaoMobile.exigirVersaoPermitida(dispositivo);
     const agora = new Date();
     return this.prisma.executarTransacao(async (transacao) => {
       await this.repositorio.serializarPareamento(pareamentoId, transacao);

@@ -100,6 +100,10 @@ function criarCenario(sobrescritas = {}) {
           return verificar({}, transacaoAutorizacao);
         },
       },
+      {
+        exigirVersaoPermitida: async (...argumentos) =>
+          chamadas.versoes?.push(argumentos),
+      },
     ),
     transacao,
   };
@@ -131,12 +135,14 @@ function criarSessaoPersistida(sobrescritas = {}) {
       estado: 'ATIVA',
       id: randomUUID(),
       nomeExibicao: 'Maria Silva',
+      plataforma: 'ANDROID',
       refreshExpiraEm: new Date(Date.now() + 24 * 60 * 60_000),
       segredoVinculoHash: hashHex(segredoVinculo),
       tokenAcessoHash: hashHex(tokenAcesso),
       tokenRefreshHash: hashHex(tokenRefresh),
       usuarioAtivo: true,
       usuarioId: randomUUID(),
+      versaoAplicativo: '1.0.0',
       versao: 1,
       ...sobrescritas,
     },

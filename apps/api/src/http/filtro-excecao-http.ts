@@ -26,6 +26,11 @@ import {
   ErroReautenticacaoNecessaria,
   ErroRequisicaoWebNaoConfiavel,
 } from '../autenticacao/erros-autenticacao.js';
+import {
+  ErroAtualizacaoObrigatoria,
+  ErroConfiguracaoReleaseInvalida,
+  ErroConflitoVersaoRelease,
+} from '../releases/erros-releases.js';
 
 const ERROS_POR_STATUS: Readonly<Record<number, CorpoErroCanonico>> = {
   [HttpStatus.BAD_REQUEST]: {
@@ -62,6 +67,21 @@ const ERRO_INTERNO: CorpoErroCanonico = {
   codigo: 'ERRO_INTERNO',
   mensagem: 'Não foi possível concluir a solicitação.',
 };
+
+const ERROS_RELEASES = {
+  ATUALIZACAO_OBRIGATORIA: {
+    codigo: 'ATUALIZACAO_OBRIGATORIA',
+    mensagem: 'Atualize o aplicativo para continuar.',
+  },
+  CONFIGURACAO_RELEASE_INVALIDA: {
+    codigo: 'CONFIGURACAO_RELEASE_INVALIDA',
+    mensagem: 'A configuração de liberação informada é inválida.',
+  },
+  CONFLITO_VERSAO_RELEASE: {
+    codigo: 'CONFLITO_VERSAO_RELEASE',
+    mensagem: 'A configuração foi alterada por outra operação.',
+  },
+} satisfies Readonly<Record<string, CorpoErroCanonico>>;
 
 const ERROS_AUTENTICACAO = {
   CONFIRMACAO_REVOGACAO_SESSAO_NECESSARIA: {
@@ -131,8 +151,10 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
     const respostaExcecao =
       excecao instanceof HttpException ? excecao.getResponse() : undefined;
     const corpoAutenticacao = this.obterCorpoAutenticacao(excecao);
+    const corpoRelease = this.obterCorpoRelease(excecao);
     const corpo =
       corpoAutenticacao ??
+      corpoRelease ??
       (possuiCorpoCanonico(respostaExcecao)
         ? respostaExcecao
         : (ERROS_POR_STATUS[status] ?? ERRO_INTERNO));
@@ -159,6 +181,13 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
   }
 
   private obterStatus(excecao: unknown): number {
+    if (excecao instanceof ErroAtualizacaoObrigatoria) return 426;
+    if (excecao instanceof ErroConfiguracaoReleaseInvalida) {
+      return HttpStatus.BAD_REQUEST;
+    }
+    if (excecao instanceof ErroConflitoVersaoRelease) {
+      return HttpStatus.CONFLICT;
+    }
     if (excecao instanceof ErroConfirmacaoRevogacaoSessaoNecessaria) {
       return HttpStatus.CONFLICT;
     }
@@ -229,6 +258,19 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
     }
     if (excecao instanceof ErroRequisicaoWebNaoConfiavel) {
       return ERROS_AUTENTICACAO.REQUISICAO_WEB_NAO_CONFIAVEL;
+    }
+    return undefined;
+  }
+
+  private obterCorpoRelease(excecao: unknown): CorpoErroCanonico | undefined {
+    if (excecao instanceof ErroAtualizacaoObrigatoria) {
+      return ERROS_RELEASES.ATUALIZACAO_OBRIGATORIA;
+    }
+    if (excecao instanceof ErroConfiguracaoReleaseInvalida) {
+      return ERROS_RELEASES.CONFIGURACAO_RELEASE_INVALIDA;
+    }
+    if (excecao instanceof ErroConflitoVersaoRelease) {
+      return ERROS_RELEASES.CONFLITO_VERSAO_RELEASE;
     }
     return undefined;
   }

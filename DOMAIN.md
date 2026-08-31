@@ -78,6 +78,8 @@ Um usuário possui no máximo dois `DispositivoMobile` ativos. O limite consider
 
 `PareamentoQr` é a autorização efêmera criada por uma `SessaoWeb` para iniciar uma `SessaoMobile`. Conserva somente os hashes do token mostrado no QR e do comprovante entregue ao app. Depois do resgate, guarda o vínculo normalizado do aparelho e uma prévia sanitizada para a confirmação web. `TentativaResgatePareamentoQr` registra IP, hash da instalação, resultado e instante para limitar abuso sem armazenar o token apresentado.
 
+`ControleRecurso` representa a decisão operacional de expor código já implantado. Possui estado, desligamento emergencial, percentual determinístico e alvos explícitos por usuário/fila; administrador só é alvo quando a configuração disser. `PoliticaVersaoMobile` existe uma vez por plataforma e conserva versões mínima/recomendada, mensagem, URL oficial da loja e versão otimista. Ambos são configuração persistente auditável, não estado efêmero de cliente ou Redis.
+
 Máquina de estados do pareamento:
 
 ```text

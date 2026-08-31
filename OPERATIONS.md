@@ -349,6 +349,8 @@ ampliar ou desativar
 
 Flag não mascara migration incompleta, falha de segurança ou estado inconsistente. Remover flags antigas em PR próprio após rollout estável.
 
+Na PR 018, controles e políticas são autoridade do PostgreSQL. O backend calcula rollout estável por código+usuário e aplica primeiro estado, atividade de usuário/perfil e desligamento emergencial. Escritas administrativas exigem `ADMINISTRAR_RELEASES`, CSRF/origem, versão esperada e auditoria transacional. Apps abaixo da mínima recebem `426 ATUALIZACAO_OBRIGATORIA` em login, pareamento, autenticação e refresh; a avaliação pública serve apenas para antecipar a tela obrigatória. A marca de prontidão passa a ser `20260831000900_criar_controles_recurso_versao`.
+
 ## 14. Health checks
 
 ### `/saude/vivo`

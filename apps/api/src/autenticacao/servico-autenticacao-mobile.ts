@@ -17,6 +17,7 @@ import type { ContextoSessaoAutorizacao } from '../autorizacao/modelo-autorizaca
 import { ServicoAutorizacao } from '../autorizacao/servico-autorizacao.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
+import { ServicoReleases } from '../releases/servico-releases.js';
 import {
   ErroCredenciaisInvalidas,
   ErroDispositivoNaoConfiavel,
@@ -73,6 +74,8 @@ export class ServicoAutenticacaoMobile {
     private readonly senhas: ServicoSenha,
     @Inject(ServicoAutorizacao)
     private readonly autorizacao: ServicoAutorizacao,
+    @Inject(ServicoReleases)
+    private readonly releases: ServicoReleases,
   ) {}
 
   public async entrar(entrada: EntradaLoginMobile): Promise<SessaoMobileEmitida> {
@@ -80,6 +83,7 @@ export class ServicoAutenticacaoMobile {
       entrada.identificador,
     );
     const dispositivo = this.normalizarDispositivo(entrada);
+    await this.exigirVersaoPermitida(dispositivo);
     this.validarEnderecoIp(entrada.enderecoIp);
     const identificadorHash = hashHex(identificadorNormalizado);
     const agora = new Date();
@@ -168,6 +172,7 @@ export class ServicoAutenticacaoMobile {
     transacao: TransacaoPrisma,
   ): Promise<ResultadoEmissaoSessaoMobile> {
     this.validarEnderecoIp(entrada.enderecoIp);
+    await this.exigirVersaoPermitida(entrada.dispositivo);
     if (!(await this.repositorio.usuarioAtivo(entrada.usuarioId, transacao))) {
       return { dispositivoNaoConfiavel: true };
     }
@@ -197,6 +202,10 @@ export class ServicoAutenticacaoMobile {
       hashHex(segredoVinculo),
       new Date(),
       'ACESSO',
+    );
+    await this.releases.exigirVersaoPermitida(
+      sessao.plataforma,
+      sessao.versaoAplicativo,
     );
     return {
       contexto: {
@@ -398,6 +407,10 @@ export class ServicoAutenticacaoMobile {
         segredoVinculoHash,
         agora,
         'REFRESH',
+      );
+      await this.releases.exigirVersaoPermitida(
+        atual.plataforma,
+        atual.versaoAplicativo,
       );
       const acessoExpiraEm = new Date(
         Math.min(
@@ -734,6 +747,15 @@ export class ServicoAutenticacaoMobile {
     };
   }
 
+  public async exigirVersaoPermitida(
+    dispositivo: Pick<EntradaDispositivoMobile, 'plataforma' | 'versaoAplicativo'>,
+  ): Promise<void> {
+    await this.releases.exigirVersaoPermitida(
+      dispositivo.plataforma,
+      dispositivo.versaoAplicativo,
+    );
+  }
+
   private async executarComSessaoAtual<T>(
     tokenAcesso: string,
     dispositivoId: string,
@@ -775,6 +797,10 @@ export class ServicoAutenticacaoMobile {
         segredoHash,
         agora,
         'ACESSO',
+      );
+      await this.releases.exigirVersaoPermitida(
+        confirmada.plataforma,
+        confirmada.versaoAplicativo,
       );
       return operacao(confirmada, agora, transacao);
     });

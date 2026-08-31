@@ -11,6 +11,7 @@ import { ControladorRotasDesconhecidas } from './sistema/controlador-rotas-desco
 import { ServicoInformacoesApi } from './sistema/servico-informacoes-api.js';
 import { ControladorSaude } from './saude/controlador-saude.js';
 import { ServicoProntidao } from './saude/servico-prontidao.js';
+import { ModuloReleases } from './releases/modulo-releases.js';
 
 @Module({
   controllers: [
@@ -25,6 +26,7 @@ import { ServicoProntidao } from './saude/servico-prontidao.js';
     ModuloEventos,
     ModuloIdempotencia,
     ModuloPersistencia,
+    ModuloReleases,
   ],
   providers: [ServicoInformacoesApi, ServicoProntidao],
 })

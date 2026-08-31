@@ -63,6 +63,8 @@ export interface SessaoMobilePersistida {
   readonly usuarioAtivo: boolean;
   readonly dispositivoId: string;
   readonly dispositivoAtivo: boolean;
+  readonly plataforma: PlataformaMobile;
+  readonly versaoAplicativo: string;
   readonly segredoVinculoHash: string;
   readonly tokenAcessoHash: string;
   readonly tokenRefreshHash: string;

@@ -199,6 +199,8 @@ Se a versão estiver abaixo da mínima:
 - abrir App Store/Google Play;
 - permitir somente diagnóstico mínimo/logout quando seguro.
 
+O bloqueio não é apenas visual: login, resgate/conclusão de QR, autenticação de access e rotação de refresh recebem `426 ATUALIZACAO_OBRIGATORIA`. A avaliação pública pré-login fornece política/mensagem sem criar autoridade; controles do usuário só chegam sob sessão válida.
+
 Forçar atualização apenas por incompatibilidade relevante de API/recurso ou segurança crítica. Versão comum pode gerar aviso opcional.
 
 Controle de recurso é autoridade do backend. O app não habilita funcionalidade porque encontrou componente local. A liberação gradual pode variar por usuário, papel, fila, conta ou percentual.

@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ModuloAuditoria } from '../auditoria/modulo-auditoria.js';
 import { ModuloPersistencia } from '../persistencia/modulo-persistencia.js';
 import { ModuloAutorizacao } from '../autorizacao/modulo-autorizacao.js';
+import { ModuloPoliticaReleases } from '../releases/modulo-politica-releases.js';
 import { ControladorAutenticacaoWeb } from './controlador-autenticacao-web.js';
 import { ControladorAutenticacaoMobile } from './controlador-autenticacao-mobile.js';
 import { REPOSITORIO_AUTENTICACAO_MOBILE } from './repositorio-autenticacao-mobile.js';
@@ -20,7 +21,12 @@ import { ServicoPareamentoQr } from './servico-pareamento-qr.js';
 @Module({
   controllers: [ControladorAutenticacaoMobile, ControladorAutenticacaoWeb],
   exports: [ServicoAutenticacaoMobile, ServicoAutenticacaoWeb, ServicoOrigemWeb, ServicoSenha],
-  imports: [ModuloAuditoria, ModuloAutorizacao, ModuloPersistencia],
+  imports: [
+    ModuloAuditoria,
+    ModuloAutorizacao,
+    ModuloPersistencia,
+    ModuloPoliticaReleases,
+  ],
   providers: [
     RepositorioAutenticacaoPrisma,
     RepositorioAutenticacaoMobilePrisma,
