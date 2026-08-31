@@ -127,6 +127,7 @@ services:
     pull_policy: build
     restart: *reinicio-staging
     init: true
+    user: "1000:0"
     depends_on:
       postgres:
         condition: service_healthy

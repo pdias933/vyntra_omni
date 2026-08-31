@@ -44,7 +44,7 @@ const arquivosSegredosBase = Object.freeze([
   },
   {
     nome: 'url-postgresql',
-    modo: 0o600,
+    modo: 0o640,
     validar: (conteudo) =>
       /^postgresql:\/\/vyntra_staging:[A-Za-z0-9_-]{43}@postgres:5432\/vyntra_staging\?schema=public\n$/.test(
         conteudo,
@@ -60,7 +60,7 @@ const arquivosSegredosBase = Object.freeze([
   },
   {
     nome: 'url-redis',
-    modo: 0o600,
+    modo: 0o640,
     validar: (conteudo) =>
       /^redis:\/\/vyntra_staging:[A-Za-z0-9_-]{43}@redis:6379\/0\n$/.test(
         conteudo,
@@ -86,12 +86,12 @@ const arquivosSegredosBase = Object.freeze([
 const arquivosCredencialStorage = Object.freeze([
   {
     nome: 'chave-storage-id',
-    modo: 0o600,
+    modo: 0o640,
     validar: (conteudo) => /^GK[a-f0-9]{24}\n$/.test(conteudo),
   },
   {
     nome: 'chave-storage-secreta',
-    modo: 0o600,
+    modo: 0o640,
     validar: (conteudo) => /^[a-f0-9]{64}\n$/.test(conteudo),
   },
 ]);

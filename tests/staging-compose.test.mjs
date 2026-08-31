@@ -131,6 +131,7 @@ test('separa todos os segredos e não aceita credencial de produção', () => {
 test('entrega à API apenas contratos por arquivo e contexto explícito', () => {
   const ambiente = compose.services.api.environment;
 
+  assert.equal(compose.services.api.user, '1000:0');
   assert.equal(ambiente.AMBIENTE_APLICACAO, 'staging');
   assert.equal(ambiente.DADOS_PERMITIDOS, 'sinteticos_ou_sanitizados');
   assert.equal(ambiente.NODE_ENV, 'production');
