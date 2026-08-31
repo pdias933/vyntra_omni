@@ -34,7 +34,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 010 | CONCLUÍDA | `xhigh` |
 | 011 | CONCLUÍDA | `high` |
 | 012 | CONCLUÍDA | `xhigh` |
-| 013 | EM ANDAMENTO | `xhigh` |
+| 013 | CONCLUÍDA | `xhigh` |
 | 014 | PENDENTE | `high` |
 | 015 | PENDENTE | `xhigh` |
 | 016 | PENDENTE | `xhigh` |
@@ -205,6 +205,10 @@ Aceite concluído em 31 de agosto de 2026: `Usuario`, `PerfilAcesso`, os três p
 ### PR 012 — Serviço central de autorização
 
 Aceite concluído em 31 de agosto de 2026: sessão, usuário/perfil, permissão, fila, recurso e estado passaram por uma decisão central `default deny`; `NEGAR` prevalece, capacidades sensíveis/transversais nunca são herdadas e UUID inexistente, fila alheia, recurso inacessível ou estado inválido retornam a mesma negação. Lint, tipos, 97 testes, build, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; a imagem `vyntra/api-staging:pr-012` ficou saudável e a prontidão permaneceu `PRONTO`. Em staging, dez cenários reais no PostgreSQL comprovaram os portões antes da consulta ao recurso, concessão e negação explícitas, sessão expirada, resposta uniforme contra IDOR/BOLA e autorização/consulta na mesma transação; os dados sintéticos foram revertidos ao fim do aceite.
+
+### PR 013 — Login e sessão web
+
+Aceite concluído em 31 de agosto de 2026: credencial Argon2id, sessão opaca persistida somente por hash, cookies `__Host` seguros, CSRF vinculado, origem/CORS explícitos, expiração absoluta, rotação atômica, logout, limite de força bruta e auditoria transacional foram entregues; usuário inexistente e senha incorreta permanecem indistinguíveis, e conta privilegiada sem MFA não recebe sessão. Lint, tipos, 110 testes, build, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831000500_criar_credencial_sessao_web` terminou com código zero e a imagem `vyntra/api-staging:pr-013` ficou saudável com prontidão `PRONTO`. Em staging, doze cenários HTTP reais comprovaram cookies, CSRF/origem, enumeração uniforme, expiração, rotação, token anterior, logout, MFA e limite; oito falhas concorrentes resultaram em cinco verificações e três bloqueios, enquanto oito rotações produziram um vencedor e sete recusas. Dados mutáveis sintéticos foram removidos e os fatos de auditoria permaneceram imutáveis.
 
 ## 5. Portas internas
 
