@@ -99,7 +99,7 @@ export class RepositorioAutenticacaoPrisma
     ].sort();
     for (const chave of chaves) {
       await transacao.$queryRaw(
-        Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${chave}, 0))`,
+        Prisma.sql`SELECT CAST(pg_advisory_xact_lock(hashtextextended(${chave}, 0)) AS text) AS bloqueio`,
       );
     }
   }
