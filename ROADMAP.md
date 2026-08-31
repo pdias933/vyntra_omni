@@ -40,7 +40,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 016 | CONCLUÍDA | `xhigh` |
 | 017 | CONCLUÍDA | `xhigh` |
 | 018 | CONCLUÍDA | `high` |
-| 019 | EM ANDAMENTO | `high` |
+| 019 | CONCLUÍDA | `high` |
 | 020 | PENDENTE | `high` |
 | 021 | PENDENTE | `medium` |
 | 022 | PENDENTE | `medium` |
@@ -237,6 +237,10 @@ Aceite concluído em 31 de agosto de 2026: controles persistentes passaram a com
 | 019 | Porta de mensageria e simulador Meta | Domínio envia/recebe tipos internos; simulador cobre sucesso, falha e duplicidade. |
 | 020 | AdaptadorErp e simulador contratual | Consultas/escritas normalizadas; protocolo pendente e resposta perdida simulados. |
 | 021 | AdaptadorSessaoAcesso | Contrato separado, simulador e controle de recurso desligado; nenhuma inferência de sessão ATIVA. |
+
+### PR 019 — Porta de mensageria e simulador Meta
+
+Aceite concluído em 31 de agosto de 2026: `CanalMensageria` e `ConsumidorEventosMensageria` passaram a trocar somente comandos, eventos, identidades, estados e falhas internos normalizados; o simulador Meta determinístico cobre aceite, falha, idempotência, conflito e duplicidade concorrente sem expor DTO ou credencial externa e sem ser registrado na aplicação. Lint, tipos, 158 testes, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; a imagem `vyntra/api-staging:pr-019` ficou saudável com prontidão `PRONTO`. Em staging, repetição de sucesso e falha preservou dois efeitos externos totais, enquanto duas entregas do mesmo evento produziram `APLICADO` e `DUPLICADO` com uma única chamada ao consumidor; não houve erro de nível 50.
 
 ## 6. Domínio principal
 
