@@ -262,7 +262,23 @@ COMMIT
 
 O worker lê itens pendentes, adquire lease/lock, executa o efeito e registra resultado/tentativa. Se morrer depois do commit, outro worker retoma. O consumidor precisa ser idempotente porque entrega “pelo menos uma vez” é esperada.
 
-A PR 009 materializa criação e vínculo transacionais. Lease, tentativas e reconciliação persistente entram na PR 010; distribuição SSE/WebSocket/push e workers específicos permanecem em suas PRs próprias.
+A PR 009 materializa criação e vínculo transacionais. A PR 010 acrescenta idempotência, concessão temporária, histórico de tentativas e reconciliação persistentes; distribuição SSE/WebSocket/push e workers específicos permanecem em suas PRs próprias.
+
+### 6.3.1 Operações recuperáveis
+
+`ServicoIdempotencia` é a porta central para comandos que não podem produzir efeito duplicado. O registro usa chave com escopo e assinatura do comando; criação concorrente é resolvida pela unicidade no PostgreSQL. A execução ou reconciliação adquire concessão por alteração condicional de `estado + versao + proxima_acao_em`, cria uma tentativa e recebe token que não é armazenado em claro.
+
+```text
+transação local: intenção + idempotência + evento + caixa de saída
+  ↓ COMMIT
+worker adquire concessão
+  ↓ chamada externa fora da transação
+transação curta: resultado confirmado ou incerteza
+  ↓
+reconciliação antes de qualquer repetição ambígua
+```
+
+Reinício de API/worker não perde a operação. Uma concessão expirada vira `RESULTADO_INCERTO`; o PostgreSQL agenda a reconciliação e mantém o histórico. Redis pode acelerar seleção/coordenação, mas não autoriza repetição nem substitui o estado persistido.
 
 ### 6.4 Fronteiras transacionais críticas
 

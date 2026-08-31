@@ -109,6 +109,8 @@ Não propague DTOs/nomenclatura Meta ou MK para domínio, UI ou Motor de Fluxos.
 - Nota interna nunca entra no pipeline Meta ou transcrição pública.
 - Snapshot serve para identificação/contexto, nunca para escrita.
 - Toda escrita externa sensível é idempotente e auditada.
+- Chave idempotente sempre possui escopo e assinatura do comando; chave e token de concessão persistem somente como hash.
+- Timeout, resposta perdida ou concessão expirada viram `RESULTADO_INCERTO`; nunca repetir efeito externo ambíguo sem reconciliar.
 - Evento só é distribuído após commit.
 - Alteração com efeito assíncrono usa `ServicoTransacaoDominio`; evento e caixa de saída não podem ser persistidos por transações independentes.
 - Remover permissão invalida stream e cache local.
@@ -134,6 +136,8 @@ Proibido:
 Toda leitura/escrita valida sessão + usuário + permissão + fila/escopo + recurso + estado. Padrão é negar.
 
 Use os serviços centralizados de autorização, proteção de dados, idempotência, auditoria, sanitização e validação de arquivo.
+
+`ServicoIdempotencia` deve participar da transação local que registra a intenção quando aplicável. A chamada externa ocorre após commit, sob concessão persistente. Não substitua constraint/versão PostgreSQL por lock apenas em Redis e não altere estado de operação recuperável diretamente para “forçar” nova tentativa.
 
 `RegistroAuditoria` é somente de acréscimo. Código de aplicação usa `ServicoAuditoria`; não chama `update`, `delete`, `upsert` ou `truncate`, não desabilita seus triggers e não cria rota administrativa de mutação. Uma ação que exige auditoria falha se o registro não puder participar da mesma transação local.
 

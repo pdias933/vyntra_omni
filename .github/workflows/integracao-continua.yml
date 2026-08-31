@@ -105,6 +105,27 @@ jobs:
             | grep --quiet --line-regexp 0
 
           docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "BEGIN; INSERT INTO registro_idempotencia (id, escopo_tipo, escopo_id, chave_hash, assinatura_requisicao_hash) VALUES ('\''a0000000-0000-4000-8000-000000000001'\'', '\''USUARIO'\'', '\''a0000000-0000-4000-8000-000000000002'\'', repeat('\''a'\'', 64), repeat('\''b'\'', 64)); INSERT INTO operacao_recuperavel (id, registro_idempotencia_id, tipo, atualizado_em) VALUES ('\''a0000000-0000-4000-8000-000000000003'\'', '\''a0000000-0000-4000-8000-000000000001'\'', '\''VERIFICAR_IDEMPOTENCIA'\'', CURRENT_TIMESTAMP); COMMIT;"' </dev/null
+          if docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "INSERT INTO registro_idempotencia (id, escopo_tipo, escopo_id, chave_hash, assinatura_requisicao_hash) VALUES ('\''a0000000-0000-4000-8000-000000000004'\'', '\''USUARIO'\'', '\''a0000000-0000-4000-8000-000000000002'\'', repeat('\''a'\'', 64), repeat('\''b'\'', 64));"' </dev/null >/dev/null 2>&1
+          then
+            echo '::error::Chave idempotente duplicada foi aceita no mesmo escopo.'
+            exit 1
+          fi
+          docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --tuples-only --no-align --command "SELECT count(*) FROM registro_idempotencia r JOIN operacao_recuperavel o ON o.registro_idempotencia_id = r.id WHERE r.id = '\''a0000000-0000-4000-8000-000000000001'\'';"' </dev/null \
+            | grep --quiet --line-regexp 1
+          if docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "UPDATE operacao_recuperavel SET estado = '\''EM_EXECUCAO'\'', proxima_acao_em = NULL WHERE id = '\''a0000000-0000-4000-8000-000000000003'\'';"' </dev/null >/dev/null 2>&1
+          then
+            echo '::error::Estado ativo sem concessão foi aceito.'
+            exit 1
+          fi
+          docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --tuples-only --no-align --command "SELECT count(*) FROM operacao_recuperavel WHERE id = '\''a0000000-0000-4000-8000-000000000003'\'' AND estado = '\''PENDENTE'\'';"' </dev/null \
+            | grep --quiet --line-regexp 1
+
+          docker compose exec -T postgres sh -ceu \
             'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "CREATE TABLE verificacao_pr004 (valor text PRIMARY KEY); INSERT INTO verificacao_pr004 VALUES ('\''persistiu'\'');"' </dev/null
           docker compose exec -T minio /usr/bin/sh -ceu \
             'export MC_HOST_local="http://$(cat /run/secrets/usuario_minio):$(cat /run/secrets/senha_minio)@127.0.0.1:9000"

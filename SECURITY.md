@@ -326,6 +326,16 @@ Replay ou duplicidade retorna sucesso compatível sem repetir o efeito. Status f
 - snapshot desatualizado nunca executa escrita;
 - cada escrita externa exige idempotência e auditoria.
 
+### 11.1 Idempotência segura
+
+- a chave de idempotência é UUID aleatório, obrigatória e única apenas dentro de escopo explícito;
+- o PostgreSQL armazena somente SHA-256 da chave; a assinatura do comando impede reutilização com conteúdo diferente;
+- a assinatura é produzida no backend a partir do comando canônico validado e minimizado; CPF, telefone, linha digitável e outros valores sensíveis ou de domínio pequeno não recebem hash simples;
+- token de concessão tem alta entropia, é entregue uma vez e persiste somente como hash;
+- concorrência é decidida por constraint e alteração condicional, nunca por verificação exclusiva em memória/Redis;
+- expiração, timeout ou resposta perdida produzem `RESULTADO_INCERTO` e exigem reconciliação antes de nova execução;
+- códigos e resultados persistidos são normalizados e sanitizados; payload externo bruto, segredo e token não entram no histórico.
+
 ## 12. Segurança do Motor de Fluxos
 
 - catálogo de nós controlado pelo código;

@@ -602,6 +602,37 @@ Regras:
 - encerramento, transferência, deploy, nova tentativa ou rotação de log não afetam auditoria;
 - alteração de negócio e auditoria compartilham transação quando constituem um único efeito.
 
+### 13.2 Idempotência e operações recuperáveis
+
+`RegistroIdempotencia` representa a aceitação única de um comando dentro de um escopo. A chave fornecida pelo cliente é um UUID de alta entropia e nunca é persistida em claro: o banco guarda somente seu SHA-256, único por `escopo_tipo + escopo_id + chave_hash`. `assinatura_requisicao_hash` vincula a chave ao conteúdo canônico do comando; reutilizá-la para conteúdo diferente é erro, não uma nova operação.
+
+```text
+OperacaoRecuperavel
+PENDENTE
+  → EM_EXECUCAO
+    → CONCLUIDA
+    → FALHA_DEFINITIVA
+    → AGUARDANDO_NOVA_TENTATIVA
+    → RESULTADO_INCERTO
+RESULTADO_INCERTO
+  → EM_RECONCILIACAO
+    → CONCLUIDA
+    → FALHA_DEFINITIVA
+    → AGUARDANDO_NOVA_TENTATIVA
+    → RESULTADO_INCERTO
+```
+
+Cada aquisição cria uma `TentativaOperacao` numerada. Uma concessão possui validade e token aleatório devolvido uma única vez; somente o hash do token permanece no PostgreSQL. Versão e alteração condicional garantem um vencedor sob concorrência. Se o processo perder a resposta externa ou a concessão expirar, a operação vai para `RESULTADO_INCERTO`: a próxima ação é reconciliar o efeito no sistema externo, nunca repeti-lo às cegas.
+
+Regras:
+
+- `AGUARDANDO_NOVA_TENTATIVA` só autoriza nova execução após `proxima_acao_em`;
+- `RESULTADO_INCERTO` só autoriza reconciliação;
+- reconciliação que comprova ausência do efeito pode liberar nova tentativa;
+- resultado e tentativas são persistentes; Redis não participa da decisão;
+- assinatura de comando é calculada pelo backend sobre campos canônicos já validados e minimizados; dado sensível ou de espaço pequeno exige HMAC/índice protegido, não hash simples;
+- o serviço pode participar da mesma transação da intenção, evento e auditoria, mas a chamada externa ocorre somente depois do commit.
+
 ## 14. Invariantes obrigatórios
 
 1. Uma instalação contém dados de uma única empresa.

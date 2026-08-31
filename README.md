@@ -48,6 +48,10 @@ Toda requisição recebe correlação validada; erros devolvem o mesmo identific
 
 Efeitos assíncronos usam `EventoDominio` sequenciado e `ItemCaixaSaida` no mesmo commit PostgreSQL da alteração principal. A entrega é posterior e nunca antecipa o estado confirmado. Contratos, rollback e limites estão em [docs/operacoes/PR-009.md](docs/operacoes/PR-009.md).
 
+### Idempotência e recuperação
+
+Comandos sensíveis usam chave com escopo, concessão temporária e tentativas persistentes. Timeout ou execução interrompida produz resultado incerto e exige reconciliação antes de uma nova tentativa. O contrato operacional está em [docs/operacoes/PR-010.md](docs/operacoes/PR-010.md); a análise de dependências está em [docs/dependencias/PR-010.md](docs/dependencias/PR-010.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local

@@ -32,6 +32,36 @@ enum EstadoItemCaixaSaida {
   @@map("estado_item_caixa_saida")
 }
 
+enum EstadoOperacaoRecuperavel {
+  PENDENTE
+  EM_EXECUCAO
+  AGUARDANDO_NOVA_TENTATIVA
+  RESULTADO_INCERTO
+  EM_RECONCILIACAO
+  CONCLUIDA
+  FALHA_DEFINITIVA
+
+  @@map("estado_operacao_recuperavel")
+}
+
+enum TipoTentativaOperacao {
+  EXECUCAO
+  RECONCILIACAO
+
+  @@map("tipo_tentativa_operacao")
+}
+
+enum ResultadoTentativaOperacao {
+  EM_ANDAMENTO
+  SUCESSO
+  FALHA_TEMPORARIA
+  RESULTADO_INCERTO
+  EFEITO_AUSENTE
+  FALHA_DEFINITIVA
+
+  @@map("resultado_tentativa_operacao")
+}
+
 model RegistroAuditoria {
   id                         String          @id @db.Uuid
   tipoEvento                 String          @map("tipo_evento") @db.VarChar(100)
@@ -96,4 +126,61 @@ model ItemCaixaSaida {
   @@index([estado, disponivelEm, criadoEm], map: "item_caixa_saida_pendente_idx")
   @@index([eventoDominioId], map: "item_caixa_saida_evento_idx")
   @@map("item_caixa_saida")
+}
+
+model RegistroIdempotencia {
+  id                       String               @id @db.Uuid
+  escopoTipo               String               @map("escopo_tipo") @db.VarChar(100)
+  escopoId                 String               @map("escopo_id") @db.Uuid
+  chaveHash                String               @map("chave_hash") @db.Char(64)
+  assinaturaRequisicaoHash String               @map("assinatura_requisicao_hash") @db.Char(64)
+  criadoEm                 DateTime             @default(now()) @map("criado_em") @db.Timestamptz(6)
+  operacao                 OperacaoRecuperavel?
+
+  @@unique([escopoTipo, escopoId, chaveHash], map: "registro_idempotencia_escopo_chave_key")
+  @@index([criadoEm], map: "registro_idempotencia_criado_em_idx")
+  @@map("registro_idempotencia")
+}
+
+model OperacaoRecuperavel {
+  id                         String                    @id @db.Uuid
+  registroIdempotenciaId     String                    @unique @map("registro_idempotencia_id") @db.Uuid
+  tipo                       String                    @db.VarChar(100)
+  entidadeTipo               String?                   @map("entidade_tipo") @db.VarChar(100)
+  entidadeId                 String?                   @map("entidade_id") @db.Uuid
+  estado                     EstadoOperacaoRecuperavel @default(PENDENTE)
+  tentativas                 Int                       @default(0)
+  versao                     Int                       @default(0)
+  concessaoTokenHash         String?                   @map("concessao_token_hash") @db.Char(64)
+  concessaoAte               DateTime?                 @map("concessao_ate") @db.Timestamptz(6)
+  proximaAcaoEm              DateTime?                 @default(now()) @map("proxima_acao_em") @db.Timestamptz(6)
+  codigoUltimoErro           String?                   @map("codigo_ultimo_erro") @db.VarChar(100)
+  resultadoProtegido         Json?                     @map("resultado_protegido")
+  criadoEm                   DateTime                  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm               DateTime                  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  concluidoEm                DateTime?                 @map("concluido_em") @db.Timestamptz(6)
+  registroIdempotencia       RegistroIdempotencia      @relation(fields: [registroIdempotenciaId], references: [id], onDelete: Restrict)
+  historicoTentativas        TentativaOperacao[]
+
+  @@index([estado, proximaAcaoEm, criadoEm], map: "operacao_recuperavel_pendente_idx")
+  @@index([entidadeTipo, entidadeId, criadoEm], map: "operacao_recuperavel_entidade_idx")
+  @@map("operacao_recuperavel")
+}
+
+model TentativaOperacao {
+  id                 String                     @id @db.Uuid
+  operacaoId         String                     @map("operacao_id") @db.Uuid
+  numero             Int
+  tipo               TipoTentativaOperacao
+  resultado          ResultadoTentativaOperacao @default(EM_ANDAMENTO)
+  concessaoTokenHash String                     @map("concessao_token_hash") @db.Char(64)
+  codigoResultado    String?                    @map("codigo_resultado") @db.VarChar(100)
+  dadosProtegidos    Json?                      @map("dados_protegidos")
+  iniciadaEm         DateTime                   @default(now()) @map("iniciada_em") @db.Timestamptz(6)
+  encerradaEm        DateTime?                  @map("encerrada_em") @db.Timestamptz(6)
+  operacao           OperacaoRecuperavel        @relation(fields: [operacaoId], references: [id], onDelete: Restrict)
+
+  @@unique([operacaoId, numero], map: "tentativa_operacao_numero_key")
+  @@index([resultado, iniciadaEm], map: "tentativa_operacao_resultado_idx")
+  @@map("tentativa_operacao")
 }
