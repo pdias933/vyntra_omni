@@ -41,7 +41,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 017 | CONCLUÍDA | `xhigh` |
 | 018 | CONCLUÍDA | `high` |
 | 019 | CONCLUÍDA | `high` |
-| 020 | EM ANDAMENTO | `high` |
+| 020 | CONCLUÍDA | `high` |
 | 021 | PENDENTE | `medium` |
 | 022 | PENDENTE | `medium` |
 | 023 | PENDENTE | `high` |
@@ -241,6 +241,10 @@ Aceite concluído em 31 de agosto de 2026: controles persistentes passaram a com
 ### PR 019 — Porta de mensageria e simulador Meta
 
 Aceite concluído em 31 de agosto de 2026: `CanalMensageria` e `ConsumidorEventosMensageria` passaram a trocar somente comandos, eventos, identidades, estados e falhas internos normalizados; o simulador Meta determinístico cobre aceite, falha, idempotência, conflito e duplicidade concorrente sem expor DTO ou credencial externa e sem ser registrado na aplicação. Lint, tipos, 158 testes, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; a imagem `vyntra/api-staging:pr-019` ficou saudável com prontidão `PRONTO`. Em staging, repetição de sucesso e falha preservou dois efeitos externos totais, enquanto duas entregas do mesmo evento produziram `APLICADO` e `DUPLICADO` com uma única chamada ao consumidor; não houve erro de nível 50.
+
+### PR 020 — AdaptadorErp e simulador contratual
+
+Aceite concluído em 31 de agosto de 2026: `AdaptadorErp` passou a separar consultas e escritas com clientes, contratos, faturas e resultados internos normalizados; o simulador contratual diferencia indisponibilidade sem efeito de resposta perdida após possível efeito, exige reconciliação e recusa reutilização divergente da chave, sem DTO MK, credencial ou registro na aplicação. Lint, tipos, 169 testes, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; a imagem `vyntra/api-staging:pr-020` ficou saudável com prontidão `PRONTO`. Em staging, três tentativas produziram dois efeitos: confirmação idempotente, indisponibilidade com efeito comprovadamente ausente e resposta perdida que permaneceu incerta até a reconciliação confirmar o protocolo oficial; critérios sintéticos de busca não retornaram na resposta e não houve erro de nível 50.
 
 ## 6. Domínio principal
 
