@@ -33,6 +33,20 @@ As versões e a justificativa da superfície inicial estão em [docs/dependencia
 
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
+### Ambiente local
+
+O ambiente de desenvolvimento sobe a API mínima, PostgreSQL, Redis e MinIO por Docker Compose. As credenciais são geradas em arquivos locais ignorados pelo Git; nenhum valor é exibido pelo comando de preparação.
+
+```text
+pnpm ambiente:preparar
+pnpm ambiente:validar
+pnpm ambiente:subir
+pnpm ambiente:estado
+pnpm ambiente:parar
+```
+
+API, endpoint S3 e console MinIO ficam disponíveis somente em `127.0.0.1`. PostgreSQL e Redis não publicam portas no host. Requisitos, persistência, limpeza segura e a restrição do MinIO a desenvolvimento estão em [docs/operacoes/PR-004.md](docs/operacoes/PR-004.md); imagens e riscos de licença/manutenção estão em [docs/dependencias/PR-004.md](docs/dependencias/PR-004.md).
+
 ## Princípios congelados
 
 1. Uma instalação atende **uma única empresa**. Se o produto for comercializado, cada cliente recebe ambiente, banco, storage e credenciais isolados.
@@ -57,7 +71,7 @@ O workflow de integração contínua repete essas verificações, examina segred
 - [INTEGRATIONS.md](INTEGRATIONS.md): Meta Cloud API, MK Solutions, snapshot e `AccessSessionAdapter`.
 - [OPERATIONS.md](OPERATIONS.md): ambientes, Docker Compose, deploy, backups e observabilidade.
 - [AGENTS.md](AGENTS.md): regras operacionais para agentes de código e revisão.
-- [ROADMAP.md](ROADMAP.md): sequência proposta de PRs pequenos e seus critérios de aceite.
+- [ROADMAP.md](ROADMAP.md): sequência de PRs pequenos, estado atual, `Effort` recomendado e critérios de aceite.
 - [design/README.md](design/README.md): referências conceituais aprovadas, direção visual e comportamento esperado das animações.
 
 ## Precedência em caso de dúvida

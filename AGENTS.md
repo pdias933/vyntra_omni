@@ -279,6 +279,18 @@ pnpm verificar:segredos
 pnpm build
 ```
 
+Para o ambiente Docker de desenvolvimento:
+
+```text
+pnpm ambiente:preparar
+pnpm ambiente:validar
+pnpm ambiente:subir
+pnpm ambiente:estado
+pnpm ambiente:parar
+```
+
+Não versione `.segredos/`, não substitua arquivos secretos por senha funcional em `.env.example` e não imprima `docker compose config` já interpolado. Não regenere parte do conjunto de segredos com volumes existentes: restaure/rotacione a credencial ou faça reset destrutivo explicitamente autorizado. O wrapper local deve fixar o Compose/projeto, aceitar apenas endpoint Docker por socket local e recusar contexto remoto. `ambiente:parar` preserva dados; remoção de volumes exige alvo/projeto conferido e autorização explícita. O MinIO comunitário fixado no Compose é uma exceção exclusiva de desenvolvimento, não uma dependência autorizada para staging/produção.
+
 Execute os comandos relevantes à mudança e o conjunto completo antes de declarar PR pronto. CI também executa scanner de dependências e secret scan.
 
 Scripts de instalação de dependências são default deny por `strictDepBuilds`, e comandos não podem disparar instalação implícita. Não use `dangerouslyAllowAllBuilds`; uma necessidade real exige revisão do pacote e entrada explícita, estreita e documentada em `allowBuilds`.
@@ -298,6 +310,7 @@ Atualize no mesmo PR quando mudar:
 - linguagem visual/comportamento de tela → `PRODUCT.md`, `MOBILE.md` e `design/references/README.md`;
 - adapter/contrato externo → `INTEGRATIONS.md`;
 - deploy/backup/alerta → `OPERATIONS.md`.
+- execução de PR → `ROADMAP.md`, atualizando `Estado` e reavaliando o `Effort` recomendado antes de declarar a entrega pronta.
 
 Mudança grande exige ADR curto com contexto, opções, decisão, consequências e plano de migração.
 
@@ -329,6 +342,7 @@ Uma alteração está pronta somente quando:
 - migration é compatível;
 - observabilidade e erro operacional são úteis;
 - docs/ADR foram atualizados;
+- a linha da PR em `ROADMAP.md` reflete o estado real e o `Effort` recomendado;
 - mudança de interface possui evidência nos clientes afetados para estado saudável sem infraestrutura, preservação de contexto/rascunho e “Reduzir Movimento” quando aplicável;
 - lint, typecheck, testes, build e scanners passam;
 - liberação gradual/flag e reversão estão definidas quando aplicável.

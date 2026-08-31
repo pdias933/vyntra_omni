@@ -26,6 +26,67 @@ env:
   TURBO_TELEMETRY_DISABLED: '1'
 
 jobs:
+  ambiente_local:
+    name: Ambiente Docker Compose
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      COMPOSE_PROJECT_NAME: vyntra-ci-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Obter código sem persistir credencial
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Gerar segredos locais sintéticos
+        run: node scripts/ambiente-local.mjs preparar
+
+      - name: Validar configuração do Compose
+        run: node scripts/ambiente-local.mjs validar
+
+      - name: Subir, testar persistência e remover ambiente efêmero
+        run: |
+          set -euo pipefail
+          limpar_ambiente() {
+            docker compose down --volumes --remove-orphans
+          }
+          trap limpar_ambiente EXIT
+
+          node scripts/ambiente-local.mjs subir
+
+          codigo_http="$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/)"
+          test "${codigo_http}" = '404'
+
+          docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "CREATE TABLE verificacao_pr004 (valor text PRIMARY KEY); INSERT INTO verificacao_pr004 VALUES ('\''persistiu'\'');"' </dev/null
+          docker compose exec -T minio /usr/bin/sh -ceu \
+            'export MC_HOST_local="http://$(cat /run/secrets/usuario_minio):$(cat /run/secrets/senha_minio)@127.0.0.1:9000"
+            timeout 15 mc ls local >/dev/null
+            mc mb --ignore-existing local/verificacao-pr004 >/dev/null
+            printf "persistiu\n" | mc pipe local/verificacao-pr004/marcador >/dev/null' </dev/null
+          docker compose exec -T redis sh -ec \
+            'REDISCLI_AUTH="$(sed -n "s/^user vyntra on >\([^ ]*\).*/\1/p" /run/secrets/redis.acl)" redis-cli --user vyntra set verificacao:pr004 persistiu >/dev/null' </dev/null
+
+          docker compose restart postgres redis minio
+          docker compose up --wait --no-build
+
+          docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --tuples-only --no-align --command "SELECT valor FROM verificacao_pr004;"' </dev/null \
+            | grep --quiet --line-regexp persistiu
+          docker compose exec -T minio /usr/bin/sh -ceu \
+            'export MC_HOST_local="http://$(cat /run/secrets/usuario_minio):$(cat /run/secrets/senha_minio)@127.0.0.1:9000"
+            mc cat local/verificacao-pr004/marcador' </dev/null \
+            | grep --quiet --line-regexp persistiu
+          docker compose exec -T redis sh -ec \
+            'REDISCLI_AUTH="$(sed -n "s/^user vyntra on >\([^ ]*\).*/\1/p" /run/secrets/redis.acl)" redis-cli --user vyntra get verificacao:pr004' </dev/null \
+            | grep --quiet --line-regexp persistiu
+
   qualidade:
     name: Qualidade e build
     runs-on: ubuntu-24.04

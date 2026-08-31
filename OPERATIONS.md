@@ -16,6 +16,22 @@ DESENVOLVIMENTO → STAGING → PRODUÇÃO
 - credenciais externas somente em arquivo local ignorado ou cofre aprovado;
 - nenhum dado real desnecessário.
 
+A implementação local está em `compose.yaml` e sobe somente `api`, `postgres`, `redis`, `minio` e o inicializador efêmero do volume MinIO. Use os comandos versionados da raiz:
+
+```text
+pnpm ambiente:preparar
+pnpm ambiente:validar
+pnpm ambiente:subir
+pnpm ambiente:estado
+pnpm ambiente:parar
+```
+
+`ambiente:parar` preserva os volumes. A remoção de volumes é intencionalmente manual e destrutiva. Segredos locais ficam em `.segredos/desenvolvimento/`, nunca em `.env.example`, Compose, imagem ou log. O diretório POSIX é `0700`; arquivos lidos por contêiner sem root são `0644` somente dentro dele, devido à semântica de bind do Compose local, e cada um é montado apenas no serviço declarado. O conjunto de segredos é indivisível: perda parcial bloqueia regeneração para não desencontrar credencial e volume persistente. O wrapper fixa arquivo/projeto e recusa daemon Docker remoto. API, S3 e console publicam somente em loopback por uma bridge local própria; PostgreSQL e Redis permanecem sem porta no host e somente na rede Docker interna de dados.
+
+Hosts Linux persistentes que executam Redis devem aplicar `vm.overcommit_memory=1` em arquivo próprio sob `/etc/sysctl.d/`, conforme a orientação oficial, e validar o valor efetivo após boot. O Docker Desktop administra esse ajuste dentro de sua própria VM.
+
+A imagem comunitária do MinIO disponível para múltiplas arquiteturas é legada e possui alertas de segurança posteriores ao último release público. Por isso, seu uso é uma exceção estritamente local: credenciais aleatórias, usuário sem root, nenhuma informação real, nenhuma política pública e nenhuma promoção da imagem para staging ou produção. O PR de staging deve escolher storage mantido/aprovado de forma independente. Detalhes e fontes estão em [docs/operacoes/PR-004.md](docs/operacoes/PR-004.md) e [docs/dependencias/PR-004.md](docs/dependencias/PR-004.md).
+
 ### Staging
 
 - VM/ambiente separado;
@@ -164,7 +180,7 @@ Valores concretos de timeout, tentativas e concorrência devem ser calibrados co
 - ciclo de vida sem auto-limpeza na V1, salvo política legal explícita;
 - backup/replicação conforme capacidade do provedor;
 - monitor de erro, latência e capacidade;
-- MinIO apenas em desenvolvimento/staging quando apropriado.
+- MinIO comunitário legado apenas em desenvolvimento; staging exige storage mantido e aprovado.
 
 PostgreSQL guarda `storage_key`, MIME, tamanho, hash e vínculos; não guarda o binário.
 
@@ -237,7 +253,7 @@ DEPLOY PRODUÇÃO
 
 Produção nunca recebe auto-deploy apenas por push/merge. O botão/ação de deploy é explícito e auditável.
 
-A integração contínua inicial implementa somente os portões anteriores a staging: qualidade, tipos, testes, dependências, segredos e build. Ela roda em pull requests, em alterações da `main` e semanalmente para detectar nova vulnerabilidade sem depender de outro commit. O workflow não recebe permissão de escrita, não persiste credencial do checkout, não publica artefato e não executa deploy.
+A integração contínua inicial implementa somente os portões anteriores a staging: qualidade, tipos, testes, dependências, segredos, build e smoke efêmero do Docker Compose com reinício/persistência. Ela roda em pull requests, em alterações da `main` e semanalmente para detectar nova vulnerabilidade sem depender de outro commit. O workflow não recebe permissão de escrita, não persiste credencial do checkout, não publica artefato e não executa deploy.
 
 ## 11. Deploy sem interromper atendimento
 

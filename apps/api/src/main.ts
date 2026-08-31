@@ -6,8 +6,14 @@ import { ModuloAplicacao } from './modulo-aplicacao.js';
 
 async function iniciarAplicacao(): Promise<void> {
   const aplicacao = await NestFactory.create(ModuloAplicacao);
+  const enderecoHttp = process.env.ENDERECO_HTTP ?? '127.0.0.1';
+  const portaHttp = Number(process.env.PORTA_HTTP ?? '3000');
 
-  await aplicacao.listen(3000, '127.0.0.1');
+  if (!Number.isInteger(portaHttp) || portaHttp < 1 || portaHttp > 65_535) {
+    throw new Error('PORTA_HTTP_INVALIDA');
+  }
+
+  await aplicacao.listen(portaHttp, enderecoHttp);
 }
 
 await iniciarAplicacao();

@@ -65,7 +65,7 @@ test('fixa actions por SHA e não persiste credencial', () => {
     passo.uses.startsWith('actions/checkout@'),
   );
 
-  assert.equal(checkouts.length, 3);
+  assert.equal(checkouts.length, 4);
 
   for (const checkout of checkouts) {
     assert.equal(checkout.with?.['persist-credentials'], false);
@@ -107,8 +107,9 @@ test('mantém Node e pnpm exatos e verifica o binário do pnpm', () => {
   }
 });
 
-test('mantém os três portões obrigatórios e sem tolerar falha', () => {
+test('mantém os portões obrigatórios e sem tolerar falha', () => {
   assert.deepEqual(Object.keys(workflow.jobs).sort(), [
+    'ambiente_local',
     'dependencias',
     'qualidade',
     'segredos',
@@ -170,6 +171,45 @@ test('mantém os três portões obrigatórios e sem tolerar falha', () => {
       );
     }
   }
+});
+
+test('sobe o ambiente local em projeto efêmero e comprova persistência', () => {
+  const job = workflow.jobs.ambiente_local;
+  const preparar = passoPorNome(
+    'ambiente_local',
+    'Gerar segredos locais sintéticos',
+  );
+  const validar = passoPorNome(
+    'ambiente_local',
+    'Validar configuração do Compose',
+  );
+  const smoke = passoPorNome(
+    'ambiente_local',
+    'Subir, testar persistência e remover ambiente efêmero',
+  );
+
+  assert.match(job.env.COMPOSE_PROJECT_NAME, /^vyntra-ci-/);
+  assert.ok(job.env.COMPOSE_PROJECT_NAME.includes('github.run_id'));
+  assert.ok(job.env.COMPOSE_PROJECT_NAME.includes('github.run_attempt'));
+  assert.equal(preparar.run, 'node scripts/ambiente-local.mjs preparar');
+  assert.equal(validar.run, 'node scripts/ambiente-local.mjs validar');
+  assert.ok(smoke.run.includes('set -euo pipefail'));
+  assert.ok(smoke.run.includes('trap limpar_ambiente EXIT'));
+  assert.ok(smoke.run.includes('node scripts/ambiente-local.mjs subir'));
+  assert.ok(smoke.run.includes('docker compose restart postgres redis minio'));
+  assert.ok(smoke.run.includes('docker compose up --wait --no-build'));
+  assert.ok(smoke.run.includes('SELECT valor FROM verificacao_pr004'));
+  assert.ok(smoke.run.includes('PGPASSWORD="$(cat /run/secrets/senha_postgresql)"'));
+  assert.ok(smoke.run.includes('psql --host 127.0.0.1'));
+  assert.ok(smoke.run.includes('--no-password'));
+  assert.ok(smoke.run.includes('MC_HOST_local'));
+  assert.ok(smoke.run.includes('mc ls local'));
+  assert.ok(smoke.run.includes('local/verificacao-pr004/marcador'));
+  assert.ok(smoke.run.includes('verificacao:pr004'));
+  assert.ok(smoke.run.includes('down --volumes --remove-orphans'));
+  assert.equal(smoke.run.match(/<\/dev\/null/g)?.length, 6);
+  assert.ok(!smoke.run.includes('docker compose config'));
+  assert.ok(!smoke.run.includes('docker compose logs'));
 });
 
 test('varre todo o histórico com Gitleaks verificado e saída ocultada', () => {

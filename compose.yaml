@@ -1,0 +1,211 @@
+x-registro-local: &registro-local
+  driver: json-file
+  options:
+    max-file: "3"
+    max-size: 10m
+
+services:
+  preparar_volume_minio:
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    user: "0:0"
+    entrypoint:
+      - /usr/bin/chmod
+    command:
+      - "0770"
+      - /data
+    network_mode: none
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - dados_minio:/data
+    logging: *registro-local
+
+  postgres:
+    image: docker.io/library/postgres:18.6-alpine3.23@sha256:697c180dbf244d3ce4a8f4cbc0156cde840af055c1bf8b76aebe422a4822086f
+    environment:
+      POSTGRES_DB: vyntra
+      POSTGRES_PASSWORD_FILE: /run/secrets/senha_postgresql
+      POSTGRES_USER: vyntra
+    secrets:
+      - senha_postgresql
+    shm_size: 128mb
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready --quiet --host 127.0.0.1 --username "$${POSTGRES_USER}" --dbname "$${POSTGRES_DB}"
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    volumes:
+      - dados_postgresql:/var/lib/postgresql
+    networks:
+      - rede_dados
+    logging: *registro-local
+
+  redis:
+    image: docker.io/library/redis:7.2.16-alpine3.21@sha256:ccd6aa8d45ff3f033d6fa15b8cc1a50579f65c89f38cf9bb607a954c4f2128ed
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --aclfile
+      - /run/secrets/redis.acl
+      - --protected-mode
+      - "yes"
+    secrets:
+      - source: redis_acl
+        target: redis.acl
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          REDISCLI_AUTH="$$(sed -n 's/^user vyntra on >\([^ ]*\).*/\1/p' /run/secrets/redis.acl)"
+          redis-cli --user vyntra ping | grep -Fqx PONG
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    volumes:
+      - dados_redis:/data
+    networks:
+      - rede_dados
+    logging: *registro-local
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    user: "1000:0"
+    command:
+      - server
+      - /data
+      - --console-address
+      - :9001
+    depends_on:
+      preparar_volume_minio:
+        condition: service_completed_successfully
+    environment:
+      HOME: /tmp
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/senha_minio
+      MINIO_ROOT_USER_FILE: /run/secrets/usuario_minio
+    secrets:
+      - senha_minio
+      - usuario_minio
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+    tmpfs:
+      - /tmp:uid=1000,gid=0,mode=0700
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - --fail
+        - --silent
+        - --show-error
+        - http://127.0.0.1:9000/minio/health/ready
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    ports:
+      - name: s3-local
+        target: 9000
+        published: "${PORTA_MINIO:-9000}"
+        host_ip: 127.0.0.1
+        protocol: tcp
+      - name: console-local
+        target: 9001
+        published: "${PORTA_CONSOLE_MINIO:-9001}"
+        host_ip: 127.0.0.1
+        protocol: tcp
+    volumes:
+      - dados_minio:/data
+    networks:
+      - rede_publicada_local
+    logging: *registro-local
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: execucao
+    image: vyntra/api-desenvolvimento:local
+    pull_policy: build
+    init: true
+    depends_on:
+      minio:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      ENDERECO_HTTP: 0.0.0.0
+      NODE_ENV: development
+      PORTA_HTTP: "3000"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s
+    tmpfs:
+      - /tmp:uid=1000,gid=1000,mode=0700
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:3000/').then((resposta) => process.exit(resposta.status === 404 ? 0 : 1)).catch(() => process.exit(1))
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    ports:
+      - name: api-local
+        target: 3000
+        published: "${PORTA_API:-3000}"
+        host_ip: 127.0.0.1
+        protocol: tcp
+    networks:
+      - rede_dados
+      - rede_publicada_local
+    logging: *registro-local
+
+networks:
+  rede_dados:
+    driver: bridge
+    internal: true
+  rede_publicada_local:
+    driver: bridge
+    internal: false
+
+secrets:
+  redis_acl:
+    file: ./.segredos/desenvolvimento/redis.acl
+  senha_minio:
+    file: ./.segredos/desenvolvimento/senha-minio
+  senha_postgresql:
+    file: ./.segredos/desenvolvimento/senha-postgresql
+  usuario_minio:
+    file: ./.segredos/desenvolvimento/usuario-minio
+
+volumes:
+  dados_minio:
+  dados_postgresql:
+  dados_redis:

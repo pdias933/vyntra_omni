@@ -1,6 +1,11 @@
 /.github/ @pdias933
 /.node-version @pdias933
+/.dockerignore @pdias933
+/.env.example @pdias933
+/.gitignore @pdias933
+/apps/*/Dockerfile @pdias933
 /apps/*/package.json @pdias933
+/compose.yaml @pdias933
 /configuracao/excecoes-auditoria.json @pdias933
 /eslint.config.mjs @pdias933
 /package.json @pdias933

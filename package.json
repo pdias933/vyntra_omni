@@ -9,6 +9,11 @@
   },
   "packageManager": "pnpm@11.24.0",
   "scripts": {
+    "ambiente:estado": "node scripts/ambiente-local.mjs estado",
+    "ambiente:parar": "node scripts/ambiente-local.mjs parar",
+    "ambiente:preparar": "node scripts/ambiente-local.mjs preparar",
+    "ambiente:subir": "node scripts/ambiente-local.mjs subir",
+    "ambiente:validar": "node scripts/ambiente-local.mjs validar",
     "build": "node scripts/executar-turbo.mjs build",
     "dev": "node scripts/executar-turbo.mjs dev",
     "lint": "node scripts/executar-turbo.mjs lint && eslint scripts tests --max-warnings 0",

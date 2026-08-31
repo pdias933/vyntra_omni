@@ -4,9 +4,11 @@ import { join } from 'node:path';
 import test from 'node:test';
 
 const arquivosObrigatorios = [
+  '.dockerignore',
   '.github/workflows/integracao-continua.yml',
   '.github/gitleaks.toml',
   '.github/gitleaksignore',
+  'apps/api/Dockerfile',
   'apps/api/package.json',
   'apps/api/src/main.ts',
   'apps/mobile/package.json',
@@ -14,11 +16,13 @@ const arquivosObrigatorios = [
   'apps/mobile/src/Aplicacao.tsx',
   'apps/web/package.json',
   'apps/web/src/main.tsx',
+  'compose.yaml',
   'configuracao/excecoes-auditoria.json',
   'eslint.config.mjs',
   'packages/eslint-config/package.json',
   'packages/typescript-config/package.json',
   'pnpm-workspace.yaml',
+  'scripts/ambiente-local.mjs',
   'scripts/auditoria-dependencias.mjs',
   'scripts/executar-turbo.mjs',
   'scripts/verificar-dependencias.mjs',
@@ -33,6 +37,16 @@ const diretoriosIgnorados = new Set([
   'dist',
   'ios',
   'node_modules',
+]);
+
+const estadosRoadmap = new Set([
+  'BLOQUEADA',
+  'CONDICIONAL',
+  'CONCLUÍDA',
+  'EM ANDAMENTO',
+  'EM FORMALIZAÇÃO',
+  'PENDENTE',
+  'PRONTA',
 ]);
 
 async function listarArquivos(diretorio) {
@@ -65,6 +79,11 @@ test('expõe os comandos obrigatórios na raiz', async () => {
   const manifesto = JSON.parse(conteudo);
 
   for (const comando of [
+    'ambiente:estado',
+    'ambiente:parar',
+    'ambiente:preparar',
+    'ambiente:subir',
+    'ambiente:validar',
     'build',
     'lint',
     'test',
@@ -80,6 +99,44 @@ test('expõe os comandos obrigatórios na raiz', async () => {
     manifesto.scripts.test,
     'node scripts/executar-turbo.mjs test && node --test "tests/*.test.mjs"',
   );
+});
+
+test('acompanha estado e Effort de todas as PRs do roadmap', async () => {
+  const conteudo = await readFile('ROADMAP.md', 'utf8');
+  const inicioPainel = conteudo.indexOf('### Painel de execução');
+  const fimPainel = conteudo.indexOf('\n## 2. Portão zero', inicioPainel);
+
+  assert.ok(inicioPainel >= 0);
+  assert.ok(fimPainel > inicioPainel);
+
+  const linhas = conteudo
+    .slice(inicioPainel, fimPainel)
+    .split(/\r?\n/)
+    .filter((linha) => /^\| \d{3} \|/.test(linha))
+    .map((linha) => linha.split('|').map((parte) => parte.trim()))
+    .map(([, numero, estado, effort]) => ({
+      effort: effort.replaceAll('`', ''),
+      estado,
+      numero,
+    }));
+
+  assert.deepEqual(
+    linhas.map(({ numero }) => numero),
+    Array.from({ length: 116 }, (_, indice) =>
+      String(indice + 1).padStart(3, '0'),
+    ),
+  );
+
+  for (const { effort, estado, numero } of linhas) {
+    assert.ok(estadosRoadmap.has(estado), `${numero}:${estado}`);
+    assert.match(effort, /^(?:low|medium|high|xhigh)$/, numero);
+  }
+
+  const porNumero = new Map(linhas.map((linha) => [linha.numero, linha]));
+  assert.equal(porNumero.get('001').estado, 'EM FORMALIZAÇÃO');
+  assert.equal(porNumero.get('002').estado, 'CONCLUÍDA');
+  assert.equal(porNumero.get('003').estado, 'CONCLUÍDA');
+  assert.equal(porNumero.get('004').estado, 'CONCLUÍDA');
 });
 
 test('workspace com arquivo de teste declara como executá-lo', async () => {
