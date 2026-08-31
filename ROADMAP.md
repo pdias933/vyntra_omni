@@ -28,7 +28,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 004 | CONCLUÍDA | `high` |
 | 005 | CONCLUÍDA | `xhigh` |
 | 006 | CONCLUÍDA | `medium` |
-| 007 | EM ANDAMENTO | `high` |
+| 007 | CONCLUÍDA | `high` |
 | 008 | PENDENTE | `high` |
 | 009 | PENDENTE | `xhigh` |
 | 010 | PENDENTE | `xhigh` |
@@ -168,6 +168,10 @@ Aceite concluído em 30 de agosto de 2026: projeto `vyntra-staging` implantado e
 ### PR 006 — API base e OpenAPI
 
 Aceite concluído em 30 de agosto de 2026: prefixo `/api/v1`, resposta técnica de versão, filtro de erros canônicos em português, validação global estrita, contrato OpenAPI 3.1 e pacote TypeScript gerado entregues; interface HTML do Swagger desativada; divergência entre controllers, JSON e SDK bloqueada pelos testes; lint, tipos, 49 testes, build e auditoria de dependências aprovados. A imagem `vyntra/api-staging:pr-006` foi construída na VM e validada com API, OpenAPI, PostgreSQL, Redis e Garage S3 saudáveis, preservando os volumes e segredos isolados da PR 005.
+
+### PR 007 — Correlação, logs e saúde
+
+Aceite concluído em 31 de agosto de 2026: correlação UUID propagada no header, nos erros canônicos e no contexto assíncrono; entrada inválida substituída; logs Pino em JSON submetidos a allowlist e sanitização central; endpoints separados de vivacidade e prontidão entregues no OpenAPI e no cliente TypeScript. Lint, tipos, 54 testes, build e auditoria de dependências foram aprovados. A imagem `vyntra/api-staging:pr-007` foi implantada na VM; API, PostgreSQL, Redis e Garage S3 permaneceram saudáveis, a prontidão comprovou as três dependências e os logs de homologação preservaram evento/correlação sem expor segredos.
 
 ## 4. Identidade de funcionários e autorização
 
