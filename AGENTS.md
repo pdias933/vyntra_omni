@@ -110,6 +110,7 @@ Não propague DTOs/nomenclatura Meta ou MK para domínio, UI ou Motor de Fluxos.
 - Snapshot serve para identificação/contexto, nunca para escrita.
 - Toda escrita externa sensível é idempotente e auditada.
 - Evento só é distribuído após commit.
+- Alteração com efeito assíncrono usa `ServicoTransacaoDominio`; evento e caixa de saída não podem ser persistidos por transações independentes.
 - Remover permissão invalida stream e cache local.
 - Encerramento, expiração, deploy ou nova tentativa não apagam histórico/auditoria.
 

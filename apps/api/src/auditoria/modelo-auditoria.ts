@@ -1,3 +1,8 @@
+import type {
+  ObjetoJsonProtegido,
+  ValorJsonProtegido,
+} from '../seguranca/modelo-dados-protegidos.js';
+
 export const ORIGENS_AUDITORIA = [
   'USUARIO',
   'FLUXO',
@@ -7,17 +12,8 @@ export const ORIGENS_AUDITORIA = [
 
 export type OrigemAuditoria = (typeof ORIGENS_AUDITORIA)[number];
 
-export type ValorJsonAuditoria =
-  | boolean
-  | number
-  | ObjetoJsonAuditoria
-  | string
-  | ValorJsonAuditoria[]
-  | null;
-
-export interface ObjetoJsonAuditoria {
-  [chave: string]: ValorJsonAuditoria;
-}
+export type ObjetoJsonAuditoria = ObjetoJsonProtegido;
+export type ValorJsonAuditoria = ValorJsonProtegido;
 
 export interface RegistroAuditoria {
   readonly id: string;
@@ -32,8 +28,8 @@ export interface RegistroAuditoria {
   readonly acao: string;
   readonly entidadeTipo: string | undefined;
   readonly entidadeId: string | undefined;
-  readonly dadosAnterioresSanitizados: ObjetoJsonAuditoria | undefined;
-  readonly dadosNovosSanitizados: ObjetoJsonAuditoria | undefined;
+  readonly dadosAnterioresSanitizados: ObjetoJsonProtegido | undefined;
+  readonly dadosNovosSanitizados: ObjetoJsonProtegido | undefined;
   readonly enderecoIp: string | undefined;
   readonly dispositivoId: string | undefined;
   readonly sessaoId: string | undefined;

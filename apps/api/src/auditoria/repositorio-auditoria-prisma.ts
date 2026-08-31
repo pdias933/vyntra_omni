@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { Prisma } from '../gerado/prisma/client.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
+import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type { RegistroAuditoria } from './modelo-auditoria.js';
 import type { RepositorioAuditoria } from './repositorio-auditoria.js';
 
@@ -11,8 +12,11 @@ export class RepositorioAuditoriaPrisma implements RepositorioAuditoria {
     @Inject(ServicoPrisma) private readonly prisma: ServicoPrisma,
   ) {}
 
-  public async acrescentar(registro: RegistroAuditoria): Promise<void> {
-    const cliente = await this.prisma.obterCliente();
+  public async acrescentar(
+    registro: RegistroAuditoria,
+    transacao?: TransacaoPrisma,
+  ): Promise<void> {
+    const cliente = transacao ?? (await this.prisma.obterCliente());
 
     await cliente.registroAuditoria.create({
       data: {

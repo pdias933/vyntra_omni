@@ -538,12 +538,27 @@ dados_protegidos_minimizados
 criado_em
 ```
 
+```text
+ItemCaixaSaida
+id
+evento_dominio_id
+tipo
+destino
+estado: PENDENTE | PROCESSADO
+dados_protegidos_minimizados
+disponivel_em
+criado_em
+processado_em?
+```
+
 `EventoDominio` é o fato interno persistente, não o payload enviado aos clientes. Um projetor autorizado cria `PayloadEventoCliente` mínimo e sanitizado para web/mobile conforme usuário, fila e recurso; push recebe uma projeção ainda menor. O objeto interno nunca é distribuído diretamente.
 
 Regras:
 
 - a sequência é atribuída apenas pelo servidor;
+- a sequência é global e monotônica na instalação; rollback pode produzir lacunas, nunca reutilização ou reordenação;
 - alteração principal, evento e `ItemCaixaSaida` são gravados na mesma transação quando houver efeito assíncrono;
+- cada item referencia exatamente o evento que originou o efeito e nasce `PENDENTE`; nenhum publicador observa item antes do commit;
 - SSE, WebSocket e push distribuem somente projeções de eventos já confirmados no PostgreSQL;
 - cliente aplica eventos em ordem de sequência e de forma idempotente;
 - projeções são filtradas e sanitizadas no servidor conforme a permissão atual;

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { ModuloAuditoria } from './auditoria/modulo-auditoria.js';
+import { ModuloEventos } from './eventos/modulo-eventos.js';
 import { ModuloPersistencia } from './persistencia/modulo-persistencia.js';
 import { ControladorInformacoesApi } from './sistema/controlador-informacoes-api.js';
 import { ControladorRotasDesconhecidas } from './sistema/controlador-rotas-desconhecidas.js';
@@ -14,7 +15,7 @@ import { ServicoProntidao } from './saude/servico-prontidao.js';
     ControladorSaude,
     ControladorRotasDesconhecidas,
   ],
-  imports: [ModuloAuditoria, ModuloPersistencia],
+  imports: [ModuloAuditoria, ModuloEventos, ModuloPersistencia],
   providers: [ServicoInformacoesApi, ServicoProntidao],
 })
 export class ModuloAplicacao {}

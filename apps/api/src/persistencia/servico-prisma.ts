@@ -3,8 +3,9 @@ import { PrismaPg } from '@prisma/adapter-pg';
 
 import { Prisma, PrismaClient } from '../gerado/prisma/client.js';
 import { obterUrlBanco } from './obter-url-banco.js';
+import type { TransacaoPrisma } from './transacao-prisma.js';
 
-const MIGRACAO_OBRIGATORIA = '20260831000100_criar_registro_auditoria';
+const MIGRACAO_OBRIGATORIA = '20260831000200_criar_eventos_caixa_saida';
 
 @Injectable()
 export class ServicoPrisma implements OnModuleDestroy {
@@ -42,6 +43,17 @@ export class ServicoPrisma implements OnModuleDestroy {
     );
 
     return resultado[0]?.aplicada === true;
+  }
+
+  public async executarTransacao<Resultado>(
+    operacao: (transacao: TransacaoPrisma) => Promise<Resultado>,
+  ): Promise<Resultado> {
+    const cliente = await this.obterCliente();
+    return cliente.$transaction(operacao, {
+      isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+      maxWait: 5_000,
+      timeout: 10_000,
+    });
   }
 
   public async onModuleDestroy(): Promise<void> {

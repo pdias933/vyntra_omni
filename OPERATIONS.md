@@ -359,7 +359,7 @@ Responde se o processo está vivo. Não faz consulta pesada a todas as dependên
 
 Responde se a instância pode receber tráfego, verificando dependências mínimas e estado de inicialização/migration.
 
-Além da conexão com PostgreSQL, a implementação confirma em `_prisma_migrations` que `20260831000100_criar_registro_auditoria` terminou e não foi revertida. A resposta externa continua genérica e não revela schema, tabela ou dependência defeituosa.
+Além da conexão com PostgreSQL, a implementação confirma em `_prisma_migrations` que a migration obrigatória mais recente terminou e não foi revertida. Na PR 009, a marca é `20260831000200_criar_eventos_caixa_saida`. A resposta externa continua genérica e não revela schema, tabela ou dependência defeituosa.
 
 ### Painel por componente
 

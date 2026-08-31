@@ -203,6 +203,9 @@ test('sobe o ambiente local em projeto efêmero e comprova persistência', () =>
   assert.ok(smoke.run.includes('DELETE FROM registro_auditoria'));
   assert.ok(smoke.run.includes('TRUNCATE registro_auditoria'));
   assert.ok(smoke.run.includes('UPDATE de auditoria não foi bloqueado'));
+  assert.ok(smoke.run.includes('INSERT INTO evento_dominio'));
+  assert.ok(smoke.run.includes('INSERT INTO item_caixa_saida'));
+  assert.ok(smoke.run.includes('Transação inválida de evento/caixa de saída não foi revertida'));
   assert.ok(smoke.run.includes('docker compose restart postgres redis minio'));
   assert.ok(smoke.run.includes('docker compose up --wait --no-build'));
   assert.ok(smoke.run.includes('SELECT valor FROM verificacao_pr004'));
@@ -214,7 +217,7 @@ test('sobe o ambiente local em projeto efêmero e comprova persistência', () =>
   assert.ok(smoke.run.includes('local/verificacao-pr004/marcador'));
   assert.ok(smoke.run.includes('verificacao:pr004'));
   assert.ok(smoke.run.includes('down --volumes --remove-orphans'));
-  assert.equal(smoke.run.match(/<\/dev\/null/g)?.length, 11);
+  assert.equal(smoke.run.match(/<\/dev\/null/g)?.length, 15);
   assert.ok(!smoke.run.includes('docker compose config'));
   assert.ok(!smoke.run.includes('docker compose logs'));
 });

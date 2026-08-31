@@ -17,6 +17,21 @@ enum OrigemAuditoria {
   @@map("origem_auditoria")
 }
 
+enum ClassificacaoDadosEvento {
+  OPERACIONAL
+  DADO_PESSOAL
+  DADO_SENSIVEL
+
+  @@map("classificacao_dados_evento")
+}
+
+enum EstadoItemCaixaSaida {
+  PENDENTE
+  PROCESSADO
+
+  @@map("estado_item_caixa_saida")
+}
+
 model RegistroAuditoria {
   id                         String          @id @db.Uuid
   tipoEvento                 String          @map("tipo_evento") @db.VarChar(100)
@@ -43,4 +58,42 @@ model RegistroAuditoria {
   @@index([atendimentoId, criadoEm], map: "registro_auditoria_atendimento_criado_em_idx")
   @@index([entidadeTipo, entidadeId, criadoEm], map: "registro_auditoria_entidade_criado_em_idx")
   @@map("registro_auditoria")
+}
+
+model EventoDominio {
+  id                         String                    @id @db.Uuid
+  sequenciaEvento            BigInt                    @unique @default(autoincrement()) @map("sequencia_evento")
+  tipo                       String                    @db.VarChar(100)
+  entidadeTipo               String                    @map("entidade_tipo") @db.VarChar(100)
+  entidadeId                 String                    @map("entidade_id") @db.Uuid
+  atendimentoId              String?                   @map("atendimento_id") @db.Uuid
+  conversaId                 String?                   @map("conversa_id") @db.Uuid
+  usuarioAtorId              String?                   @map("usuario_ator_id") @db.Uuid
+  classificacaoDados         ClassificacaoDadosEvento @map("classificacao_dados")
+  dadosProtegidosMinimizados Json                      @map("dados_protegidos_minimizados")
+  criadoEm                   DateTime                  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  itensCaixaSaida            ItemCaixaSaida[]
+
+  @@index([criadoEm], map: "evento_dominio_criado_em_idx")
+  @@index([entidadeTipo, entidadeId, sequenciaEvento], map: "evento_dominio_entidade_sequencia_idx")
+  @@index([atendimentoId, sequenciaEvento], map: "evento_dominio_atendimento_sequencia_idx")
+  @@index([conversaId, sequenciaEvento], map: "evento_dominio_conversa_sequencia_idx")
+  @@map("evento_dominio")
+}
+
+model ItemCaixaSaida {
+  id                         String               @id @db.Uuid
+  eventoDominioId            String               @map("evento_dominio_id") @db.Uuid
+  tipo                       String               @db.VarChar(100)
+  destino                    String               @db.VarChar(100)
+  estado                     EstadoItemCaixaSaida @default(PENDENTE)
+  dadosProtegidosMinimizados Json                 @map("dados_protegidos_minimizados")
+  disponivelEm               DateTime             @default(now()) @map("disponivel_em") @db.Timestamptz(6)
+  criadoEm                   DateTime             @default(now()) @map("criado_em") @db.Timestamptz(6)
+  processadoEm               DateTime?            @map("processado_em") @db.Timestamptz(6)
+  eventoDominio              EventoDominio        @relation(fields: [eventoDominioId], references: [id], onDelete: Restrict)
+
+  @@index([estado, disponivelEm, criadoEm], map: "item_caixa_saida_pendente_idx")
+  @@index([eventoDominioId], map: "item_caixa_saida_evento_idx")
+  @@map("item_caixa_saida")
 }

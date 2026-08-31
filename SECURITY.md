@@ -18,6 +18,8 @@ O backend é a autoridade para:
 
 Web e mobile nunca recebem credenciais da Meta, MK, storage ou banco e nunca chamam esses serviços diretamente.
 
+Eventos internos e itens da caixa de saída persistem somente dados minimizados e sanitizados. Eles não carregam payload externo bruto, segredo ou autorização; projeção ao cliente continua sujeita à permissão atual e só ocorre após commit.
+
 ## 2. Ativos protegidos
 
 - conversas, mensagens, mídias, formulários e notas internas;

@@ -226,6 +226,8 @@ O acesso inicial usa Prisma 7 estável com o adaptador oficial `pg`. `ServicoPri
 
 `Auditoria` depende de uma porta somente de acréscimo. Prisma executa o `INSERT`; constraints e triggers PostgreSQL, criados pela migration, materializam coerência de ator/contexto e bloqueiam `UPDATE`, `DELETE` e `TRUNCATE`. O trigger é o uso excepcional de SQL bruto porque Prisma não modela triggers; ele não recebe entrada dinâmica.
 
+`ServicoTransacaoDominio` delimita a unidade de trabalho para efeitos assíncronos. A alteração principal roda primeiro; `EventoDominio` recebe `sequencia_evento` do PostgreSQL e cada `ItemCaixaSaida` referencia esse evento, tudo no mesmo callback transacional Prisma. Falha de validação, constraint ou persistência reverte o conjunto inteiro. Repositórios de evento e caixa de saída não abrem transações próprias e não publicam nada.
+
 Migrations rodam em um contêiner/job único antes da API. A API não executa migration no startup e só fica pronta quando a migration obrigatória consta como concluída.
 
 ### 6.2 Redis
@@ -259,6 +261,8 @@ COMMIT
 ```
 
 O worker lê itens pendentes, adquire lease/lock, executa o efeito e registra resultado/tentativa. Se morrer depois do commit, outro worker retoma. O consumidor precisa ser idempotente porque entrega “pelo menos uma vez” é esperada.
+
+A PR 009 materializa criação e vínculo transacionais. Lease, tentativas e reconciliação persistente entram na PR 010; distribuição SSE/WebSocket/push e workers específicos permanecem em suas PRs próprias.
 
 ### 6.4 Fronteiras transacionais críticas
 

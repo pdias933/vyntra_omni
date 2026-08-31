@@ -89,6 +89,22 @@ jobs:
             | grep --quiet --line-regexp 1
 
           docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "BEGIN; INSERT INTO evento_dominio (id, tipo, entidade_tipo, entidade_id, classificacao_dados, dados_protegidos_minimizados) VALUES ('\''90000000-0000-4000-8000-000000000001'\'', '\''VERIFICACAO_CI_CRIADA'\'', '\''REGISTRO_VERIFICACAO'\'', '\''90000000-0000-4000-8000-000000000002'\'', '\''OPERACIONAL'\'', '\''{}'\''::jsonb); INSERT INTO item_caixa_saida (id, evento_dominio_id, tipo, destino, dados_protegidos_minimizados) VALUES ('\''90000000-0000-4000-8000-000000000003'\'', '\''90000000-0000-4000-8000-000000000001'\'', '\''DISTRIBUIR_EVENTO'\'', '\''DISTRIBUIDOR_EVENTOS'\'', '\''{}'\''::jsonb); COMMIT;"' </dev/null
+          docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --tuples-only --no-align --command "SELECT count(*) FROM evento_dominio e JOIN item_caixa_saida c ON c.evento_dominio_id = e.id WHERE e.id = '\''90000000-0000-4000-8000-000000000001'\'';"' </dev/null \
+            | grep --quiet --line-regexp 1
+
+          if docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "BEGIN; INSERT INTO evento_dominio (id, tipo, entidade_tipo, entidade_id, classificacao_dados, dados_protegidos_minimizados) VALUES ('\''90000000-0000-4000-8000-000000000004'\'', '\''VERIFICACAO_ROLLBACK'\'', '\''REGISTRO_VERIFICACAO'\'', '\''90000000-0000-4000-8000-000000000005'\'', '\''OPERACIONAL'\'', '\''{}'\''::jsonb); INSERT INTO item_caixa_saida (id, evento_dominio_id, tipo, destino, dados_protegidos_minimizados) VALUES ('\''90000000-0000-4000-8000-000000000006'\'', '\''90000000-0000-4000-8000-000000000004'\'', '\''DISTRIBUIR_EVENTO'\'', '\''destino-invalido'\'', '\''{}'\''::jsonb); COMMIT;"' </dev/null >/dev/null 2>&1
+          then
+            echo '::error::Transação inválida de evento/caixa de saída não foi revertida.'
+            exit 1
+          fi
+          docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --tuples-only --no-align --command "SELECT count(*) FROM evento_dominio WHERE id = '\''90000000-0000-4000-8000-000000000004'\'';"' </dev/null \
+            | grep --quiet --line-regexp 0
+
+          docker compose exec -T postgres sh -ceu \
             'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "CREATE TABLE verificacao_pr004 (valor text PRIMARY KEY); INSERT INTO verificacao_pr004 VALUES ('\''persistiu'\'');"' </dev/null
           docker compose exec -T minio /usr/bin/sh -ceu \
             'export MC_HOST_local="http://$(cat /run/secrets/usuario_minio):$(cat /run/secrets/senha_minio)@127.0.0.1:9000"

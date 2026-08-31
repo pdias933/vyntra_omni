@@ -44,6 +44,10 @@ Toda requisição recebe correlação validada; erros devolvem o mesmo identific
 
 `ServicoAuditoria` acrescenta registros sanitizados no PostgreSQL por um repositório sem operações de edição/remoção. A migration aditiva bloqueia `UPDATE`, `DELETE` e `TRUNCATE` na própria tabela; usuários e administradores da plataforma não recebem endpoint de mutação. O job de migration termina antes da API e a prontidão confirma a migration obrigatória. Modelo, operação e rollback estão em [docs/operacoes/PR-008.md](docs/operacoes/PR-008.md); versões e superfície das dependências estão em [docs/dependencias/PR-008.md](docs/dependencias/PR-008.md).
 
+### Eventos e caixa de saída
+
+Efeitos assíncronos usam `EventoDominio` sequenciado e `ItemCaixaSaida` no mesmo commit PostgreSQL da alteração principal. A entrega é posterior e nunca antecipa o estado confirmado. Contratos, rollback e limites estão em [docs/operacoes/PR-009.md](docs/operacoes/PR-009.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local

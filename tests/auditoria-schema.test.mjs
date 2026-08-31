@@ -61,7 +61,7 @@ test('bloqueia update, delete e truncate no PostgreSQL', () => {
 });
 
 test('expõe somente acrescentar no contrato e na implementação do repositório', () => {
-  assert.match(porta, /acrescentar\(registro: RegistroAuditoria\): Promise<void>/);
+  assert.match(porta, /acrescentar\([\s\S]+registro: RegistroAuditoria,[\s\S]+\): Promise<void>/);
   assert.ok(!porta.includes('atualizar'));
   assert.ok(!porta.includes('remover'));
   assert.match(repositorio, /registroAuditoria\.create/);

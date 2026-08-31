@@ -4,6 +4,7 @@ import { isIP } from 'node:net';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { contextoCorrelacao } from '../observabilidade/contexto-correlacao.js';
+import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import {
   ORIGENS_AUDITORIA,
   type EntradaRegistroAuditoria,
@@ -28,7 +29,10 @@ export class ServicoAuditoria {
     private readonly repositorio: RepositorioAuditoria,
   ) {}
 
-  public async registrar(entrada: EntradaRegistroAuditoria): Promise<RegistroAuditoria> {
+  public async registrar(
+    entrada: EntradaRegistroAuditoria,
+    transacao?: TransacaoPrisma,
+  ): Promise<RegistroAuditoria> {
     this.validarEntrada(entrada);
 
     const registro: RegistroAuditoria = {
@@ -56,7 +60,7 @@ export class ServicoAuditoria {
       versaoFluxoId: entrada.versaoFluxoId,
     };
 
-    await this.repositorio.acrescentar(registro);
+    await this.repositorio.acrescentar(registro, transacao);
     return registro;
   }
 
