@@ -1,15 +1,16 @@
 # 0001 — Visibilidade de histórico e notas
 
-- Status: **PROPOSTA**
+- Status: **APROVADA**
 - Data da proposta: 2026-08-29
-- Responsável pela aprovação: pendente
+- Data da aprovação: 2026-08-30
+- Responsável pela aprovação: Patrick Dias — responsável do projeto
 - Afeta: `SECURITY.md`, `DOMAIN.md`, RBAC e timeline
 
 ## Contexto
 
 A timeline é única por contato, mas menor privilégio continua obrigatório. Transferência precisa levar contexto suficiente sem expor notas privadas de filas sem relação com o usuário.
 
-## Decisão proposta
+## Decisão aprovada
 
 - Quem está autorizado no atendimento atual vê todas as mensagens cliente↔empresa do mesmo protocolo, inclusive as anteriores à transferência.
 - Atendimento histórico só aparece quando o usuário acessa ao menos uma fila participante ou possui `VISUALIZAR_HISTORICO_TRANSVERSAL`.
@@ -23,6 +24,6 @@ A timeline é única por contato, mas menor privilégio continua obrigatório. T
 
 O serviço de autorização e as consultas filtram no PostgreSQL antes de retornar conteúdo. A UI não recebe metadados de itens negados.
 
-## Comportamento até aprovação
+## Regra de implementação
 
-Negar histórico e notas sem interseção de fila. Não conceder nenhuma permissão transversal por papel base.
+Histórico e notas sem interseção de fila permanecem negados sem a permissão transversal específica. Nenhum papel base, inclusive Administrador, recebe permissão transversal de notas implicitamente.

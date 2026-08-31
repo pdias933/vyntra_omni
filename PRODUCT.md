@@ -39,6 +39,8 @@ Cada assunto operacional continua sendo um `Atendimento` separado, com:
 
 Transferir de Financeiro para Suporte não cria outra conversa, não troca automaticamente a conta WhatsApp e não perde protocolo ou contexto.
 
+Quem conduz o atendimento atual vê as mensagens cliente↔empresa do mesmo protocolo. Histórico de outros atendimentos exige interseção com uma fila participante ou permissão transversal. Nota interna exige permissão própria, conserva a fila de criação e só atravessa filas com permissão transversal específica, nunca herdada automaticamente pelo Administrador.
+
 ### 3.2 Conversa parecida com um mensageiro moderno
 
 O histórico é apresentado de forma contínua, com paginação transparente, e combina visualmente:
@@ -117,6 +119,8 @@ No composer, `/` abre respostas rápidas pesquisáveis. O botão dedicado de aç
 - Modos ortogonais: `BOT`, `FILA_HUMANA` e `HUMANO`.
 - Encerramento explícito por humano autorizado ou por nó publicado do fluxo.
 - Reabertura do mesmo atendimento por até 30 minutos, desde que a janela Meta continue aberta.
+- Encerramento por fluxo exige fila humana de fallback; nova mensagem dentro da tolerância reabre nessa fila, sem responsável, e não retoma a execução terminal anterior.
+- Reabertura manual autorizada assume o atendimento em modo humano para o operador que executou o comando.
 - Nova interação após o encerramento definitivo cria outro atendimento, mantendo a timeline.
 - Cópia segura do atendimento, vinculada ao protocolo, com token não previsível e somente conteúdo cliente↔empresa.
 - A transcrição original permanece como fonte da verdade.
@@ -178,6 +182,8 @@ No composer, `/` abre respostas rápidas pesquisáveis. O botão dedicado de aç
 - REST + WebSocket em primeiro plano; APNs/FCM em background; sincronização antes de reabrir realtime.
 - SQLite como réplica/cache local.
 - Conversas carregadas, rascunhos e pendências de saída de texto disponíveis offline.
+- Autorização offline assinada por no máximo 4 horas; depois disso o cache autenticado bloqueia até revalidar.
+- Offline permite leitura mínima já autorizada e rascunho/pendência de texto, mas nunca ação ERP, exportação, vínculo, nova URL de mídia ou envio efetivo.
 - Reconciliação multi-dispositivo e estado `REVISAO_NECESSARIA` quando a conversa ou atribuição mudou.
 - Atualização obrigatória comandada pelo backend quando houver incompatibilidade ou risco de segurança.
 
@@ -212,6 +218,11 @@ No composer, `/` abre respostas rápidas pesquisáveis. O botão dedicado de aç
 - Auditoria imutável para ações relevantes de usuário, fluxo, sistema e integração.
 - Idempotência nas operações sensíveis.
 - Mídias somente nos tipos aprovados, com validação real e storage privado.
+- Tetos internos iniciais: imagem 8 MB, áudio 16 MB, vídeo 32 MB e PDF 20 MB; prevalece o menor limite validado com o provedor.
+- QR de pareamento com 90 segundos, uso único e um token ativo por sessão web.
+- Senha de 12–128 caracteres, bloqueio de credenciais comprometidas e MFA obrigatório para usuários privilegiados.
+- Ações ERP classificadas em risco baixo, médio ou alto; risco alto exige ERP em tempo real, contexto explícito, revalidação, prévia, confirmação, idempotência e auditoria.
+- Link público de transcrição e eliminação automática permanecem desligados até política jurídica/LGPD aprovada.
 - Feature flags e rollout controlados pelo backend.
 - Painel de saúde, logs estruturados, métricas, alertas e correlação.
 - Docker Compose, PostgreSQL, Redis e storage S3 externo.
@@ -259,6 +270,8 @@ A V1 está apta ao piloto quando, no mínimo:
 - filtros operacionais não são repetidos em cards;
 - abrir e fechar Detalhes preserva posição da timeline e rascunho;
 - ação com efeito real não pula seleção, prévia ou confirmação exigida;
+- autorização offline expirada bloqueia o cache e nenhuma pendência executa ação externa sem reautorização;
+- link público de transcrição e disparo ERP real continuam bloqueados sem suas validações jurídica/contratual;
 - web e mobile compartilham linguagem sem que uma interface seja mera ampliação da outra;
 - staging não usa banco, credenciais ou dados brutos de produção;
 - um backup é restaurado com sucesso em ambiente limpo;

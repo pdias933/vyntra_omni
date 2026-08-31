@@ -1,11 +1,12 @@
 # 0007 — Disparos transacionais pelo ERP
 
-- Status: **PROPOSTA PARCIAL — EXIGE ERP E JURÍDICO/DPO**
+- Status: **APROVADA**
 - Data da proposta: 2026-08-29
-- Responsável pela aprovação: pendente
+- Data da aprovação técnica: 2026-08-30
+- Responsável pela aprovação técnica: Patrick Dias — responsável do projeto
 - Afeta: `INTEGRATIONS.md`, consentimento, Meta e callbacks
 
-## Decisão proposta
+## Decisão técnica aprovada
 
 - Cada requisição cria no máximo uma mensagem. Lote/campanha continua fora da V1.
 - Autenticação máquina-a-máquina usa credencial própria por ambiente, escopo mínimo, TLS, rotação e allowlist de rede opcional.
@@ -20,6 +21,6 @@
 
 Capacidade real do ERP para autenticação/callback e a política de consentimento/base legal precisam ser confirmadas. Nenhum DTO ou endpoint do MK é presumido por esta decisão.
 
-## Comportamento até aprovação
+## Condição externa de liberação
 
-Endpoint e callback permanecem desligados. Simuladores podem cobrir o contrato interno sem realizar disparo real.
+A aprovação técnica não presume capacidade do ERP nem base legal. Endpoint e callback permanecem desligados até validar autenticação/callback reais, finalidade, consentimento e opt-out com ERP e jurídico/DPO. Simuladores podem cobrir o contrato interno sem disparo real.

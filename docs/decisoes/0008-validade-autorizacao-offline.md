@@ -1,11 +1,12 @@
 # 0008 — Validade da autorização offline
 
-- Status: **PROPOSTA**
+- Status: **APROVADA**
 - Data da proposta: 2026-08-29
-- Responsável pela aprovação: pendente
+- Data da aprovação: 2026-08-30
+- Responsável pela aprovação: Patrick Dias — responsável do projeto
 - Afeta: `MOBILE.md`, `SECURITY.md`, revogação e SQLite
 
-## Decisão proposta
+## Decisão aprovada
 
 - Autorização offline vale no máximo 4 horas e só é renovada pelo servidor enquanto online.
 - O artefato é vinculado à instalação, usuário, dispositivo, sessão, versão de permissões e escopos autorizados.
@@ -17,8 +18,8 @@
 
 ## Risco residual
 
-Aceitar até quatro horas de acesso a cache previamente autorizado em aparelho revogado é decisão do responsável de segurança e do dono dos dados.
+Fica aceito para a V1 o risco residual de até quatro horas de acesso ao cache previamente autorizado em aparelho totalmente offline. Escopo e dado exibível permanecem minimizados.
 
-## Comportamento até aprovação
+## Regra de implementação
 
-Autorização offline autenticada permanece desligada. O app pode ser estruturado para cache, mas bloqueia a área protegida ao perder a autorização online normal.
+Autorização offline pode ser implementada com validade máxima de quatro horas, vínculo integral ao dispositivo/sessão/escopo e bloqueio imediato ao expirar. Ação externa continua proibida offline.

@@ -1,8 +1,8 @@
 # Omnichannel V1 — documentação-base
 
-Status: **base consolidada para revisão e implementação**.
+Status: **base consolidada para implementação; Portão Zero fechado em 30 de agosto de 2026**.
 
-Origem: decisões consolidadas da conversa **NEXUS CHAT** até 29 de agosto de 2026. Quando propostas intermediárias divergiam, prevaleceu a decisão aceita mais recente.
+Origem: decisões consolidadas da conversa **NEXUS CHAT** até 29 de agosto de 2026, com aprovação do Portão Zero registrada em 30 de agosto de 2026. Quando propostas intermediárias divergiam, prevaleceu a decisão aceita mais recente.
 
 Este pacote consolida as decisões de produto, domínio, arquitetura, segurança, integrações, operação e desenvolvimento da V1. Ele é a fonte inicial para decompor o projeto em PRs pequenos; não substitui contratos reais da Meta ou do MK Solutions, nem dispensa validar essas APIs no ambiente contratado antes de congelar DTOs.
 
@@ -30,8 +30,8 @@ Este pacote consolida as decisões de produto, domínio, arquitetura, segurança
 - [INTEGRATIONS.md](INTEGRATIONS.md): Meta Cloud API, MK Solutions, snapshot e `AccessSessionAdapter`.
 - [OPERATIONS.md](OPERATIONS.md): ambientes, Docker Compose, deploy, backups e observabilidade.
 - [AGENTS.md](AGENTS.md): regras operacionais para agentes de código e revisão.
-- [ROADMAP.md](ROADMAP.md): sequência proposta de PRs pequenos e seus critérios de aceite.
-- [docs/decisoes/README.md](docs/decisoes/README.md): Portão Zero, propostas pendentes e decisões aprovadas.
+- [ROADMAP.md](ROADMAP.md): sequência de PRs pequenos, estado atual, `Effort` recomendado e critérios de aceite.
+- [docs/decisoes/README.md](docs/decisoes/README.md): Portão Zero fechado, decisões aprovadas e condições externas que permanecem bloqueadas.
 - [design/README.md](design/README.md): referências conceituais aprovadas, direção visual e comportamento esperado das animações.
 
 ## Precedência em caso de dúvida

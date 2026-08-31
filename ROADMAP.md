@@ -10,6 +10,134 @@
 - Integrações usam simuladores até a caracterização real; nenhum DTO externo é inventado.
 - Segurança, autorização, auditoria, idempotência e eventos entram junto da funcionalidade, não apenas na revisão final de segurança.
 - O PR condicional de sessão de acesso pode ser adiado sem bloquear o piloto.
+- Toda PR atualiza sua própria linha no painel abaixo no mesmo conjunto de mudanças.
+- `CONCLUÍDA` exige aceite, verificações e entrega publicada/rastreável no repositório; `PRONTA` ainda aguarda publicação ou integração.
+- `Effort` indica o nível de raciocínio e revisão recomendado para o Codex, não prazo nem tamanho de equipe. Mudança material de escopo exige recalibrá-lo.
+
+Estados possíveis: `PENDENTE`, `EM FORMALIZAÇÃO`, `EM ANDAMENTO`, `PRONTA`, `CONCLUÍDA`, `BLOQUEADA` e `CONDICIONAL`.
+
+Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: mesmo as menores preservam contratos ou decisões arquiteturais.
+
+### Painel de execução
+
+| PR | Estado | Effort |
+|---:|---|---|
+| 001 | CONCLUÍDA | `xhigh` |
+| 002 | CONCLUÍDA | `medium` |
+| 003 | CONCLUÍDA | `high` |
+| 004 | CONCLUÍDA | `high` |
+| 005 | PENDENTE | `xhigh` |
+| 006 | PENDENTE | `medium` |
+| 007 | PENDENTE | `high` |
+| 008 | PENDENTE | `high` |
+| 009 | PENDENTE | `xhigh` |
+| 010 | PENDENTE | `xhigh` |
+| 011 | PENDENTE | `high` |
+| 012 | PENDENTE | `xhigh` |
+| 013 | PENDENTE | `xhigh` |
+| 014 | PENDENTE | `high` |
+| 015 | PENDENTE | `xhigh` |
+| 016 | PENDENTE | `xhigh` |
+| 017 | PENDENTE | `xhigh` |
+| 018 | PENDENTE | `high` |
+| 019 | PENDENTE | `high` |
+| 020 | PENDENTE | `high` |
+| 021 | PENDENTE | `medium` |
+| 022 | PENDENTE | `medium` |
+| 023 | PENDENTE | `high` |
+| 024 | PENDENTE | `xhigh` |
+| 025 | PENDENTE | `xhigh` |
+| 026 | PENDENTE | `xhigh` |
+| 027 | PENDENTE | `xhigh` |
+| 028 | PENDENTE | `xhigh` |
+| 029 | PENDENTE | `high` |
+| 030 | PENDENTE | `high` |
+| 031 | PENDENTE | `medium` |
+| 032 | PENDENTE | `high` |
+| 033 | PENDENTE | `xhigh` |
+| 034 | PENDENTE | `high` |
+| 035 | PENDENTE | `xhigh` |
+| 036 | PENDENTE | `xhigh` |
+| 037 | PENDENTE | `high` |
+| 038 | PENDENTE | `xhigh` |
+| 039 | PENDENTE | `xhigh` |
+| 040 | PENDENTE | `xhigh` |
+| 041 | PENDENTE | `xhigh` |
+| 042 | PENDENTE | `xhigh` |
+| 043 | PENDENTE | `xhigh` |
+| 044 | PENDENTE | `xhigh` |
+| 045 | PENDENTE | `xhigh` |
+| 046 | PENDENTE | `high` |
+| 047 | PENDENTE | `high` |
+| 048 | PENDENTE | `high` |
+| 049 | PENDENTE | `xhigh` |
+| 050 | PENDENTE | `xhigh` |
+| 051 | PENDENTE | `xhigh` |
+| 052 | PENDENTE | `xhigh` |
+| 053 | PENDENTE | `xhigh` |
+| 054 | PENDENTE | `xhigh` |
+| 055 | PENDENTE | `xhigh` |
+| 056 | PENDENTE | `xhigh` |
+| 057 | PENDENTE | `high` |
+| 058 | PENDENTE | `xhigh` |
+| 059 | PENDENTE | `xhigh` |
+| 060 | PENDENTE | `high` |
+| 061 | PENDENTE | `xhigh` |
+| 062 | PENDENTE | `xhigh` |
+| 063 | PENDENTE | `xhigh` |
+| 064 | PENDENTE | `xhigh` |
+| 065 | PENDENTE | `xhigh` |
+| 066 | PENDENTE | `xhigh` |
+| 067 | PENDENTE | `xhigh` |
+| 068 | CONDICIONAL | `xhigh` |
+| 069 | PENDENTE | `high` |
+| 070 | PENDENTE | `xhigh` |
+| 071 | PENDENTE | `xhigh` |
+| 072 | PENDENTE | `xhigh` |
+| 073 | PENDENTE | `xhigh` |
+| 074 | PENDENTE | `high` |
+| 075 | PENDENTE | `xhigh` |
+| 076 | PENDENTE | `high` |
+| 077 | PENDENTE | `xhigh` |
+| 078 | PENDENTE | `xhigh` |
+| 079 | PENDENTE | `xhigh` |
+| 080 | PENDENTE | `xhigh` |
+| 081 | PENDENTE | `xhigh` |
+| 082 | PENDENTE | `xhigh` |
+| 083 | PENDENTE | `xhigh` |
+| 084 | PENDENTE | `xhigh` |
+| 085 | PENDENTE | `high` |
+| 086 | PENDENTE | `high` |
+| 087 | PENDENTE | `high` |
+| 088 | PENDENTE | `high` |
+| 089 | PENDENTE | `high` |
+| 090 | PENDENTE | `high` |
+| 091 | PENDENTE | `xhigh` |
+| 092 | PENDENTE | `xhigh` |
+| 093 | PENDENTE | `xhigh` |
+| 094 | PENDENTE | `high` |
+| 095 | PENDENTE | `xhigh` |
+| 096 | PENDENTE | `xhigh` |
+| 097 | PENDENTE | `xhigh` |
+| 098 | PENDENTE | `high` |
+| 099 | PENDENTE | `xhigh` |
+| 100 | PENDENTE | `xhigh` |
+| 101 | PENDENTE | `high` |
+| 102 | PENDENTE | `high` |
+| 103 | PENDENTE | `high` |
+| 104 | PENDENTE | `xhigh` |
+| 105 | PENDENTE | `xhigh` |
+| 106 | PENDENTE | `high` |
+| 107 | PENDENTE | `xhigh` |
+| 108 | PENDENTE | `high` |
+| 109 | PENDENTE | `xhigh` |
+| 110 | PENDENTE | `high` |
+| 111 | PENDENTE | `high` |
+| 112 | PENDENTE | `xhigh` |
+| 113 | PENDENTE | `xhigh` |
+| 114 | PENDENTE | `xhigh` |
+| 115 | PENDENTE | `high` |
+| 116 | PENDENTE | `xhigh` |
 
 ## 2. Portão zero
 
@@ -17,7 +145,7 @@
 
 Fechar visibilidade histórica entre filas/notas, matriz de risco por ação ERP, reabertura após encerramento pelo bot, retenção/LGPD e link público, senha/MFA, limites de mídia/QR/rate limit, contrato de disparo ERP e validade máxima da autorização offline.
 
-Aceite: decisões aprovadas e rastreáveis; lacuna não aprovada continua em default deny ou com recurso desligado.
+Aceite concluído em 2026-08-30: oito decisões técnicas aprovadas e rastreáveis em [docs/decisoes](docs/decisoes/README.md); validações externas ainda ausentes permanecem em `default deny` ou com recurso desligado.
 
 ## 3. Fundação
 

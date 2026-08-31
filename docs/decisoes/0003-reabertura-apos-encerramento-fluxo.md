@@ -1,11 +1,12 @@
 # 0003 — Reabertura após encerramento pelo fluxo
 
-- Status: **PROPOSTA**
+- Status: **APROVADA**
 - Data da proposta: 2026-08-29
-- Responsável pela aprovação: pendente
+- Data da aprovação: 2026-08-30
+- Responsável pela aprovação: Patrick Dias — responsável do projeto
 - Afeta: `DOMAIN.md`, `FLOWS.md` e filas
 
-## Decisão proposta
+## Decisão aprovada
 
 - Nova mensagem do contato em até 30 minutos reabre atomicamente o mesmo atendimento e protocolo.
 - Quando o encerramento foi pelo Motor de Fluxos, o atendimento volta como `AGUARDANDO`, em fila humana de fallback configurada e sem responsável.
@@ -18,6 +19,6 @@
 
 O protocolo permanece contínuo dentro da tolerância, mas automação concluída não reaparece silenciosamente. A transição incrementa a versão de atribuição e gera auditoria/evento.
 
-## Comportamento até aprovação
+## Regra de implementação
 
-Encerramento por fluxo fica desativado. Fluxos podem encaminhar para fila humana, mas não concluir o atendimento.
+Encerramento por fluxo só pode ser publicado com fila humana de fallback ativa. A reabertura cria nova autoridade operacional sem retomar a execução terminal anterior.

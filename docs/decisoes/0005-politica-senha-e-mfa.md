@@ -1,11 +1,12 @@
 # 0005 — Política de senha e MFA
 
-- Status: **PROPOSTA**
+- Status: **APROVADA**
 - Data da proposta: 2026-08-29
-- Responsável pela aprovação: pendente
+- Data da aprovação: 2026-08-30
+- Responsável pela aprovação: Patrick Dias — responsável do projeto
 - Afeta: `SECURITY.md`, autenticação, recuperação e operação
 
-## Decisão proposta
+## Decisão aprovada
 
 - Senha entre 12 e 128 caracteres, aceitando espaços e sem composição artificial obrigatória.
 - Bloquear senhas comuns ou conhecidamente comprometidas; não exigir troca periódica sem indício de risco.
@@ -16,10 +17,10 @@
 - Exigir reautenticação realizada há no máximo 10 minutos para ação administrativa crítica e confirmação de novo aparelho.
 - Recuperação invalida sessões/refresh tokens e gera auditoria/alerta ao usuário.
 
-## Ponto operacional pendente
+## Decisão operacional da V1
 
-MFA obrigatório para todos os atendentes depende de decisão operacional. A proposta do piloto obriga inicialmente apenas usuários privilegiados.
+MFA é obrigatório inicialmente para usuários privilegiados. Obrigá-lo para todos os atendentes poderá ser configurado depois sem reduzir esse piso.
 
-## Comportamento até aprovação
+## Regra de implementação
 
-Autenticação real e piloto permanecem bloqueados; nenhum requisito de senha/MFA diferente deve ser codificado como definitivo.
+Autenticação real segue esta política. Parâmetros Argon2id são calibrados no hardware de produção dentro da faixa aprovada e registrados antes do piloto.

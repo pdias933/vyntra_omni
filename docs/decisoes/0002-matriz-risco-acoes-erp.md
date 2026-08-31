@@ -1,11 +1,12 @@
 # 0002 — Matriz de risco das ações ERP
 
-- Status: **PROPOSTA**
+- Status: **APROVADA**
 - Data da proposta: 2026-08-29
-- Responsável pela aprovação: pendente
+- Data da aprovação: 2026-08-30
+- Responsável pela aprovação: Patrick Dias — responsável do projeto
 - Afeta: `SECURITY.md`, `PRODUCT.md`, `INTEGRATIONS.md` e Motor de Fluxos
 
-## Decisão proposta
+## Decisão aprovada
 
 | Risco | Ações iniciais | Controles mínimos |
 |---|---|---|
@@ -25,6 +26,6 @@ Regras complementares:
 
 A consulta de elegibilidade e a execução são casos de uso separados. Snapshot nunca autoriza mutação, decisão financeira atual ou escrita externa.
 
-## Comportamento até aprovação
+## Regra de implementação
 
-Somente consultas mascaradas de baixo risco podem ser prototipadas. Toda mutação ERP e exibição sensível permanecem desligadas.
+A matriz é o piso obrigatório. Toda ação concreta ainda precisa declarar os controles da própria linha antes de ser habilitada; capacidade, método de prova ou dado em tempo real não caracterizado mantém a ação em `default deny`.

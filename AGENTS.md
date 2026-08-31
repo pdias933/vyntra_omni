@@ -293,6 +293,7 @@ Atualize no mesmo PR quando mudar:
 - linguagem visual/comportamento de tela → `PRODUCT.md`, `MOBILE.md` e `design/references/README.md`;
 - adapter/contrato externo → `INTEGRATIONS.md`;
 - deploy/backup/alerta → `OPERATIONS.md`.
+- execução de PR → `ROADMAP.md`, atualizando `Estado` e reavaliando o `Effort` recomendado antes de declarar a entrega pronta.
 
 Mudança grande exige ADR curto com contexto, opções, decisão, consequências e plano de migração.
 
@@ -324,6 +325,7 @@ Uma alteração está pronta somente quando:
 - migration é compatível;
 - observabilidade e erro operacional são úteis;
 - docs/ADR foram atualizados;
+- a linha da PR em `ROADMAP.md` reflete o estado real e o `Effort` recomendado;
 - mudança de interface possui evidência nos clientes afetados para estado saudável sem infraestrutura, preservação de contexto/rascunho e “Reduzir Movimento” quando aplicável;
 - lint, typecheck, testes, build e scanners passam;
 - liberação gradual/flag e reversão estão definidas quando aplicável.

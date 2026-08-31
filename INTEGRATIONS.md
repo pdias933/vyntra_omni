@@ -25,6 +25,8 @@ O adapter:
 - aplica timeout, circuit breaker e limite de concorrência;
 - não expõe credencial ou payload bruto.
 
+Limites de payload nunca excedem o teto interno aprovado. Para mídia, vale o menor valor entre imagem 8 MB, áudio 16 MB, vídeo 32 MB, PDF 20 MB e a capacidade real caracterizada do provedor.
+
 ## 2. Meta Cloud API
 
 ### 2.1 Escopo
@@ -184,6 +186,8 @@ atualizarOrdemServico(ordem, dados, chave_idempotencia)
 ```
 
 Adicionar método ao contrato exige caso de uso real e semântica comum. Não copiar cada endpoint de fornecedor para a porta.
+
+Cada método declara sua linha na matriz de risco. Consulta mascarada e criação de protocolo são inicialmente de baixo risco; financeiro resumido, listagem de faturas e sessão/contexto temporário são médios; envio de documento/Pix/linha, vínculo persistente, desbloqueio, desconexão e criação/alteração de OS são altos. O adapter nunca reduz os controles: alto risco exige ERP em tempo real, cliente/contrato explícitos, revalidação, prévia, confirmação, idempotência e auditoria no serviço de domínio. Capacidade ou prova não caracterizada retorna indisponibilidade/negação segura.
 
 ### 3.3 Ciclo do protocolo ERP
 
@@ -400,21 +404,25 @@ conta_whatsapp
 template
 parametros
 referencia_erp
-callback?
+callback_id?
 ```
+
+Cada requisição cria no máximo uma mensagem. `chave_idempotencia` é obrigatória: mesma chave e mesmo corpo retornam o mesmo `disparo_id`; corpo diferente retorna `409`. A aceitação retorna `202` com `disparo_id` e estado `NA_FILA`; envio nunca é tratado como síncrono.
 
 Processo:
 
 1. autenticar sistema chamador;
 2. validar finalidade, consentimento/política e conta/template;
-3. deduplicar por chave/finalidade/referência;
+3. deduplicar por chave/finalidade/referência e recusar reuso incompatível;
 4. resolver contato/identidade sem criar vínculo inseguro;
 5. persistir a mensagem como `NA_FILA`, já visível na timeline, junto do item de caixa de saída;
 6. enviar via Meta;
 7. atualizar a mensagem com aceitação/falha e gerar novo evento;
-8. devolver/emitir estados normalizados ao ERP.
+8. devolver/emitir `NA_FILA`, `ENVIADA`, `ENTREGUE`, `LIDA` ou `FALHOU` ao ERP.
 
-Antes desse endpoint, definir autenticação máquina-a-máquina, contrato de callback, opt-out/consentimento, limites e deduplicação por finalidade. Não construir criador de campanha na V1.
+Autenticação máquina-a-máquina usa credencial própria por ambiente, escopo mínimo, TLS e rotação. Callback não aceita URL da requisição: `callback_id` referencia destino previamente cadastrado, com assinatura e eventos idempotentes; consulta autenticada por `GET` é fallback obrigatório. O registro de idempotência dura pelo menos tanto quanto a mensagem.
+
+O limite inicial é 60 requisições por minuto por credencial, com burst de 20. Finalidade pertence a allowlist transacional e consentimento/opt-out são verificados antes da fila. Endpoint e callback reais permanecem desligados até caracterizar capacidade do ERP e aprovar a política jurídica/DPO. Simuladores podem validar o contrato interno. Não construir lote, campanha ou criador de campanha na V1.
 
 ## 8. Operações externas idempotentes
 

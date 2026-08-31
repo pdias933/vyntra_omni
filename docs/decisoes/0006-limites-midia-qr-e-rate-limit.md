@@ -1,11 +1,12 @@
 # 0006 — Limites de mídia, QR e rate limit
 
-- Status: **PROPOSTA**
+- Status: **APROVADA**
 - Data da proposta: 2026-08-29
-- Responsável pela aprovação: pendente
+- Data da aprovação: 2026-08-30
+- Responsável pela aprovação: Patrick Dias — responsável do projeto
 - Afeta: `SECURITY.md`, `MOBILE.md`, adapters e operação
 
-## Decisão proposta
+## Decisão aprovada
 
 ### Mídia
 
@@ -36,6 +37,6 @@ O limite efetivo é sempre o menor entre o limite interno e a capacidade real va
 
 Todos os valores são configuráveis por ambiente e observados antes de ajuste. Caracterização real Meta/MK pode apenas reduzir o teto efetivo sem contaminar o domínio.
 
-## Comportamento até aprovação
+## Regra de implementação
 
-QR, upload e escrita ERP permanecem desligados. Login em simulador/desenvolvimento não pode ser confundido com política pronta para piloto.
+Os valores são tetos internos iniciais e configuráveis. Caracterização real de Meta/MK pode apenas reduzir o limite efetivo; aumento exige nova revisão de risco e evidência operacional.
