@@ -102,6 +102,7 @@ Mídia fica em storage externo; disco local comporta banco, cache, imagens de co
 - SSH restrito por IP/VPN e autenticação forte;
 - PostgreSQL e Redis somente em rede local/Docker, nunca expostos à internet;
 - painel administrativo protegido pelo mesmo backend/RBAC;
+- MFA obrigatório para Administrador e usuários que administram usuários/integrações, publicam fluxo ou exportam histórico;
 - CORS por origem conhecida;
 - webhook Meta em rota dedicada com validação própria;
 - comunicação MK restrita por IP/VPN quando suportada;
@@ -234,6 +235,18 @@ O runbook deve cobrir:
 - restauração em nova VM;
 - atualização de DNS/Cloudflare;
 - validação de integridade antes de liberar tráfego.
+
+### 9.3 Retenção e eliminação controlada
+
+Antes do piloto, jurídico/DPO e produto devem aprovar prazos, bases legais, categorias de histórico/mídia/auditoria/backups, bloqueio legal e conteúdo exportável. Até essa aprovação:
+
+- não existe autoeliminação de histórico/mídia nem exclusão individual por usuário;
+- link público de transcrição permanece desligado;
+- a implementação prepara anonimização/eliminação controlada e auditoria `RETENCAO_APLICADA`;
+- eventos incrementais conservam 30 dias para sincronização, sem definir a retenção do histórico de negócio;
+- restauração e eliminação devem ser ensaiadas em conjunto para evitar ressuscitar dado já eliminado.
+
+Se o link público for liberado, sua validade padrão será 72 horas, máxima de 7 dias, com revogação imediata, conteúdo sanitizado e mídia excluída por padrão.
 
 ## 10. Pipeline de entrega
 
@@ -459,7 +472,10 @@ Não antecipar Kubernetes ou microserviços sem evidência.
 - testes de segurança do [SECURITY.md](SECURITY.md);
 - flags iniciais e reversão definidas;
 - política de versão mobile configurada;
+- parâmetros Argon2id calibrados no hardware de produção e limites de login/QR/identidade/ERP carregados por ambiente;
 - runbooks acessíveis;
 - capacidades Meta/MK confirmadas;
+- política jurídica/LGPD de retenção e conteúdo exportável aprovada e ensaiada;
+- contrato real de disparo ERP, consentimento/opt-out e callbacks aprovados antes de habilitar o endpoint;
 - RPO/RTO medidos e aceitos;
 - deploy de produção manual.

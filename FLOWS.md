@@ -193,6 +193,8 @@ Atendimento 1003 → v9
 
 O rótulo externo “PPPoE” pode aparecer na apresentação administrativa da integração; o contrato interno usa `SESSAO_ACESSO`.
 
+A matriz de risco ERP também limita o Motor de Fluxos. Consulta mascarada de baixo risco usa contexto explícito e autorização da capacidade. Risco médio exige vínculo verificado ou revalidação estruturada e dado em tempo real quando necessário. Risco alto usa serviço de domínio específico, cliente/contrato explícitos, revalidação, prévia/confirmabilidade compatível com automação, idempotência e auditoria; capacidade não caracterizada fica desabilitada. CPF/CNPJ sozinho não autoriza risco alto. `DESCONECTAR_SESSAO_ACESSO` é exclusivamente humano e não existe como nó. Publicar configuração nunca concede uma capacidade que o fluxo não possua.
+
 ## 6. Configuração tipada
 
 Cada tipo de nó possui schema próprio. Exemplos:
@@ -367,6 +369,10 @@ Atendimento modo HUMANO / responsável definido
 Envio automático e resgate serializam a autoridade de saída pelo atendimento. O despachante só muda uma mensagem automática de `NA_FILA` para `ENVIANDO` após revalidar modo, execução e `versao_atribuicao`; o resgate cancela as automáticas ainda `NA_FILA`. Se houver requisição já iniciada, o resgate só conclui depois de resolver seu resultado dentro do tempo limite: apenas mensagem aceita pela Meta antes do commit permanece `ENVIADA` no histórico. Depois do commit, nenhum novo envio automático pode ser iniciado ou aceito.
 
 O histórico registra em qual nó a automação foi interrompida. Um novo atendimento futuro começa no fluxo publicado da conta; não retoma arbitrariamente a execução antiga.
+
+### 11.1 Encerramento e reabertura após fluxo
+
+Uma versão só pode publicar `ENCERRAR_ATENDIMENTO` se declarar uma fila humana de fallback ativa. O encerramento torna a `ExecucaoFluxo` terminal. Se o contato enviar nova mensagem em até 30 minutos e a regra de reabertura for válida, o mesmo atendimento/protocolo volta a `AGUARDANDO`, modo `FILA_HUMANA`, nessa fila e sem responsável. A execução anterior não retoma nó, espera ou escrita ERP. Depois da tolerância, nasce outro atendimento e uma nova execução usa a versão então publicada.
 
 ## 12. Simulador
 

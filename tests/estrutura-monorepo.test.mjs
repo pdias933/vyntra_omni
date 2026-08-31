@@ -133,7 +133,7 @@ test('acompanha estado e Effort de todas as PRs do roadmap', async () => {
   }
 
   const porNumero = new Map(linhas.map((linha) => [linha.numero, linha]));
-  assert.equal(porNumero.get('001').estado, 'EM FORMALIZAÇÃO');
+  assert.equal(porNumero.get('001').estado, 'CONCLUÍDA');
   assert.equal(porNumero.get('002').estado, 'CONCLUÍDA');
   assert.equal(porNumero.get('003').estado, 'CONCLUÍDA');
   assert.equal(porNumero.get('004').estado, 'CONCLUÍDA');

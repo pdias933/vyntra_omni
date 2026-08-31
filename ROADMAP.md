@@ -22,7 +22,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 
 | PR | Estado | Effort |
 |---:|---|---|
-| 001 | EM FORMALIZAÇÃO | `xhigh` |
+| 001 | CONCLUÍDA | `xhigh` |
 | 002 | CONCLUÍDA | `medium` |
 | 003 | CONCLUÍDA | `high` |
 | 004 | CONCLUÍDA | `high` |
@@ -145,7 +145,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 
 Fechar visibilidade histórica entre filas/notas, matriz de risco por ação ERP, reabertura após encerramento pelo bot, retenção/LGPD e link público, senha/MFA, limites de mídia/QR/rate limit, contrato de disparo ERP e validade máxima da autorização offline.
 
-Aceite: decisões aprovadas e rastreáveis; lacuna não aprovada continua em default deny ou com recurso desligado.
+Aceite concluído em 2026-08-30: oito decisões técnicas aprovadas e rastreáveis em [docs/decisoes](docs/decisoes/README.md); validações externas ainda ausentes permanecem em `default deny` ou com recurso desligado.
 
 ## 3. Fundação
 

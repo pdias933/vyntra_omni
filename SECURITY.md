@@ -57,7 +57,7 @@ Controller escondendo botão, filtro na UI ou `if` local não substitui esses se
 - terceiro dispositivo revoga automaticamente o mais antigo e informa o usuário;
 - revogação por troca de senha, suspeita, aparelho perdido ou ação administrativa;
 - sessão revogada deixa de sincronizar, abrir WebSocket ou emitir novas URLs de mídia. Uma URL S3 já assinada pode permanecer válida até seu TTL curto; revogação imediata exigiria download intermediado por token introspectável/revogável.
-- acesso ao cache sem rede exige autorização offline assinada e de duração limitada; revogação de aparelho totalmente offline fica sujeita apenas a essa janela máxima, que deve ser aprovada antes do piloto.
+- acesso ao cache sem rede exige autorização offline assinada com validade máxima de 4 horas, vinculada a instalação, usuário, dispositivo, sessão, versão de permissões e escopos; revogação conhecida invalida imediatamente e aparelho totalmente offline bloqueia o cache ao expirar.
 
 ### 4.2 Pareamento QR
 
@@ -68,9 +68,10 @@ O QR:
 - é vinculado à sessão web que o criou;
 - exige confirmação no backend/web antes de emitir sessão mobile;
 - é invalidado após uso, expiração, logout ou cancelamento;
+- vale 90 segundos, admite somente um QR ativo por sessão web e a geração de outro invalida o anterior;
 - possui rate limit e auditoria de criação, tentativa e vínculo.
 
-O valor exato da validade será configurado após teste de UX; a faixa inicial proposta é 60–120 segundos.
+O limite inicial é de 5 gerações em 10 minutos por usuário e 10 tentativas de resgate em 10 minutos por IP/dispositivo.
 
 ### 4.3 Web
 
@@ -82,13 +83,22 @@ O valor exato da validade será configurado após teste de UX; a faixa inicial p
 - reautenticação pode ser exigida para mudanças críticas de integração, permissão ou segurança;
 - SSE reutiliza o cookie e valida origem/escopo.
 
-### 4.4 Login e força bruta
+### 4.4 Credenciais, MFA e força bruta
+
+- senha aceita de 12 a 128 caracteres, inclusive espaços, sem regra artificial de composição;
+- senha comum ou conhecida como comprometida é recusada; não há troca periódica sem indício de risco;
+- armazenamento usa Argon2id calibrado para 100–250 ms no servidor; ponto inicial: 64 MiB, 3 iterações e paralelismo 1;
+- MFA é obrigatório para Administrador e quem administra usuários/integrações, publica fluxo ou exporta histórico;
+- fatores da V1: TOTP e códigos de recuperação de uso único; SMS/WhatsApp não servem como fator único;
+- MFA para todos os atendentes pode ser configurado depois sem remover a obrigação dos privilegiados; WebAuthn pode ser acrescentado por decisão própria sem enfraquecer TOTP;
+- ação administrativa crítica e confirmação de novo aparelho exigem autenticação realizada há no máximo 10 minutos;
+- recuperação de credencial invalida sessões e refresh tokens e gera auditoria/alerta.
 
 - rate limit por conta, IP, dispositivo e endpoint, sem depender de um único sinal;
 - atraso progressivo e bloqueio técnico temporário;
 - resposta que não confirma se o usuário existe;
 - auditoria e alerta de padrão anômalo;
-- política de senha e MFA devem ser definidas antes do piloto; até lá, nenhuma implementação deve inventar requisitos incompatíveis.
+- 5 falhas em 15 minutos por conta+IP bloqueiam por 15 minutos; o teto adicional é 50 tentativas em 15 minutos por IP.
 
 ## 5. Autorização: RBAC + fila + recurso
 
@@ -129,6 +139,7 @@ ENCERRAR_ATENDIMENTO
 REABRIR_ATENDIMENTO
 ASSUMIR_ATENDIMENTO
 ADICIONAR_NOTA_INTERNA
+VISUALIZAR_NOTA_INTERNA
 
 CONSULTAR_CLIENTE
 VINCULAR_CLIENTE
@@ -151,6 +162,7 @@ PUBLICAR_FLUXO
 REVERTER_FLUXO
 
 VISUALIZAR_HISTORICO_TRANSVERSAL
+VISUALIZAR_NOTAS_TRANSVERSAIS
 VISUALIZAR_DADO_SENSIVEL
 EXPORTAR_HISTORICO
 
@@ -164,9 +176,9 @@ Consultar e executar são permissões diferentes. Editar um fluxo não concede p
 
 ### 5.4 Timeline única com menor privilégio
 
-A timeline é única por contato, mas a API filtra conteúdo por atendimento e permissão, conforme [ARCHITECTURE.md](ARCHITECTURE.md). Um atendimento transferido permanece inteiramente disponível à equipe que agora o conduz; atendimentos históricos de filas sem interseção exigem permissão transversal. O cliente nunca recebe itens omitidos nem metadados que permitam inferir conteúdo restrito.
+A timeline é única por contato, mas a API filtra conteúdo por atendimento e permissão, conforme [ARCHITECTURE.md](ARCHITECTURE.md). Quem conduz o atendimento atual vê todas as mensagens cliente↔empresa do mesmo protocolo, inclusive anteriores à transferência. Atendimento histórico exige interseção com ao menos uma fila participante ou `VISUALIZAR_HISTORICO_TRANSVERSAL`.
 
-Essa matriz deve ser aprovada no PR de RBAC. Até então, aplica-se `default deny`.
+Nota exige `VISUALIZAR_NOTA_INTERNA` e permanece vinculada à fila em que foi criada. Nota sem interseção de fila exige `VISUALIZAR_NOTAS_TRANSVERSAIS`; nem Administrador recebe essa permissão implicitamente. Permissão transversal de mensagens não concede a de notas. Conteúdo negado não sai da API; quando necessário, somente um separador neutro, sem data, fila, autor ou assunto, pode indicar descontinuidade. Contexto essencial entre filas vira `EventoConversa` sanitizado, nunca nota privada usada como atalho.
 
 ## 6. Identidade do contato e risco da ação
 
@@ -181,7 +193,15 @@ Regras:
 - ações usam o cliente/contrato explícitos do atendimento;
 - respostas de identificação evitam confirmar excessivamente a existência de cadastro.
 
-Antes de liberar ações ERP no piloto, o produto deve aprovar uma matriz por ação:
+A matriz inicial aprovada classifica:
+
+| Risco | Ações iniciais | Controles mínimos |
+|---|---|---|
+| Baixo | Criar protocolo; consultar cliente/contrato com dados mascarados | contexto explícito, RBAC, anti-enumeração e auditoria quando aplicável |
+| Médio | Situação financeira resumida; listar faturas; consultar sessão; trocar contexto temporário | vínculo verificado sem sinal de risco ou revalidação no atendimento; origem em tempo real quando necessária; prévia |
+| Alto | Enviar PDF/Pix/linha digitável; criar vínculo persistente; desbloquear; desconectar sessão; criar/alterar OS | ERP em tempo real, cliente e contrato explícitos, revalidação, prévia, confirmação, idempotência e auditoria |
+
+Cada ação concreta registra:
 
 ```text
 ação
@@ -193,7 +213,7 @@ confirmação necessária
 permissão humana/Motor de Fluxos
 ```
 
-Enquanto uma ação não estiver nessa matriz, ela fica negada. Em especial, não presumir que CPF sozinho autoriza alteração cadastral, desconexão, desbloqueio ou exportação.
+CPF/CNPJ sozinho nunca autoriza risco alto. `REVALIDADO_NO_ATENDIMENTO` exige fator estruturado aprovado e conferido no ERP; risco alto exige segundo fator independente aprovado ou encaminhamento humano. Enquanto capacidade, prova ou linha concreta não estiver caracterizada, a ação fica negada. Desconexão de sessão é somente humana na V1 e não existe como nó do Motor de Fluxos.
 
 ## 7. Proteção de dados
 
@@ -225,7 +245,7 @@ Sanitização ocorre antes do logger e antes de anexar atributos a spans. `corre
 
 ### 7.3 Retenção
 
-Histórico e mídia têm retenção inicial indefinida por decisão de produto. Isso não remove obrigações de minimização e eliminação legal. Antes do piloto deve existir política de retenção/LGPD, processo excepcional de remoção e auditoria `RETENCAO_APLICADA`. Atendente, supervisor e administrador não apagam registros individuais para esconder rastros.
+Prazos de histórico, mídia, auditoria e backup e suas bases legais dependem de política aprovada por jurídico/DPO antes do piloto. Até lá, não há autoeliminação nem exclusão individual por atendente, supervisor ou administrador. A implementação deve suportar categorias de retenção, bloqueio legal, anonimização/eliminação controlada e auditoria `RETENCAO_APLICADA`. Eventos incrementais permanecem disponíveis por 30 dias; isso não define retenção do histórico de negócio.
 
 ## 8. Segurança de mídia e transcrição
 
@@ -235,7 +255,8 @@ Histórico e mídia têm retenção inicial indefinida por decisão de produto. 
 - validar extensão, MIME, assinatura real e tamanho;
 - normalizar nome e ignorar caminho informado pelo usuário;
 - scan de malware quando aplicável antes da disponibilização;
-- limites por tipo e conta configurados no servidor;
+- tetos internos iniciais: imagem 8 MB, áudio 16 MB, vídeo 32 MB e PDF 20 MB;
+- limite efetivo é o menor entre teto interno e capacidade validada do provedor; excesso vira placeholder seguro sem download irrestrito;
 - bucket privado e criptografado;
 - download após autorização, por URL assinada curta;
 - hash e metadados no PostgreSQL;
@@ -249,7 +270,18 @@ Histórico e mídia têm retenção inicial indefinida por decisão de produto. 
 - nunca inclui nota, diagnóstico, formulário sensível, log ou ação ERP interna;
 - sanitização e proteção contra indexação;
 - acesso e exportação auditados quando identificáveis;
-- expiração, revogação e limite de acesso precisam ser decididos antes do PR da transcrição; até lá, não criar link público permanente.
+- mídia é excluída por padrão;
+- se juridicamente liberado, validade padrão de 72 horas, máxima de 7 dias e revogação imediata; token é armazenado por HMAC;
+- o recurso público permanece desligado até aprovação jurídica/DPO da política e do conteúdo exportável.
+
+### 8.3 Limites operacionais iniciais
+
+- busca de identidade: 30 requisições por minuto por usuário;
+- escrita ERP sensível: 10 por minuto por usuário e 30 por hora por instalação/ação, além de idempotência;
+- API transacional ERP: 60 por minuto por credencial, com burst de 20;
+- webhook Meta não recebe teto baixo genérico: usa limite de tamanho, assinatura, concorrência e backpressure medidos.
+
+Os valores são configuráveis por ambiente. Caracterização real pode reduzi-los; aumento exige revisão de risco e evidência operacional.
 
 ## 9. Web, API e realtime
 
@@ -370,9 +402,9 @@ Auditoria não recebe segredo/payload integral e possui acesso próprio por perm
 | Ameaça | Controle obrigatório |
 |---|---|
 | Sessão mobile roubada | Refresh rotativo, Keychain/Keystore, vínculo ao dispositivo, limite de dois e revogação remota. |
-| Aparelho revogado permanece offline | Autorização offline com validade máxima, bloqueio do cache ao expirar e limpeza na próxima conexão. |
+| Aparelho revogado permanece offline | Autorização offline vinculada com validade máxima de 4 horas, bloqueio do cache ao expirar e limpeza na próxima conexão. |
 | Navegador esquecido | Duas sessões, 12 h de inatividade, revogação e reautenticação sensível. |
-| QR fotografado/repetido | Token efêmero, uso único, confirmação e rate limit. |
+| QR fotografado/repetido | Token de 90 segundos, uso único, um ativo por sessão web, confirmação e rate limit. |
 | Brute force/credential stuffing | Rate limit, atraso progressivo, bloqueio temporário e alerta. |
 | IDOR/BOLA | Usuário + permissão + fila + recurso em toda leitura/escrita. |
 | Escalada de privilégio | `default deny`, autorização central e auditoria. |
@@ -401,7 +433,7 @@ Auditoria não recebe segredo/payload integral e possui acesso próprio por perm
 | Supply chain | Lockfile, dependência justificada, scanner e atualização controlada. |
 | Administrador malicioso | Auditoria imutável inclusive para administrador. |
 | Exportação em massa | Permissão específica, limites e auditoria. |
-| Token da transcrição descoberto | Entropia alta, conteúdo sanitizado, política de expiração/revogação. |
+| Token da transcrição descoberto | Recurso desligado sem política jurídica; quando liberado, entropia alta, HMAC, conteúdo sanitizado, 72 h padrão/7 dias máximo e revogação. |
 | Enumeração de cliente | Rate limit e resposta sem confirmação excessiva. |
 
 ## 15. Regras de código seguro

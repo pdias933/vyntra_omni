@@ -190,6 +190,8 @@ A API de timeline compõe, sem converter tudo em mensagem:
 
 O carregamento é paginado em web e mobile. A ordem causal/operacional é `sequencia_evento`; timestamps do servidor, da Meta e do dispositivo servem à exibição, ao contexto e ao diagnóstico, sem reordenar fatos já sequenciados.
 
+Autorização é aplicada na consulta do PostgreSQL. A equipe do atendimento atual vê as mensagens cliente↔empresa do mesmo protocolo. Histórico de outro atendimento exige interseção com fila participante ou `VISUALIZAR_HISTORICO_TRANSVERSAL`. `NotaInterna` exige `VISUALIZAR_NOTA_INTERNA`, conserva a fila de criação e, sem interseção, exige `VISUALIZAR_NOTAS_TRANSVERSAIS`. Permissões transversais de mensagem e nota são independentes. Item negado e seus metadados não saem da API; continuidade essencial usa `EventoConversa` sanitizado.
+
 ## 6. Máquina de estados do atendimento
 
 ### 6.1 Estado principal
@@ -265,7 +267,11 @@ finalizado_definitivamente_em?
 finalizado_definitivamente_por: SISTEMA?
 ```
 
-A reabertura manual é comando de domínio, não atualização direta de coluna. Ela valida prazo, janela Meta já aberta, autorização e atribuição atual. Na entrada do contato, a ordem transacional da seção 5.2 prevalece. O contexto e protocolo são preservados. O sistema apenas promove `ENCERRADO_REABRIVEL` para `ENCERRADO` quando a tolerância termina; ele não inicia o encerramento. Depois de `ENCERRADO`, uma nova interação gera outro atendimento.
+A reabertura manual é comando de domínio, não atualização direta de coluna. Ela valida prazo, janela Meta já aberta, autorização e atribuição atual e resulta em `EM_ATENDIMENTO`, modo `HUMANO`, com o operador autorizado como responsável.
+
+Na entrada do contato, a ordem transacional da seção 5.2 prevalece. Se o encerramento anterior foi do Motor de Fluxos, o atendimento reabre em `AGUARDANDO`, modo `FILA_HUMANA`, na fila humana de fallback congelada no encerramento e sem responsável. A `ExecucaoFluxo` anterior permanece terminal e nunca retoma nó ou escrita ERP. Publicar fluxo capaz de encerrar exige fila de fallback ativa. Contexto e protocolo são preservados e `versao_atribuicao` é incrementada com evento/auditoria.
+
+O sistema apenas promove `ENCERRADO_REABRIVEL` para `ENCERRADO` quando a tolerância termina; ele não inicia o encerramento. Depois de `ENCERRADO`, uma nova interação gera outro atendimento e protocolo e usa o fluxo atualmente publicado.
 
 ## 7. Janela Meta — máquina independente
 

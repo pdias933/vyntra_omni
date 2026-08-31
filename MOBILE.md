@@ -165,7 +165,7 @@ web confirma o aparelho
 backend cria sessão exclusiva do mobile
 ```
 
-O QR não contém credencial permanente. Replay, foto usada depois da validade e segunda utilização falham.
+O QR não contém credencial permanente, vale 90 segundos e é de uso único. Existe no máximo um QR ativo por sessão web; gerar outro invalida o anterior. Replay, foto usada depois da validade e segunda utilização falham. O backend limita geração e resgate conforme `SECURITY.md`.
 
 ### 4.3 Limite
 
@@ -217,9 +217,9 @@ autorizacao_offline_valida_ate
 
 Tokens ficam em armazenamento seguro, não no SQLite comum.
 
-Dados locais sensíveis devem usar criptografia/proteção compatível com a plataforma, política de backup local e limpeza em logout/revogação. O servidor emite uma autorização offline assinada e de duração limitada. Um aparelho sem rede pode ler o cache somente até `autorizacao_offline_valida_ate`; depois disso, bloqueia a área autenticada até revalidar sessão e permissões.
+Dados locais sensíveis devem usar criptografia/proteção compatível com a plataforma, política de backup local e limpeza em logout/revogação. O servidor emite uma autorização offline assinada, vinculada à instalação, usuário, dispositivo, sessão, versão de permissões e escopos, com validade máxima de 4 horas. Um aparelho sem rede pode ler somente o cache mínimo já autorizado, manter rascunhos e criar pendência de texto até `autorizacao_offline_valida_ate`; depois disso, bloqueia a área autenticada até revalidar sessão e permissões.
 
-Revogação remota não apaga instantaneamente um aparelho totalmente offline. A exposição fica limitada por essa validade. O prazo máximo exato é portão de segurança anterior ao piloto; enquanto não aprovado, a implementação deve negar acesso offline quando a autorização normal expirar, em vez de inventar um prazo amplo.
+Offline nunca permite ação ERP, exportação, criação de vínculo, visualização integral de dado sensível, obtenção de nova URL de mídia ou envio efetivo. Ao retornar, o app sincroniza e reautoriza antes de qualquer pendência. Token expirado, falha de integridade local ou relógio recuado além da tolerância bloqueiam a área autenticada. Revogação conhecida invalida imediatamente cache e pendências; um aparelho totalmente offline bloqueia no máximo ao fim das 4 horas e conclui a limpeza ao reconectar.
 
 ## 7. Sincronização
 
@@ -372,6 +372,8 @@ Falha de rede ao marcar leitura é reconciliada idempotentemente. Push não marc
 - player de áudio, imagem/vídeo em tela cheia e visualizador PDF;
 - galeria de mídias, links e documentos paginada;
 - URL assinada pode expirar; app solicita outra após autorização.
+- tetos de seleção/upload: imagem 8 MB, áudio 16 MB, vídeo 32 MB e PDF 20 MB, podendo ser menores conforme a capacidade validada do provedor;
+- arquivo acima do limite é recusado antes do envio com mensagem clara e nunca dispara upload/download irrestrito.
 
 ## 13. Ações do sistema
 

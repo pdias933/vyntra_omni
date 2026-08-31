@@ -437,10 +437,11 @@ Padrão conservador da V1:
 - o usuário autorizado ao atendimento atual vê todo o conteúdo externo desse protocolo, inclusive partes produzidas antes de uma transferência;
 - atendimentos históricos aparecem com conteúdo somente quando o usuário tem acesso a pelo menos uma fila participante daquele atendimento ou possui `VISUALIZAR_HISTORICO_TRANSVERSAL`;
 - itens não autorizados não são retornados à web/mobile nem ao usuário autenticado; a UI pode exibir apenas um separador neutro indicando que existe histórico restrito, sem metadados sensíveis;
-- notas internas podem ter regra ainda mais restritiva por fila/permissão;
+- nota interna exige `VISUALIZAR_NOTA_INTERNA`, conserva a fila de criação e, sem interseção, exige `VISUALIZAR_NOTAS_TRANSVERSAIS`; essa permissão não é herdada de `VISUALIZAR_HISTORICO_TRANSVERSAL` nem do papel Administrador;
+- informação essencial entre filas vira `EventoConversa` sanitizado, não nota privada usada como atalho;
 - administrador não recebe automaticamente permissão para revelar dado sensível completo; a permissão específica e auditoria continuam necessárias.
 
-Essa regra reconcilia “timeline contínua” com menor privilégio. Deve ser validada com o responsável de produto no PR de RBAC antes de congelar consultas e índices.
+Essa matriz aprovada reconcilia “timeline contínua” com menor privilégio. O PR de RBAC deve implementá-la nas consultas/índices sem ampliar permissões.
 
 ## 11. Mídia
 
@@ -512,17 +513,15 @@ Quando a carga justificar:
 
 Não criar abstrações vazias para IA, ACS, massivas ou outros ERPs na V1. As fronteiras documentadas bastam até existir um caso real.
 
-## 16. Decisões que bloqueiam implementação específica
+## 16. Condições que ainda bloqueiam liberação específica
 
 Antes dos PRs correspondentes, confirmar:
 
-- matriz final de visibilidade histórica transversal e notas internas;
-- matriz de risco/revalidação de identidade por tipo de ação;
 - versão/capacidades reais das APIs Meta na conta;
 - contratos e respostas reais do MK;
 - fonte real do `AccessSessionAdapter`;
-- limites concretos de mídia, timeouts e rate limits;
-- política legal de retenção e expiração/revogação do link de transcrição;
-- protocolo/callback de disparos transacionais vindos do ERP.
+- timeouts externos e limites que possam ser menores que os tetos internos aprovados;
+- política jurídica/DPO de retenção, eliminação e conteúdo exportável antes de habilitar link público;
+- autenticação, protocolo/callback, consentimento e opt-out reais antes de habilitar disparos vindos do ERP.
 
-O restante da arquitetura pode avançar sem inventar esses valores.
+Visibilidade/notas, matriz inicial de risco, validade offline, QR, senha/MFA e tetos internos foram fechados no Portão Zero. O restante da arquitetura pode avançar respeitando `default deny`; condições externas acima mantêm somente o recurso dependente desligado.
