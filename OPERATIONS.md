@@ -165,6 +165,8 @@ Migrations são executadas por um job único antes da liberação da nova API, p
 
 Desde a PR 008, Compose materializa esse job como `migrar`: Prisma Migrate mantém seu lock consultivo e metadados, aplica somente migrations versionadas e termina. A API depende de `service_completed_successfully`; falha de migration impede prontidão e tráfego. O mesmo artefato pode ser executado novamente com segurança, pois migrations concluídas não são reaplicadas.
 
+O primeiro ambiente preexistente deve ter o schema conferido e o marco `20260830000000_baseline_pre_prisma` resolvido explicitamente uma única vez antes do deploy. O marco não altera nem reivindica tabelas anteriores ao Prisma; em banco vazio, ele é aplicado automaticamente.
+
 ## 7. Redis e workers
 
 Redis pode ser reiniciado/perdido sem apagar negócio. Depois da recuperação:

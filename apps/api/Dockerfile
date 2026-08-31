@@ -7,6 +7,10 @@ FROM ${IMAGEM_NODE} AS construtor
 ENV CI=true \
     NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
 
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /codigo
 
 ADD --checksum=sha256:d1eab2433172661cc36a18ec85fce93f771db1962717329cc01ec9c2824ca24f \
@@ -41,7 +45,7 @@ WORKDIR /codigo/apps/api
 
 USER 1000:0
 
-CMD ["pnpm", "prisma:migrate:deploy"]
+CMD ["node", "/codigo/node_modules/prisma/build/index.js", "migrate", "deploy"]
 
 FROM ${IMAGEM_NODE} AS execucao
 

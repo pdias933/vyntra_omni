@@ -1,0 +1,2 @@
+-- Marco inicial para ambientes criados antes da adoção do Prisma Migrate.
+-- Não reivindica nem altera tabelas operacionais preexistentes.
