@@ -97,6 +97,7 @@ test('expõe os comandos obrigatórios na raiz', async () => {
     'staging:validar',
     'test',
     'typecheck',
+    'verificar:contratos',
     'verificar:dependencias',
     'verificar:expo',
     'verificar:segredos',
@@ -106,7 +107,7 @@ test('expõe os comandos obrigatórios na raiz', async () => {
 
   assert.equal(
     manifesto.scripts.test,
-    'node scripts/executar-turbo.mjs test && node --test "tests/*.test.mjs"',
+    'node scripts/verificar-contratos.mjs && node scripts/executar-turbo.mjs test && node --test "tests/*.test.mjs"',
   );
 });
 

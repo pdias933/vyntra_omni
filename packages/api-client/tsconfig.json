@@ -1,0 +1,12 @@
+{
+  "extends": "@vyntra/typescript-config/base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "exactOptionalPropertyTypes": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts"]
+}

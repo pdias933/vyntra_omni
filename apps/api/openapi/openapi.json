@@ -1,0 +1,83 @@
+{
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1": {
+      "get": {
+        "operationId": "obterInformacoesApi",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InformacoesApiDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroCanonicoDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Obtém a identidade e a versão pública da API.",
+        "tags": [
+          "sistema"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "API Vyntra Omnichannel",
+    "description": "Contrato público e versionado do Omnichannel V1.",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "ErroCanonicoDto": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "RECURSO_NAO_ENCONTRADO"
+          },
+          "mensagem": {
+            "type": "string",
+            "example": "O recurso solicitado não foi encontrado."
+          }
+        },
+        "required": [
+          "codigo",
+          "mensagem"
+        ]
+      },
+      "InformacoesApiDto": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "example": "Vyntra Omnichannel"
+          },
+          "versao_api": {
+            "type": "string",
+            "example": "v1"
+          }
+        },
+        "required": [
+          "nome",
+          "versao_api"
+        ]
+      }
+    }
+  }
+}

@@ -1,11 +1,9 @@
 import 'reflect-metadata';
 
-import { NestFactory } from '@nestjs/core';
-
-import { ModuloAplicacao } from './modulo-aplicacao.js';
+import { criarAplicacao } from './configurar-aplicacao.js';
 
 async function iniciarAplicacao(): Promise<void> {
-  const aplicacao = await NestFactory.create(ModuloAplicacao);
+  const aplicacao = await criarAplicacao();
   const enderecoHttp = process.env.ENDERECO_HTTP ?? '127.0.0.1';
   const portaHttp = Number(process.env.PORTA_HTTP ?? '3000');
 

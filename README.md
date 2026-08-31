@@ -8,7 +8,7 @@ Este pacote consolida as decisões de produto, domínio, arquitetura, segurança
 
 ## Fundação técnica
 
-O monorepo contém aplicações mínimas e compiláveis em `apps/api`, `apps/web` e `apps/mobile`. Elas ainda não representam uma funcionalidade da V1 e não possuem banco, endpoint de negócio, integração externa ou layout final.
+O monorepo contém aplicações mínimas e compiláveis em `apps/api`, `apps/web` e `apps/mobile`. Elas ainda não representam uma funcionalidade da V1 e não possuem endpoint de negócio, integração externa ou layout final. A API já publica sua identidade técnica e o contrato OpenAPI em `/api/v1`.
 
 Baseline local:
 
@@ -23,6 +23,7 @@ pnpm verificar:expo
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm verificar:contratos
 pnpm verificar:dependencias
 pnpm build
 ```
@@ -30,6 +31,10 @@ pnpm build
 Desenvolvedores com Gitleaks 8.30.0 instalado também podem examinar histórico, arquivos preparados e alterações rastreadas com `pnpm verificar:segredos`; arquivos novos devem ser preparados no Git para entrar nessa verificação local. Tanto o comando local quanto a CI fixam configuração e arquivo de exceções, ignoram comentários de liberação e exigem que um canário sintético seja detectado antes da varredura real.
 
 As versões e a justificativa da superfície inicial estão em [docs/dependencias/PR-002.md](docs/dependencias/PR-002.md).
+
+### API base e cliente gerado
+
+`GET /api/v1` identifica a versão pública. O contrato fica em `GET /api/v1/openapi.json`, sem interface Swagger HTML exposta. `pnpm gerar:contratos` atualiza o JSON e o pacote `@vyntra/api-client`; `pnpm verificar:contratos` bloqueia divergência entre controllers, contrato e SDK. Uso, formato de erro e limites desta fundação estão em [docs/api/PR-006.md](docs/api/PR-006.md); dependências e superfície estão em [docs/dependencias/PR-006.md](docs/dependencias/PR-006.md).
 
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 

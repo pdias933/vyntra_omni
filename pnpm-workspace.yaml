@@ -11,5 +11,9 @@ strictDepBuilds: true
 verifyDepsBeforeRun: error
 
 overrides:
+  js-yaml: 4.3.2
   react: 19.2.3
   react-dom: 19.2.3
+
+allowBuilds:
+  '@scarf/scarf': false
