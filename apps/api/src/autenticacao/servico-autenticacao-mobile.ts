@@ -28,6 +28,7 @@ import type {
   EntradaDispositivoMobile,
   EntradaLoginMobile,
   ResumoDispositivoMobile,
+  ResultadoEmissaoSessaoMobile,
   SessaoMobileAutenticada,
   SessaoMobileEmitida,
   SessaoMobilePersistida,
@@ -78,7 +79,7 @@ export class ServicoAutenticacaoMobile {
     const identificadorNormalizado = this.normalizarIdentificador(
       entrada.identificador,
     );
-    const dispositivo = this.validarDispositivo(entrada);
+    const dispositivo = this.normalizarDispositivo(entrada);
     this.validarEnderecoIp(entrada.enderecoIp);
     const identificadorHash = hashHex(identificadorNormalizado);
     const agora = new Date();
@@ -136,191 +137,48 @@ export class ServicoAutenticacaoMobile {
       throw new ErroMfaNecessario();
     }
 
-    const tokenAcesso = gerarSegredo();
-    const tokenRefresh = gerarSegredo();
-    const sessaoId = randomUUID();
-    const acessoExpiraEm = new Date(agora.getTime() + DURACAO_ACESSO_MS);
-    const refreshExpiraEm = new Date(agora.getTime() + DURACAO_REFRESH_MS);
-    const resultado = await this.prisma.executarTransacao(async (transacao) => {
-      let dispositivosRevogadosPorLimite = 0;
-      await this.repositorio.serializarDispositivosUsuario(
-        credencial.usuarioId,
-        transacao,
-      );
-      let persistido = await this.repositorio.obterDispositivo(
-        credencial.usuarioId,
-        dispositivo.identificadorInstalacaoHash,
-        transacao,
-      );
-      if (
-        persistido !== undefined &&
-        (persistido.estado !== 'ATIVO' ||
-          !this.hashConfere(
-            dispositivo.segredoVinculoHash,
-            persistido.segredoVinculoHash,
-          ))
-      ) {
-        await this.auditoria.registrar(
-          {
-            acao: 'RECUSAR_DISPOSITIVO_MOBILE',
-            dadosNovos: { resultado: 'DISPOSITIVO_NAO_CONFIAVEL' },
-            enderecoIp: entrada.enderecoIp,
-            entidadeId: persistido.id,
-            entidadeTipo: 'DISPOSITIVO_MOBILE',
-            origem: 'USUARIO',
-            tipoEvento: 'DISPOSITIVO_MOBILE_RECUSADO',
-            usuarioId: credencial.usuarioId,
-          },
-          transacao,
-        );
-        return { dispositivoNaoConfiavel: true } as const;
-      }
-      await this.confirmarTentativa(reserva.id, transacao);
-      if (persistido === undefined) {
-        const dispositivosAtivos =
-          await this.repositorio.listarDispositivosAtivosUsuario(
-            credencial.usuarioId,
-            transacao,
-          );
-        const quantidadeRevogar = Math.max(
-          0,
-          dispositivosAtivos.length - LIMITE_DISPOSITIVOS_MOBILE + 1,
-        );
-        if (quantidadeRevogar > 0) {
-          const dispositivosRevogados = dispositivosAtivos
-            .slice(0, quantidadeRevogar)
-            .map(({ id }) => id);
-          const quantidade = await this.repositorio.revogarDispositivos(
-            credencial.usuarioId,
-            dispositivosRevogados,
-            agora,
-            'LIMITE_DISPOSITIVOS_MOBILE',
-            transacao,
-          );
-          if (quantidade !== dispositivosRevogados.length) {
-            throw new Error('LIMITE_DISPOSITIVOS_MOBILE_NAO_SERIALIZADO');
-          }
-          dispositivosRevogadosPorLimite = quantidade;
-          const sessoesRevogadas =
-            await this.repositorio.revogarSessoesAtivasDispositivos(
-              credencial.usuarioId,
-              dispositivosRevogados,
-              agora,
-              'DISPOSITIVO_REVOGADO_POR_LIMITE',
-              transacao,
-            );
-          await this.auditoria.registrar(
-            {
-              acao: 'SUBSTITUIR_DISPOSITIVO_MOBILE_MAIS_ANTIGO',
-              dadosNovos: {
-                dispositivos_revogados: quantidade,
-                sessoes_revogadas: sessoesRevogadas,
-              },
-              enderecoIp: entrada.enderecoIp,
-              entidadeId: credencial.usuarioId,
-              entidadeTipo: 'USUARIO',
-              origem: 'USUARIO',
-              tipoEvento: 'DISPOSITIVO_MOBILE_ANTIGO_REVOGADO',
-              usuarioId: credencial.usuarioId,
-            },
-            transacao,
-          );
-        }
-        const dispositivoId = randomUUID();
-        await this.repositorio.criarDispositivo(
-          {
-            ...dispositivo,
-            agora,
-            id: dispositivoId,
-            usuarioId: credencial.usuarioId,
-          },
-          transacao,
-        );
-        persistido = {
-          estado: 'ATIVO',
-          id: dispositivoId,
-          segredoVinculoHash: dispositivo.segredoVinculoHash,
-          usuarioId: credencial.usuarioId,
-        };
-        await this.auditoria.registrar(
-          {
-            acao: 'VINCULAR_DISPOSITIVO_MOBILE',
-            dadosNovos: { plataforma: dispositivo.plataforma },
-            dispositivoId,
-            enderecoIp: entrada.enderecoIp,
-            entidadeId: dispositivoId,
-            entidadeTipo: 'DISPOSITIVO_MOBILE',
-            origem: 'USUARIO',
-            tipoEvento: 'DISPOSITIVO_MOBILE_VINCULADO',
-            usuarioId: credencial.usuarioId,
-          },
-          transacao,
-        );
-      } else {
-        const atualizado = await this.repositorio.atualizarDispositivo(
-          persistido.id,
+    const resultado = await this.prisma.executarTransacao((transacao) =>
+      this.emitirSessaoEmTransacao(
+        {
+          agora,
+          antesDeEmitir: () => this.confirmarTentativa(reserva.id, transacao),
           dispositivo,
-          agora,
-          transacao,
-        );
-        if (!atualizado) return { dispositivoNaoConfiavel: true } as const;
-      }
-
-      const sessoesAnteriores =
-        await this.repositorio.revogarSessoesAtivasDispositivo(
-          persistido.id,
-          agora,
-          'NOVO_LOGIN_MESMO_DISPOSITIVO',
-          transacao,
-        );
-      await this.repositorio.criarSessao(
-        {
-          acessoExpiraEm,
-          autenticadaEm: agora,
-          dispositivoId: persistido.id,
-          id: sessaoId,
-          refreshExpiraEm,
-          tokenAcessoHash: hashHex(tokenAcesso),
-          tokenRefreshHash: hashHex(tokenRefresh),
-          usuarioId: credencial.usuarioId,
-        },
-        transacao,
-      );
-      await this.auditoria.registrar(
-        {
-          acao: 'LOGIN_MOBILE_CONCLUIDO',
-          dadosNovos: { sessoes_anteriores_revogadas: sessoesAnteriores },
-          dispositivoId: persistido.id,
           enderecoIp: entrada.enderecoIp,
-          entidadeId: sessaoId,
-          entidadeTipo: 'SESSAO_MOBILE',
-          origem: 'USUARIO',
-          sessaoId,
-          tipoEvento: 'SESSAO_MOBILE_CRIADA',
+          nomeExibicao: credencial.nomeExibicao,
+          origemAutenticacao: 'CREDENCIAL',
           usuarioId: credencial.usuarioId,
         },
         transacao,
-      );
-      return {
-        dispositivoId: persistido.id,
-        dispositivoNaoConfiavel: false,
-        dispositivosRevogadosPorLimite,
-      } as const;
-    });
+      ),
+    );
     if (resultado.dispositivoNaoConfiavel) {
       throw new ErroDispositivoNaoConfiavel();
     }
-    return {
-      acessoExpiraEm,
-      dispositivoId: resultado.dispositivoId,
-      dispositivoSubstituido: resultado.dispositivosRevogadosPorLimite > 0,
-      id: sessaoId,
-      nomeExibicao: credencial.nomeExibicao,
-      refreshExpiraEm,
-      tokenAcesso,
-      tokenRefresh,
-      usuarioId: credencial.usuarioId,
-    };
+    return resultado.sessao;
+  }
+
+  public async emitirSessaoPorPareamento(
+    entrada: {
+      readonly agora: Date;
+      readonly dispositivo: EntradaDispositivoMobile;
+      readonly enderecoIp: string;
+      readonly nomeExibicao: string;
+      readonly usuarioId: string;
+    },
+    transacao: TransacaoPrisma,
+  ): Promise<ResultadoEmissaoSessaoMobile> {
+    this.validarEnderecoIp(entrada.enderecoIp);
+    if (!(await this.repositorio.usuarioAtivo(entrada.usuarioId, transacao))) {
+      return { dispositivoNaoConfiavel: true };
+    }
+    return this.emitirSessaoEmTransacao(
+      {
+        ...entrada,
+        antesDeEmitir: async () => undefined,
+        origemAutenticacao: 'PAREAMENTO_QR',
+      },
+      transacao,
+    );
   }
 
   public async autenticar(
@@ -632,7 +490,225 @@ export class ServicoAutenticacaoMobile {
     });
   }
 
-  private validarDispositivo(entrada: EntradaLoginMobile): EntradaDispositivoMobile {
+  private async emitirSessaoEmTransacao(
+    entrada: {
+      readonly agora: Date;
+      readonly antesDeEmitir: () => Promise<void>;
+      readonly dispositivo: EntradaDispositivoMobile;
+      readonly enderecoIp: string;
+      readonly nomeExibicao: string;
+      readonly origemAutenticacao: 'CREDENCIAL' | 'PAREAMENTO_QR';
+      readonly usuarioId: string;
+    },
+    transacao: TransacaoPrisma,
+  ): Promise<ResultadoEmissaoSessaoMobile> {
+    const tokenAcesso = gerarSegredo();
+    const tokenRefresh = gerarSegredo();
+    const sessaoId = randomUUID();
+    const acessoExpiraEm = new Date(
+      entrada.agora.getTime() + DURACAO_ACESSO_MS,
+    );
+    const refreshExpiraEm = new Date(
+      entrada.agora.getTime() + DURACAO_REFRESH_MS,
+    );
+    let dispositivosRevogadosPorLimite = 0;
+
+    await this.repositorio.serializarDispositivosUsuario(
+      entrada.usuarioId,
+      transacao,
+    );
+    let persistido = await this.repositorio.obterDispositivo(
+      entrada.usuarioId,
+      entrada.dispositivo.identificadorInstalacaoHash,
+      transacao,
+    );
+    if (
+      persistido !== undefined &&
+      (persistido.estado !== 'ATIVO' ||
+        !this.hashConfere(
+          entrada.dispositivo.segredoVinculoHash,
+          persistido.segredoVinculoHash,
+        ))
+    ) {
+      await this.auditoria.registrar(
+        {
+          acao: 'RECUSAR_DISPOSITIVO_MOBILE',
+          dadosNovos: { resultado: 'DISPOSITIVO_NAO_CONFIAVEL' },
+          enderecoIp: entrada.enderecoIp,
+          entidadeId: persistido.id,
+          entidadeTipo: 'DISPOSITIVO_MOBILE',
+          origem: 'USUARIO',
+          tipoEvento: 'DISPOSITIVO_MOBILE_RECUSADO',
+          usuarioId: entrada.usuarioId,
+        },
+        transacao,
+      );
+      return { dispositivoNaoConfiavel: true };
+    }
+
+    await entrada.antesDeEmitir();
+    if (persistido === undefined) {
+      const dispositivosAtivos =
+        await this.repositorio.listarDispositivosAtivosUsuario(
+          entrada.usuarioId,
+          transacao,
+        );
+      const quantidadeRevogar = Math.max(
+        0,
+        dispositivosAtivos.length - LIMITE_DISPOSITIVOS_MOBILE + 1,
+      );
+      if (quantidadeRevogar > 0) {
+        const dispositivosRevogados = dispositivosAtivos
+          .slice(0, quantidadeRevogar)
+          .map(({ id }) => id);
+        const quantidade = await this.repositorio.revogarDispositivos(
+          entrada.usuarioId,
+          dispositivosRevogados,
+          entrada.agora,
+          'LIMITE_DISPOSITIVOS_MOBILE',
+          transacao,
+        );
+        if (quantidade !== dispositivosRevogados.length) {
+          throw new Error('LIMITE_DISPOSITIVOS_MOBILE_NAO_SERIALIZADO');
+        }
+        dispositivosRevogadosPorLimite = quantidade;
+        const sessoesRevogadas =
+          await this.repositorio.revogarSessoesAtivasDispositivos(
+            entrada.usuarioId,
+            dispositivosRevogados,
+            entrada.agora,
+            'DISPOSITIVO_REVOGADO_POR_LIMITE',
+            transacao,
+          );
+        await this.auditoria.registrar(
+          {
+            acao: 'SUBSTITUIR_DISPOSITIVO_MOBILE_MAIS_ANTIGO',
+            dadosNovos: {
+              dispositivos_revogados: quantidade,
+              sessoes_revogadas: sessoesRevogadas,
+            },
+            enderecoIp: entrada.enderecoIp,
+            entidadeId: entrada.usuarioId,
+            entidadeTipo: 'USUARIO',
+            origem: 'USUARIO',
+            tipoEvento: 'DISPOSITIVO_MOBILE_ANTIGO_REVOGADO',
+            usuarioId: entrada.usuarioId,
+          },
+          transacao,
+        );
+      }
+
+      const dispositivoId = randomUUID();
+      await this.repositorio.criarDispositivo(
+        {
+          ...entrada.dispositivo,
+          agora: entrada.agora,
+          id: dispositivoId,
+          usuarioId: entrada.usuarioId,
+        },
+        transacao,
+      );
+      persistido = {
+        estado: 'ATIVO',
+        id: dispositivoId,
+        segredoVinculoHash: entrada.dispositivo.segredoVinculoHash,
+        usuarioId: entrada.usuarioId,
+      };
+      await this.auditoria.registrar(
+        {
+          acao: 'VINCULAR_DISPOSITIVO_MOBILE',
+          dadosNovos: { plataforma: entrada.dispositivo.plataforma },
+          dispositivoId,
+          enderecoIp: entrada.enderecoIp,
+          entidadeId: dispositivoId,
+          entidadeTipo: 'DISPOSITIVO_MOBILE',
+          origem: 'USUARIO',
+          tipoEvento: 'DISPOSITIVO_MOBILE_VINCULADO',
+          usuarioId: entrada.usuarioId,
+        },
+        transacao,
+      );
+    } else {
+      const atualizado = await this.repositorio.atualizarDispositivo(
+        persistido.id,
+        entrada.dispositivo,
+        entrada.agora,
+        transacao,
+      );
+      if (!atualizado) return { dispositivoNaoConfiavel: true };
+    }
+
+    const sessoesAnteriores =
+      await this.repositorio.revogarSessoesAtivasDispositivo(
+        persistido.id,
+        entrada.agora,
+        entrada.origemAutenticacao === 'PAREAMENTO_QR'
+          ? 'NOVO_PAREAMENTO_QR_MESMO_DISPOSITIVO'
+          : 'NOVO_LOGIN_MESMO_DISPOSITIVO',
+        transacao,
+      );
+    await this.repositorio.criarSessao(
+      {
+        acessoExpiraEm,
+        autenticadaEm: entrada.agora,
+        dispositivoId: persistido.id,
+        id: sessaoId,
+        refreshExpiraEm,
+        tokenAcessoHash: hashHex(tokenAcesso),
+        tokenRefreshHash: hashHex(tokenRefresh),
+        usuarioId: entrada.usuarioId,
+      },
+      transacao,
+    );
+    await this.auditoria.registrar(
+      {
+        acao:
+          entrada.origemAutenticacao === 'PAREAMENTO_QR'
+            ? 'CRIAR_SESSAO_MOBILE_POR_PAREAMENTO_QR'
+            : 'LOGIN_MOBILE_CONCLUIDO',
+        dadosNovos: {
+          origem_autenticacao: entrada.origemAutenticacao,
+          sessoes_anteriores_revogadas: sessoesAnteriores,
+        },
+        dispositivoId: persistido.id,
+        enderecoIp: entrada.enderecoIp,
+        entidadeId: sessaoId,
+        entidadeTipo: 'SESSAO_MOBILE',
+        origem: 'USUARIO',
+        sessaoId,
+        tipoEvento:
+          entrada.origemAutenticacao === 'PAREAMENTO_QR'
+            ? 'SESSAO_MOBILE_CRIADA_POR_PAREAMENTO_QR'
+            : 'SESSAO_MOBILE_CRIADA',
+        usuarioId: entrada.usuarioId,
+      },
+      transacao,
+    );
+    return {
+      dispositivoNaoConfiavel: false,
+      sessao: {
+        acessoExpiraEm,
+        dispositivoId: persistido.id,
+        dispositivoSubstituido: dispositivosRevogadosPorLimite > 0,
+        id: sessaoId,
+        nomeExibicao: entrada.nomeExibicao,
+        refreshExpiraEm,
+        tokenAcesso,
+        tokenRefresh,
+        usuarioId: entrada.usuarioId,
+      },
+    };
+  }
+
+  public normalizarDispositivo(
+    entrada: {
+      readonly identificadorInstalacao: string;
+      readonly segredoVinculo: string;
+      readonly plataforma: 'ANDROID' | 'IOS';
+      readonly modeloSanitizado?: string;
+      readonly versaoAplicativo: string;
+    },
+  ): EntradaDispositivoMobile {
     if (
       !IDENTIFICADOR_UUID.test(entrada.identificadorInstalacao) ||
       !SEGREDO_OPACO.test(entrada.segredoVinculo) ||

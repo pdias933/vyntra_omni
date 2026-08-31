@@ -13,6 +13,9 @@ import { RepositorioAutenticacaoPrisma } from './repositorio-autenticacao-prisma
 import { ServicoAutenticacaoWeb } from './servico-autenticacao-web.js';
 import { ServicoOrigemWeb } from './servico-origem-web.js';
 import { ServicoSenha } from './servico-senha.js';
+import { REPOSITORIO_PAREAMENTO_QR } from './repositorio-pareamento-qr.js';
+import { RepositorioPareamentoQrPrisma } from './repositorio-pareamento-qr-prisma.js';
+import { ServicoPareamentoQr } from './servico-pareamento-qr.js';
 
 @Module({
   controllers: [ControladorAutenticacaoMobile, ControladorAutenticacaoWeb],
@@ -21,8 +24,10 @@ import { ServicoSenha } from './servico-senha.js';
   providers: [
     RepositorioAutenticacaoPrisma,
     RepositorioAutenticacaoMobilePrisma,
+    RepositorioPareamentoQrPrisma,
     ServicoAutenticacaoMobile,
     ServicoAutenticacaoWeb,
+    ServicoPareamentoQr,
     ServicoOrigemWeb,
     ServicoSenha,
     {
@@ -32,6 +37,10 @@ import { ServicoSenha } from './servico-senha.js';
     {
       provide: REPOSITORIO_AUTENTICACAO,
       useExisting: RepositorioAutenticacaoPrisma,
+    },
+    {
+      provide: REPOSITORIO_PAREAMENTO_QR,
+      useExisting: RepositorioPareamentoQrPrisma,
     },
   ],
 })

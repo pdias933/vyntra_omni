@@ -51,3 +51,39 @@ export class ErroDispositivoNaoConfiavel extends Error {
     this.name = 'ErroDispositivoNaoConfiavel';
   }
 }
+
+export class ErroPareamentoQrInvalido extends Error {
+  public readonly codigo = 'PAREAMENTO_QR_INVALIDO';
+
+  public constructor() {
+    super('PAREAMENTO_QR_INVALIDO');
+    this.name = 'ErroPareamentoQrInvalido';
+  }
+}
+
+export class ErroLimitePareamentoQrExcedido extends Error {
+  public readonly codigo = 'LIMITE_PAREAMENTO_QR_EXCEDIDO';
+
+  public constructor() {
+    super('LIMITE_PAREAMENTO_QR_EXCEDIDO');
+    this.name = 'ErroLimitePareamentoQrExcedido';
+  }
+}
+
+export class ErroReautenticacaoNecessaria extends Error {
+  public readonly codigo = 'REAUTENTICACAO_NECESSARIA';
+
+  public constructor() {
+    super('REAUTENTICACAO_NECESSARIA');
+    this.name = 'ErroReautenticacaoNecessaria';
+  }
+}
+
+export class ErroPareamentoQrAguardandoConfirmacao extends Error {
+  public readonly codigo = 'PAREAMENTO_QR_AGUARDANDO_CONFIRMACAO';
+
+  public constructor() {
+    super('PAREAMENTO_QR_AGUARDANDO_CONFIRMACAO');
+    this.name = 'ErroPareamentoQrAguardandoConfirmacao';
+  }
+}

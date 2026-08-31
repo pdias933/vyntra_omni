@@ -193,6 +193,25 @@ export class RepositorioAutenticacaoPrisma
       data: { estado: 'REVOGADA', motivoRevogacao: motivo, revogadaEm: agora },
       where: { estado: 'ATIVA', id: { in: [...sessaoIds] }, usuarioId },
     });
+    if (resultado.count > 0) {
+      await transacao.pareamentoQr.updateMany({
+        data: {
+          estado: 'CANCELADO',
+          finalizadoEm: agora,
+          motivoFinalizacao: 'SESSAO_WEB_REVOGADA',
+        },
+        where: {
+          estado: {
+            in: [
+              'AGUARDANDO_RESGATE',
+              'AGUARDANDO_CONFIRMACAO',
+              'CONFIRMADO',
+            ],
+          },
+          sessaoWebId: { in: [...sessaoIds] },
+        },
+      });
+    }
     return resultado.count;
   }
 
@@ -300,6 +319,25 @@ export class RepositorioAutenticacaoPrisma
         tokenHash: tokenHashAtual,
       },
     });
+    if (resultado.count === 1) {
+      await transacao.pareamentoQr.updateMany({
+        data: {
+          estado: 'CANCELADO',
+          finalizadoEm: agora,
+          motivoFinalizacao: 'SESSAO_WEB_REVOGADA',
+        },
+        where: {
+          estado: {
+            in: [
+              'AGUARDANDO_RESGATE',
+              'AGUARDANDO_CONFIRMACAO',
+              'CONFIRMADO',
+            ],
+          },
+          sessaoWebId: sessaoId,
+        },
+      });
+    }
     return resultado.count === 1;
   }
 }

@@ -449,6 +449,7 @@ Alertar sem exigir dashboard aberto:
 - certificado próximo de vencer;
 - template/capacidade externa rejeitada;
 - reconciliação de protocolo presa.
+- aumento anormal de geração, resgate recusado ou bloqueio de pareamento QR por usuário, IP ou instalação.
 
 Limites concretos devem ser definidos a partir de baseline e revisados após piloto.
 
@@ -465,6 +466,7 @@ Limites concretos devem ser definidos a partir de baseline e revisados após pil
 - deploy com health falhando;
 - reversão de versão de fluxo;
 - app abaixo da versão mínima;
+- pareamento QR bloqueado, expirando em massa ou sem confirmação;
 - restauração de backup.
 
 Cada runbook contém sinais, impacto, ações seguras, verificação, comunicação e critério de encerramento.

@@ -84,6 +84,13 @@ export interface SessaoMobileEmitida {
   readonly dispositivoSubstituido: boolean;
 }
 
+export type ResultadoEmissaoSessaoMobile =
+  | { readonly dispositivoNaoConfiavel: true }
+  | {
+      readonly dispositivoNaoConfiavel: false;
+      readonly sessao: SessaoMobileEmitida;
+    };
+
 export interface SessaoMobileAutenticada {
   readonly contexto: ContextoSessaoAutorizacao;
   readonly dispositivoId: string;

@@ -252,7 +252,15 @@ Limite e revogação serializam a coleção de dispositivos por UUID do usuário
 
 `ServicoAutenticacaoMobile.autenticar` é o portão único também para sincronização e tempo real: valida access, vínculo, usuário, dispositivo e sessão em cada nova decisão. O gateway da PR 056 deverá revalidar em handshake, heartbeat e comando, além de fechar conexões ao receber a projeção de revogação; não poderá reter autoridade apenas porque um WebSocket já abriu. Nesta etapa ainda não há gateway ou endpoint de sincronização, portanto a PR 016 entrega a autoridade revogável e os contratos, sem criar transporte fictício.
 
-### 6.1.3 Autorização central
+### 6.1.3 Pareamento QR
+
+`ServicoPareamentoQr` coordena web e mobile sem transformar um cliente no emissor da identidade do outro. A web cria um token aleatório de 90 segundos sob sessão+CSRF+origem; o mobile o resgata uma vez e recebe outro comprovante efêmero. O PostgreSQL conserva somente hashes e a máquina de estados. A web consulta apenas estado e prévia sanitizada do aparelho, confirma pela mesma sessão com autenticação recente e nunca observa a credencial mobile.
+
+Na conclusão, o mesmo aparelho reapresenta comprovante, identificador da instalação e segredo de vínculo. Uma única transação serializa o pareamento, reutiliza `ServicoAutenticacaoMobile` para aplicar o limite de dois aparelhos, cria a sessão e marca `CONCLUIDO`. A resposta com access/refresh sai somente pelo endpoint mobile. Advisory locks curtos por usuário, token, IP, instalação e pareamento fecham corridas entre réplicas; unicidade parcial garante um pareamento ativo por sessão web. Redis não participa da autoridade.
+
+O fluxo HTTP possui contratos separados no SDK OpenAPI: criar/consultar/confirmar/cancelar na web e resgatar/consultar/concluir no mobile. Scanner e telas serão consumidores desses contratos; a API não depende de biblioteca de QR nem recebe imagem. Revogar a sessão web cancela pareamentos pendentes na mesma transação.
+
+### 6.1.4 Autorização central
 
 ```text
 contexto de sessão autenticada

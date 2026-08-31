@@ -169,6 +169,10 @@ backend cria sessão exclusiva do mobile
 
 O QR não contém credencial permanente, vale 90 segundos e é de uso único. Existe no máximo um QR ativo por sessão web; gerar outro invalida o anterior. Replay, foto usada depois da validade e segunda utilização falham. O backend limita geração e resgate conforme `SECURITY.md`.
 
+Após ler o QR, o app troca imediatamente o token por um comprovante diferente e mantém ambos apenas pelo tempo necessário ao fluxo; nenhum deles vai para SQLite, AsyncStorage, log ou telemetria. Consulta e conclusão reapresentam o comprovante e o mesmo vínculo da instalação. A tela mostra uma prévia clara do aparelho na web e aguarda confirmação sem revelar token técnico. Expiração, cancelamento, logout web, troca de aparelho durante o fluxo ou replay encerram a tentativa e oferecem gerar/ler um novo QR, nunca repetem silenciosamente o vínculo.
+
+Somente depois de `CONFIRMADO` o app solicita a conclusão. Access e refresh retornam exclusivamente nessa resposta mobile e passam ao mesmo `GerenciadorSessaoMobile`/cofre nativo do login por credencial. `AGUARDANDO_CONFIRMACAO` é estado normal e pode usar progresso discreto; erro técnico não deve aparecer como estado permanente de sincronização.
+
 ### 4.3 Limite
 
 Cada usuário possui no máximo dois dispositivos móveis. Ao confirmar o terceiro, o backend revoga o mais antigo, registra auditoria e envia evento de encerramento à sessão afetada.

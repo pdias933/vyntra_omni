@@ -76,6 +76,22 @@ Um usuário possui no máximo dois `DispositivoMobile` ativos. O limite consider
 
 `SessaoMobile` pertence simultaneamente a usuário e dispositivo. Access e refresh tokens opacos são armazenados somente por hash; estado, expirações absoluta/curta, versão, rotação e motivo de revogação permanecem históricos. `TokenRefreshMobileUsado` registra o hash consumido para detectar replay sem conservar o segredo bruto. `TentativaLoginMobile` limita abuso por identificador+IP+instalação e por IP usando apenas hashes e metadados mínimos.
 
+`PareamentoQr` é a autorização efêmera criada por uma `SessaoWeb` para iniciar uma `SessaoMobile`. Conserva somente os hashes do token mostrado no QR e do comprovante entregue ao app. Depois do resgate, guarda o vínculo normalizado do aparelho e uma prévia sanitizada para a confirmação web. `TentativaResgatePareamentoQr` registra IP, hash da instalação, resultado e instante para limitar abuso sem armazenar o token apresentado.
+
+Máquina de estados do pareamento:
+
+```text
+AGUARDANDO_RESGATE ──resgate único──→ AGUARDANDO_CONFIRMACAO
+AGUARDANDO_CONFIRMACAO ──confirmação web recente──→ CONFIRMADO
+CONFIRMADO ──sessão mobile emitida──→ CONCLUIDO
+
+AGUARDANDO_RESGATE | AGUARDANDO_CONFIRMACAO | CONFIRMADO
+  ──prazo──→ EXPIRADO
+  ──cancelamento/revogação web──→ CANCELADO
+```
+
+`CONCLUIDO`, `CANCELADO` e `EXPIRADO` são finais. Novo QR cancela o anterior da mesma sessão. Confirmação pertence à mesma sessão web criadora; conclusão pertence ao mesmo aparelho que resgatou. Somente o mobile recebe a sessão emitida.
+
 `PerfilAcesso` combina um `PapelBase` — `ADMINISTRADOR`, `SUPERVISOR` ou `ATENDENTE` — com ajustes granulares em `PermissaoPerfil`. Cada ajuste é `CONCEDER` ou `NEGAR`, inclusive para negar uma capacidade herdada quando a matriz base for materializada pelo serviço central. Ausência de decisão efetiva significa negar.
 
 `Fila` é um escopo operacional, nunca um papel. Financeiro, Suporte e Comercial são exemplos configuráveis de fila. `AcessoUsuarioFila` registra explicitamente quais filas pertencem ao escopo do usuário e conserva revogação coerente; permissão de uma ação e acesso à fila são condições independentes.
@@ -92,6 +108,9 @@ Regras:
 - refresh mobile é de uso único; reutilização revoga a sessão e exige nova autenticação.
 - dispositivo revogado invalida todas as suas sessões e deixa de produzir contexto para REST, sincronização ou WebSocket;
 - contagem, escolha do mais antigo, revogação e criação do terceiro compartilham a mesma serialização/transação PostgreSQL.
+- pareamento QR vale 90 segundos, possui no máximo uma instância ativa por sessão web e nunca persiste token ou comprovante bruto;
+- resgate, confirmação e conclusão do pareamento são transições condicionais de uso único; revogação da sessão web cancela qualquer pareamento ainda ativo;
+- confirmação de pareamento exige a sessão web criadora e autenticação recente; a sessão mobile só é emitida ao aparelho vinculado no resgate.
 
 ### 3.2 Decisão central de autorização
 

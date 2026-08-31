@@ -19,14 +19,34 @@ export type EstadoSaudeDto = {
     estado: 'VIVO' | 'PRONTO';
 };
 
-export type EntradaLoginMobileDto = {
-    identificador: string;
-    senha: string;
+export type EntradaResgatePareamentoQrDto = {
+    token_qr: string;
     identificador_instalacao: string;
     segredo_vinculo: string;
     plataforma: 'IOS' | 'ANDROID';
     modelo_sanitizado?: string;
     versao_aplicativo: string;
+};
+
+export type ResgatePareamentoQrDto = {
+    pareamento_id: string;
+    comprovante_resgate: string;
+    expira_em: string;
+};
+
+export type EntradaComprovantePareamentoQrDto = {
+    pareamento_id: string;
+    comprovante_resgate: string;
+    identificador_instalacao: string;
+    segredo_vinculo: string;
+    plataforma: 'IOS' | 'ANDROID';
+    modelo_sanitizado?: string;
+    versao_aplicativo: string;
+};
+
+export type EstadoPareamentoQrMobileDto = {
+    estado: 'AGUARDANDO_CONFIRMACAO' | 'CONFIRMADO';
+    expira_em: string;
 };
 
 export type SessaoMobileDto = {
@@ -39,6 +59,16 @@ export type SessaoMobileDto = {
     acesso_expira_em: string;
     refresh_expira_em: string;
     dispositivo_substituido: boolean;
+};
+
+export type EntradaLoginMobileDto = {
+    identificador: string;
+    senha: string;
+    identificador_instalacao: string;
+    segredo_vinculo: string;
+    plataforma: 'IOS' | 'ANDROID';
+    modelo_sanitizado?: string;
+    versao_aplicativo: string;
 };
 
 export type EntradaRefreshMobileDto = {
@@ -61,6 +91,21 @@ export type ContextoSessaoMobileDto = {
     dispositivo_id: string;
     nome_exibicao: string;
     acesso_expira_em: string;
+};
+
+export type PareamentoQrGeradoDto = {
+    pareamento_id: string;
+    token_qr: string;
+    expira_em: string;
+};
+
+export type ResumoPareamentoQrWebDto = {
+    pareamento_id: string;
+    estado: 'AGUARDANDO_RESGATE' | 'AGUARDANDO_CONFIRMACAO' | 'CONFIRMADO';
+    expira_em: string;
+    plataforma?: 'IOS' | 'ANDROID';
+    modelo_sanitizado?: string;
+    versao_aplicativo?: string;
 };
 
 export type EntradaLoginWebDto = {
@@ -137,6 +182,45 @@ export type VerificarAplicacaoProntaResponses = {
 };
 
 export type VerificarAplicacaoProntaResponse = VerificarAplicacaoProntaResponses[keyof VerificarAplicacaoProntaResponses];
+
+export type ResgatarPareamentoQrMobileData = {
+    body: EntradaResgatePareamentoQrDto;
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/mobile/pareamentos-qr/resgatar';
+};
+
+export type ResgatarPareamentoQrMobileResponses = {
+    200: ResgatePareamentoQrDto;
+};
+
+export type ResgatarPareamentoQrMobileResponse = ResgatarPareamentoQrMobileResponses[keyof ResgatarPareamentoQrMobileResponses];
+
+export type ConsultarPareamentoQrMobileData = {
+    body: EntradaComprovantePareamentoQrDto;
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/mobile/pareamentos-qr/consultar';
+};
+
+export type ConsultarPareamentoQrMobileResponses = {
+    200: EstadoPareamentoQrMobileDto;
+};
+
+export type ConsultarPareamentoQrMobileResponse = ConsultarPareamentoQrMobileResponses[keyof ConsultarPareamentoQrMobileResponses];
+
+export type ConcluirPareamentoQrMobileData = {
+    body: EntradaComprovantePareamentoQrDto;
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/mobile/pareamentos-qr/concluir';
+};
+
+export type ConcluirPareamentoQrMobileResponses = {
+    200: SessaoMobileDto;
+};
+
+export type ConcluirPareamentoQrMobileResponse = ConcluirPareamentoQrMobileResponses[keyof ConcluirPareamentoQrMobileResponses];
 
 export type EntrarSessaoMobileData = {
     body: EntradaLoginMobileDto;
@@ -237,6 +321,73 @@ export type SairSessaoMobileResponses = {
 };
 
 export type SairSessaoMobileResponse = SairSessaoMobileResponses[keyof SairSessaoMobileResponses];
+
+export type GerarPareamentoQrWebData = {
+    body?: never;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/web/pareamentos-qr';
+};
+
+export type GerarPareamentoQrWebResponses = {
+    201: PareamentoQrGeradoDto;
+};
+
+export type GerarPareamentoQrWebResponse = GerarPareamentoQrWebResponses[keyof GerarPareamentoQrWebResponses];
+
+export type ConsultarPareamentoQrWebData = {
+    body?: never;
+    path: {
+        pareamentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/autenticacao/web/pareamentos-qr/{pareamentoId}';
+};
+
+export type ConsultarPareamentoQrWebResponses = {
+    200: ResumoPareamentoQrWebDto;
+};
+
+export type ConsultarPareamentoQrWebResponse = ConsultarPareamentoQrWebResponses[keyof ConsultarPareamentoQrWebResponses];
+
+export type ConfirmarPareamentoQrWebData = {
+    body?: never;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        pareamentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/autenticacao/web/pareamentos-qr/{pareamentoId}/confirmar';
+};
+
+export type ConfirmarPareamentoQrWebResponses = {
+    204: void;
+};
+
+export type ConfirmarPareamentoQrWebResponse = ConfirmarPareamentoQrWebResponses[keyof ConfirmarPareamentoQrWebResponses];
+
+export type CancelarPareamentoQrWebData = {
+    body?: never;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        pareamentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/autenticacao/web/pareamentos-qr/{pareamentoId}/cancelar';
+};
+
+export type CancelarPareamentoQrWebResponses = {
+    204: void;
+};
+
+export type CancelarPareamentoQrWebResponse = CancelarPareamentoQrWebResponses[keyof CancelarPareamentoQrWebResponses];
 
 export type EntrarSessaoWebData = {
     body: EntradaLoginWebDto;

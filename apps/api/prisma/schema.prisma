@@ -195,6 +195,25 @@ enum ResultadoTentativaLoginMobile {
   @@map("resultado_tentativa_login_mobile")
 }
 
+enum EstadoPareamentoQr {
+  AGUARDANDO_RESGATE
+  AGUARDANDO_CONFIRMACAO
+  CONFIRMADO
+  CONCLUIDO
+  CANCELADO
+  EXPIRADO
+
+  @@map("estado_pareamento_qr")
+}
+
+enum ResultadoTentativaResgateQr {
+  SUCESSO
+  FALHA
+  BLOQUEADA
+
+  @@map("resultado_tentativa_resgate_qr")
+}
+
 model RegistroAuditoria {
   id                         String          @id @db.Uuid
   tipoEvento                 String          @map("tipo_evento") @db.VarChar(100)
@@ -332,6 +351,7 @@ model Usuario {
   sessoesWeb    SessaoWeb[]
   dispositivosMobile DispositivoMobile[]
   sessoesMobile SessaoMobile[]
+  pareamentosQr PareamentoQr[]
 
   @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
   @@index([perfilId], map: "usuario_perfil_idx")
@@ -442,10 +462,53 @@ model SessaoWeb {
   criadoEm           DateTime         @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm       DateTime         @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   usuario            Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  pareamentosQr       PareamentoQr[]
 
   @@index([usuarioId, estado, expiraEm], map: "sessao_web_usuario_estado_expira_idx")
   @@index([estado, expiraEm], map: "sessao_web_estado_expira_idx")
   @@map("sessao_web")
+}
+
+model PareamentoQr {
+  id                           String               @id @db.Uuid
+  usuarioId                    String               @map("usuario_id") @db.Uuid
+  sessaoWebId                  String               @map("sessao_web_id") @db.Uuid
+  tokenQrHash                  String               @unique @map("token_qr_hash") @db.Char(64)
+  comprovanteResgateHash       String?              @unique @map("comprovante_resgate_hash") @db.Char(64)
+  estado                       EstadoPareamentoQr   @default(AGUARDANDO_RESGATE)
+  identificadorInstalacaoHash  String?              @map("identificador_instalacao_hash") @db.Char(64)
+  segredoVinculoHash           String?              @map("segredo_vinculo_hash") @db.Char(64)
+  plataforma                   PlataformaMobile?
+  modeloSanitizado             String?              @map("modelo_sanitizado") @db.VarChar(120)
+  versaoAplicativo             String?              @map("versao_aplicativo") @db.VarChar(40)
+  enderecoIpResgate            String?              @map("endereco_ip_resgate") @db.Inet
+  expiraEm                     DateTime             @map("expira_em") @db.Timestamptz(6)
+  resgatadoEm                  DateTime?            @map("resgatado_em") @db.Timestamptz(6)
+  confirmadoEm                 DateTime?            @map("confirmado_em") @db.Timestamptz(6)
+  concluidoEm                  DateTime?            @map("concluido_em") @db.Timestamptz(6)
+  finalizadoEm                 DateTime?            @map("finalizado_em") @db.Timestamptz(6)
+  motivoFinalizacao            String?              @map("motivo_finalizacao") @db.VarChar(80)
+  criadoEm                     DateTime             @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm                 DateTime             @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  usuario                      Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  sessaoWeb                    SessaoWeb            @relation(fields: [sessaoWebId], references: [id], onDelete: Restrict)
+
+  @@index([usuarioId, criadoEm], map: "pareamento_qr_usuario_criado_idx")
+  @@index([sessaoWebId, estado, expiraEm], map: "pareamento_qr_sessao_estado_expira_idx")
+  @@index([estado, expiraEm], map: "pareamento_qr_estado_expira_idx")
+  @@map("pareamento_qr")
+}
+
+model TentativaResgatePareamentoQr {
+  id                           String                       @id @db.Uuid
+  enderecoIp                   String                       @map("endereco_ip") @db.Inet
+  identificadorInstalacaoHash  String                       @map("identificador_instalacao_hash") @db.Char(64)
+  resultado                    ResultadoTentativaResgateQr
+  criadoEm                     DateTime                     @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  @@index([enderecoIp, criadoEm], map: "tentativa_resgate_qr_ip_criado_idx")
+  @@index([identificadorInstalacaoHash, criadoEm], map: "tentativa_resgate_qr_dispositivo_criado_idx")
+  @@map("tentativa_resgate_pareamento_qr")
 }
 
 model TentativaLoginWeb {

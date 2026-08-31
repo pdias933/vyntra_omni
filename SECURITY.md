@@ -81,6 +81,10 @@ O QR:
 
 O limite inicial é de 5 gerações em 10 minutos por usuário e 10 tentativas de resgate em 10 minutos por IP/dispositivo.
 
+A PR 017 materializa esse protocolo em seis estados persistentes: `AGUARDANDO_RESGATE`, `AGUARDANDO_CONFIRMACAO`, `CONFIRMADO`, `CONCLUIDO`, `CANCELADO` e `EXPIRADO`. Token do QR e comprovante de resgate possuem 256 bits aleatórios e entram no PostgreSQL somente por SHA-256. O resgate troca o token visível no QR por um comprovante diferente, de uso exclusivo do app e vinculado ao hash do identificador da instalação, ao segredo de vínculo, à plataforma, à versão e ao modelo sanitizado. O navegador recebe apenas estado e prévia do aparelho; nunca recebe comprovante, access token ou refresh token.
+
+Geração exige sessão web+CSRF+origem. Confirmação exige a mesma sessão web e autenticação realizada há no máximo 10 minutos. Resgate, consulta e conclusão são serializados no PostgreSQL; uma conclusão confirmada cria dispositivo/sessão mobile e finaliza o pareamento no mesmo commit. Logout ou qualquer revogação da sessão web cancela seus pareamentos pendentes. Tentativas persistentes e locks independentes por IP, instalação e token impedem que concorrência ou múltiplas APIs contornem os limites; Redis não é autoridade.
+
 ### 4.3 Web
 
 - cookie de sessão `HttpOnly`, `Secure` e `SameSite`;

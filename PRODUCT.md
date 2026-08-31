@@ -166,6 +166,7 @@ No composer, `/` abre respostas rápidas pesquisáveis. O botão dedicado de aç
 
 - Aplicativo real em React Native + Expo Prebuild, com um código-base para as duas plataformas.
 - Login por usuário/senha ou QR efêmero gerado na web.
+- No pareamento QR, o app resgata o código uma vez, a mesma sessão web confirma uma prévia do aparelho e somente o mobile recebe a sessão; expiração, cancelamento, logout e replay exigem um novo QR.
 - Sessão persistente, biometria para desbloqueio e tokens no Keychain/Keystore.
 - Limite de dois dispositivos móveis por usuário; o terceiro revoga o mais antigo.
 - Lista de atendimentos, contatos, notificações e perfil.
@@ -220,6 +221,7 @@ No composer, `/` abre respostas rápidas pesquisáveis. O botão dedicado de aç
 - Mídias somente nos tipos aprovados, com validação real e storage privado.
 - Tetos internos iniciais: imagem 8 MB, áudio 16 MB, vídeo 32 MB e PDF 20 MB; prevalece o menor limite validado com o provedor.
 - QR de pareamento com 90 segundos, uso único e um token ativo por sessão web.
+- Pareamento confirmado somente pela sessão web criadora com autenticação recente; token/comprovante persistidos apenas como hash e sessão entregue somente ao aparelho que resgatou.
 - Senha de 12–128 caracteres, bloqueio de credenciais comprometidas e MFA obrigatório para usuários privilegiados.
 - Ações ERP classificadas em risco baixo, médio ou alto; risco alto exige ERP em tempo real, contexto explícito, revalidação, prévia, confirmação, idempotência e auditoria.
 - Link público de transcrição e eliminação automática permanecem desligados até política jurídica/LGPD aprovada.

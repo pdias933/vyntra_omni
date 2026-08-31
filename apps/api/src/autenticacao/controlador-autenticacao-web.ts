@@ -15,6 +15,7 @@ import {
 import {
   ApiBody,
   ApiCookieAuth,
+  ApiCreatedResponse,
   ApiHeader,
   ApiNoContentResponse,
   ApiOkResponse,
@@ -32,8 +33,13 @@ import {
 import { EntradaLoginWebDto } from './dto/entrada-login-web.dto.js';
 import { SessaoWebDto } from './dto/sessao-web.dto.js';
 import { ResumoSessaoWebDto } from './dto/resumo-sessao-web.dto.js';
+import {
+  PareamentoQrGeradoDto,
+  ResumoPareamentoQrWebDto,
+} from './dto/pareamento-qr.dto.js';
 import { ServicoAutenticacaoWeb } from './servico-autenticacao-web.js';
 import { ServicoOrigemWeb } from './servico-origem-web.js';
+import { ServicoPareamentoQr } from './servico-pareamento-qr.js';
 
 interface RequisicaoHttp {
   readonly socket: { readonly remoteAddress?: string };
@@ -52,7 +58,83 @@ export class ControladorAutenticacaoWeb {
     private readonly autenticacao: ServicoAutenticacaoWeb,
     @Inject(ServicoOrigemWeb)
     private readonly origens: ServicoOrigemWeb,
+    @Inject(ServicoPareamentoQr)
+    private readonly pareamentoQr: ServicoPareamentoQr,
   ) {}
+
+  @Post('pareamentos-qr')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiCookieAuth('sessaoWeb')
+  @ApiHeader({ name: NOME_HEADER_CSRF_WEB, required: true })
+  @ApiOperation({ operationId: 'gerarPareamentoQrWeb', summary: 'Gera um token QR efêmero vinculado à sessão web' })
+  @ApiCreatedResponse({ type: PareamentoQrGeradoDto })
+  public async gerarPareamentoQr(
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_CSRF_WEB) csrfCabecalho: string | undefined,
+    @Headers('origin') origem: string | undefined,
+  ): Promise<PareamentoQrGeradoDto> {
+    this.origens.validar(origem);
+    const pareamento = await this.pareamentoQr.gerar(
+      obterTokenSessaoWeb(cookies),
+      obterTokenCsrfWeb(cookies, csrfCabecalho),
+    );
+    return new PareamentoQrGeradoDto(pareamento);
+  }
+
+  @Get('pareamentos-qr/:pareamentoId')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiOperation({ operationId: 'consultarPareamentoQrWeb', summary: 'Consulta o aparelho que aguarda confirmação nesta sessão web' })
+  @ApiOkResponse({ type: ResumoPareamentoQrWebDto })
+  public async consultarPareamentoQr(
+    @Param('pareamentoId', new ParseUUIDPipe()) pareamentoId: string,
+    @Headers('cookie') cookies: string | undefined,
+  ): Promise<ResumoPareamentoQrWebDto> {
+    const pareamento = await this.pareamentoQr.consultarNaWeb(
+      obterTokenSessaoWeb(cookies),
+      pareamentoId,
+    );
+    return new ResumoPareamentoQrWebDto(pareamento);
+  }
+
+  @Post('pareamentos-qr/:pareamentoId/confirmar')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiCookieAuth('sessaoWeb')
+  @ApiHeader({ name: NOME_HEADER_CSRF_WEB, required: true })
+  @ApiOperation({ operationId: 'confirmarPareamentoQrWeb', summary: 'Confirma um aparelho com autenticação web recente' })
+  @ApiNoContentResponse()
+  public async confirmarPareamentoQr(
+    @Param('pareamentoId', new ParseUUIDPipe()) pareamentoId: string,
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_CSRF_WEB) csrfCabecalho: string | undefined,
+    @Headers('origin') origem: string | undefined,
+  ): Promise<void> {
+    this.origens.validar(origem);
+    await this.pareamentoQr.confirmar(
+      obterTokenSessaoWeb(cookies),
+      obterTokenCsrfWeb(cookies, csrfCabecalho),
+      pareamentoId,
+    );
+  }
+
+  @Post('pareamentos-qr/:pareamentoId/cancelar')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiCookieAuth('sessaoWeb')
+  @ApiHeader({ name: NOME_HEADER_CSRF_WEB, required: true })
+  @ApiOperation({ operationId: 'cancelarPareamentoQrWeb', summary: 'Cancela o pareamento vinculado à sessão web atual' })
+  @ApiNoContentResponse()
+  public async cancelarPareamentoQr(
+    @Param('pareamentoId', new ParseUUIDPipe()) pareamentoId: string,
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_CSRF_WEB) csrfCabecalho: string | undefined,
+    @Headers('origin') origem: string | undefined,
+  ): Promise<void> {
+    this.origens.validar(origem);
+    await this.pareamentoQr.cancelar(
+      obterTokenSessaoWeb(cookies),
+      obterTokenCsrfWeb(cookies, csrfCabecalho),
+      pareamentoId,
+    );
+  }
 
   @Post('entrar')
   @HttpCode(HttpStatus.OK)

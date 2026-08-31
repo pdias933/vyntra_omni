@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarSessoesWebData, ListarSessoesWebResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
+import type { CancelarPareamentoQrWebData, CancelarPareamentoQrWebResponses, ConcluirPareamentoQrMobileData, ConcluirPareamentoQrMobileResponses, ConfirmarPareamentoQrWebData, ConfirmarPareamentoQrWebResponses, ConsultarPareamentoQrMobileData, ConsultarPareamentoQrMobileResponses, ConsultarPareamentoQrWebData, ConsultarPareamentoQrWebResponses, EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, GerarPareamentoQrWebData, GerarPareamentoQrWebResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarSessoesWebData, ListarSessoesWebResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, ResgatarPareamentoQrMobileData, ResgatarPareamentoQrMobileResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -32,6 +32,42 @@ export const verificarProcessoVivo = <ThrowOnError extends boolean = false>(opti
  * Informa se a API pode receber tráfego.
  */
 export const verificarAplicacaoPronta = <ThrowOnError extends boolean = false>(options?: Options<VerificarAplicacaoProntaData, ThrowOnError>): RequestResult<VerificarAplicacaoProntaResponses, VerificarAplicacaoProntaErrors, ThrowOnError> => (options?.client ?? client).get<VerificarAplicacaoProntaResponses, VerificarAplicacaoProntaErrors, ThrowOnError>({ url: '/api/v1/saude/pronto', ...options });
+
+/**
+ * Resgata uma vez o token efêmero de pareamento QR
+ */
+export const resgatarPareamentoQrMobile = <ThrowOnError extends boolean = false>(options: Options<ResgatarPareamentoQrMobileData, ThrowOnError>): RequestResult<ResgatarPareamentoQrMobileResponses, unknown, ThrowOnError> => (options.client ?? client).post<ResgatarPareamentoQrMobileResponses, unknown, ThrowOnError>({
+    url: '/api/v1/autenticacao/mobile/pareamentos-qr/resgatar',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Consulta a confirmação web do pareamento resgatado
+ */
+export const consultarPareamentoQrMobile = <ThrowOnError extends boolean = false>(options: Options<ConsultarPareamentoQrMobileData, ThrowOnError>): RequestResult<ConsultarPareamentoQrMobileResponses, unknown, ThrowOnError> => (options.client ?? client).post<ConsultarPareamentoQrMobileResponses, unknown, ThrowOnError>({
+    url: '/api/v1/autenticacao/mobile/pareamentos-qr/consultar',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Conclui o pareamento confirmado e entrega sessão somente ao mobile
+ */
+export const concluirPareamentoQrMobile = <ThrowOnError extends boolean = false>(options: Options<ConcluirPareamentoQrMobileData, ThrowOnError>): RequestResult<ConcluirPareamentoQrMobileResponses, unknown, ThrowOnError> => (options.client ?? client).post<ConcluirPareamentoQrMobileResponses, unknown, ThrowOnError>({
+    url: '/api/v1/autenticacao/mobile/pareamentos-qr/concluir',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Autentica e vincula uma sessão mobile ao aparelho
@@ -90,6 +126,58 @@ export const obterSessaoMobile = <ThrowOnError extends boolean = false>(options:
 export const sairSessaoMobile = <ThrowOnError extends boolean = false>(options: Options<SairSessaoMobileData, ThrowOnError>): RequestResult<SairSessaoMobileResponses, unknown, ThrowOnError> => (options.client ?? client).post<SairSessaoMobileResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/autenticacao/mobile/sair',
+    ...options
+});
+
+/**
+ * Gera um token QR efêmero vinculado à sessão web
+ */
+export const gerarPareamentoQrWeb = <ThrowOnError extends boolean = false>(options: Options<GerarPareamentoQrWebData, ThrowOnError>): RequestResult<GerarPareamentoQrWebResponses, unknown, ThrowOnError> => (options.client ?? client).post<GerarPareamentoQrWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/autenticacao/web/pareamentos-qr',
+    ...options
+});
+
+/**
+ * Consulta o aparelho que aguarda confirmação nesta sessão web
+ */
+export const consultarPareamentoQrWeb = <ThrowOnError extends boolean = false>(options: Options<ConsultarPareamentoQrWebData, ThrowOnError>): RequestResult<ConsultarPareamentoQrWebResponses, unknown, ThrowOnError> => (options.client ?? client).get<ConsultarPareamentoQrWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/autenticacao/web/pareamentos-qr/{pareamentoId}',
+    ...options
+});
+
+/**
+ * Confirma um aparelho com autenticação web recente
+ */
+export const confirmarPareamentoQrWeb = <ThrowOnError extends boolean = false>(options: Options<ConfirmarPareamentoQrWebData, ThrowOnError>): RequestResult<ConfirmarPareamentoQrWebResponses, unknown, ThrowOnError> => (options.client ?? client).post<ConfirmarPareamentoQrWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/autenticacao/web/pareamentos-qr/{pareamentoId}/confirmar',
+    ...options
+});
+
+/**
+ * Cancela o pareamento vinculado à sessão web atual
+ */
+export const cancelarPareamentoQrWeb = <ThrowOnError extends boolean = false>(options: Options<CancelarPareamentoQrWebData, ThrowOnError>): RequestResult<CancelarPareamentoQrWebResponses, unknown, ThrowOnError> => (options.client ?? client).post<CancelarPareamentoQrWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/autenticacao/web/pareamentos-qr/{pareamentoId}/cancelar',
     ...options
 });
 

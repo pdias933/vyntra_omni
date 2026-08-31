@@ -29,7 +29,14 @@ import {
   SessaoMobileDto,
 } from './dto/sessao-mobile.dto.js';
 import { ResumoDispositivoMobileDto } from './dto/resumo-dispositivo-mobile.dto.js';
+import {
+  EntradaComprovantePareamentoQrDto,
+  EntradaResgatePareamentoQrDto,
+  EstadoPareamentoQrMobileDto,
+  ResgatePareamentoQrDto,
+} from './dto/pareamento-qr.dto.js';
 import { ServicoAutenticacaoMobile } from './servico-autenticacao-mobile.js';
+import { ServicoPareamentoQr } from './servico-pareamento-qr.js';
 
 export const NOME_HEADER_DISPOSITIVO_MOBILE = 'x-dispositivo-id';
 export const NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE = 'x-segredo-dispositivo';
@@ -57,7 +64,82 @@ export class ControladorAutenticacaoMobile {
   public constructor(
     @Inject(ServicoAutenticacaoMobile)
     private readonly autenticacao: ServicoAutenticacaoMobile,
+    @Inject(ServicoPareamentoQr)
+    private readonly pareamentoQr: ServicoPareamentoQr,
   ) {}
+
+  @Post('pareamentos-qr/resgatar')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: EntradaResgatePareamentoQrDto })
+  @ApiOperation({ operationId: 'resgatarPareamentoQrMobile', summary: 'Resgata uma vez o token efêmero de pareamento QR' })
+  @ApiOkResponse({ type: ResgatePareamentoQrDto })
+  public async resgatarPareamentoQr(
+    @Body() entrada: EntradaResgatePareamentoQrDto,
+    @Req() requisicao: RequisicaoHttpMobile,
+  ): Promise<ResgatePareamentoQrDto> {
+    const resgate = await this.pareamentoQr.resgatar(
+      entrada.token_qr,
+      {
+        identificadorInstalacao: entrada.identificador_instalacao,
+        ...(entrada.modelo_sanitizado === undefined
+          ? {}
+          : { modeloSanitizado: entrada.modelo_sanitizado }),
+        plataforma: entrada.plataforma,
+        segredoVinculo: entrada.segredo_vinculo,
+        versaoAplicativo: entrada.versao_aplicativo,
+      },
+      requisicao.socket.remoteAddress ?? '',
+    );
+    return new ResgatePareamentoQrDto(resgate);
+  }
+
+  @Post('pareamentos-qr/consultar')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: EntradaComprovantePareamentoQrDto })
+  @ApiOperation({ operationId: 'consultarPareamentoQrMobile', summary: 'Consulta a confirmação web do pareamento resgatado' })
+  @ApiOkResponse({ type: EstadoPareamentoQrMobileDto })
+  public async consultarPareamentoQr(
+    @Body() entrada: EntradaComprovantePareamentoQrDto,
+  ): Promise<EstadoPareamentoQrMobileDto> {
+    const estado = await this.pareamentoQr.consultarNoMobile(
+      entrada.pareamento_id,
+      entrada.comprovante_resgate,
+      {
+        identificadorInstalacao: entrada.identificador_instalacao,
+        ...(entrada.modelo_sanitizado === undefined
+          ? {}
+          : { modeloSanitizado: entrada.modelo_sanitizado }),
+        plataforma: entrada.plataforma,
+        segredoVinculo: entrada.segredo_vinculo,
+        versaoAplicativo: entrada.versao_aplicativo,
+      },
+    );
+    return new EstadoPareamentoQrMobileDto(estado);
+  }
+
+  @Post('pareamentos-qr/concluir')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: EntradaComprovantePareamentoQrDto })
+  @ApiOperation({ operationId: 'concluirPareamentoQrMobile', summary: 'Conclui o pareamento confirmado e entrega sessão somente ao mobile' })
+  @ApiOkResponse({ type: SessaoMobileDto })
+  public async concluirPareamentoQr(
+    @Body() entrada: EntradaComprovantePareamentoQrDto,
+  ): Promise<SessaoMobileDto> {
+    const sessao = await this.pareamentoQr.concluir(
+      entrada.pareamento_id,
+      entrada.comprovante_resgate,
+      {
+        identificadorInstalacao: entrada.identificador_instalacao,
+        ...(entrada.modelo_sanitizado === undefined
+          ? {}
+          : { modeloSanitizado: entrada.modelo_sanitizado }),
+        plataforma: entrada.plataforma,
+        segredoVinculo: entrada.segredo_vinculo,
+        versaoAplicativo: entrada.versao_aplicativo,
+      },
+    );
+    return new SessaoMobileDto(sessao);
+  }
 
   @Post('entrar')
   @HttpCode(HttpStatus.OK)

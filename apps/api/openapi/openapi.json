@@ -87,6 +87,102 @@
         ]
       }
     },
+    "/api/v1/autenticacao/mobile/pareamentos-qr/resgatar": {
+      "post": {
+        "operationId": "resgatarPareamentoQrMobile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaResgatePareamentoQrDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResgatePareamentoQrDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Resgata uma vez o token efêmero de pareamento QR",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/mobile/pareamentos-qr/consultar": {
+      "post": {
+        "operationId": "consultarPareamentoQrMobile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaComprovantePareamentoQrDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoPareamentoQrMobileDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Consulta a confirmação web do pareamento resgatado",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/mobile/pareamentos-qr/concluir": {
+      "post": {
+        "operationId": "concluirPareamentoQrMobile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaComprovantePareamentoQrDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoMobileDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Conclui o pareamento confirmado e entrega sessão somente ao mobile",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
     "/api/v1/autenticacao/mobile/entrar": {
       "post": {
         "operationId": "entrarSessaoMobile",
@@ -336,6 +432,152 @@
           }
         ],
         "summary": "Revoga a sessão mobile atual",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/web/pareamentos-qr": {
+      "post": {
+        "operationId": "gerarPareamentoQrWeb",
+        "parameters": [
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PareamentoQrGeradoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Gera um token QR efêmero vinculado à sessão web",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/web/pareamentos-qr/{pareamentoId}": {
+      "get": {
+        "operationId": "consultarPareamentoQrWeb",
+        "parameters": [
+          {
+            "name": "pareamentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumoPareamentoQrWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Consulta o aparelho que aguarda confirmação nesta sessão web",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/web/pareamentos-qr/{pareamentoId}/confirmar": {
+      "post": {
+        "operationId": "confirmarPareamentoQrWeb",
+        "parameters": [
+          {
+            "name": "pareamentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Confirma um aparelho com autenticação web recente",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/web/pareamentos-qr/{pareamentoId}/cancelar": {
+      "post": {
+        "operationId": "cancelarPareamentoQrWeb",
+        "parameters": [
+          {
+            "name": "pareamentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Cancela o pareamento vinculado à sessão web atual",
         "tags": [
           "autenticacao"
         ]
@@ -713,19 +955,13 @@
           "estado"
         ]
       },
-      "EntradaLoginMobileDto": {
+      "EntradaResgatePareamentoQrDto": {
         "type": "object",
         "properties": {
-          "identificador": {
+          "token_qr": {
             "type": "string",
-            "example": "maria.silva",
-            "maxLength": 120,
-            "minLength": 3
-          },
-          "senha": {
-            "type": "string",
-            "maxLength": 128,
-            "minLength": 12
+            "minLength": 43,
+            "maxLength": 43
           },
           "identificador_instalacao": {
             "type": "string",
@@ -749,17 +985,104 @@
           },
           "versao_aplicativo": {
             "type": "string",
-            "example": "1.0.0",
             "maxLength": 40
           }
         },
         "required": [
-          "identificador",
-          "senha",
+          "token_qr",
           "identificador_instalacao",
           "segredo_vinculo",
           "plataforma",
           "versao_aplicativo"
+        ]
+      },
+      "ResgatePareamentoQrDto": {
+        "type": "object",
+        "properties": {
+          "pareamento_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "comprovante_resgate": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43
+          },
+          "expira_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "pareamento_id",
+          "comprovante_resgate",
+          "expira_em"
+        ]
+      },
+      "EntradaComprovantePareamentoQrDto": {
+        "type": "object",
+        "properties": {
+          "pareamento_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "comprovante_resgate": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43
+          },
+          "identificador_instalacao": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "segredo_vinculo": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43
+          },
+          "plataforma": {
+            "type": "string",
+            "enum": [
+              "IOS",
+              "ANDROID"
+            ]
+          },
+          "modelo_sanitizado": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "versao_aplicativo": {
+            "type": "string",
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "pareamento_id",
+          "comprovante_resgate",
+          "identificador_instalacao",
+          "segredo_vinculo",
+          "plataforma",
+          "versao_aplicativo"
+        ]
+      },
+      "EstadoPareamentoQrMobileDto": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "type": "string",
+            "enum": [
+              "AGUARDANDO_CONFIRMACAO",
+              "CONFIRMADO"
+            ]
+          },
+          "expira_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "estado",
+          "expira_em"
         ]
       },
       "SessaoMobileDto": {
@@ -812,6 +1135,55 @@
           "acesso_expira_em",
           "refresh_expira_em",
           "dispositivo_substituido"
+        ]
+      },
+      "EntradaLoginMobileDto": {
+        "type": "object",
+        "properties": {
+          "identificador": {
+            "type": "string",
+            "example": "maria.silva",
+            "maxLength": 120,
+            "minLength": 3
+          },
+          "senha": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 12
+          },
+          "identificador_instalacao": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "segredo_vinculo": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43
+          },
+          "plataforma": {
+            "type": "string",
+            "enum": [
+              "IOS",
+              "ANDROID"
+            ]
+          },
+          "modelo_sanitizado": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "versao_aplicativo": {
+            "type": "string",
+            "example": "1.0.0",
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "identificador",
+          "senha",
+          "identificador_instalacao",
+          "segredo_vinculo",
+          "plataforma",
+          "versao_aplicativo"
         ]
       },
       "EntradaRefreshMobileDto": {
@@ -897,6 +1269,68 @@
           "dispositivo_id",
           "nome_exibicao",
           "acesso_expira_em"
+        ]
+      },
+      "PareamentoQrGeradoDto": {
+        "type": "object",
+        "properties": {
+          "pareamento_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "token_qr": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43
+          },
+          "expira_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "pareamento_id",
+          "token_qr",
+          "expira_em"
+        ]
+      },
+      "ResumoPareamentoQrWebDto": {
+        "type": "object",
+        "properties": {
+          "pareamento_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "AGUARDANDO_RESGATE",
+              "AGUARDANDO_CONFIRMACAO",
+              "CONFIRMADO"
+            ]
+          },
+          "expira_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "plataforma": {
+            "type": "string",
+            "enum": [
+              "IOS",
+              "ANDROID"
+            ]
+          },
+          "modelo_sanitizado": {
+            "type": "string"
+          },
+          "versao_aplicativo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pareamento_id",
+          "estado",
+          "expira_em"
         ]
       },
       "EntradaLoginWebDto": {

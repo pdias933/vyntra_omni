@@ -19,7 +19,11 @@ import {
   ErroConfirmacaoRevogacaoSessaoNecessaria,
   ErroDispositivoNaoConfiavel,
   ErroLimiteLoginExcedido,
+  ErroLimitePareamentoQrExcedido,
   ErroMfaNecessario,
+  ErroPareamentoQrAguardandoConfirmacao,
+  ErroPareamentoQrInvalido,
+  ErroReautenticacaoNecessaria,
   ErroRequisicaoWebNaoConfiavel,
 } from '../autenticacao/erros-autenticacao.js';
 
@@ -79,6 +83,22 @@ const ERROS_AUTENTICACAO = {
   MFA_NECESSARIO: {
     codigo: 'MFA_NECESSARIO',
     mensagem: 'É necessário concluir a autenticação multifator.',
+  },
+  LIMITE_PAREAMENTO_QR_EXCEDIDO: {
+    codigo: 'LIMITE_DE_REQUISICOES',
+    mensagem: 'Muitas solicitações foram feitas. Tente novamente em instantes.',
+  },
+  PAREAMENTO_QR_AGUARDANDO_CONFIRMACAO: {
+    codigo: 'PAREAMENTO_QR_AGUARDANDO_CONFIRMACAO',
+    mensagem: 'Confirme este aparelho na web para continuar.',
+  },
+  PAREAMENTO_QR_INVALIDO: {
+    codigo: 'PAREAMENTO_QR_INVALIDO',
+    mensagem: 'Este pareamento não está mais disponível.',
+  },
+  REAUTENTICACAO_NECESSARIA: {
+    codigo: 'REAUTENTICACAO_NECESSARIA',
+    mensagem: 'Autentique-se novamente para confirmar este aparelho.',
   },
   REQUISICAO_WEB_NAO_CONFIAVEL: {
     codigo: 'REQUISICAO_NAO_CONFIAVEL',
@@ -148,6 +168,18 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
     if (excecao instanceof ErroLimiteLoginExcedido) {
       return HttpStatus.TOO_MANY_REQUESTS;
     }
+    if (excecao instanceof ErroLimitePareamentoQrExcedido) {
+      return HttpStatus.TOO_MANY_REQUESTS;
+    }
+    if (excecao instanceof ErroPareamentoQrAguardandoConfirmacao) {
+      return HttpStatus.CONFLICT;
+    }
+    if (
+      excecao instanceof ErroPareamentoQrInvalido ||
+      excecao instanceof ErroReautenticacaoNecessaria
+    ) {
+      return HttpStatus.UNAUTHORIZED;
+    }
     if (
       excecao instanceof ErroDispositivoNaoConfiavel ||
       excecao instanceof ErroMfaNecessario ||
@@ -182,6 +214,18 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
     }
     if (excecao instanceof ErroMfaNecessario) {
       return ERROS_AUTENTICACAO.MFA_NECESSARIO;
+    }
+    if (excecao instanceof ErroLimitePareamentoQrExcedido) {
+      return ERROS_AUTENTICACAO.LIMITE_PAREAMENTO_QR_EXCEDIDO;
+    }
+    if (excecao instanceof ErroPareamentoQrAguardandoConfirmacao) {
+      return ERROS_AUTENTICACAO.PAREAMENTO_QR_AGUARDANDO_CONFIRMACAO;
+    }
+    if (excecao instanceof ErroPareamentoQrInvalido) {
+      return ERROS_AUTENTICACAO.PAREAMENTO_QR_INVALIDO;
+    }
+    if (excecao instanceof ErroReautenticacaoNecessaria) {
+      return ERROS_AUTENTICACAO.REAUTENTICACAO_NECESSARIA;
     }
     if (excecao instanceof ErroRequisicaoWebNaoConfiavel) {
       return ERROS_AUTENTICACAO.REQUISICAO_WEB_NAO_CONFIAVEL;

@@ -361,7 +361,7 @@ export class ServicoAutenticacaoWeb {
   }
 
   public async sairDeTodas(token: string, csrf: string): Promise<void> {
-    await this.revogarComSessaoAtual(token, csrf, async (sessao, agora, transacao) => {
+    await this.executarComSessaoAtual(token, csrf, async (sessao, agora, transacao) => {
       await this.repositorio.serializarSessoesUsuario(sessao.usuarioId, transacao);
       const ativas = await this.repositorio.listarSessoesAtivasUsuario(
         sessao.usuarioId,
@@ -396,7 +396,7 @@ export class ServicoAutenticacaoWeb {
     csrf: string,
     sessaoAlvoId: string,
   ): Promise<void> {
-    await this.revogarComSessaoAtual(token, csrf, async (sessao, agora, transacao) => {
+    await this.executarComSessaoAtual(token, csrf, async (sessao, agora, transacao) => {
       await this.repositorio.serializarSessoesUsuario(sessao.usuarioId, transacao);
       const quantidade = await this.repositorio.revogarSessoes(
         sessao.usuarioId,
@@ -429,7 +429,7 @@ export class ServicoAutenticacaoWeb {
     csrf: string,
     usuarioAlvoId: string,
   ): Promise<void> {
-    await this.revogarComSessaoAtual(token, csrf, async (sessao, agora, transacao) => {
+    await this.executarComSessaoAtual(token, csrf, async (sessao, agora, transacao) => {
       await this.autorizacao.autorizar(
         {
           permissao: 'ADMINISTRAR_USUARIOS',
@@ -486,7 +486,7 @@ export class ServicoAutenticacaoWeb {
     csrf: string,
     usuarioAlvoId: string,
   ): Promise<void> {
-    await this.revogarComSessaoAtual(
+    await this.executarComSessaoAtual(
       token,
       csrf,
       async (sessao, agora, transacao) =>
@@ -532,27 +532,27 @@ export class ServicoAutenticacaoWeb {
     });
   }
 
-  private async revogarComSessaoAtual(
+  public async executarComSessaoAtual<T>(
     token: string,
     csrf: string,
     operacao: (
       sessao: SessaoWebPersistida,
       agora: Date,
       transacao: TransacaoPrisma,
-    ) => Promise<void>,
-  ): Promise<void> {
+    ) => Promise<T>,
+  ): Promise<T> {
     this.validarSegredo(token);
     this.validarSegredo(csrf);
     const tokenHash = hashHex(token);
     const csrfHash = hashHex(csrf);
     const agora = new Date();
-    await this.prisma.executarTransacao(async (transacao) => {
+    return this.prisma.executarTransacao(async (transacao) => {
       const sessao = await this.repositorio.obterSessao(tokenHash, transacao);
       this.validarSessaoPersistida(sessao, agora);
       if (!this.hashConfere(csrfHash, sessao.csrfHash)) {
         throw new ErroRequisicaoWebNaoConfiavel();
       }
-      await operacao(sessao, agora, transacao);
+      return operacao(sessao, agora, transacao);
     });
   }
 
