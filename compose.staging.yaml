@@ -1,0 +1,228 @@
+x-registro-staging: &registro-staging
+  driver: json-file
+  options:
+    max-file: "5"
+    max-size: 10m
+
+x-reinicio-staging: &reinicio-staging unless-stopped
+
+services:
+  postgres:
+    image: docker.io/library/postgres:18.6-alpine3.23@sha256:697c180dbf244d3ce4a8f4cbc0156cde840af055c1bf8b76aebe422a4822086f
+    restart: *reinicio-staging
+    environment:
+      POSTGRES_DB: vyntra_staging
+      POSTGRES_INITDB_ARGS: --data-checksums
+      POSTGRES_PASSWORD_FILE: /run/secrets/senha_postgresql
+      POSTGRES_USER: vyntra_staging
+    secrets:
+      - senha_postgresql
+    shm_size: 256mb
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready --quiet --host 127.0.0.1 --username "$${POSTGRES_USER}" --dbname "$${POSTGRES_DB}"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    volumes:
+      - dados_postgresql_staging:/var/lib/postgresql
+    networks:
+      - rede_dados_staging
+    logging: *registro-staging
+
+  redis:
+    image: docker.io/library/redis:7.2.16-alpine3.21@sha256:ccd6aa8d45ff3f033d6fa15b8cc1a50579f65c89f38cf9bb607a954c4f2128ed
+    restart: *reinicio-staging
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --aclfile
+      - /run/secrets/redis.acl
+      - --protected-mode
+      - "yes"
+      - --maxmemory-policy
+      - noeviction
+    secrets:
+      - source: redis_acl
+        target: redis.acl
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 20s
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          REDISCLI_AUTH="$$(sed -n 's/^user vyntra_staging on >\([^ ]*\).*/\1/p' /run/secrets/redis.acl)"
+          redis-cli --user vyntra_staging ping | grep -Fqx PONG
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    volumes:
+      - dados_redis_staging:/data
+    networks:
+      - rede_dados_staging
+    logging: *registro-staging
+
+  storage:
+    image: docker.io/dxflrs/garage:v2.3.0@sha256:866bd13ed2038ba7e7190e840482bc27234c4afaf77be8cfa439ae088c1e4690
+    restart: *reinicio-staging
+    entrypoint:
+      - /garage
+    command:
+      - server
+      - --single-node
+    environment:
+      GARAGE_ADMIN_TOKEN_FILE: /run/secrets/garage_admin
+      GARAGE_CONFIG_FILE: /etc/garage.toml
+      GARAGE_METRICS_TOKEN_FILE: /run/secrets/garage_metricas
+      GARAGE_RPC_SECRET_FILE: /run/secrets/garage_rpc
+      RUST_LOG: garage=info
+    configs:
+      - source: configuracao_storage
+        target: /etc/garage.toml
+        mode: 0444
+    secrets:
+      - garage_admin
+      - garage_metricas
+      - garage_rpc
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+    tmpfs:
+      - /tmp:mode=0700
+    healthcheck:
+      test:
+        - CMD
+        - /garage
+        - status
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
+    volumes:
+      - dados_storage_staging:/var/lib/garage/data
+      - metadados_storage_staging:/var/lib/garage/meta
+      - snapshots_storage_staging:/var/lib/garage/snapshots
+    networks:
+      - rede_storage_staging
+    logging: *registro-staging
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: execucao
+    image: vyntra/api-staging:pr-005
+    pull_policy: build
+    restart: *reinicio-staging
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+    environment:
+      AMBIENTE_APLICACAO: staging
+      BANCO_URL_FILE: /run/secrets/url_postgresql
+      DADOS_PERMITIDOS: sinteticos_ou_sanitizados
+      ENDERECO_HTTP: 0.0.0.0
+      NODE_ENV: production
+      PORTA_HTTP: "3000"
+      REDIS_URL_FILE: /run/secrets/url_redis
+      STORAGE_BUCKET: vyntra-staging-midias
+      STORAGE_CHAVE_ACESSO_FILE: /run/secrets/chave_storage_id
+      STORAGE_CHAVE_SECRETA_FILE: /run/secrets/chave_storage_secreta
+      STORAGE_ENDPOINT: http://storage:3900
+      STORAGE_FORCE_PATH_STYLE: "true"
+      STORAGE_REGION: vyntra-staging
+    secrets:
+      - chave_storage_id
+      - chave_storage_secreta
+      - url_postgresql
+      - url_redis
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 20s
+    tmpfs:
+      - /tmp:uid=1000,gid=1000,mode=0700
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:3000/').then((resposta) => process.exit(resposta.status === 404 ? 0 : 1)).catch(() => process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    ports:
+      - name: api-staging-loopback
+        target: 3000
+        published: "3100"
+        host_ip: 127.0.0.1
+        protocol: tcp
+    networks:
+      - rede_dados_staging
+      - rede_storage_staging
+      - rede_publicada_staging
+    logging: *registro-staging
+
+configs:
+  configuracao_storage:
+    file: ./infra/staging/garage.toml
+
+networks:
+  rede_dados_staging:
+    driver: bridge
+    internal: true
+  rede_storage_staging:
+    driver: bridge
+    internal: true
+  rede_publicada_staging:
+    driver: bridge
+    internal: false
+
+secrets:
+  chave_storage_id:
+    file: ./.segredos/staging/chave-storage-id
+  chave_storage_secreta:
+    file: ./.segredos/staging/chave-storage-secreta
+  garage_admin:
+    file: ./.segredos/staging/garage-admin
+  garage_metricas:
+    file: ./.segredos/staging/garage-metricas
+  garage_rpc:
+    file: ./.segredos/staging/garage-rpc
+  redis_acl:
+    file: ./.segredos/staging/redis.acl
+  senha_postgresql:
+    file: ./.segredos/staging/senha-postgresql
+  url_postgresql:
+    file: ./.segredos/staging/url-postgresql
+  url_redis:
+    file: ./.segredos/staging/url-redis
+
+volumes:
+  dados_postgresql_staging:
+  dados_redis_staging:
+  dados_storage_staging:
+  metadados_storage_staging:
+  snapshots_storage_staging:

@@ -420,6 +420,7 @@ Auditoria não recebe segredo/payload integral e possui acesso próprio por perm
 | Mídia descoberta | Bucket privado, autorização e URL assinada curta. |
 | CPF em log/push | Máscara, criptografia, HMAC de busca e sanitização central. |
 | Segredo em Git/log | Secret manager, secret scan e proibição de payload bruto. |
+| Contaminação de staging por produção | Projeto, banco, Redis, storage, volumes e credenciais exclusivos; sem importador; marcador de dados sintéticos/sanitizados e confirmação operacional. |
 | Backup roubado | Criptografia, cópia externa e acesso mínimo. |
 | MK comprometido/fora | Adapter, validação, timeout, circuit breaker e snapshot somente leitura. |
 | Meta indisponível | Caixa de saída persistente, nova tentativa classificada e painel de reprocessamento. |

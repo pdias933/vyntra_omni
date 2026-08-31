@@ -43,6 +43,20 @@ A imagem comunitária do MinIO disponível para múltiplas arquiteturas é legad
 
 Staging nunca lê ou escreve banco de produção e não reutiliza credencial de produção.
 
+A implementação mínima usa `compose.staging.yaml`, projeto fixo `vyntra-staging` e comandos `pnpm staging:*`. Seus nomes de banco, usuário Redis, bucket, redes, volumes e diretório de segredos são exclusivos. Somente a API publica porta, em `127.0.0.1:3100`; PostgreSQL, Redis, S3 e administração do storage permanecem nas redes internas.
+
+O storage de staging é Garage S3 mantido e fixado por versão/digest, não o MinIO comunitário legado do desenvolvimento. Ele roda em nó único porque esta PR utiliza uma única VM e somente dados descartáveis de staging. Isso não oferece redundância e é proibido em produção. Metadados, blocos e snapshots usam volumes separados; o bucket é privado, sem website, e a chave da aplicação não recebe permissão de proprietário.
+
+```text
+pnpm staging:preparar
+pnpm staging:validar
+VYNTRA_CONFIRMAR_STAGING=STAGING_ISOLADO_SEM_DADOS_DE_PRODUCAO pnpm staging:subir
+pnpm staging:smoke
+pnpm staging:estado
+```
+
+O marcador local `DADOS_PERMITIDOS=sinteticos_ou_sanitizados` é obrigatório e indivisível com o conjunto de segredos. A confirmação de subida é uma guarda contra erro operacional; não autoriza importar produção. Não existe comando de importação, restauração ou reset automático no wrapper. Detalhes estão no [runbook da PR 005](docs/operacoes/PR-005.md).
+
 ### Produção
 
 - instalação exclusiva da empresa;

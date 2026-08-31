@@ -204,6 +204,8 @@ Regras:
 
 PostgreSQL e Redis ficam na mesma VM na implantação inicial; storage de mídia fica fora da VM. A mesma VM continua sendo um ponto único de falha aceito pela meta de recuperação da V1. Duas APIs na mesma VM melhoram deploy, não oferecem alta disponibilidade contra perda da VM.
 
+O staging mínimo antecipa somente as fronteiras já implementadas: uma API, PostgreSQL, Redis e storage S3 em um projeto Compose exclusivo. Redes, volumes e segredos não são compartilhados com desenvolvimento ou produção. Como a PR 005 usa uma única VM e dados exclusivamente sintéticos/sanitizados, seu Garage roda em nó único sem redundância; essa topologia valida contrato S3 e operação, mas é explicitamente inválida para produção. Serviços futuros entram no staging apenas no PR que implementar sua capacidade real.
+
 ## 6. Persistência e transações
 
 ### 6.1 PostgreSQL

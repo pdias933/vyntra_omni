@@ -47,6 +47,20 @@ pnpm ambiente:parar
 
 API, endpoint S3 e console MinIO ficam disponíveis somente em `127.0.0.1`. PostgreSQL e Redis não publicam portas no host. Requisitos, persistência, limpeza segura e a restrição do MinIO a desenvolvimento estão em [docs/operacoes/PR-004.md](docs/operacoes/PR-004.md); imagens e riscos de licença/manutenção estão em [docs/dependencias/PR-004.md](docs/dependencias/PR-004.md).
 
+### Staging isolado
+
+O staging possui composição, projeto Docker, redes, volumes e segredos próprios. PostgreSQL, Redis e Garage S3 não publicam portas no host; a API mínima fica somente em `127.0.0.1:3100`. O comando de subida exige confirmação explícita de que o ambiente contém apenas dados sintéticos ou sanitizados.
+
+```text
+pnpm staging:preparar
+pnpm staging:validar
+VYNTRA_CONFIRMAR_STAGING=STAGING_ISOLADO_SEM_DADOS_DE_PRODUCAO pnpm staging:subir
+pnpm staging:smoke
+pnpm staging:estado
+```
+
+Segredos são arquivos ignorados em `.segredos/staging/`; valores nunca entram em Compose, Git, imagem, log ou parâmetro de processo. O storage cria uma chave exclusiva com leitura/escrita somente no bucket privado `vyntra-staging-midias`, sem permissão de proprietário. Topologia, implantação, recuperação e limites estão em [docs/operacoes/PR-005.md](docs/operacoes/PR-005.md); seleção e risco do storage estão em [docs/dependencias/PR-005.md](docs/dependencias/PR-005.md).
+
 ## Princípios congelados
 
 1. Uma instalação atende **uma única empresa**. Se o produto for comercializado, cada cliente recebe ambiente, banco, storage e credenciais isolados.
