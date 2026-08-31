@@ -33,7 +33,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 009 | CONCLUÍDA | `xhigh` |
 | 010 | CONCLUÍDA | `xhigh` |
 | 011 | CONCLUÍDA | `high` |
-| 012 | EM ANDAMENTO | `xhigh` |
+| 012 | CONCLUÍDA | `xhigh` |
 | 013 | PENDENTE | `xhigh` |
 | 014 | PENDENTE | `high` |
 | 015 | PENDENTE | `xhigh` |
@@ -201,6 +201,10 @@ Aceite concluído em 31 de agosto de 2026: chaves com escopo e assinatura, opera
 ### PR 011 — Usuário, perfil, permissão e fila no schema
 
 Aceite concluído em 31 de agosto de 2026: `Usuario`, `PerfilAcesso`, os três papéis base, 34 códigos granulares, ajustes `CONCEDER`/`NEGAR`, `Fila` e `AcessoUsuarioFila` foram materializados sem antecipar credencial, sessão ou serviço de decisão. Lint, tipos, 82 testes, build, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831000400_criar_usuarios_perfis_permissoes_filas` terminou com código zero e a imagem `vyntra/api-staging:pr-011` ficou saudável. Em staging, usuário sem perfil permaneceu sem fila, perfil Administrador vazio permaneceu sem concessões persistidas, vínculos explícitos de permissão/fila foram preservados e o PostgreSQL recusou nome normalizado duplicado e revogação sem timestamp.
+
+### PR 012 — Serviço central de autorização
+
+Aceite concluído em 31 de agosto de 2026: sessão, usuário/perfil, permissão, fila, recurso e estado passaram por uma decisão central `default deny`; `NEGAR` prevalece, capacidades sensíveis/transversais nunca são herdadas e UUID inexistente, fila alheia, recurso inacessível ou estado inválido retornam a mesma negação. Lint, tipos, 97 testes, build, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; a imagem `vyntra/api-staging:pr-012` ficou saudável e a prontidão permaneceu `PRONTO`. Em staging, dez cenários reais no PostgreSQL comprovaram os portões antes da consulta ao recurso, concessão e negação explícitas, sessão expirada, resposta uniforme contra IDOR/BOLA e autorização/consulta na mesma transação; os dados sintéticos foram revertidos ao fim do aceite.
 
 ## 5. Portas internas
 
