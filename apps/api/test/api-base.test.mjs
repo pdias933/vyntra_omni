@@ -2,6 +2,10 @@ import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 
 import { criarAplicacao } from '../dist/configurar-aplicacao.js';
+import {
+  ErroNaoAutenticado,
+  ErroPermissaoNegada,
+} from '../dist/autorizacao/erros-autorizacao.js';
 import { FiltroExcecaoHttp } from '../dist/http/filtro-excecao-http.js';
 
 let aplicacao;
@@ -82,6 +86,41 @@ test('oculta mensagem e stack de erro interno', () => {
     },
     status: 500,
   });
+});
+
+test('normaliza negação de autorização sem revelar o motivo interno', () => {
+  const respostas = [];
+  const filtro = new FiltroExcecaoHttp(
+    {
+      httpAdapter: {
+        reply: (_resposta, corpo, status) => respostas.push({ corpo, status }),
+      },
+    },
+    { registrar: () => undefined },
+  );
+  const contexto = {
+    switchToHttp: () => ({ getResponse: () => ({}) }),
+  };
+
+  filtro.catch(new ErroNaoAutenticado(), contexto);
+  filtro.catch(new ErroPermissaoNegada(), contexto);
+
+  assert.deepEqual(respostas, [
+    {
+      corpo: {
+        codigo: 'NAO_AUTENTICADO',
+        mensagem: 'É necessário autenticar-se para continuar.',
+      },
+      status: 401,
+    },
+    {
+      corpo: {
+        codigo: 'PERMISSAO_NEGADA',
+        mensagem: 'Você não tem permissão para realizar esta ação.',
+      },
+      status: 403,
+    },
+  ]);
 });
 
 test('publica liveness leve e readiness saudável sem dependência configurada', async () => {

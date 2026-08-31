@@ -228,7 +228,23 @@ O acesso inicial usa Prisma 7 estável com o adaptador oficial `pg`. `ServicoPri
 
 `ServicoTransacaoDominio` delimita a unidade de trabalho para efeitos assíncronos. A alteração principal roda primeiro; `EventoDominio` recebe `sequencia_evento` do PostgreSQL e cada `ItemCaixaSaida` referencia esse evento, tudo no mesmo callback transacional Prisma. Falha de validação, constraint ou persistência reverte o conjunto inteiro. Repositórios de evento e caixa de saída não abrem transações próprias e não publicam nada.
 
-Usuários, perfis, permissões e filas também residem no PostgreSQL. Perfil é referência opcional do usuário; permissões são ajustes granulares por código fechado; acesso de fila é relação explícita e revogável. O schema não contém credencial nem sessão antes dos PRs próprios e não calcula autorização: a PR 012 combinará usuário ativo, perfil, permissão, fila, recurso e estado em um único serviço `default deny`.
+Usuários, perfis, permissões e filas também residem no PostgreSQL. Perfil é referência opcional do usuário; permissões são ajustes granulares por código fechado; acesso de fila é relação explícita e revogável. O schema não contém credencial nem sessão antes dos PRs próprios. `ServicoAutorizacao` combina contexto de sessão autenticada, usuário/perfil ativos, matriz e ajustes de permissão, fila/escopo e verificação do recurso/estado em `default deny`.
+
+### 6.1.1 Autorização central
+
+```text
+contexto de sessão autenticada
+  → usuário e perfil ativos
+  → papel base + CONCEDER/NEGAR
+  → fila ativa + vínculo quando exigido
+  → consulta filtrada do recurso concreto
+  → estado permite a ação
+  → AutorizacaoConcedida efêmera
+```
+
+O repositório projeta somente o usuário, o perfil e a fila solicitada; não carrega coleção para filtrar em memória. O verificador específico do módulo recebe o contexto já autorizado e retorna apenas acesso/estado. Recurso inexistente e recurso conhecido sem acesso convergem para `PERMISSAO_NEGADA` sem metadados diferenciadores.
+
+O serviço aceita `TransacaoPrisma` opcional e a repassa à leitura do contexto e ao verificador. Casos de uso mutáveis devem usá-la junto da alteração/constraint do agregado quando for necessário fechar corrida entre decisão e escrita. A PR 013 fornecerá o contexto a partir da sessão web real; nenhum cliente pode construir esse objeto diretamente.
 
 Migrations rodam em um contêiner/job único antes da API. A API não executa migration no startup e só fica pronta quando a migration obrigatória consta como concluída.
 

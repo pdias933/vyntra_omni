@@ -361,6 +361,8 @@ Responde se a instância pode receber tráfego, verificando dependências mínim
 
 Além da conexão com PostgreSQL, a implementação confirma em `_prisma_migrations` que a migration obrigatória mais recente terminou e não foi revertida. Na PR 011, a marca é `20260831000400_criar_usuarios_perfis_permissoes_filas`. A resposta externa continua genérica e não revela schema, tabela ou dependência defeituosa.
 
+A PR 012 não altera schema; por isso a marca de prontidão continua sendo a migration da PR 011. A imagem da API passa a incluir o serviço central de autorização e só deve ser promovida após os testes de outra fila, UUID conhecido sem acesso, recurso inexistente, estado inválido e permissões sempre explícitas produzirem a mesma negação canônica.
+
 ### Recuperação de operações
 
 Um processo periódico recupera concessões vencidas em lotes pequenos. Ele encerra a tentativa como `RESULTADO_INCERTO`, limpa a concessão e agenda reconciliação imediata. O operador pode observar tipo, estado, idade, quantidade de tentativas e código normalizado; token, payload bruto e dado sensível não aparecem em log ou painel.

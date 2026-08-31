@@ -54,7 +54,11 @@ Comandos sensíveis usam chave com escopo, concessão temporária e tentativas p
 
 ### Identidade e escopo de funcionários
 
-O PostgreSQL materializa usuários, perfis, ajustes granulares de permissão, filas e vínculos explícitos de escopo. Usuário nasce sem perfil e sem fila; autenticação e decisão central de autorização permanecem nos PRs seguintes. O modelo e o aceite estão em [docs/operacoes/PR-011.md](docs/operacoes/PR-011.md).
+O PostgreSQL materializa usuários, perfis, ajustes granulares de permissão, filas e vínculos explícitos de escopo. Usuário nasce sem perfil e sem fila; autenticação e sessões permanecem nos PRs seguintes. O modelo e o aceite estão em [docs/operacoes/PR-011.md](docs/operacoes/PR-011.md).
+
+### Autorização central
+
+`ServicoAutorizacao` valida sessão autenticada, usuário/perfil, permissão efetiva, fila, recurso e estado em ordem e com negação padrão. Recurso inexistente ou fora do escopo devolve a mesma resposta segura. Matriz, uso transacional e aceite estão em [docs/operacoes/PR-012.md](docs/operacoes/PR-012.md).
 
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 

@@ -139,6 +139,10 @@ Toda leitura/escrita valida sessão + usuário + permissão + fila/escopo + recu
 
 Use os serviços centralizados de autorização, proteção de dados, idempotência, auditoria, sanitização e validação de arquivo.
 
+Todo caso de uso protegido chama `ServicoAutorizacao` antes de consultar conteúdo do recurso. O verificador específico aplica usuário/fila/recurso na query e devolve apenas acesso/estado; não use `findMany` seguido de filtro em memória. Recurso inexistente, outra fila e estado incompatível resultam em `PERMISSAO_NEGADA` indistinguível. Para escrita sujeita a corrida, passe a mesma `TransacaoPrisma` à autorização, verificação e alteração condicional.
+
+Não acrescente permissões transversais, dado sensível ou exportação a papel base. Ajuste `NEGAR` prevalece sobre matriz e `CONCEDER`; Administrador alcança filas ativas somente para permissões que efetivamente possui.
+
 `ServicoIdempotencia` deve participar da transação local que registra a intenção quando aplicável. A chamada externa ocorre após commit, sob concessão persistente. Não substitua constraint/versão PostgreSQL por lock apenas em Redis e não altere estado de operação recuperável diretamente para “forçar” nova tentativa.
 
 `RegistroAuditoria` é somente de acréscimo. Código de aplicação usa `ServicoAuditoria`; não chama `update`, `delete`, `upsert` ou `truncate`, não desabilita seus triggers e não cria rota administrativa de mutação. Uma ação que exige auditoria falha se o registro não puder participar da mesma transação local.

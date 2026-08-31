@@ -76,6 +76,14 @@ Regras:
 - `VISUALIZAR_DADO_SENSIVEL`, `EXPORTAR_HISTORICO` e `VISUALIZAR_NOTAS_TRANSVERSAIS` continuam específicos e não decorrem apenas de ser Administrador;
 - credenciais, sessão e avaliação do recurso concreto não pertencem a esta fundação do schema.
 
+### 3.2 Decisão central de autorização
+
+`AutorizacaoConcedida` é uma prova efêmera produzida pelo backend, não entidade persistente nem autorização transferível ao cliente. Ela só existe depois de validar, nesta ordem, sessão, usuário/perfil, permissão efetiva, escopo de fila e recurso/estado concreto.
+
+Para permissões de fila, Administrador alcança toda fila ativa e os demais papéis exigem `AcessoUsuarioFila` ativo. Permissões globais continuam exigindo recurso e estado verificáveis dentro do escopo da instalação. Ajuste `NEGAR` vence papel base; ajuste `CONCEDER` pode acrescentar capacidade. Ausência, inatividade ou inconsistência sempre negam.
+
+O verificador do recurso retorna apenas `acessivel` e `estadoPermiteAcao`. Recurso inexistente, conhecido sem acesso ou em estado incompatível não muda o contrato de erro. Caso de uso que altera estado deve usar a mesma transação para autorização, consulta filtrada e alteração quando a corrida for relevante, além das constraints/condições específicas do agregado.
+
 ## 4. Identidade, contato e cliente ERP
 
 ### 4.1 `Contato`

@@ -8,6 +8,10 @@ import {
 import type { HttpAdapterHost } from '@nestjs/core';
 
 import type { CorpoErroCanonico } from './excecao-http-canonica.js';
+import {
+  ErroNaoAutenticado,
+  ErroPermissaoNegada,
+} from '../autorizacao/erros-autorizacao.js';
 import { contextoCorrelacao } from '../observabilidade/contexto-correlacao.js';
 import type { RegistradorTecnico } from '../observabilidade/logger-estruturado.js';
 
@@ -68,10 +72,7 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
   public catch(excecao: unknown, contexto: ArgumentsHost): void {
     const http = this.adaptadorHttp.httpAdapter;
     const resposta = contexto.switchToHttp().getResponse();
-    const status =
-      excecao instanceof HttpException
-        ? excecao.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    const status = this.obterStatus(excecao);
     const respostaExcecao =
       excecao instanceof HttpException ? excecao.getResponse() : undefined;
     const corpo = possuiCorpoCanonico(respostaExcecao)
@@ -97,5 +98,18 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
       },
       status,
     );
+  }
+
+  private obterStatus(excecao: unknown): number {
+    if (excecao instanceof ErroNaoAutenticado) {
+      return HttpStatus.UNAUTHORIZED;
+    }
+    if (excecao instanceof ErroPermissaoNegada) {
+      return HttpStatus.FORBIDDEN;
+    }
+
+    return excecao instanceof HttpException
+      ? excecao.getStatus()
+      : HttpStatus.INTERNAL_SERVER_ERROR;
   }
 }

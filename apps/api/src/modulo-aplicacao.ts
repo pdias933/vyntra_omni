@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { ModuloAuditoria } from './auditoria/modulo-auditoria.js';
+import { ModuloAutorizacao } from './autorizacao/modulo-autorizacao.js';
 import { ModuloEventos } from './eventos/modulo-eventos.js';
 import { ModuloIdempotencia } from './idempotencia/modulo-idempotencia.js';
 import { ModuloPersistencia } from './persistencia/modulo-persistencia.js';
@@ -18,6 +19,7 @@ import { ServicoProntidao } from './saude/servico-prontidao.js';
   ],
   imports: [
     ModuloAuditoria,
+    ModuloAutorizacao,
     ModuloEventos,
     ModuloIdempotencia,
     ModuloPersistencia,

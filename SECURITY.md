@@ -115,6 +115,14 @@ Financeiro, Suporte e Comercial são filas, não papéis.
 
 O schema não atribui perfil ao criar usuário, não cria vínculo automático de fila e não semeia concessão. `PermissaoPerfil` registra ajuste explícito `CONCEDER` ou `NEGAR`; a matriz efetiva dos papéis e a decisão central entram na PR 012. Até essa decisão existir, ausência de regra, perfil ou escopo permanece negação.
 
+A matriz conservadora inicial da PR 012 é:
+
+- `ADMINISTRADOR`: visualizar filas, administrar usuários/filas/integrações/releases e visualizar/editar/testar/publicar/reverter fluxos;
+- `SUPERVISOR`: visualizar/resgatar/transferir/receber/encerrar/reabrir/assumir atendimentos, adicionar/visualizar nota e solicitar formulário nas filas vinculadas;
+- `ATENDENTE`: visualizar/resgatar/transferir/receber/encerrar atendimentos, adicionar/visualizar nota e solicitar formulário nas filas vinculadas.
+
+Um ajuste `NEGAR` sempre prevalece sobre a matriz; `CONCEDER` libera capacidade ausente. `VISUALIZAR_HISTORICO_TRANSVERSAL`, `VISUALIZAR_NOTAS_TRANSVERSAIS`, `VISUALIZAR_DADO_SENSIVEL` e `EXPORTAR_HISTORICO` não pertencem a papel base algum. Administrador alcança todas as filas ativas para permissões que já possui, mas isso não cria permissão sensível, transversal ou de exportação.
+
 ### 5.2 Regra de decisão
 
 Toda leitura/escrita valida:
@@ -129,6 +137,8 @@ E estado atual permite a ação
 ```
 
 Ausência de regra significa negar. O backend retorna `403 PERMISSAO_NEGADA`, sem vazar existência ou conteúdo do recurso.
+
+`ServicoAutorizacao` executa essa ordem e só então chama o verificador do recurso concreto. UUID inexistente, recurso de outra fila, ausência de permissão e estado que impede a ação produzem o mesmo erro externo. Sessão ausente, revogada ou expirada produz apenas `401 NAO_AUTENTICADO`. Quando houver mutação, autorização e consulta do recurso podem participar da mesma transação curta; o recurso deve ser filtrado no banco, não carregado em massa para filtragem em memória.
 
 ### 5.3 Permissões iniciais
 

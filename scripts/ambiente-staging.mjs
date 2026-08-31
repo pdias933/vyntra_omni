@@ -476,7 +476,7 @@ function executarVerificacaoS3(modo = 'gravar-e-ler') {
       `type=bind,source=${segredoChave},target=/run/secrets/chave_storage_secreta,readonly`,
       '--entrypoint',
       'node',
-      'vyntra/api-staging:pr-011',
+      'vyntra/api-staging:pr-012',
       '/verificar-storage-s3.mjs',
       modo,
     ],
