@@ -29,6 +29,7 @@ const arquivosObrigatorios = [
   'scripts/executar-turbo.mjs',
   'scripts/verificar-dependencias.mjs',
   'scripts/verificar-segredos.mjs',
+  'scripts/verificar-storage-s3.mjs',
   'turbo.json',
 ];
 
@@ -145,6 +146,7 @@ test('acompanha estado e Effort de todas as PRs do roadmap', async () => {
   assert.equal(porNumero.get('002').estado, 'CONCLUÍDA');
   assert.equal(porNumero.get('003').estado, 'CONCLUÍDA');
   assert.equal(porNumero.get('004').estado, 'CONCLUÍDA');
+  assert.equal(porNumero.get('005').estado, 'CONCLUÍDA');
 });
 
 test('workspace com arquivo de teste declara como executá-lo', async () => {

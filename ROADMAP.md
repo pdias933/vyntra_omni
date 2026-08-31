@@ -26,7 +26,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 002 | CONCLUÍDA | `medium` |
 | 003 | CONCLUÍDA | `high` |
 | 004 | CONCLUÍDA | `high` |
-| 005 | EM ANDAMENTO | `xhigh` |
+| 005 | CONCLUÍDA | `xhigh` |
 | 006 | PENDENTE | `medium` |
 | 007 | PENDENTE | `high` |
 | 008 | PENDENTE | `high` |
@@ -160,6 +160,10 @@ Aceite concluído em 2026-08-30: oito decisões técnicas aprovadas e rastreáve
 | 008 | Auditoria imutável | Registro somente de acréscimo e serviço central; usuário e administrador não editam/apagam. |
 | 009 | Evento e Caixa de Saída Transacional | sequencia_evento, EventoDominio e ItemCaixaSaida no mesmo commit do agregado. |
 | 010 | Idempotência e operações recuperáveis | Chaves com escopo, concessão temporária, tentativas e reconciliação persistentes no PostgreSQL. |
+
+### PR 005 — Staging isolado mínimo
+
+Aceite concluído em 30 de agosto de 2026: projeto `vyntra-staging` implantado em diretório próprio na VM de testes, coexistindo com `vyntra-desenvolvimento`; API, PostgreSQL, Redis e Garage S3 saudáveis; somente APIs publicadas em loopback; cinco volumes, três redes e dez arquivos de segredo exclusivos; bucket privado com chave sem permissão de proprietário; protocolo S3 e persistência de PostgreSQL, Redis e objeto comprovados após reinício. Nenhum dado bruto ou credencial de produção foi usado.
 
 ## 4. Identidade de funcionários e autorização
 

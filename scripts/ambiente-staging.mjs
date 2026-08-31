@@ -15,6 +15,11 @@ const caminhoScript = fileURLToPath(import.meta.url);
 const raizRepositorio = resolve(dirname(caminhoScript), '..');
 const diretorioSegredosPadrao = join(raizRepositorio, '.segredos', 'staging');
 const caminhoCompose = join(raizRepositorio, 'compose.staging.yaml');
+const caminhoVerificadorStorage = join(
+  raizRepositorio,
+  'scripts',
+  'verificar-storage-s3.mjs',
+);
 const nomeProjeto = 'vyntra-staging';
 const nomeChaveStorage = 'vyntra-staging-aplicacao';
 const nomeBucketStorage = 'vyntra-staging-midias';
@@ -82,7 +87,7 @@ const arquivosCredencialStorage = Object.freeze([
   {
     nome: 'chave-storage-id',
     modo: 0o600,
-    validar: (conteudo) => /^GK[A-Za-z0-9]{32,64}\n$/.test(conteudo),
+    validar: (conteudo) => /^GK[a-f0-9]{24}\n$/.test(conteudo),
   },
   {
     nome: 'chave-storage-secreta',
@@ -439,6 +444,47 @@ function executarJsonApiStorage(operacao, corpo) {
   return interpretarJson(resultado.stdout, operacao);
 }
 
+function executarVerificacaoS3(modo = 'gravar-e-ler') {
+  const ambiente = criarAmbienteDocker();
+  const contexto = obterContextoDockerLocal(ambiente);
+  const segredoId = join(diretorioSegredosPadrao, 'chave-storage-id');
+  const segredoChave = join(
+    diretorioSegredosPadrao,
+    'chave-storage-secreta',
+  );
+
+  executarDocker(
+    [
+      '--context',
+      contexto,
+      'run',
+      '--rm',
+      '--network',
+      `${nomeProjeto}_rede_storage_staging`,
+      '--read-only',
+      '--cap-drop',
+      'ALL',
+      '--security-opt',
+      'no-new-privileges:true',
+      '--user',
+      '0:0',
+      '--mount',
+      `type=bind,source=${caminhoVerificadorStorage},target=/verificar-storage-s3.mjs,readonly`,
+      '--mount',
+      `type=bind,source=${segredoId},target=/run/secrets/chave_storage_id,readonly`,
+      '--mount',
+      `type=bind,source=${segredoChave},target=/run/secrets/chave_storage_secreta,readonly`,
+      '--entrypoint',
+      'node',
+      'vyntra/api-staging:pr-005',
+      '/verificar-storage-s3.mjs',
+      modo,
+    ],
+    ambiente,
+    { codigoErro: 'VERIFICACAO_STORAGE_S3_FALHOU' },
+  );
+}
+
 async function inicializarStorage(diretorio = diretorioSegredosPadrao) {
   const chaves = executarJsonApiStorage('ListKeys');
   const chaveExistente = chaves.find(({ name }) => name === nomeChaveStorage);
@@ -542,6 +588,8 @@ async function executarSmoke() {
   if (saudeStorage.status !== 'healthy') {
     throw new Error('STORAGE_STAGING_NAO_SAUDAVEL');
   }
+
+  executarVerificacaoS3();
 
   executarDockerCompose(
     [

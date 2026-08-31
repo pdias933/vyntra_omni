@@ -153,7 +153,7 @@ test('persiste a credencial do storage como par sem sobrescrever', async (t) => 
   await prepararSegredosBase(diretorio);
   assert.equal(await obterEstadoCredencialStorage(diretorio), 'AUSENTE');
 
-  const identificador = `GK${'a'.repeat(32)}`;
+  const identificador = `GK${'a'.repeat(24)}`;
   const segredo = 'b'.repeat(64);
   assert.deepEqual(
     await armazenarCredencialStorage(identificador, segredo, diretorio),

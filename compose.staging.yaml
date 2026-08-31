@@ -89,7 +89,6 @@ services:
     configs:
       - source: configuracao_storage
         target: /etc/garage.toml
-        mode: 0444
     secrets:
       - garage_admin
       - garage_metricas

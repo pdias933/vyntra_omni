@@ -8,6 +8,10 @@ const conteudoCompose = await readFile('compose.staging.yaml', 'utf8');
 const compose = parse(conteudoCompose);
 const configuracaoStorage = await readFile('infra/staging/garage.toml', 'utf8');
 const codigoStaging = await readFile('scripts/ambiente-staging.mjs', 'utf8');
+const codigoVerificacaoS3 = await readFile(
+  'scripts/verificar-storage-s3.mjs',
+  'utf8',
+);
 
 test('declara somente a pilha mínima e persistente de staging', () => {
   assert.deepEqual(Object.keys(compose.services).sort(), [
@@ -117,6 +121,11 @@ test('separa todos os segredos e não aceita credencial de produção', () => {
   );
   assert.match(codigoStaging, /DADOS_PERMITIDOS=sinteticos_ou_sanitizados/);
   assert.match(codigoStaging, /CHAVE_STORAGE_EXISTE_SEM_SEGREDO_LOCAL/);
+  assert.match(codigoStaging, /vyntra\/api-staging:pr-005/);
+  assert.match(codigoStaging, /no-new-privileges:true/);
+  assert.match(codigoVerificacaoS3, /AWS4-HMAC-SHA256/);
+  assert.ok(!codigoVerificacaoS3.includes('console.log(identificador'));
+  assert.ok(!codigoVerificacaoS3.includes('console.log(segredo'));
 });
 
 test('entrega à API apenas contratos por arquivo e contexto explícito', () => {
