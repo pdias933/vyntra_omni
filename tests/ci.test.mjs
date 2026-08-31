@@ -196,6 +196,8 @@ test('sobe o ambiente local em projeto efêmero e comprova persistência', () =>
   assert.ok(smoke.run.includes('set -euo pipefail'));
   assert.ok(smoke.run.includes('trap limpar_ambiente EXIT'));
   assert.ok(smoke.run.includes('node scripts/ambiente-local.mjs subir'));
+  assert.ok(smoke.run.includes('/api/v1/saude/pronto'));
+  assert.ok(smoke.run.includes("test \"${codigo_http}\" = '200'"));
   assert.ok(smoke.run.includes('docker compose restart postgres redis minio'));
   assert.ok(smoke.run.includes('docker compose up --wait --no-build'));
   assert.ok(smoke.run.includes('SELECT valor FROM verificacao_pr004'));

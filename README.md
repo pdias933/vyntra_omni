@@ -36,6 +36,10 @@ As versões e a justificativa da superfície inicial estão em [docs/dependencia
 
 `GET /api/v1` identifica a versão pública. O contrato fica em `GET /api/v1/openapi.json`, sem interface Swagger HTML exposta. `pnpm gerar:contratos` atualiza o JSON e o pacote `@vyntra/api-client`; `pnpm verificar:contratos` bloqueia divergência entre controllers, contrato e SDK. Uso, formato de erro e limites desta fundação estão em [docs/api/PR-006.md](docs/api/PR-006.md); dependências e superfície estão em [docs/dependencias/PR-006.md](docs/dependencias/PR-006.md).
 
+### Correlação, logs e saúde
+
+Toda requisição recebe correlação validada; erros devolvem o mesmo identificador e logs técnicos são JSON sanitizado via Pino. Liveness e readiness ficam em `/api/v1/saude/vivo` e `/api/v1/saude/pronto`. Contrato operacional e limites estão em [docs/operacoes/PR-007.md](docs/operacoes/PR-007.md); a análise da dependência está em [docs/dependencias/PR-007.md](docs/dependencias/PR-007.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local

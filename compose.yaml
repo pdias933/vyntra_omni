@@ -154,9 +154,15 @@ services:
       redis:
         condition: service_healthy
     environment:
+      AMBIENTE_APLICACAO: desenvolvimento
+      BANCO_HOST: postgres
+      BANCO_PORTA: "5432"
       ENDERECO_HTTP: 0.0.0.0
       NODE_ENV: development
       PORTA_HTTP: "3000"
+      REDIS_HOST: redis
+      REDIS_PORTA: "6379"
+      STORAGE_ENDPOINT: http://minio:9000
     read_only: true
     cap_drop:
       - ALL
@@ -171,7 +177,7 @@ services:
         - node
         - -e
         - >-
-          fetch('http://127.0.0.1:3000/').then((resposta) => process.exit(resposta.status === 404 ? 0 : 1)).catch(() => process.exit(1))
+          fetch('http://127.0.0.1:3000/api/v1/saude/pronto').then((resposta) => process.exit(resposta.status === 200 ? 0 : 1)).catch(() => process.exit(1))
       interval: 5s
       timeout: 5s
       retries: 12

@@ -476,7 +476,7 @@ function executarVerificacaoS3(modo = 'gravar-e-ler') {
       `type=bind,source=${segredoChave},target=/run/secrets/chave_storage_secreta,readonly`,
       '--entrypoint',
       'node',
-      'vyntra/api-staging:pr-006',
+      'vyntra/api-staging:pr-007',
       '/verificar-storage-s3.mjs',
       modo,
     ],
@@ -614,9 +614,11 @@ async function executarSmoke() {
     { capturar: true },
   );
 
-  const resposta = await fetch('http://127.0.0.1:3100/');
+  const resposta = await fetch(
+    'http://127.0.0.1:3100/api/v1/saude/pronto',
+  );
 
-  if (resposta.status !== 404) {
+  if (resposta.status !== 200) {
     throw new Error(`API_STAGING_STATUS_INESPERADO:${resposta.status}`);
   }
 }

@@ -32,6 +32,60 @@
           "sistema"
         ]
       }
+    },
+    "/api/v1/saude/vivo": {
+      "get": {
+        "operationId": "verificarProcessoVivo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoSaudeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Informa se o processo da API está vivo.",
+        "tags": [
+          "saude"
+        ]
+      }
+    },
+    "/api/v1/saude/pronto": {
+      "get": {
+        "operationId": "verificarAplicacaoPronta",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoSaudeDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroCanonicoDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Informa se a API pode receber tráfego.",
+        "tags": [
+          "saude"
+        ]
+      }
     }
   },
   "info": {
@@ -54,11 +108,16 @@
           "mensagem": {
             "type": "string",
             "example": "O recurso solicitado não foi encontrado."
+          },
+          "correlacao_id": {
+            "type": "string",
+            "example": "7fe3cc48-98bc-4b36-9fe7-36de7c1ac882"
           }
         },
         "required": [
           "codigo",
-          "mensagem"
+          "mensagem",
+          "correlacao_id"
         ]
       },
       "InformacoesApiDto": {
@@ -76,6 +135,22 @@
         "required": [
           "nome",
           "versao_api"
+        ]
+      },
+      "EstadoSaudeDto": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "type": "string",
+            "enum": [
+              "VIVO",
+              "PRONTO"
+            ],
+            "example": "PRONTO"
+          }
+        },
+        "required": [
+          "estado"
         ]
       }
     }

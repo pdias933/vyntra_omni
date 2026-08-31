@@ -138,7 +138,7 @@ test('usa arquivos secretos locais sem senha funcional versionada', () => {
   assert.match(codeowners, /^\/\.gitignore @pdias933$/m);
 });
 
-test('ordena o startup por saúde sem antecipar endpoints da PR 007', () => {
+test('ordena o startup pela prontidão publicada na PR 007', () => {
   for (const nome of ['api', 'minio', 'postgres', 'redis']) {
     const healthcheck = compose.services[nome].healthcheck;
     assert.ok(healthcheck.test.length >= 2);
@@ -158,13 +158,20 @@ test('ordena o startup por saúde sem antecipar endpoints da PR 007', () => {
   );
   assert.match(
     compose.services.api.healthcheck.test.at(-1),
-    /resposta\.status === 404/,
+    /resposta\.status === 200/,
   );
   assert.match(
     compose.services.postgres.healthcheck.test.at(-1),
     /--host 127\.0\.0\.1/,
   );
-  assert.ok(!conteudoCompose.includes('/saude/'));
+  assert.ok(conteudoCompose.includes('/api/v1/saude/pronto'));
+  assert.equal(compose.services.api.environment.AMBIENTE_APLICACAO, 'desenvolvimento');
+  assert.equal(compose.services.api.environment.BANCO_HOST, 'postgres');
+  assert.equal(compose.services.api.environment.REDIS_HOST, 'redis');
+  assert.equal(
+    compose.services.api.environment.STORAGE_ENDPOINT,
+    'http://minio:9000',
+  );
 });
 
 test('remove privilégios amplos e limita logs e montagens', () => {

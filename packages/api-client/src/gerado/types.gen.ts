@@ -7,11 +7,16 @@ export type ClientOptions = {
 export type ErroCanonicoDto = {
     codigo: string;
     mensagem: string;
+    correlacao_id: string;
 };
 
 export type InformacoesApiDto = {
     nome: string;
     versao_api: string;
+};
+
+export type EstadoSaudeDto = {
+    estado: 'VIVO' | 'PRONTO';
 };
 
 export type ObterInformacoesApiData = {
@@ -32,3 +37,35 @@ export type ObterInformacoesApiResponses = {
 };
 
 export type ObterInformacoesApiResponse = ObterInformacoesApiResponses[keyof ObterInformacoesApiResponses];
+
+export type VerificarProcessoVivoData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/saude/vivo';
+};
+
+export type VerificarProcessoVivoResponses = {
+    200: EstadoSaudeDto;
+};
+
+export type VerificarProcessoVivoResponse = VerificarProcessoVivoResponses[keyof VerificarProcessoVivoResponses];
+
+export type VerificarAplicacaoProntaData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/saude/pronto';
+};
+
+export type VerificarAplicacaoProntaErrors = {
+    503: ErroCanonicoDto;
+};
+
+export type VerificarAplicacaoProntaError = VerificarAplicacaoProntaErrors[keyof VerificarAplicacaoProntaErrors];
+
+export type VerificarAplicacaoProntaResponses = {
+    200: EstadoSaudeDto;
+};
+
+export type VerificarAplicacaoProntaResponse = VerificarAplicacaoProntaResponses[keyof VerificarAplicacaoProntaResponses];

@@ -121,7 +121,7 @@ test('separa todos os segredos e não aceita credencial de produção', () => {
   );
   assert.match(codigoStaging, /DADOS_PERMITIDOS=sinteticos_ou_sanitizados/);
   assert.match(codigoStaging, /CHAVE_STORAGE_EXISTE_SEM_SEGREDO_LOCAL/);
-  assert.match(codigoStaging, /vyntra\/api-staging:pr-006/);
+  assert.match(codigoStaging, /vyntra\/api-staging:pr-007/);
   assert.match(codigoStaging, /no-new-privileges:true/);
   assert.match(codigoVerificacaoS3, /AWS4-HMAC-SHA256/);
   assert.ok(!codigoVerificacaoS3.includes('console.log(identificador'));
@@ -160,6 +160,15 @@ test('ordena startup por saúde e limita privilégios e logs', () => {
     assert.equal(servico.logging.options['max-file'], '5', nome);
     assert.equal(servico.logging.options['max-size'], '10m', nome);
   }
+
+  assert.match(
+    compose.services.api.healthcheck.test.at(-1),
+    /\/api\/v1\/saude\/pronto/,
+  );
+  assert.match(
+    compose.services.api.healthcheck.test.at(-1),
+    /resposta\.status === 200/,
+  );
 
   assert.equal(compose.services.api.depends_on.postgres.condition, 'service_healthy');
   assert.equal(compose.services.api.depends_on.redis.condition, 'service_healthy');

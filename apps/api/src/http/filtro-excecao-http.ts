@@ -8,6 +8,8 @@ import {
 import type { HttpAdapterHost } from '@nestjs/core';
 
 import type { CorpoErroCanonico } from './excecao-http-canonica.js';
+import { contextoCorrelacao } from '../observabilidade/contexto-correlacao.js';
+import type { RegistradorTecnico } from '../observabilidade/logger-estruturado.js';
 
 const ERROS_POR_STATUS: Readonly<Record<number, CorpoErroCanonico>> = {
   [HttpStatus.BAD_REQUEST]: {
@@ -58,7 +60,10 @@ function possuiCorpoCanonico(valor: unknown): valor is CorpoErroCanonico {
 
 @Catch()
 export class FiltroExcecaoHttp implements ExceptionFilter {
-  public constructor(private readonly adaptadorHttp: HttpAdapterHost) {}
+  public constructor(
+    private readonly adaptadorHttp: HttpAdapterHost,
+    private readonly logger: RegistradorTecnico,
+  ) {}
 
   public catch(excecao: unknown, contexto: ArgumentsHost): void {
     const http = this.adaptadorHttp.httpAdapter;
@@ -72,7 +77,25 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
     const corpo = possuiCorpoCanonico(respostaExcecao)
       ? respostaExcecao
       : (ERROS_POR_STATUS[status] ?? ERRO_INTERNO);
+    const correlacaoId = contextoCorrelacao.obter();
 
-    http.reply(resposta, corpo, status);
+    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+      this.logger.registrar('error', 'REQUISICAO_HTTP_FALHOU', {
+        codigo_erro: corpo.codigo,
+        modulo: 'HTTP',
+        status_http: status,
+      });
+    }
+
+    http.reply(
+      resposta,
+      {
+        ...corpo,
+        ...(correlacaoId === undefined
+          ? {}
+          : { correlacao_id: correlacaoId }),
+      },
+      status,
+    );
   }
 }

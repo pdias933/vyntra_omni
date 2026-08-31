@@ -123,7 +123,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/api-staging:pr-006
+    image: vyntra/api-staging:pr-007
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -167,7 +167,7 @@ services:
         - node
         - -e
         - >-
-          fetch('http://127.0.0.1:3000/').then((resposta) => process.exit(resposta.status === 404 ? 0 : 1)).catch(() => process.exit(1))
+          fetch('http://127.0.0.1:3000/api/v1/saude/pronto').then((resposta) => process.exit(resposta.status === 200 ? 0 : 1)).catch(() => process.exit(1))
       interval: 10s
       timeout: 5s
       retries: 12

@@ -60,8 +60,8 @@ jobs:
 
           node scripts/ambiente-local.mjs subir
 
-          codigo_http="$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/)"
-          test "${codigo_http}" = '404'
+          codigo_http="$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/api/v1/saude/pronto)"
+          test "${codigo_http}" = '200'
 
           docker compose exec -T postgres sh -ceu \
             'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "CREATE TABLE verificacao_pr004 (valor text PRIMARY KEY); INSERT INTO verificacao_pr004 VALUES ('\''persistiu'\'');"' </dev/null

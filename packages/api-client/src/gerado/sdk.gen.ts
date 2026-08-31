@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses } from './types.gen';
+import type { ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -22,3 +22,13 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * Obtém a identidade e a versão pública da API.
  */
 export const obterInformacoesApi = <ThrowOnError extends boolean = false>(options?: Options<ObterInformacoesApiData, ThrowOnError>): RequestResult<ObterInformacoesApiResponses, ObterInformacoesApiErrors, ThrowOnError> => (options?.client ?? client).get<ObterInformacoesApiResponses, ObterInformacoesApiErrors, ThrowOnError>({ url: '/api/v1', ...options });
+
+/**
+ * Informa se o processo da API está vivo.
+ */
+export const verificarProcessoVivo = <ThrowOnError extends boolean = false>(options?: Options<VerificarProcessoVivoData, ThrowOnError>): RequestResult<VerificarProcessoVivoResponses, unknown, ThrowOnError> => (options?.client ?? client).get<VerificarProcessoVivoResponses, unknown, ThrowOnError>({ url: '/api/v1/saude/vivo', ...options });
+
+/**
+ * Informa se a API pode receber tráfego.
+ */
+export const verificarAplicacaoPronta = <ThrowOnError extends boolean = false>(options?: Options<VerificarAplicacaoProntaData, ThrowOnError>): RequestResult<VerificarAplicacaoProntaResponses, VerificarAplicacaoProntaErrors, ThrowOnError> => (options?.client ?? client).get<VerificarAplicacaoProntaResponses, VerificarAplicacaoProntaErrors, ThrowOnError>({ url: '/api/v1/saude/pronto', ...options });
