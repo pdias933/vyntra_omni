@@ -138,6 +138,7 @@ export class RepositorioReleasesPrisma implements RepositorioReleases {
         usuarios: {
           create: entrada.usuariosAlvo.map((usuarioId) => ({ usuarioId })),
         },
+        versao: 1,
       },
     });
   }

@@ -6,11 +6,12 @@ const raiz = new URL('../', import.meta.url);
 const ler = (caminho) => readFile(new URL(caminho, raiz), 'utf8');
 
 test('persistência guarda rollout, alvos e política por plataforma com invariantes', async () => {
-  const [schema, migration] = await Promise.all([
+  const [schema, migration, repositorio] = await Promise.all([
     ler('apps/api/prisma/schema.prisma'),
     ler(
       'apps/api/prisma/migrations/20260831000900_criar_controles_recurso_versao/migration.sql',
     ),
+    ler('apps/api/src/releases/repositorio-releases-prisma.ts'),
   ]);
   assert.match(schema, /model ControleRecurso/);
   assert.match(schema, /model PoliticaVersaoMobile/);
@@ -20,6 +21,7 @@ test('persistência guarda rollout, alvos e política por plataforma com invaria
   assert.match(migration, /INSERT INTO "politica_versao_mobile"/);
   assert.match(migration, /'IOS'/);
   assert.match(migration, /'ANDROID'/);
+  assert.match(repositorio, /criarControle[\s\S]*versao: 1/);
 });
 
 test('backend é autoridade para kill switch, rollout e atualização obrigatória', async () => {
