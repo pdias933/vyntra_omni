@@ -37,7 +37,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 013 | CONCLUÍDA | `xhigh` |
 | 014 | CONCLUÍDA | `high` |
 | 015 | CONCLUÍDA | `xhigh` |
-| 016 | EM ANDAMENTO | `xhigh` |
+| 016 | CONCLUÍDA | `xhigh` |
 | 017 | PENDENTE | `xhigh` |
 | 018 | PENDENTE | `high` |
 | 019 | PENDENTE | `high` |
@@ -217,6 +217,10 @@ Aceite concluído em 31 de agosto de 2026: máximo de duas sessões web, confirm
 ### PR 015 — Sessão e dispositivo mobile
 
 Aceite concluído em 31 de agosto de 2026: sessão mobile separada da web, access token de 15 minutos somente em memória, refresh rotativo com limite absoluto de 30 dias no Keychain/Keystore, vínculo por instalação/dispositivo, rate limit persistente, MFA conservador, logout e replay com revogação auditada foram entregues. Lint, tipos, 123 testes, build iOS/Android, contratos, Expo e auditoria de dependências foram aprovados. A migration `20260831000700_criar_sessao_dispositivo_mobile` terminou com código zero e a imagem `vyntra/api-staging:pr-015` ficou saudável com prontidão `PRONTO`. Em staging, login, validação e rotação retornaram `200`; access anterior, refresh repetido e sessão revogada retornaram `401`; novo login retornou `200`, logout `204` e vínculo divergente `403`. PostgreSQL confirmou os hashes, o refresh consumido, duas revogações, duas tentativas bem-sucedidas, uma falha de vínculo e sete fatos de auditoria. Dados mutáveis sintéticos foram removidos; não houve erro de nível 50.
+
+### PR 016 — Limites e revogação mobile
+
+Aceite concluído em 31 de agosto de 2026: o PostgreSQL passou a impor no máximo dois aparelhos por usuário; o terceiro login substitui atomicamente o mais antigo, encerra todas as suas sessões e informa a substituição. Listagem própria, revogação de um aparelho, revogação administrativa autorizada e limpeza segura do app foram entregues sem antecipar o WebSocket da PR 056. Lint, tipos, 129 testes, build iOS/Android, contratos, Expo e auditoria de dependências foram aprovados. Não houve migration; a imagem `vyntra/api-staging:pr-016` ficou saudável com prontidão `PRONTO`. Em staging, a lista inicial apresentou dois aparelhos e um atual; o terceiro login retornou `200` e `dispositivo_substituido=true`; access e refresh antigos retornaram `401`; alvo alheio retornou `403`; revogações própria e administrativa retornaram `204`. O banco confirmou três aparelhos revogados, nenhuma sessão ativa e exatamente um fato para substituição, revogação própria e revogação administrativa. Dados mutáveis sintéticos foram removidos; não houve erro de nível 50.
 
 ## 5. Portas internas
 
