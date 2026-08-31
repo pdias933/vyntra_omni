@@ -375,6 +375,8 @@ A PR 016 não possui migration e mantém como marca obrigatória `20260831000700
 
 A PR 019 não possui migration e mantém como marca obrigatória `20260831000900_criar_controles_recurso_versao`. O simulador de mensageria pode ser exercitado no build/staging, mas não é selecionado por configuração, não abre webhook e não possui credencial. Promover a imagem não habilita envio Meta. Se o simulador aparecer no grafo de dependências da aplicação, a promoção deve ser bloqueada.
 
+A PR 020 também não possui migration e mantém a mesma marca obrigatória. O simulador ERP pode ser exercitado dentro da imagem, mas não possui endpoint, credencial ou registro no módulo da aplicação; promover a imagem não habilita MK. `RESULTADO_INCERTO` em produção exige operação persistente e reconciliação — reiniciar, reprogramar cenário ou repetir manualmente não é procedimento válido.
+
 ### Recuperação de operações
 
 Um processo periódico recupera concessões vencidas em lotes pequenos. Ele encerra a tentativa como `RESULTADO_INCERTO`, limpa a concessão e agenda reconciliação imediata. O operador pode observar tipo, estado, idade, quantidade de tentativas e código normalizado; token, payload bruto e dado sensível não aparecem em log ou painel.

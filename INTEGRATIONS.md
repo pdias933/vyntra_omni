@@ -203,6 +203,14 @@ Se o ERP confirmar o protocolo, uma transação local grava o valor oficial imut
 
 Backoff, limite de tentativas, campos de comentário e comportamento do ERP em encerramento/reabertura só podem ser congelados após a caracterização real do MK.
 
+### 3.4 Contrato mínimo e simulador
+
+A PR 020 materializa `AdaptadorErp` como composição de `ConsultasErp` e `EscritasErp`. A fatia inicial cobre localização de clientes, contratos, faturas, criação de atendimento/protocolo e reconciliação dessa criação. Consultas retornam modelos normalizados com origem `TEMPO_REAL`; indisponibilidade é explícita e não se apresenta como snapshot. Novos métodos entram somente junto do caso de uso que fixa sua semântica comum.
+
+`AdaptadorErpSimulado` recebe apenas dados sintéticos e relógio controlado. Criação confirmada devolve protocolo oficial determinístico; indisponibilidade anterior à chamada declara que não existe efeito externo; perda de resposta cria o efeito simulado, devolve `RESULTADO_INCERTO` e permite encontrá-lo apenas pela reconciliação. Repetição compatível reaproveita o resultado e chave divergente falha. A memória existe somente para testes: produção continua exigindo `OperacaoIntegracao`, idempotência PostgreSQL, caixa de saída e auditoria.
+
+O simulador não contém DTO MK, credencial, endpoint ou inferência sobre campos reais e não é registrado no runtime. `AdaptadorMkSolutions` permanece bloqueado até a caracterização da seção 4.3; `AdaptadorSessaoAcesso` continua uma porta separada.
+
 ## 4. `AdaptadorMkSolutions`
 
 É a primeira implementação de `AdaptadorErp`.

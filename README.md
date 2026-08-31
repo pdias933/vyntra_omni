@@ -76,6 +76,8 @@ Controles de recurso permitem piloto por administrador, usuário, fila ou percen
 
 A porta `CanalMensageria` troca somente comandos, eventos e falhas internos normalizados. O simulador Meta é determinístico, cobre aceite/falha/duplicidade e não é uma integração de produção nem um DTO oficial. Contrato, limites e validação estão em [docs/operacoes/PR-019.md](docs/operacoes/PR-019.md); não houve nova dependência, conforme [docs/dependencias/PR-019.md](docs/dependencias/PR-019.md).
 
+A porta `AdaptadorErp` separa consultas e escritas normalizadas. O simulador distingue ERP indisponível de resposta perdida e obriga reconciliação quando um efeito pode existir, sem antecipar DTO MK ou registrar integração real. Contrato e aceite estão em [docs/operacoes/PR-020.md](docs/operacoes/PR-020.md); não houve nova dependência, conforme [docs/dependencias/PR-020.md](docs/dependencias/PR-020.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local

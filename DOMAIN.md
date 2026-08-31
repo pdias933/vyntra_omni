@@ -566,6 +566,8 @@ PENDENTE → OFICIAL
 
 O atendimento nasce com UUID interno e protocolo `PENDENTE`. Somente um valor confirmado pelo ERP muda o estado para `OFICIAL`; o valor oficial é imutável. Tentativa, timeout, falha e reconciliação pertencem à `OperacaoIntegracao`, não viram estados do protocolo. Resposta perdida ou resultado incerto exige reconciliação conservadora, nunca nova criação cega. A política operacional detalhada será fechada com o contrato real do MK no PR correspondente.
 
+A porta ERP materializada na PR 020 não antecipa a entidade persistente: `INDISPONIVEL` com `efeitoExternoPossivel: false` mantém o protocolo pendente; `RESULTADO_INCERTO` significa que o efeito pode existir e exige `reconciliarCriacaoAtendimento`. Apenas `CONFIRMADO`, vindo da criação ou da reconciliação, contém `protocoloOficial`. O simulador nunca gera número local de contingência.
+
 ## 12. Snapshot e integração
 
 Estado normalizado de uma integração:

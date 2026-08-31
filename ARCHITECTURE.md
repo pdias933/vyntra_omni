@@ -574,6 +574,8 @@ Nenhum adapter expõe credencial, DTO bruto ou código externo ao domínio. [FLO
 
 Na PR 019, a porta de mensageria é código puro e não registra integração real no módulo da aplicação. O simulador Meta implementa a porta, normaliza estados externos e entrega eventos internos a um consumidor; repetição compatível reaproveita resultado e chave incompatível falha. Esse armazenamento em memória existe somente para teste. Produção continuará exigindo persistência/idempotência PostgreSQL, webhook autenticado e caixa de saída nos PRs próprios.
 
+Na PR 020, `AdaptadorErp` separa consultas e escritas e devolve somente modelos internos normalizados. Seu simulador contratual diferencia indisponibilidade anterior à escrita, quando não há efeito externo, de resposta perdida após possível criação. A segunda situação retorna `RESULTADO_INCERTO` e só pode avançar por reconciliação. O simulador não é provider da aplicação; `OperacaoIntegracao`, caixa de saída e protocolo persistente continuam pertencendo aos PRs de domínio.
+
 ## 14. Observabilidade
 
 Quatro sinais distintos:

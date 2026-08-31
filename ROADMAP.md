@@ -41,7 +41,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 017 | CONCLUÍDA | `xhigh` |
 | 018 | CONCLUÍDA | `high` |
 | 019 | CONCLUÍDA | `high` |
-| 020 | PENDENTE | `high` |
+| 020 | EM ANDAMENTO | `high` |
 | 021 | PENDENTE | `medium` |
 | 022 | PENDENTE | `medium` |
 | 023 | PENDENTE | `high` |

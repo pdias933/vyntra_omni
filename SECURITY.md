@@ -352,6 +352,7 @@ Replay ou duplicidade retorna sucesso compatível sem repetir o efeito. Status f
 - URL com token/query sensível nunca é logada;
 - resposta externa é tratada como não confiável e validada pelo adapter;
 - simulador Meta não recebe segredo, não é registrado no runtime e nunca substitui assinatura, deduplicação PostgreSQL ou validação do webhook real;
+- simulador ERP não recebe segredo nem DTO MK, não é registrado no runtime e separa efeito comprovadamente ausente de efeito incerto; memória de teste nunca substitui operação/idempotência PostgreSQL;
 - snapshot desatualizado nunca executa escrita;
 - cada escrita externa exige idempotência e auditoria.
 
