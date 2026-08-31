@@ -27,7 +27,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 003 | CONCLUÍDA | `high` |
 | 004 | CONCLUÍDA | `high` |
 | 005 | CONCLUÍDA | `xhigh` |
-| 006 | EM ANDAMENTO | `medium` |
+| 006 | CONCLUÍDA | `medium` |
 | 007 | PENDENTE | `high` |
 | 008 | PENDENTE | `high` |
 | 009 | PENDENTE | `xhigh` |
@@ -164,6 +164,10 @@ Aceite concluído em 2026-08-30: oito decisões técnicas aprovadas e rastreáve
 ### PR 005 — Staging isolado mínimo
 
 Aceite concluído em 30 de agosto de 2026: projeto `vyntra-staging` implantado em diretório próprio na VM de testes, coexistindo com `vyntra-desenvolvimento`; API, PostgreSQL, Redis e Garage S3 saudáveis; somente APIs publicadas em loopback; cinco volumes, três redes e dez arquivos de segredo exclusivos; bucket privado com chave sem permissão de proprietário; protocolo S3 e persistência de PostgreSQL, Redis e objeto comprovados após reinício. Nenhum dado bruto ou credencial de produção foi usado.
+
+### PR 006 — API base e OpenAPI
+
+Aceite concluído em 30 de agosto de 2026: prefixo `/api/v1`, resposta técnica de versão, filtro de erros canônicos em português, validação global estrita, contrato OpenAPI 3.1 e pacote TypeScript gerado entregues; interface HTML do Swagger desativada; divergência entre controllers, JSON e SDK bloqueada pelos testes; lint, tipos, 49 testes, build e auditoria de dependências aprovados. A imagem `vyntra/api-staging:pr-006` foi construída na VM e validada com API, OpenAPI, PostgreSQL, Redis e Garage S3 saudáveis, preservando os volumes e segredos isolados da PR 005.
 
 ## 4. Identidade de funcionários e autorização
 
