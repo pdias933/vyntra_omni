@@ -27,7 +27,7 @@ function gerarValorAleatorio() {
 const arquivosSegredos = Object.freeze([
   {
     nome: 'senha-postgresql',
-    modo: 0o600,
+    modo: 0o640,
     gerar: () => `${gerarValorAleatorio()}\n`,
     validar: (conteudo) => /^[A-Za-z0-9_-]{43}\n$/.test(conteudo),
   },

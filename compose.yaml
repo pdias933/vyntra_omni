@@ -83,6 +83,38 @@ services:
       - rede_dados
     logging: *registro-local
 
+  migrar:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migracao
+    image: vyntra/migracoes-desenvolvimento:pr-008
+    pull_policy: build
+    restart: "no"
+    init: true
+    user: "1000:0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      BANCO_HOST: postgres
+      BANCO_NOME: vyntra
+      BANCO_PORTA: "5432"
+      BANCO_SENHA_FILE: /run/secrets/senha_postgresql
+      BANCO_USUARIO: vyntra
+    secrets:
+      - senha_postgresql
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:uid=1000,gid=0,mode=0700
+    networks:
+      - rede_dados
+    logging: *registro-local
+
   minio:
     image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     user: "1000:0"
@@ -146,7 +178,10 @@ services:
     image: vyntra/api-desenvolvimento:local
     pull_policy: build
     init: true
+    user: "1000:0"
     depends_on:
+      migrar:
+        condition: service_completed_successfully
       minio:
         condition: service_healthy
       postgres:
@@ -156,13 +191,18 @@ services:
     environment:
       AMBIENTE_APLICACAO: desenvolvimento
       BANCO_HOST: postgres
+      BANCO_NOME: vyntra
       BANCO_PORTA: "5432"
+      BANCO_SENHA_FILE: /run/secrets/senha_postgresql
+      BANCO_USUARIO: vyntra
       ENDERECO_HTTP: 0.0.0.0
       NODE_ENV: development
       PORTA_HTTP: "3000"
       REDIS_HOST: redis
       REDIS_PORTA: "6379"
       STORAGE_ENDPOINT: http://minio:9000
+    secrets:
+      - senha_postgresql
     read_only: true
     cap_drop:
       - ALL

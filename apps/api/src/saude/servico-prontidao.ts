@@ -1,7 +1,9 @@
 import { createConnection } from 'node:net';
 import { readFile } from 'node:fs/promises';
 
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+
+import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 
 export interface ResultadoProntidao {
   readonly falhas: readonly string[];
@@ -91,6 +93,10 @@ async function conectar(alvo: AlvoDependencia): Promise<boolean> {
 
 @Injectable()
 export class ServicoProntidao {
+  public constructor(
+    @Inject(ServicoPrisma) private readonly prisma: ServicoPrisma,
+  ) {}
+
   public async verificar(): Promise<ResultadoProntidao> {
     try {
       const alvos = await this.obterAlvos();
@@ -103,6 +109,16 @@ export class ServicoProntidao {
       const falhas = resultados
         .filter(({ disponivel }) => !disponivel)
         .map(({ componente }) => componente);
+
+      const postgresqlDisponivel = resultados.some(
+        ({ componente, disponivel }) => componente === 'POSTGRESQL' && disponivel,
+      );
+      if (
+        postgresqlDisponivel &&
+        !(await this.prisma.verificarMigracaoObrigatoria())
+      ) {
+        falhas.push('MIGRACAO_POSTGRESQL');
+      }
 
       return { falhas, pronto: falhas.length === 0 };
     } catch {

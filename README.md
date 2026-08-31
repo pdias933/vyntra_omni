@@ -40,11 +40,15 @@ As versões e a justificativa da superfície inicial estão em [docs/dependencia
 
 Toda requisição recebe correlação validada; erros devolvem o mesmo identificador e logs técnicos são JSON sanitizado via Pino. Liveness e readiness ficam em `/api/v1/saude/vivo` e `/api/v1/saude/pronto`. Contrato operacional e limites estão em [docs/operacoes/PR-007.md](docs/operacoes/PR-007.md); a análise da dependência está em [docs/dependencias/PR-007.md](docs/dependencias/PR-007.md).
 
+### Auditoria imutável
+
+`ServicoAuditoria` acrescenta registros sanitizados no PostgreSQL por um repositório sem operações de edição/remoção. A migration aditiva bloqueia `UPDATE`, `DELETE` e `TRUNCATE` na própria tabela; usuários e administradores da plataforma não recebem endpoint de mutação. O job de migration termina antes da API e a prontidão confirma a migration obrigatória. Modelo, operação e rollback estão em [docs/operacoes/PR-008.md](docs/operacoes/PR-008.md); versões e superfície das dependências estão em [docs/dependencias/PR-008.md](docs/dependencias/PR-008.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local
 
-O ambiente de desenvolvimento sobe a API mínima, PostgreSQL, Redis e MinIO por Docker Compose. As credenciais são geradas em arquivos locais ignorados pelo Git; nenhum valor é exibido pelo comando de preparação.
+O ambiente de desenvolvimento sobe a API mínima, um job único de migration, PostgreSQL, Redis e MinIO por Docker Compose. As credenciais são geradas em arquivos locais ignorados pelo Git; nenhum valor é exibido pelo comando de preparação.
 
 ```text
 pnpm ambiente:preparar

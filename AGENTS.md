@@ -134,6 +134,8 @@ Toda leitura/escrita valida sessão + usuário + permissão + fila/escopo + recu
 
 Use os serviços centralizados de autorização, proteção de dados, idempotência, auditoria, sanitização e validação de arquivo.
 
+`RegistroAuditoria` é somente de acréscimo. Código de aplicação usa `ServicoAuditoria`; não chama `update`, `delete`, `upsert` ou `truncate`, não desabilita seus triggers e não cria rota administrativa de mutação. Uma ação que exige auditoria falha se o registro não puder participar da mesma transação local.
+
 ## 7. Banco e migrations
 
 - Nunca editar migration já aplicada.

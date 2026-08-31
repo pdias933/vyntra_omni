@@ -24,12 +24,24 @@ COPY packages/typescript-config/package.json packages/typescript-config/package.
 RUN pnpm --filter '@vyntra/api...' install --frozen-lockfile
 
 COPY tsconfig.json ./
+COPY apps/api/prisma.config.ts apps/api/
+COPY apps/api/prisma apps/api/prisma
 COPY apps/api/tsconfig.json apps/api/tsconfig.build.json apps/api/
 COPY apps/api/src apps/api/src
 COPY packages/typescript-config/*.json packages/typescript-config/
 
 RUN pnpm --filter @vyntra/api build \
     && pnpm --filter @vyntra/api deploy --prod --legacy /saida/api
+
+FROM construtor AS migracao
+
+ENV HOME=/tmp
+
+WORKDIR /codigo/apps/api
+
+USER 1000:0
+
+CMD ["pnpm", "prisma:migrate:deploy"]
 
 FROM ${IMAGEM_NODE} AS execucao
 

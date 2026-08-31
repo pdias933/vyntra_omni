@@ -574,6 +574,19 @@ ERP_REESTABELECIDO
 PERMISSOES_ALTERADAS
 ```
 
+### 13.1 `RegistroAuditoria`
+
+`RegistroAuditoria` é um fato de segurança somente de acréscimo, separado de `EventoDominio` e de log técnico. Registra tipo, ação, origem (`USUARIO`, `FLUXO`, `SISTEMA` ou `INTEGRACAO`), ator compatível, contexto opcional, entidade afetada, correlação e instantâneo anterior/novo já sanitizado.
+
+Regras:
+
+- origem `USUARIO` exige `usuario_id`; origem `FLUXO` exige `fluxo_id` e `versao_fluxo_id`; as demais não simulam ator humano;
+- `entidade_tipo` e `entidade_id` aparecem juntos ou ambos ficam ausentes;
+- valores sensíveis não persistem em claro nos instantâneos;
+- o serviço e o repositório não oferecem edição ou remoção;
+- encerramento, transferência, deploy, nova tentativa ou rotação de log não afetam auditoria;
+- alteração de negócio e auditoria compartilham transação quando constituem um único efeito.
+
 ## 14. Invariantes obrigatórios
 
 1. Uma instalação contém dados de uma única empresa.

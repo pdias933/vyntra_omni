@@ -11,9 +11,12 @@ strictDepBuilds: true
 verifyDepsBeforeRun: error
 
 overrides:
+  deepmerge-ts: 8.0.2
   js-yaml: 4.3.2
   react: 19.2.3
   react-dom: 19.2.3
 
 allowBuilds:
   '@scarf/scarf': false
+  '@prisma/engines': true
+  prisma: true

@@ -397,6 +397,16 @@ Eventos obrigatórios:
 
 Auditoria não recebe segredo/payload integral e possui acesso próprio por permissão.
 
+Controles de persistência obrigatórios:
+
+- `ServicoAuditoria` valida origem/ator, identificadores e contexto e sanitiza os dados antes de delegar;
+- a porta de persistência expõe somente acréscimo;
+- a tabela bloqueia `UPDATE`, `DELETE` e `TRUNCATE` por trigger, além de não conceder essas operações a `PUBLIC`;
+- não existe endpoint para usuário ou administrador alterar/apagar registro;
+- erro técnico de persistência não pode ser convertido em sucesso da ação auditável;
+- quando a auditoria acompanhar uma alteração de negócio, ambas devem participar da mesma transação local;
+- eliminação/anonimização futura por retenção exige migration/procedimento privilegiado próprio e `RETENCAO_APLICADA`; não se contorna o trigger no runtime comum.
+
 ## 14. Threat model da V1
 
 | Ameaça | Controle obrigatório |

@@ -22,6 +22,7 @@ const imagensExternas = Object.entries(compose.services)
 test('declara somente a pilha local e o inicializador limitado do MinIO', () => {
   assert.deepEqual(Object.keys(compose.services).sort(), [
     'api',
+    'migrar',
     'minio',
     'postgres',
     'preparar_volume_minio',
@@ -37,6 +38,10 @@ test('declara somente a pilha local e o inicializador limitado do MinIO', () => 
   assert.equal(compose.services.api.pull_policy, 'build');
   assert.equal(
     compose.services.minio.depends_on.preparar_volume_minio.condition,
+    'service_completed_successfully',
+  );
+  assert.equal(
+    compose.services.api.depends_on.migrar.condition,
     'service_completed_successfully',
   );
 });
@@ -151,6 +156,7 @@ test('ordena o startup pela prontidão publicada na PR 007', () => {
   assert.equal(compose.services.api.depends_on.postgres.condition, 'service_healthy');
   assert.equal(compose.services.api.depends_on.redis.condition, 'service_healthy');
   assert.equal(compose.services.api.depends_on.minio.condition, 'service_healthy');
+  assert.equal(compose.services.migrar.depends_on.postgres.condition, 'service_healthy');
   assert.ok(
     compose.services.minio.healthcheck.test.includes(
       'http://127.0.0.1:9000/minio/health/ready',
@@ -197,12 +203,14 @@ test('remove privilégios amplos e limita logs e montagens', () => {
     }
   }
 
-  for (const nome of ['api', 'minio', 'preparar_volume_minio']) {
+  for (const nome of ['api', 'migrar', 'minio', 'preparar_volume_minio']) {
     assert.deepEqual(compose.services[nome].cap_drop, ['ALL']);
     assert.equal(compose.services[nome].read_only, true);
   }
 
   assert.equal(compose.services.minio.user, '1000:0');
+  assert.equal(compose.services.api.user, '1000:0');
+  assert.equal(compose.services.migrar.user, '1000:0');
   assert.match(dockerfileApi, /USER 1000:1000/);
   assert.match(dockerfileApi, /COPY --from=construtor --chown=node:node/);
 });
@@ -218,6 +226,8 @@ test('não envia segredos, histórico ou outras aplicações ao build da API', (
     '!pnpm-workspace.yaml',
     '!tsconfig.json',
     '!apps/api/package.json',
+    '!apps/api/prisma.config.ts',
+    '!apps/api/prisma/**/*.sql',
     '!apps/api/tsconfig.json',
     '!apps/api/tsconfig.build.json',
     '!apps/api/src/**/*.ts',

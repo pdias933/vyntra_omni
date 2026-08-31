@@ -1,0 +1,46 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/gerado/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OrigemAuditoria {
+  USUARIO
+  FLUXO
+  SISTEMA
+  INTEGRACAO
+
+  @@map("origem_auditoria")
+}
+
+model RegistroAuditoria {
+  id                         String          @id @db.Uuid
+  tipoEvento                 String          @map("tipo_evento") @db.VarChar(100)
+  origem                     OrigemAuditoria
+  usuarioId                  String?         @map("usuario_id") @db.Uuid
+  fluxoId                    String?         @map("fluxo_id") @db.Uuid
+  versaoFluxoId              String?         @map("versao_fluxo_id") @db.Uuid
+  atendimentoId              String?         @map("atendimento_id") @db.Uuid
+  contatoId                  String?         @map("contato_id") @db.Uuid
+  filaId                     String?         @map("fila_id") @db.Uuid
+  acao                       String          @db.VarChar(100)
+  entidadeTipo               String?         @map("entidade_tipo") @db.VarChar(100)
+  entidadeId                 String?         @map("entidade_id") @db.Uuid
+  dadosAnterioresSanitizados Json?           @map("dados_anteriores_sanitizados")
+  dadosNovosSanitizados      Json?           @map("dados_novos_sanitizados")
+  enderecoIp                 String?         @map("endereco_ip") @db.Inet
+  dispositivoId              String?         @map("dispositivo_id") @db.Uuid
+  sessaoId                   String?         @map("sessao_id") @db.Uuid
+  correlacaoId               String          @map("correlacao_id") @db.Uuid
+  criadoEm                   DateTime        @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  @@index([criadoEm], map: "registro_auditoria_criado_em_idx")
+  @@index([usuarioId, criadoEm], map: "registro_auditoria_usuario_criado_em_idx")
+  @@index([atendimentoId, criadoEm], map: "registro_auditoria_atendimento_criado_em_idx")
+  @@index([entidadeTipo, entidadeId, criadoEm], map: "registro_auditoria_entidade_criado_em_idx")
+  @@map("registro_auditoria")
+}

@@ -16,6 +16,7 @@ const codigoVerificacaoS3 = await readFile(
 test('declara somente a pilha mínima e persistente de staging', () => {
   assert.deepEqual(Object.keys(compose.services).sort(), [
     'api',
+    'migrar',
     'postgres',
     'redis',
     'storage',
@@ -32,8 +33,8 @@ test('declara somente a pilha mínima e persistente de staging', () => {
     assert.equal(volume?.external, undefined);
   }
 
-  for (const servico of Object.values(compose.services)) {
-    assert.equal(servico.restart, 'unless-stopped');
+  for (const [nome, servico] of Object.entries(compose.services)) {
+    assert.equal(servico.restart, nome === 'migrar' ? 'no' : 'unless-stopped');
     assert.equal(servico.container_name, undefined);
     assert.equal(servico.privileged, undefined);
   }
@@ -121,7 +122,7 @@ test('separa todos os segredos e não aceita credencial de produção', () => {
   );
   assert.match(codigoStaging, /DADOS_PERMITIDOS=sinteticos_ou_sanitizados/);
   assert.match(codigoStaging, /CHAVE_STORAGE_EXISTE_SEM_SEGREDO_LOCAL/);
-  assert.match(codigoStaging, /vyntra\/api-staging:pr-007/);
+  assert.match(codigoStaging, /vyntra\/api-staging:pr-008/);
   assert.match(codigoStaging, /no-new-privileges:true/);
   assert.match(codigoVerificacaoS3, /AWS4-HMAC-SHA256/);
   assert.ok(!codigoVerificacaoS3.includes('console.log(identificador'));
@@ -150,6 +151,8 @@ test('entrega à API apenas contratos por arquivo e contexto explícito', () => 
     'url_postgresql',
     'url_redis',
   ]);
+  assert.deepEqual(compose.services.migrar.secrets, ['url_postgresql']);
+  assert.equal(compose.services.migrar.user, '1000:0');
 });
 
 test('ordena startup por saúde e limita privilégios e logs', () => {
@@ -174,5 +177,13 @@ test('ordena startup por saúde e limita privilégios e logs', () => {
   assert.equal(compose.services.api.depends_on.postgres.condition, 'service_healthy');
   assert.equal(compose.services.api.depends_on.redis.condition, 'service_healthy');
   assert.equal(compose.services.api.depends_on.storage.condition, 'service_healthy');
+  assert.equal(
+    compose.services.api.depends_on.migrar.condition,
+    'service_completed_successfully',
+  );
+  assert.equal(
+    compose.services.migrar.depends_on.postgres.condition,
+    'service_healthy',
+  );
   assert.equal(compose.services.api.pull_policy, 'build');
 });

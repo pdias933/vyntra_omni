@@ -118,17 +118,48 @@ services:
       - rede_storage_staging
     logging: *registro-staging
 
+  migrar:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migracao
+    image: vyntra/migracoes-staging:pr-008
+    pull_policy: build
+    restart: "no"
+    init: true
+    user: "1000:0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      BANCO_URL_FILE: /run/secrets/url_postgresql
+      HOME: /tmp
+    secrets:
+      - url_postgresql
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:uid=1000,gid=0,mode=0700
+    networks:
+      - rede_dados_staging
+    logging: *registro-staging
+
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/api-staging:pr-007
+    image: vyntra/api-staging:pr-008
     pull_policy: build
     restart: *reinicio-staging
     init: true
     user: "1000:0"
     depends_on:
+      migrar:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:

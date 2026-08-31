@@ -21,15 +21,19 @@ const EXPRESSOES_SENSIVEIS: ReadonlyArray<readonly [RegExp, string]> = [
   [/\b[A-Za-z0-9+/=_-]{40,}\b/gu, '[VALOR_REMOVIDO]'],
 ];
 
+export function sanitizarTextoSensivel(valor: unknown, limite = 500): string {
+  let texto = typeof valor === 'string' ? valor : String(valor);
+
+  for (const [expressao, substituicao] of EXPRESSOES_SENSIVEIS) {
+    texto = texto.replace(expressao, substituicao);
+  }
+
+  return texto.slice(0, limite);
+}
+
 export class SanitizadorLogs {
   public sanitizarTexto(valor: unknown): string {
-    let texto = typeof valor === 'string' ? valor : String(valor);
-
-    for (const [expressao, substituicao] of EXPRESSOES_SENSIVEIS) {
-      texto = texto.replace(expressao, substituicao);
-    }
-
-    return texto.slice(0, 500);
+    return sanitizarTextoSensivel(valor);
   }
 
   public sanitizarRegistro(

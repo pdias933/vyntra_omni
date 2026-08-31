@@ -16,7 +16,7 @@ DESENVOLVIMENTO → STAGING → PRODUÇÃO
 - credenciais externas somente em arquivo local ignorado ou cofre aprovado;
 - nenhum dado real desnecessário.
 
-A implementação local está em `compose.yaml` e sobe somente `api`, `postgres`, `redis`, `minio` e o inicializador efêmero do volume MinIO. Use os comandos versionados da raiz:
+A implementação local está em `compose.yaml` e sobe `api`, o job único `migrar`, `postgres`, `redis`, `minio` e o inicializador efêmero do volume MinIO. Use os comandos versionados da raiz:
 
 ```text
 pnpm ambiente:preparar
@@ -162,6 +162,8 @@ Na V1 fica na mesma VM, com:
 Mover para VM/serviço dedicado é evolução operacional, não reescrita do software.
 
 Migrations são executadas por um job único antes da liberação da nova API, protegido por lock consultivo/transacional no PostgreSQL. Containers de API e worker não disputam migration no startup e nunca executam alteração destrutiva automaticamente.
+
+Desde a PR 008, Compose materializa esse job como `migrar`: Prisma Migrate mantém seu lock consultivo e metadados, aplica somente migrations versionadas e termina. A API depende de `service_completed_successfully`; falha de migration impede prontidão e tráfego. O mesmo artefato pode ser executado novamente com segurança, pois migrations concluídas não são reaplicadas.
 
 ## 7. Redis e workers
 
@@ -355,6 +357,8 @@ Responde se o processo está vivo. Não faz consulta pesada a todas as dependên
 
 Responde se a instância pode receber tráfego, verificando dependências mínimas e estado de inicialização/migration.
 
+Além da conexão com PostgreSQL, a implementação confirma em `_prisma_migrations` que `20260831000100_criar_registro_auditoria` terminou e não foi revertida. A resposta externa continua genérica e não revela schema, tabela ou dependência defeituosa.
+
 ### Painel por componente
 
 ```text
@@ -389,7 +393,7 @@ Um monitor externo consulta a saúde pública mínima. Se a VM morrer, o alerta 
 
 ### Auditoria
 
-Fica no PostgreSQL/armazenamento próprio, com retenção longa e imutabilidade lógica. Não desaparece com rotação de Docker.
+Fica no PostgreSQL/armazenamento próprio, com retenção longa e imutabilidade lógica. Não desaparece com rotação de Docker. A tabela é somente de acréscimo; triggers bloqueiam alteração, exclusão e truncamento até mesmo pelo papel atual da aplicação. Usuários da plataforma não recebem acesso SQL nem endpoint de mutação.
 
 ### Métricas iniciais
 

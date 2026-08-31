@@ -222,6 +222,12 @@ Armazena:
 - operações externas idempotentes;
 - flags, políticas de versão e auditoria.
 
+O acesso inicial usa Prisma 7 estável com o adaptador oficial `pg`. `ServicoPrisma` cria o cliente/pool de forma tardia, limita cada processo a cinco conexões e encerra o pool com o módulo. URL autenticada continua vindo de arquivo secreto; desenvolvimento pode compô-la em memória a partir de usuário, banco, host e arquivo de senha.
+
+`Auditoria` depende de uma porta somente de acréscimo. Prisma executa o `INSERT`; constraints e triggers PostgreSQL, criados pela migration, materializam coerência de ator/contexto e bloqueiam `UPDATE`, `DELETE` e `TRUNCATE`. O trigger é o uso excepcional de SQL bruto porque Prisma não modela triggers; ele não recebe entrada dinâmica.
+
+Migrations rodam em um contêiner/job único antes da API. A API não executa migration no startup e só fica pronta quando a migration obrigatória consta como concluída.
+
 ### 6.2 Redis
 
 Usos permitidos:

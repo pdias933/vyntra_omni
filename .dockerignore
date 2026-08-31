@@ -8,6 +8,11 @@
 !apps
 !apps/api
 !apps/api/package.json
+!apps/api/prisma.config.ts
+!apps/api/prisma
+!apps/api/prisma/**/*.prisma
+!apps/api/prisma/**/*.sql
+!apps/api/prisma/**/*.toml
 !apps/api/tsconfig.json
 !apps/api/tsconfig.build.json
 !apps/api/src

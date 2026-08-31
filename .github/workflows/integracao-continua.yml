@@ -64,6 +64,31 @@ jobs:
           test "${codigo_http}" = '200'
 
           docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "INSERT INTO registro_auditoria (id, tipo_evento, origem, acao, correlacao_id) VALUES ('\''80000000-0000-4000-8000-000000000001'\'', '\''VERIFICACAO_CI'\'', '\''SISTEMA'\'', '\''VERIFICAR_IMUTABILIDADE'\'', '\''80000000-0000-4000-8000-000000000002'\'');"' </dev/null
+
+          if docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "UPDATE registro_auditoria SET acao = '\''ALTERACAO_PROIBIDA'\'';"' </dev/null >/dev/null 2>&1
+          then
+            echo '::error::UPDATE de auditoria não foi bloqueado.'
+            exit 1
+          fi
+          if docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "DELETE FROM registro_auditoria;"' </dev/null >/dev/null 2>&1
+          then
+            echo '::error::DELETE de auditoria não foi bloqueado.'
+            exit 1
+          fi
+          if docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "TRUNCATE registro_auditoria;"' </dev/null >/dev/null 2>&1
+          then
+            echo '::error::TRUNCATE de auditoria não foi bloqueado.'
+            exit 1
+          fi
+          docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --tuples-only --no-align --command "SELECT count(*) FROM registro_auditoria WHERE tipo_evento = '\''VERIFICACAO_CI'\'';"' </dev/null \
+            | grep --quiet --line-regexp 1
+
+          docker compose exec -T postgres sh -ceu \
             'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "CREATE TABLE verificacao_pr004 (valor text PRIMARY KEY); INSERT INTO verificacao_pr004 VALUES ('\''persistiu'\'');"' </dev/null
           docker compose exec -T minio /usr/bin/sh -ceu \
             'export MC_HOST_local="http://$(cat /run/secrets/usuario_minio):$(cat /run/secrets/senha_minio)@127.0.0.1:9000"
