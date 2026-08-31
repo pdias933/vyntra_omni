@@ -36,7 +36,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 012 | CONCLUÍDA | `xhigh` |
 | 013 | CONCLUÍDA | `xhigh` |
 | 014 | CONCLUÍDA | `high` |
-| 015 | EM ANDAMENTO | `xhigh` |
+| 015 | CONCLUÍDA | `xhigh` |
 | 016 | PENDENTE | `xhigh` |
 | 017 | PENDENTE | `xhigh` |
 | 018 | PENDENTE | `high` |
@@ -213,6 +213,10 @@ Aceite concluído em 31 de agosto de 2026: credencial Argon2id, sessão opaca pe
 ### PR 014 — Limites de sessão web
 
 Aceite concluído em 31 de agosto de 2026: máximo de duas sessões web, confirmação explícita da terceira, substituição atômica da mais antiga, 12 horas de inatividade renovável, listagem própria, revogação remota, logout global e revogação administrativa autorizada/auditada foram entregues. Lint, tipos, 113 testes, build, contratos, Expo e auditoria de dependências foram aprovados. A migration `20260831000600_limitar_sessoes_web` terminou com código zero e a imagem `vyntra/api-staging:pr-014` ficou saudável com prontidão `PRONTO`. Em staging, o primeiro login retornou `200`; duas tentativas concorrentes para a vaga restante produziram um `200` e um `409`; a repetição confirmada retornou `200`, preservou exatamente duas sessões e registrou a revogação por limite; logout global retornou `204` e deixou zero sessão ativa. Dados mutáveis sintéticos foram removidos e os fatos de auditoria permaneceram imutáveis.
+
+### PR 015 — Sessão e dispositivo mobile
+
+Aceite concluído em 31 de agosto de 2026: sessão mobile separada da web, access token de 15 minutos somente em memória, refresh rotativo com limite absoluto de 30 dias no Keychain/Keystore, vínculo por instalação/dispositivo, rate limit persistente, MFA conservador, logout e replay com revogação auditada foram entregues. Lint, tipos, 123 testes, build iOS/Android, contratos, Expo e auditoria de dependências foram aprovados. A migration `20260831000700_criar_sessao_dispositivo_mobile` terminou com código zero e a imagem `vyntra/api-staging:pr-015` ficou saudável com prontidão `PRONTO`. Em staging, login, validação e rotação retornaram `200`; access anterior, refresh repetido e sessão revogada retornaram `401`; novo login retornou `200`, logout `204` e vínculo divergente `403`. PostgreSQL confirmou os hashes, o refresh consumido, duas revogações, duas tentativas bem-sucedidas, uma falha de vínculo e sete fatos de auditoria. Dados mutáveis sintéticos foram removidos; não houve erro de nível 50.
 
 ## 5. Portas internas
 
