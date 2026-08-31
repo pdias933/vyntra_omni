@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 
 import {
+  ErroDispositivoNaoConfiavel,
   ErroMfaNecessario,
 } from '../dist/autenticacao/erros-autenticacao.js';
 import { ServicoAutenticacaoMobile } from '../dist/autenticacao/servico-autenticacao-mobile.js';
@@ -15,6 +16,7 @@ function criarCenario(sobrescritas = {}) {
     auditoria: [],
     dispositivos: [],
     revogacoes: [],
+    resultadosTentativa: [],
     rotacoes: [],
     sessoes: [],
     tentativas: [],
@@ -32,7 +34,10 @@ function criarCenario(sobrescritas = {}) {
   };
   const repositorio = {
     atualizarDispositivo: async () => sobrescritas.dispositivoAtualizado ?? true,
-    atualizarResultadoTentativa: async () => true,
+    atualizarResultadoTentativa: async (...argumentos) => {
+      chamadas.resultadosTentativa.push(argumentos);
+      return true;
+    },
     contarFalhasRecentes: async () =>
       sobrescritas.contagens ?? { contaIpDispositivo: 0, ip: 0 },
     criarDispositivo: async (...argumentos) =>
@@ -170,6 +175,28 @@ test('access token exige o dispositivo e o segredo de vínculo corretos', async 
         'z'.repeat(43),
       ),
     ErroNaoAutenticado,
+  );
+});
+
+test('vínculo divergente não converte a tentativa em sucesso', async () => {
+  const cenario = criarCenario({
+    dispositivo: {
+      estado: 'ATIVO',
+      id: randomUUID(),
+      segredoVinculoHash: hashHex('z'.repeat(43)),
+      usuarioId: randomUUID(),
+    },
+  });
+
+  await assert.rejects(
+    () => cenario.servico.entrar(entradaLogin),
+    ErroDispositivoNaoConfiavel,
+  );
+  assert.equal(cenario.chamadas.resultadosTentativa.length, 0);
+  assert.equal(cenario.chamadas.sessoes.length, 0);
+  assert.equal(
+    cenario.chamadas.auditoria[0][0].tipoEvento,
+    'DISPOSITIVO_MOBILE_RECUSADO',
   );
 });
 

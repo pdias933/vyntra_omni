@@ -133,7 +133,6 @@ export class ServicoAutenticacaoMobile {
     const acessoExpiraEm = new Date(agora.getTime() + DURACAO_ACESSO_MS);
     const refreshExpiraEm = new Date(agora.getTime() + DURACAO_REFRESH_MS);
     const resultado = await this.prisma.executarTransacao(async (transacao) => {
-      await this.confirmarTentativa(reserva.id, transacao);
       await this.repositorio.serializarDispositivo(
         credencial.usuarioId,
         dispositivo.identificadorInstalacaoHash,
@@ -167,6 +166,7 @@ export class ServicoAutenticacaoMobile {
         );
         return { dispositivoNaoConfiavel: true } as const;
       }
+      await this.confirmarTentativa(reserva.id, transacao);
       if (persistido === undefined) {
         const dispositivoId = randomUUID();
         await this.repositorio.criarDispositivo(
