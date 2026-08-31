@@ -31,7 +31,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 007 | CONCLUÍDA | `high` |
 | 008 | CONCLUÍDA | `high` |
 | 009 | CONCLUÍDA | `xhigh` |
-| 010 | EM ANDAMENTO | `xhigh` |
+| 010 | CONCLUÍDA | `xhigh` |
 | 011 | PENDENTE | `high` |
 | 012 | PENDENTE | `xhigh` |
 | 013 | PENDENTE | `xhigh` |
@@ -180,6 +180,10 @@ Aceite concluído em 31 de agosto de 2026: `RegistroAuditoria` canônico, saniti
 ### PR 009 — Evento e Caixa de Saída Transacional
 
 Aceite concluído em 31 de agosto de 2026: `EventoDominio` recebeu `sequencia_evento` global do PostgreSQL e `ItemCaixaSaida` passou a referenciar o fato que originou o efeito; `ServicoTransacaoDominio` confirmou alteração, evento e itens em um único commit e reverteu integralmente a unidade sob falha. Lint, tipos, 68 testes, build, contratos e auditoria de dependências foram aprovados. A migration aditiva terminou com código zero e a imagem `vyntra/api-staging:pr-009` ficou saudável. Em staging, dois commits reais produziram sequências `1` e `3`, enquanto a tentativa intermediária falhou e não deixou auditoria, evento ou item; ambos os commits persistiram dados protegidos e nenhuma caixa de saída ficou órfã.
+
+### PR 010 — Idempotência e operações recuperáveis
+
+Aceite concluído em 31 de agosto de 2026: chaves com escopo e assinatura, operações recuperáveis, concessões temporárias e histórico de tentativas passaram a ser autoridade do PostgreSQL; chave e token persistem somente como hash, e expiração ou resposta perdida exigem reconciliação antes de nova execução. Lint, tipos, 77 testes, build, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831000300_criar_idempotencia_operacoes` terminou com código zero e a imagem `vyntra/api-staging:pr-010` ficou saudável. Em staging, oito criações simultâneas produziram uma operação nova e sete reaproveitamentos; oito aquisições produziram um vencedor; execução incerta, reconciliação com efeito ausente e nova execução concluída preservaram três tentativas; uma concessão vencida foi recuperada como `RESULTADO_INCERTO`; chave, tokens, CPF e senha não ficaram em claro.
 
 ## 4. Identidade de funcionários e autorização
 
