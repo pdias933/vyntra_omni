@@ -35,7 +35,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 011 | CONCLUÍDA | `high` |
 | 012 | CONCLUÍDA | `xhigh` |
 | 013 | CONCLUÍDA | `xhigh` |
-| 014 | EM ANDAMENTO | `high` |
+| 014 | CONCLUÍDA | `high` |
 | 015 | PENDENTE | `xhigh` |
 | 016 | PENDENTE | `xhigh` |
 | 017 | PENDENTE | `xhigh` |
@@ -209,6 +209,10 @@ Aceite concluído em 31 de agosto de 2026: sessão, usuário/perfil, permissão,
 ### PR 013 — Login e sessão web
 
 Aceite concluído em 31 de agosto de 2026: credencial Argon2id, sessão opaca persistida somente por hash, cookies `__Host` seguros, CSRF vinculado, origem/CORS explícitos, expiração absoluta, rotação atômica, logout, limite de força bruta e auditoria transacional foram entregues; usuário inexistente e senha incorreta permanecem indistinguíveis, e conta privilegiada sem MFA não recebe sessão. Lint, tipos, 110 testes, build, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831000500_criar_credencial_sessao_web` terminou com código zero e a imagem `vyntra/api-staging:pr-013` ficou saudável com prontidão `PRONTO`. Em staging, doze cenários HTTP reais comprovaram cookies, CSRF/origem, enumeração uniforme, expiração, rotação, token anterior, logout, MFA e limite; oito falhas concorrentes resultaram em cinco verificações e três bloqueios, enquanto oito rotações produziram um vencedor e sete recusas. Dados mutáveis sintéticos foram removidos e os fatos de auditoria permaneceram imutáveis.
+
+### PR 014 — Limites de sessão web
+
+Aceite concluído em 31 de agosto de 2026: máximo de duas sessões web, confirmação explícita da terceira, substituição atômica da mais antiga, 12 horas de inatividade renovável, listagem própria, revogação remota, logout global e revogação administrativa autorizada/auditada foram entregues. Lint, tipos, 113 testes, build, contratos, Expo e auditoria de dependências foram aprovados. A migration `20260831000600_limitar_sessoes_web` terminou com código zero e a imagem `vyntra/api-staging:pr-014` ficou saudável com prontidão `PRONTO`. Em staging, o primeiro login retornou `200`; duas tentativas concorrentes para a vaga restante produziram um `200` e um `409`; a repetição confirmada retornou `200`, preservou exatamente duas sessões e registrou a revogação por limite; logout global retornou `204` e deixou zero sessão ativa. Dados mutáveis sintéticos foram removidos e os fatos de auditoria permaneceram imutáveis.
 
 ## 5. Portas internas
 
