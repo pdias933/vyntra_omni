@@ -39,7 +39,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 015 | CONCLUÍDA | `xhigh` |
 | 016 | CONCLUÍDA | `xhigh` |
 | 017 | CONCLUÍDA | `xhigh` |
-| 018 | EM ANDAMENTO | `high` |
+| 018 | CONCLUÍDA | `high` |
 | 019 | PENDENTE | `high` |
 | 020 | PENDENTE | `high` |
 | 021 | PENDENTE | `medium` |
@@ -225,6 +225,10 @@ Aceite concluído em 31 de agosto de 2026: o PostgreSQL passou a impor no máxim
 ### PR 017 — Pareamento por QR
 
 Aceite concluído em 31 de agosto de 2026: token QR de 90 segundos e comprovante de resgate separado passaram a ser persistidos somente por hash; novo QR cancela o anterior, confirmação exige a sessão web criadora com autenticação recente e apenas o aparelho vinculado recebe access/refresh. Limites por usuário, IP e instalação, estados finais, cancelamento por revogação web e auditoria foram entregues com autoridade PostgreSQL. Lint, tipos, 138 testes, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831000800_criar_pareamento_qr` terminou com código zero e a imagem `vyntra/api-staging:pr-017` ficou saudável com prontidão `PRONTO`. Em staging, quatro resgates concorrentes produziram um `200` e três `401`; QR substituído, sessão web alheia, autenticação antiga, replay e QR após logout foram recusados; aguardo retornou `409`, confirmação `204`, conclusão e validação mobile `200`. O banco confirmou três pareamentos, um concluído, dois cancelados, zero ativo, hashes de 64 caracteres, seis tentativas e um único sucesso. Dados mutáveis sintéticos foram removidos; a auditoria imutável foi preservada e não houve erro de nível 50.
+
+### PR 018 — Controles de recurso e política de versão
+
+Aceite concluído em 31 de agosto de 2026: controles persistentes passaram a combinar estado, desligamento emergencial, administradores, usuários, filas e percentual determinístico, com autorização `ADMINISTRAR_RELEASES`, versão otimista e auditoria transacional; iOS/Android receberam políticas mínima/recomendada e o backend passou a bloquear login, pareamento, autenticação e refresh abaixo da mínima com `426`. Lint, tipos, 147 testes, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831000900_criar_controles_recurso_versao` terminou com código zero e a imagem `vyntra/api-staging:pr-018` ficou saudável com prontidão `PRONTO`. Em staging, alvos explícitos ativaram o recurso, o desligamento emergencial prevaleceu sobre 100%, duas escritas concorrentes produziram um `200` e um `409`, versão antiga recebeu `426` e a mínima recebeu `200`; constraints recusaram percentual e ordem de versões inválidos. A política foi restaurada, todos os dados mutáveis sintéticos foram removidos e seis fatos imutáveis de release foram preservados, sem erro de nível 50.
 
 ## 5. Portas internas
 
