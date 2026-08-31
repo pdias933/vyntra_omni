@@ -29,7 +29,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 005 | CONCLUÍDA | `xhigh` |
 | 006 | CONCLUÍDA | `medium` |
 | 007 | CONCLUÍDA | `high` |
-| 008 | EM ANDAMENTO | `high` |
+| 008 | CONCLUÍDA | `high` |
 | 009 | PENDENTE | `xhigh` |
 | 010 | PENDENTE | `xhigh` |
 | 011 | PENDENTE | `high` |
@@ -172,6 +172,10 @@ Aceite concluído em 30 de agosto de 2026: prefixo `/api/v1`, resposta técnica 
 ### PR 007 — Correlação, logs e saúde
 
 Aceite concluído em 31 de agosto de 2026: correlação UUID propagada no header, nos erros canônicos e no contexto assíncrono; entrada inválida substituída; logs Pino em JSON submetidos a allowlist e sanitização central; endpoints separados de vivacidade e prontidão entregues no OpenAPI e no cliente TypeScript. Lint, tipos, 54 testes, build e auditoria de dependências foram aprovados. A imagem `vyntra/api-staging:pr-007` foi implantada na VM; API, PostgreSQL, Redis e Garage S3 permaneceram saudáveis, a prontidão comprovou as três dependências e os logs de homologação preservaram evento/correlação sem expor segredos.
+
+### PR 008 — Auditoria imutável
+
+Aceite concluído em 31 de agosto de 2026: `RegistroAuditoria` canônico, sanitização, serviço e repositório somente de acréscimo entregues com Prisma/PostgreSQL; constraints de origem/ator/contexto e triggers impediram mutação inclusive pelo usuário proprietário do banco. Lint, tipos, 61 testes, build, contratos e auditoria de dependências foram aprovados. O baseline explícito preservou a tabela sintética anterior ao Prisma; o job `migrar` terminou com código zero e a imagem `vyntra/api-staging:pr-008` ficou saudável. Em staging, escrita pelo serviço central, proteção de segredo, rejeição de ator inválido e bloqueio real de `UPDATE`, `DELETE` e `TRUNCATE` foram comprovados; o registro sintético de aceite permaneceu na trilha imutável.
 
 ## 4. Identidade de funcionários e autorização
 
