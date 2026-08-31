@@ -86,6 +86,130 @@
           "saude"
         ]
       }
+    },
+    "/api/v1/autenticacao/web/entrar": {
+      "post": {
+        "operationId": "entrarSessaoWeb",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaLoginWebDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoWebDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Autentica e cria uma sessão web",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/web/sessao": {
+      "get": {
+        "operationId": "obterSessaoWeb",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Obtém a sessão web atual",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/web/rotacionar": {
+      "post": {
+        "operationId": "rotacionarSessaoWeb",
+        "parameters": [
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Rotaciona os segredos da sessão web",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/web/sair": {
+      "post": {
+        "operationId": "sairSessaoWeb",
+        "parameters": [
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Revoga a sessão web atual",
+        "tags": [
+          "autenticacao"
+        ]
+      }
     }
   },
   "info": {
@@ -97,6 +221,13 @@
   "tags": [],
   "servers": [],
   "components": {
+    "securitySchemes": {
+      "sessaoWeb": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-vyntra_sessao"
+      }
+    },
     "schemas": {
       "ErroCanonicoDto": {
         "type": "object",
@@ -151,6 +282,54 @@
         },
         "required": [
           "estado"
+        ]
+      },
+      "EntradaLoginWebDto": {
+        "type": "object",
+        "properties": {
+          "identificador": {
+            "type": "string",
+            "example": "maria.silva",
+            "maxLength": 120,
+            "minLength": 3
+          },
+          "senha": {
+            "type": "string",
+            "example": "uma senha longa e privada",
+            "maxLength": 128,
+            "minLength": 12
+          }
+        },
+        "required": [
+          "identificador",
+          "senha"
+        ]
+      },
+      "SessaoWebDto": {
+        "type": "object",
+        "properties": {
+          "sessao_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "usuario_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome_exibicao": {
+            "type": "string",
+            "example": "Maria Silva"
+          },
+          "expira_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "sessao_id",
+          "usuario_id",
+          "nome_exibicao",
+          "expira_em"
         ]
       }
     }

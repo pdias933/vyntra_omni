@@ -123,7 +123,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: migracao
-    image: vyntra/migracoes-staging:pr-012
+    image: vyntra/migracoes-staging:pr-013
     pull_policy: build
     restart: "no"
     init: true
@@ -152,7 +152,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/api-staging:pr-012
+    image: vyntra/api-staging:pr-013
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -172,6 +172,7 @@ services:
       DADOS_PERMITIDOS: sinteticos_ou_sanitizados
       ENDERECO_HTTP: 0.0.0.0
       NODE_ENV: production
+      ORIGENS_WEB_PERMITIDAS: https://staging.vyntra.local
       PORTA_HTTP: "3000"
       REDIS_URL_FILE: /run/secrets/url_redis
       STORAGE_BUCKET: vyntra-staging-midias

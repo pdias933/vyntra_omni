@@ -10,6 +10,10 @@ const configuracaoDocumento = new DocumentBuilder()
   .setDescription('Contrato público e versionado do Omnichannel V1.')
   .setVersion('1.0.0')
   .setOpenAPIVersion('3.1.0')
+  .addCookieAuth('__Host-vyntra_sessao', {
+    in: 'cookie',
+    type: 'apiKey',
+  }, 'sessaoWeb')
   .build();
 
 export function criarDocumentoOpenApi(

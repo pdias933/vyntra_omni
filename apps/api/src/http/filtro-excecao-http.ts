@@ -14,6 +14,12 @@ import {
 } from '../autorizacao/erros-autorizacao.js';
 import { contextoCorrelacao } from '../observabilidade/contexto-correlacao.js';
 import type { RegistradorTecnico } from '../observabilidade/logger-estruturado.js';
+import {
+  ErroCredenciaisInvalidas,
+  ErroLimiteLoginExcedido,
+  ErroMfaNecessario,
+  ErroRequisicaoWebNaoConfiavel,
+} from '../autenticacao/erros-autenticacao.js';
 
 const ERROS_POR_STATUS: Readonly<Record<number, CorpoErroCanonico>> = {
   [HttpStatus.BAD_REQUEST]: {
@@ -51,6 +57,25 @@ const ERRO_INTERNO: CorpoErroCanonico = {
   mensagem: 'Não foi possível concluir a solicitação.',
 };
 
+const ERROS_AUTENTICACAO = {
+  CREDENCIAIS_INVALIDAS: {
+    codigo: 'CREDENCIAIS_INVALIDAS',
+    mensagem: 'Não foi possível autenticar com as credenciais informadas.',
+  },
+  LIMITE_LOGIN_EXCEDIDO: {
+    codigo: 'LIMITE_DE_REQUISICOES',
+    mensagem: 'Muitas solicitações foram feitas. Tente novamente em instantes.',
+  },
+  MFA_NECESSARIO: {
+    codigo: 'MFA_NECESSARIO',
+    mensagem: 'É necessário concluir a autenticação multifator.',
+  },
+  REQUISICAO_WEB_NAO_CONFIAVEL: {
+    codigo: 'REQUISICAO_NAO_CONFIAVEL',
+    mensagem: 'A origem ou a proteção da requisição não pôde ser validada.',
+  },
+} satisfies Readonly<Record<string, CorpoErroCanonico>>;
+
 function possuiCorpoCanonico(valor: unknown): valor is CorpoErroCanonico {
   return (
     typeof valor === 'object' &&
@@ -75,9 +100,12 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
     const status = this.obterStatus(excecao);
     const respostaExcecao =
       excecao instanceof HttpException ? excecao.getResponse() : undefined;
-    const corpo = possuiCorpoCanonico(respostaExcecao)
-      ? respostaExcecao
-      : (ERROS_POR_STATUS[status] ?? ERRO_INTERNO);
+    const corpoAutenticacao = this.obterCorpoAutenticacao(excecao);
+    const corpo =
+      corpoAutenticacao ??
+      (possuiCorpoCanonico(respostaExcecao)
+        ? respostaExcecao
+        : (ERROS_POR_STATUS[status] ?? ERRO_INTERNO));
     const correlacaoId = contextoCorrelacao.obter();
 
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
@@ -101,6 +129,18 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
   }
 
   private obterStatus(excecao: unknown): number {
+    if (excecao instanceof ErroCredenciaisInvalidas) {
+      return HttpStatus.UNAUTHORIZED;
+    }
+    if (excecao instanceof ErroLimiteLoginExcedido) {
+      return HttpStatus.TOO_MANY_REQUESTS;
+    }
+    if (
+      excecao instanceof ErroMfaNecessario ||
+      excecao instanceof ErroRequisicaoWebNaoConfiavel
+    ) {
+      return HttpStatus.FORBIDDEN;
+    }
     if (excecao instanceof ErroNaoAutenticado) {
       return HttpStatus.UNAUTHORIZED;
     }
@@ -111,5 +151,21 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
     return excecao instanceof HttpException
       ? excecao.getStatus()
       : HttpStatus.INTERNAL_SERVER_ERROR;
+  }
+
+  private obterCorpoAutenticacao(excecao: unknown): CorpoErroCanonico | undefined {
+    if (excecao instanceof ErroCredenciaisInvalidas) {
+      return ERROS_AUTENTICACAO.CREDENCIAIS_INVALIDAS;
+    }
+    if (excecao instanceof ErroLimiteLoginExcedido) {
+      return ERROS_AUTENTICACAO.LIMITE_LOGIN_EXCEDIDO;
+    }
+    if (excecao instanceof ErroMfaNecessario) {
+      return ERROS_AUTENTICACAO.MFA_NECESSARIO;
+    }
+    if (excecao instanceof ErroRequisicaoWebNaoConfiavel) {
+      return ERROS_AUTENTICACAO.REQUISICAO_WEB_NAO_CONFIAVEL;
+    }
+    return undefined;
   }
 }

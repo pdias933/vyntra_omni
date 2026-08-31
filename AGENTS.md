@@ -141,6 +141,8 @@ Use os serviços centralizados de autorização, proteção de dados, idempotên
 
 Todo caso de uso protegido chama `ServicoAutorizacao` antes de consultar conteúdo do recurso. O verificador específico aplica usuário/fila/recurso na query e devolve apenas acesso/estado; não use `findMany` seguido de filtro em memória. Recurso inexistente, outra fila e estado incompatível resultam em `PERMISSAO_NEGADA` indistinguível. Para escrita sujeita a corrida, passe a mesma `TransacaoPrisma` à autorização, verificação e alteração condicional.
 
+Contexto de sessão web vem somente de `ServicoAutenticacaoWeb`. Nunca aceite `usuario_id`, `sessao_id`, papel ou permissão enviados pelo cliente como identidade autenticada. Token/cookie/CSRF bruto não entra em banco, log, evento, auditoria ou DTO de resposta; persista apenas hash. Mutação web autenticada exige cookie de sessão, dupla apresentação CSRF e origem permitida. Rotação deve substituir token e CSRF em alteração condicional atômica. Conta privilegiada sem MFA confirmado permanece sem sessão; não crie exceção temporária para Administrador.
+
 Não acrescente permissões transversais, dado sensível ou exportação a papel base. Ajuste `NEGAR` prevalece sobre matriz e `CONCEDER`; Administrador alcança filas ativas somente para permissões que efetivamente possui.
 
 `ServicoIdempotencia` deve participar da transação local que registra a intenção quando aplicável. A chamada externa ocorre após commit, sob concessão persistente. Não substitua constraint/versão PostgreSQL por lock apenas em Redis e não altere estado de operação recuperável diretamente para “forçar” nova tentativa.

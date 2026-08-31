@@ -122,7 +122,7 @@ test('separa todos os segredos e não aceita credencial de produção', () => {
   );
   assert.match(codigoStaging, /DADOS_PERMITIDOS=sinteticos_ou_sanitizados/);
   assert.match(codigoStaging, /CHAVE_STORAGE_EXISTE_SEM_SEGREDO_LOCAL/);
-  assert.match(codigoStaging, /vyntra\/api-staging:pr-012/);
+  assert.match(codigoStaging, /vyntra\/api-staging:pr-013/);
   assert.match(codigoStaging, /no-new-privileges:true/);
   assert.match(codigoVerificacaoS3, /AWS4-HMAC-SHA256/);
   assert.ok(!codigoVerificacaoS3.includes('console.log(identificador'));
@@ -134,6 +134,7 @@ test('entrega à API apenas contratos por arquivo e contexto explícito', () => 
 
   assert.equal(compose.services.api.user, '1000:0');
   assert.equal(ambiente.AMBIENTE_APLICACAO, 'staging');
+  assert.equal(ambiente.ORIGENS_WEB_PERMITIDAS, 'https://staging.vyntra.local');
   assert.equal(ambiente.DADOS_PERMITIDOS, 'sinteticos_ou_sanitizados');
   assert.equal(ambiente.NODE_ENV, 'production');
   assert.equal(ambiente.BANCO_URL_FILE, '/run/secrets/url_postgresql');

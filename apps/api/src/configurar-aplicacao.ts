@@ -11,6 +11,7 @@ import {
 } from './observabilidade/logger-estruturado.js';
 import { criarMiddlewareCorrelacao } from './observabilidade/middleware-correlacao.js';
 import { configurarOpenApi } from './openapi/configurar-openapi.js';
+import { ServicoOrigemWeb } from './autenticacao/servico-origem-web.js';
 
 export interface OpcoesAplicacao {
   readonly documentarOpenApi?: boolean;
@@ -35,6 +36,23 @@ export async function criarAplicacao(
           routeResolutionStrategy: 'specificity',
         };
   const aplicacao = await NestFactory.create(ModuloAplicacao, opcoesNest);
+
+  const origensWeb = aplicacao.get(ServicoOrigemWeb);
+  aplicacao.enableCors({
+    allowedHeaders: ['content-type', 'x-correlation-id', 'x-csrf-token'],
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    origin: (
+      origem: string | undefined,
+      concluir: (erro: Error | null, permitir?: boolean) => void,
+    ) => {
+      if (origensWeb.permiteCors(origem)) {
+        concluir(null, true);
+      } else {
+        concluir(null, false);
+      }
+    },
+  });
 
   aplicacao.setGlobalPrefix('api/v1');
   aplicacao.use(criarMiddlewareCorrelacao(registradorTecnico));

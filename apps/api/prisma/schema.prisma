@@ -144,6 +144,28 @@ enum EstadoAcessoFila {
   @@map("estado_acesso_fila")
 }
 
+enum EstadoCredencialSenha {
+  ATIVA
+  REVOGADA
+
+  @@map("estado_credencial_senha")
+}
+
+enum EstadoSessaoWeb {
+  ATIVA
+  REVOGADA
+
+  @@map("estado_sessao_web")
+}
+
+enum ResultadoTentativaLoginWeb {
+  SUCESSO
+  FALHA
+  BLOQUEADA
+
+  @@map("resultado_tentativa_login_web")
+}
+
 model RegistroAuditoria {
   id                         String          @id @db.Uuid
   tipoEvento                 String          @map("tipo_evento") @db.VarChar(100)
@@ -277,10 +299,61 @@ model Usuario {
   atualizadoEm  DateTime      @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   perfil        PerfilAcesso? @relation(fields: [perfilId], references: [id], onDelete: Restrict)
   acessosFila   AcessoUsuarioFila[]
+  credencialSenha CredencialSenha?
+  sessoesWeb    SessaoWeb[]
 
   @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
   @@index([perfilId], map: "usuario_perfil_idx")
   @@map("usuario")
+}
+
+model CredencialSenha {
+  usuarioId              String                 @id @map("usuario_id") @db.Uuid
+  identificadorNormalizado String               @unique @map("identificador_normalizado") @db.VarChar(120)
+  senhaHash              String                 @map("senha_hash") @db.VarChar(255)
+  estado                 EstadoCredencialSenha  @default(ATIVA)
+  senhaAlteradaEm        DateTime               @default(now()) @map("senha_alterada_em") @db.Timestamptz(6)
+  revogadaEm             DateTime?              @map("revogada_em") @db.Timestamptz(6)
+  criadoEm               DateTime               @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm           DateTime               @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  usuario                Usuario                @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@index([estado, identificadorNormalizado], map: "credencial_senha_estado_identificador_idx")
+  @@map("credencial_senha")
+}
+
+model SessaoWeb {
+  id                 String           @id @db.Uuid
+  usuarioId          String           @map("usuario_id") @db.Uuid
+  tokenHash          String           @unique @map("token_hash") @db.Char(64)
+  csrfHash           String           @map("csrf_hash") @db.Char(64)
+  estado             EstadoSessaoWeb  @default(ATIVA)
+  versao             Int              @default(0)
+  enderecoIp         String           @map("endereco_ip") @db.Inet
+  agenteUsuarioHash  String           @map("agente_usuario_hash") @db.Char(64)
+  autenticadaEm      DateTime         @default(now()) @map("autenticada_em") @db.Timestamptz(6)
+  expiraEm           DateTime         @map("expira_em") @db.Timestamptz(6)
+  rotacionadaEm      DateTime?        @map("rotacionada_em") @db.Timestamptz(6)
+  revogadaEm         DateTime?        @map("revogada_em") @db.Timestamptz(6)
+  criadoEm           DateTime         @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm       DateTime         @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  usuario            Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@index([usuarioId, estado, expiraEm], map: "sessao_web_usuario_estado_expira_idx")
+  @@index([estado, expiraEm], map: "sessao_web_estado_expira_idx")
+  @@map("sessao_web")
+}
+
+model TentativaLoginWeb {
+  id                   String                         @id @db.Uuid
+  identificadorHash    String                         @map("identificador_hash") @db.Char(64)
+  enderecoIp           String                         @map("endereco_ip") @db.Inet
+  resultado            ResultadoTentativaLoginWeb
+  criadoEm             DateTime                       @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  @@index([identificadorHash, enderecoIp, criadoEm], map: "tentativa_login_web_identificador_ip_idx")
+  @@index([enderecoIp, criadoEm], map: "tentativa_login_web_ip_idx")
+  @@map("tentativa_login_web")
 }
 
 model PerfilAcesso {

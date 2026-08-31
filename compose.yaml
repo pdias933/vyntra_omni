@@ -88,7 +88,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: migracao
-    image: vyntra/migracoes-desenvolvimento:pr-012
+    image: vyntra/migracoes-desenvolvimento:pr-013
     pull_policy: build
     restart: "no"
     init: true
@@ -197,6 +197,7 @@ services:
       BANCO_USUARIO: vyntra
       ENDERECO_HTTP: 0.0.0.0
       NODE_ENV: development
+      ORIGENS_WEB_PERMITIDAS: https://localhost:5173
       PORTA_HTTP: "3000"
       REDIS_HOST: redis
       REDIS_PORTA: "6379"

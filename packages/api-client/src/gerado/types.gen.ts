@@ -19,6 +19,18 @@ export type EstadoSaudeDto = {
     estado: 'VIVO' | 'PRONTO';
 };
 
+export type EntradaLoginWebDto = {
+    identificador: string;
+    senha: string;
+};
+
+export type SessaoWebDto = {
+    sessao_id: string;
+    usuario_id: string;
+    nome_exibicao: string;
+    expira_em: string;
+};
+
 export type ObterInformacoesApiData = {
     body?: never;
     path?: never;
@@ -69,3 +81,61 @@ export type VerificarAplicacaoProntaResponses = {
 };
 
 export type VerificarAplicacaoProntaResponse = VerificarAplicacaoProntaResponses[keyof VerificarAplicacaoProntaResponses];
+
+export type EntrarSessaoWebData = {
+    body: EntradaLoginWebDto;
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/web/entrar';
+};
+
+export type EntrarSessaoWebResponses = {
+    200: SessaoWebDto;
+};
+
+export type EntrarSessaoWebResponse = EntrarSessaoWebResponses[keyof EntrarSessaoWebResponses];
+
+export type ObterSessaoWebData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/web/sessao';
+};
+
+export type ObterSessaoWebResponses = {
+    200: SessaoWebDto;
+};
+
+export type ObterSessaoWebResponse = ObterSessaoWebResponses[keyof ObterSessaoWebResponses];
+
+export type RotacionarSessaoWebData = {
+    body?: never;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/web/rotacionar';
+};
+
+export type RotacionarSessaoWebResponses = {
+    200: SessaoWebDto;
+};
+
+export type RotacionarSessaoWebResponse = RotacionarSessaoWebResponses[keyof RotacionarSessaoWebResponses];
+
+export type SairSessaoWebData = {
+    body?: never;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/web/sair';
+};
+
+export type SairSessaoWebResponses = {
+    204: void;
+};
+
+export type SairSessaoWebResponse = SairSessaoWebResponses[keyof SairSessaoWebResponses];

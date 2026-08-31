@@ -85,6 +85,10 @@ O limite inicial é de 5 gerações em 10 minutos por usuário e 10 tentativas d
 - reautenticação pode ser exigida para mudanças críticas de integração, permissão ou segurança;
 - SSE reutiliza o cookie e valida origem/escopo.
 
+Na PR 013, o token de sessão e o token CSRF possuem 256 bits aleatórios e são persistidos somente por hash. O cookie de sessão usa o prefixo `__Host-`, `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/` e não declara `Domain`; o CSRF é vinculado à sessão e deve coincidir em cookie e header. Toda mutação de autenticação também exige `Origin` HTTPS presente na allowlist. Rotação troca ambos os segredos por atualização atômica condicionada ao token atual e não estende a expiração absoluta de 12 horas.
+
+Tentativas usam janela persistente de 15 minutos: cinco falhas por identificador normalizado+IP ou cinquenta por IP bloqueiam novas verificações. O identificador aparece nessa trilha somente por SHA-256; senha nunca é registrada. Usuário inexistente executa Argon2id simulado e recebe a mesma resposta de senha incorreta. Conta privilegiada sem segundo fator concluído não recebe sessão (`MFA_NECESSARIO`). Limite de duas sessões, inatividade e revogação administrativa continuam na PR 014.
+
 ### 4.4 Credenciais, MFA e força bruta
 
 - senha aceita de 12 a 128 caracteres, inclusive espaços, sem regra artificial de composição;

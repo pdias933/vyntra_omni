@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
+import type { EntrarSessaoWebData, EntrarSessaoWebResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoWebData, ObterSessaoWebResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoWebData, SairSessaoWebResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -32,3 +32,54 @@ export const verificarProcessoVivo = <ThrowOnError extends boolean = false>(opti
  * Informa se a API pode receber tráfego.
  */
 export const verificarAplicacaoPronta = <ThrowOnError extends boolean = false>(options?: Options<VerificarAplicacaoProntaData, ThrowOnError>): RequestResult<VerificarAplicacaoProntaResponses, VerificarAplicacaoProntaErrors, ThrowOnError> => (options?.client ?? client).get<VerificarAplicacaoProntaResponses, VerificarAplicacaoProntaErrors, ThrowOnError>({ url: '/api/v1/saude/pronto', ...options });
+
+/**
+ * Autentica e cria uma sessão web
+ */
+export const entrarSessaoWeb = <ThrowOnError extends boolean = false>(options: Options<EntrarSessaoWebData, ThrowOnError>): RequestResult<EntrarSessaoWebResponses, unknown, ThrowOnError> => (options.client ?? client).post<EntrarSessaoWebResponses, unknown, ThrowOnError>({
+    url: '/api/v1/autenticacao/web/entrar',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Obtém a sessão web atual
+ */
+export const obterSessaoWeb = <ThrowOnError extends boolean = false>(options?: Options<ObterSessaoWebData, ThrowOnError>): RequestResult<ObterSessaoWebResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ObterSessaoWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/autenticacao/web/sessao',
+    ...options
+});
+
+/**
+ * Rotaciona os segredos da sessão web
+ */
+export const rotacionarSessaoWeb = <ThrowOnError extends boolean = false>(options: Options<RotacionarSessaoWebData, ThrowOnError>): RequestResult<RotacionarSessaoWebResponses, unknown, ThrowOnError> => (options.client ?? client).post<RotacionarSessaoWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/autenticacao/web/rotacionar',
+    ...options
+});
+
+/**
+ * Revoga a sessão web atual
+ */
+export const sairSessaoWeb = <ThrowOnError extends boolean = false>(options: Options<SairSessaoWebData, ThrowOnError>): RequestResult<SairSessaoWebResponses, unknown, ThrowOnError> => (options.client ?? client).post<SairSessaoWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/autenticacao/web/sair',
+    ...options
+});

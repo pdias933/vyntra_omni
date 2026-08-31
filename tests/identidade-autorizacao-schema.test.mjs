@@ -98,6 +98,6 @@ test('separa perfil, permissão e escopo de fila por chaves restritivas', () => 
 test('migration é aditiva e não cria credencial ou sessão antecipadamente', () => {
   assert.ok(!/DROP (TABLE|COLUMN|TYPE)/u.test(migracao));
   assert.ok(!/ALTER TABLE[^;]+DROP/u.test(migracao));
-  assert.ok(!schema.includes('senhaHash'));
-  assert.ok(!schema.includes('SessaoUsuario'));
+  assert.ok(!migracao.includes('senha_hash'));
+  assert.ok(!migracao.includes('sessao_web'));
 });

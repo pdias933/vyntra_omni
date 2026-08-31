@@ -60,6 +60,10 @@ O PostgreSQL materializa usuários, perfis, ajustes granulares de permissão, fi
 
 `ServicoAutorizacao` valida sessão autenticada, usuário/perfil, permissão efetiva, fila, recurso e estado em ordem e com negação padrão. Recurso inexistente ou fora do escopo devolve a mesma resposta segura. Matriz, uso transacional e aceite estão em [docs/operacoes/PR-012.md](docs/operacoes/PR-012.md).
 
+### Login e sessão web
+
+Senha usa Argon2id; identificador desconhecido não altera a resposta nem elimina o custo criptográfico. Sessões usam cookie `__Host` seguro, token opaco persistido apenas por hash, CSRF vinculado, origem HTTPS explícita, rotação atômica e auditoria. Contas privilegiadas continuam bloqueadas sem MFA. Contratos e operação estão em [docs/operacoes/PR-013.md](docs/operacoes/PR-013.md); a análise de dependências está em [docs/dependencias/PR-013.md](docs/dependencias/PR-013.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local

@@ -171,4 +171,43 @@ test('publica contrato OpenAPI sem interface navegável', async () => {
     documento.paths['/api/v1/saude/pronto'].get.operationId,
     'verificarAplicacaoPronta',
   );
+  assert.equal(
+    documento.paths['/api/v1/autenticacao/web/entrar'].post.operationId,
+    'entrarSessaoWeb',
+  );
+  assert.equal(
+    documento.components.securitySchemes.sessaoWeb.name,
+    '__Host-vyntra_sessao',
+  );
+});
+
+test('login web recusa origem ausente ou não permitida antes do banco', async () => {
+  const corpo = JSON.stringify({
+    identificador: 'maria.silva',
+    senha: 'senha longa de teste',
+  });
+  const ausente = await fetch(`${enderecoBase}/api/v1/autenticacao/web/entrar`, {
+    body: corpo,
+    headers: { 'content-type': 'application/json' },
+    method: 'POST',
+  });
+  const naoPermitida = await fetch(
+    `${enderecoBase}/api/v1/autenticacao/web/entrar`,
+    {
+      body: corpo,
+      headers: {
+        'content-type': 'application/json',
+        origin: 'https://malicioso.example',
+      },
+      method: 'POST',
+    },
+  );
+
+  assert.equal(ausente.status, 403);
+  assert.equal((await ausente.json()).codigo, 'REQUISICAO_NAO_CONFIAVEL');
+  assert.equal(naoPermitida.status, 403);
+  assert.equal(
+    (await naoPermitida.json()).codigo,
+    'REQUISICAO_NAO_CONFIAVEL',
+  );
 });

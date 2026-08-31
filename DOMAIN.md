@@ -62,7 +62,13 @@ Instalação (uma empresa)
 
 ### 3.1 Funcionários e escopos de acesso
 
-`Usuario` representa o funcionário dentro da instalação, separado de credencial e sessão. Na fundação ele possui nome de exibição, estado e perfil opcional; identificador de login, senha e sessões entram nos PRs de autenticação. Usuário sem perfil permanece sem capacidade, e perfil não concede fila por simples associação.
+`Usuario` representa o funcionário dentro da instalação, separado de credencial e sessão. Ele possui nome de exibição, estado e perfil opcional. Usuário sem perfil permanece sem capacidade, e perfil não concede fila por simples associação.
+
+`CredencialSenha` associa um identificador normalizado único ao usuário e conserva somente o hash Argon2id da senha. Identificador não é identidade pública, senha nunca é recuperável e revogar a credencial não apaga usuário, auditoria ou sessões históricas.
+
+`SessaoWeb` é uma sessão de navegador com identificador próprio, token opaco armazenado somente por hash, proteção CSRF vinculada, expiração e versão de rotação. O segredo apresentado pelo navegador nunca é persistido. Rotação substitui token e CSRF atomicamente; logout revoga a sessão sem remover seu histórico. A PR 014 acrescenta limite simultâneo, inatividade e revogação administrativa.
+
+`TentativaLoginWeb` registra somente hash do identificador, IP, resultado e instante. Ela sustenta os limites técnicos sem guardar identificador ou senha em claro.
 
 `PerfilAcesso` combina um `PapelBase` — `ADMINISTRADOR`, `SUPERVISOR` ou `ATENDENTE` — com ajustes granulares em `PermissaoPerfil`. Cada ajuste é `CONCEDER` ou `NEGAR`, inclusive para negar uma capacidade herdada quando a matriz base for materializada pelo serviço central. Ausência de decisão efetiva significa negar.
 
@@ -74,7 +80,8 @@ Regras:
 - perfil inativo, usuário inativo ou acesso revogado não autoriza ação;
 - código de permissão vem do catálogo fechado no schema e não de texto livre;
 - `VISUALIZAR_DADO_SENSIVEL`, `EXPORTAR_HISTORICO` e `VISUALIZAR_NOTAS_TRANSVERSAIS` continuam específicos e não decorrem apenas de ser Administrador;
-- credenciais, sessão e avaliação do recurso concreto não pertencem a esta fundação do schema.
+- credencial válida autentica identidade, mas não concede perfil, fila ou permissão;
+- sessão web só produz contexto autenticado enquanto estiver ativa, não expirada e vinculada a usuário ativo.
 
 ### 3.2 Decisão central de autorização
 
