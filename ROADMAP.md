@@ -32,7 +32,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 008 | CONCLUÍDA | `high` |
 | 009 | CONCLUÍDA | `xhigh` |
 | 010 | CONCLUÍDA | `xhigh` |
-| 011 | EM ANDAMENTO | `high` |
+| 011 | CONCLUÍDA | `high` |
 | 012 | PENDENTE | `xhigh` |
 | 013 | PENDENTE | `xhigh` |
 | 014 | PENDENTE | `high` |
@@ -197,6 +197,10 @@ Aceite concluído em 31 de agosto de 2026: chaves com escopo e assinatura, opera
 | 016 | Limites e revogação mobile | Dois aparelhos; terceiro revoga o mais antigo; servidor corta sincronização e WebSocket. |
 | 017 | Pareamento por QR | Token efêmero, uso único, validade curta, confirmação web e replay recusado. |
 | 018 | Controles de recurso e política de versão | Liberação gradual/desligamento emergencial auditados e versão mínima por plataforma. |
+
+### PR 011 — Usuário, perfil, permissão e fila no schema
+
+Aceite concluído em 31 de agosto de 2026: `Usuario`, `PerfilAcesso`, os três papéis base, 34 códigos granulares, ajustes `CONCEDER`/`NEGAR`, `Fila` e `AcessoUsuarioFila` foram materializados sem antecipar credencial, sessão ou serviço de decisão. Lint, tipos, 82 testes, build, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831000400_criar_usuarios_perfis_permissoes_filas` terminou com código zero e a imagem `vyntra/api-staging:pr-011` ficou saudável. Em staging, usuário sem perfil permaneceu sem fila, perfil Administrador vazio permaneceu sem concessões persistidas, vínculos explícitos de permissão/fila foram preservados e o PostgreSQL recusou nome normalizado duplicado e revogação sem timestamp.
 
 ## 5. Portas internas
 
