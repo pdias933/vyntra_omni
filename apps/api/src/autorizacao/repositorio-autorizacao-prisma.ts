@@ -19,35 +19,35 @@ export class RepositorioAutorizacaoPrisma implements RepositorioAutorizacao {
     transacao?: TransacaoPrisma,
   ): Promise<ContextoUsuarioAutorizacao | undefined> {
     const contexto = transacao ?? (await this.prisma.obterCliente());
-    const [usuario, fila, acessoFila] = await Promise.all([
-      contexto.usuario.findUnique({
-        select: {
-          estado: true,
-          perfil: {
-            select: {
-              estado: true,
-              papelBase: true,
-              permissoes: {
-                select: { codigo: true, efeito: true },
-              },
+    const usuario = await contexto.usuario.findUnique({
+      select: {
+        estado: true,
+        perfil: {
+          select: {
+            estado: true,
+            papelBase: true,
+            permissoes: {
+              select: { codigo: true, efeito: true },
             },
           },
         },
-        where: { id: usuarioId },
-      }),
+      },
+      where: { id: usuarioId },
+    });
+    const fila =
       filaId === undefined
-        ? Promise.resolve(undefined)
-        : contexto.fila.findUnique({
+        ? undefined
+        : await contexto.fila.findUnique({
             select: { estado: true },
             where: { id: filaId },
-          }),
+          });
+    const acessoFila =
       filaId === undefined
-        ? Promise.resolve(undefined)
-        : contexto.acessoUsuarioFila.findUnique({
+        ? undefined
+        : await contexto.acessoUsuarioFila.findUnique({
             select: { estado: true },
             where: { usuarioId_filaId: { filaId, usuarioId } },
-          }),
-    ]);
+          });
 
     if (usuario === null) {
       return undefined;
