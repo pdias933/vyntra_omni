@@ -63,6 +63,10 @@ Controller escondendo botão, filtro na UI ou `if` local não substitui esses se
 
 A PR 015 materializa a sessão mobile separada da web. Access e refresh tokens têm 256 bits aleatórios; o PostgreSQL recebe somente SHA-256. O access token vale 15 minutos e permanece apenas na memória do app. O refresh token tem limite absoluto de 30 dias, é guardado com o segredo de vínculo em Keychain/Keystore e rotaciona a cada renovação. Cada requisição autenticada apresenta access token, UUID do dispositivo e segredo da instalação; estado do usuário, dispositivo e sessão são revalidados no servidor. Refresh já utilizado é prova de replay: a sessão inteira é revogada e o fato auditado. A trilha de força bruta persiste somente hashes do identificador e da instalação, IP, resultado e instante; senha, tokens e segredo de vínculo nunca entram em log ou auditoria.
 
+A PR 016 torna o PostgreSQL autoridade do limite de dois aparelhos. Login de uma instalação nova serializa todos os dispositivos do usuário, revoga o ativo com `ultimo_acesso_em` mais antigo e encerra suas sessões antes de criar o terceiro; a resposta informa que houve substituição. O usuário lista somente os próprios aparelhos ativos e pode revogar qualquer um, inclusive o atual. Revogação administrativa exige sessão web, CSRF, origem permitida e `ADMINISTRAR_USUARIOS`. Alvo de outro usuário converge para negação sem vazamento. Toda revogação informa motivo, encerra todas as sessões do aparelho e gera auditoria.
+
+Após o commit, access e refresh daquele aparelho perdem autoridade imediatamente. Sincronização e WebSocket devem chamar `ServicoAutenticacaoMobile.autenticar` no handshake e novamente em heartbeat/comandos; uma conexão não pode conservar um contexto autenticado indefinidamente. O gateway ainda será materializado na PR 056, quando o fechamento físico da conexão ativa também será testado; até lá não existe transporte WebSocket a ser mantido ou cortado.
+
 ### 4.2 Pareamento QR
 
 O QR:

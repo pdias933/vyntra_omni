@@ -27,6 +27,7 @@ function criarCenario(sobrescritas = {}) {
     auditoria: [],
     atualizacoesTentativa: [],
     criarSessao: [],
+    dispositivosMobileAdmin: [],
     falhas: [],
     rotacoes: [],
     revogacoes: [],
@@ -90,6 +91,10 @@ function criarCenario(sobrescritas = {}) {
     auditoria,
     senhas,
     { autorizar: async () => ({}) },
+    {
+      revogarDispositivosAdministrativamente: async (...argumentos) =>
+        chamadas.dispositivosMobileAdmin.push(argumentos),
+    },
   );
   return { chamadas, credencial, servico, transacao };
 }
@@ -351,4 +356,40 @@ test('logout global revoga todas as sessões ativas na mesma transação', async
     cenario.chamadas.auditoria[0][0].tipoEvento,
     'SESSOES_WEB_REVOGADAS_GLOBALMENTE',
   );
+});
+
+test('revogação administrativa mobile reutiliza a sessão web validada', async () => {
+  const token = 'k'.repeat(43);
+  const csrf = 'l'.repeat(43);
+  const usuarioAdministradorId = randomUUID();
+  const usuarioAlvoId = randomUUID();
+  const sessaoId = randomUUID();
+  const cenario = criarCenario({
+    sessao: {
+      autenticadaEm: new Date(),
+      csrfHash: hashHex(csrf),
+      estado: 'ATIVA',
+      expiraEm: new Date(Date.now() + 60_000),
+      id: sessaoId,
+      nomeExibicao: 'Administrador',
+      tokenHash: hashHex(token),
+      ultimaAtividadeEm: new Date(),
+      usuarioAtivo: true,
+      usuarioId: usuarioAdministradorId,
+      versao: 0,
+    },
+  });
+
+  await cenario.servico.revogarDispositivosMobileAdministrativamente(
+    token,
+    csrf,
+    usuarioAlvoId,
+  );
+  const [contexto, alvo, agora, transacao] =
+    cenario.chamadas.dispositivosMobileAdmin[0];
+  assert.equal(contexto.sessaoId, sessaoId);
+  assert.equal(contexto.usuarioId, usuarioAdministradorId);
+  assert.equal(alvo, usuarioAlvoId);
+  assert.ok(agora instanceof Date);
+  assert.equal(transacao, cenario.transacao);
 });

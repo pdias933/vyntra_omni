@@ -369,6 +369,8 @@ A PR 014 não acrescenta configuração nem segredo. Alertar para crescimento an
 
 A PR 015 também não acrescenta segredo de infraestrutura. Monitorar `LOGIN_MOBILE_BLOQUEADO`, `DISPOSITIVO_MOBILE_RECUSADO`, `REPLAY_TOKEN_REFRESH_MOBILE`, taxa de renovação negada e sessões/dispositivos ativos com expiração vencida. Replay deve revogar a sessão; nunca apagar `TokenRefreshMobileUsado`, reativar sessão/dispositivo por SQL nem registrar token, segredo de vínculo ou identificador bruto da instalação. Rollback de imagem preserva as tabelas aditivas e não exige removê-las.
 
+A PR 016 não possui migration e mantém como marca obrigatória `20260831000700_criar_sessao_dispositivo_mobile`. Monitorar `DISPOSITIVO_MOBILE_ANTIGO_REVOGADO`, revogações próprias/administrativas, usuários com mais de dois dispositivos ativos e sessões ativas ligadas a aparelho revogado; os dois últimos sinais indicam quebra de invariantes. Nunca corrigir reativando/alterando linhas manualmente. O rollback de imagem preserva os estados já revogados; novo login legítimo cria o vínculo permitido pela versão em execução.
+
 ### Recuperação de operações
 
 Um processo periódico recupera concessões vencidas em lotes pequenos. Ele encerra a tentativa como `RESULTADO_INCERTO`, limpa a concessão e agenda reconciliação imediata. O operador pode observar tipo, estado, idade, quantidade de tentativas e código normalizado; token, payload bruto e dado sensível não aparecem em log ou painel.

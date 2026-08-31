@@ -102,4 +102,14 @@ export class CofreSessaoMobile {
       SecureStore.deleteItemAsync(CHAVE_TOKEN_REFRESH),
     ]);
   }
+
+  public async substituirIdentidadeInstalacao(): Promise<IdentidadeInstalacaoMobile> {
+    await Promise.all([
+      SecureStore.deleteItemAsync(CHAVE_IDENTIFICADOR_INSTALACAO),
+      SecureStore.deleteItemAsync(CHAVE_SEGREDO_VINCULO),
+      SecureStore.deleteItemAsync(CHAVE_DISPOSITIVO_ID),
+      SecureStore.deleteItemAsync(CHAVE_TOKEN_REFRESH),
+    ]);
+    return this.obterOuCriarIdentidadeInstalacao();
+  }
 }

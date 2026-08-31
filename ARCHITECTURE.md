@@ -248,6 +248,10 @@ Renovação serializa o hash do refresh no PostgreSQL, registra o hash consumido
 
 No app, `CofreSessaoMobile` usa SecureStore, que delega a Keychain/Keystore. Identificador da instalação, segredo de vínculo, UUID do dispositivo e refresh ficam no cofre com política restrita ao aparelho. O access token existe somente em memória no `GerenciadorSessaoMobile`; SQLite e AsyncStorage não recebem tokens. Contratos HTTP continuam no SDK OpenAPI gerado; essas classes cuidam apenas da custódia local.
 
+Limite e revogação serializam a coleção de dispositivos por UUID do usuário com advisory lock parametrizado. Uma instalação nova lista os ativos em ordem determinística, revoga aparelhos excedentes e suas sessões, e só então cria dispositivo/sessão. Listagem própria projeta apenas UUID, plataforma, modelo sanitizado, versão e instantes; hashes nunca saem do repositório. Revogação própria e administrativa usam alterações condicionadas por usuário+estado e auditoria na mesma transação. A administrativa reutiliza a sessão web já validada e ainda passa pelo serviço central de autorização.
+
+`ServicoAutenticacaoMobile.autenticar` é o portão único também para sincronização e tempo real: valida access, vínculo, usuário, dispositivo e sessão em cada nova decisão. O gateway da PR 056 deverá revalidar em handshake, heartbeat e comando, além de fechar conexões ao receber a projeção de revogação; não poderá reter autoridade apenas porque um WebSocket já abriu. Nesta etapa ainda não há gateway ou endpoint de sincronização, portanto a PR 016 entrega a autoridade revogável e os contratos, sem criar transporte fictício.
+
 ### 6.1.3 Autorização central
 
 ```text

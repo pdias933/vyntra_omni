@@ -216,4 +216,24 @@ export class ControladorAutenticacaoWeb {
       usuarioId,
     );
   }
+
+  @Post('usuarios/:usuarioId/revogar-dispositivos-mobile')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiCookieAuth('sessaoWeb')
+  @ApiHeader({ name: NOME_HEADER_CSRF_WEB, required: true })
+  @ApiOperation({ operationId: 'revogarDispositivosMobileAdministrativamente', summary: 'Revoga administrativamente os dispositivos móveis de um usuário' })
+  @ApiNoContentResponse()
+  public async revogarDispositivosMobileAdministrativamente(
+    @Param('usuarioId', new ParseUUIDPipe()) usuarioId: string,
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_CSRF_WEB) csrfCabecalho: string | undefined,
+    @Headers('origin') origem: string | undefined,
+  ): Promise<void> {
+    this.origens.validar(origem);
+    await this.autenticacao.revogarDispositivosMobileAdministrativamente(
+      obterTokenSessaoWeb(cookies),
+      obterTokenCsrfWeb(cookies, csrfCabecalho),
+      usuarioId,
+    );
+  }
 }

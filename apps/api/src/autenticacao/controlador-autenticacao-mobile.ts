@@ -6,6 +6,8 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Param,
+  ParseUUIDPipe,
   Post,
   Req,
 } from '@nestjs/common';
@@ -26,6 +28,7 @@ import {
   ContextoSessaoMobileDto,
   SessaoMobileDto,
 } from './dto/sessao-mobile.dto.js';
+import { ResumoDispositivoMobileDto } from './dto/resumo-dispositivo-mobile.dto.js';
 import { ServicoAutenticacaoMobile } from './servico-autenticacao-mobile.js';
 
 export const NOME_HEADER_DISPOSITIVO_MOBILE = 'x-dispositivo-id';
@@ -98,6 +101,48 @@ export class ControladorAutenticacaoMobile {
       exigirCabecalho(segredo),
     );
     return new SessaoMobileDto(sessao);
+  }
+
+  @Get('dispositivos')
+  @ApiBearerAuth('sessaoMobile')
+  @ApiHeader({ name: NOME_HEADER_DISPOSITIVO_MOBILE, required: true })
+  @ApiHeader({ name: NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE, required: true })
+  @ApiOperation({ operationId: 'listarDispositivosMobile', summary: 'Lista os dispositivos móveis ativos do usuário atual' })
+  @ApiOkResponse({ type: [ResumoDispositivoMobileDto] })
+  public async listarDispositivos(
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<readonly ResumoDispositivoMobileDto[]> {
+    const dispositivos = await this.autenticacao.listarDispositivos(
+      obterTokenAcesso(autorizacao),
+      exigirCabecalho(dispositivoId),
+      exigirCabecalho(segredo),
+    );
+    return dispositivos.map(
+      (dispositivo) => new ResumoDispositivoMobileDto(dispositivo),
+    );
+  }
+
+  @Post('dispositivos/:dispositivoId/revogar')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth('sessaoMobile')
+  @ApiHeader({ name: NOME_HEADER_DISPOSITIVO_MOBILE, required: true })
+  @ApiHeader({ name: NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE, required: true })
+  @ApiOperation({ operationId: 'revogarDispositivoMobileDoUsuario', summary: 'Revoga um dispositivo móvel do usuário atual' })
+  @ApiNoContentResponse()
+  public async revogarDispositivo(
+    @Param('dispositivoId', new ParseUUIDPipe()) dispositivoAlvoId: string,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<void> {
+    await this.autenticacao.revogarDispositivoDoUsuario(
+      obterTokenAcesso(autorizacao),
+      exigirCabecalho(dispositivoId),
+      exigirCabecalho(segredo),
+      dispositivoAlvoId,
+    );
   }
 
   @Get('sessao')

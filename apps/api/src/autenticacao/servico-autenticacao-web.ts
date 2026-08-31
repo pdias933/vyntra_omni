@@ -33,6 +33,7 @@ import {
   REPOSITORIO_AUTENTICACAO,
   type RepositorioAutenticacao,
 } from './repositorio-autenticacao.js';
+import { ServicoAutenticacaoMobile } from './servico-autenticacao-mobile.js';
 import { ServicoSenha } from './servico-senha.js';
 import { credencialExigeMfa } from './politica-mfa.js';
 
@@ -66,6 +67,8 @@ export class ServicoAutenticacaoWeb {
     private readonly senhas: ServicoSenha,
     @Inject(ServicoAutorizacao)
     private readonly autorizacao: ServicoAutorizacao,
+    @Inject(ServicoAutenticacaoMobile)
+    private readonly autenticacaoMobile: ServicoAutenticacaoMobile,
   ) {}
 
   public async entrar(entrada: EntradaLoginWeb): Promise<SessaoWebEmitida> {
@@ -476,6 +479,29 @@ export class ServicoAutenticacaoWeb {
         transacao,
       );
     });
+  }
+
+  public async revogarDispositivosMobileAdministrativamente(
+    token: string,
+    csrf: string,
+    usuarioAlvoId: string,
+  ): Promise<void> {
+    await this.revogarComSessaoAtual(
+      token,
+      csrf,
+      async (sessao, agora, transacao) =>
+        this.autenticacaoMobile.revogarDispositivosAdministrativamente(
+          {
+            estado: 'ATIVA',
+            expiraEm: sessao.expiraEm,
+            sessaoId: sessao.id,
+            usuarioId: sessao.usuarioId,
+          },
+          usuarioAlvoId,
+          agora,
+          transacao,
+        ),
+    );
   }
 
   private async obterSessaoAtiva(token: string): Promise<SessaoWebPersistida> {

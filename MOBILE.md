@@ -173,6 +173,8 @@ O QR não contém credencial permanente, vale 90 segundos e é de uso único. Ex
 
 Cada usuário possui no máximo dois dispositivos móveis. Ao confirmar o terceiro, o backend revoga o mais antigo, registra auditoria e envia evento de encerramento à sessão afetada.
 
+Na V1 o terceiro login não pede uma segunda confirmação: credencial/MFA válidos constituem a confirmação, o backend substitui atomicamente o aparelho com acesso mais antigo e a resposta informa a substituição. A tela de Perfil lista os dois aparelhos ativos com plataforma, modelo sanitizado, versão e último acesso; nunca exibe identificador de instalação, hash ou segredo. Revogar exige confirmação visual e encerra todas as sessões daquele aparelho. Se for o atual, ou se uma resposta autenticada retornar `401`, o gerenciador limpa refresh/UUID do cofre e volta ao login. `DISPOSITIVO_NAO_CONFIAVEL` após credencial válida descarta também a identidade local revogada/restaurada e gera uma instalação nova antes de permitir nova tentativa explícita de login. Essa transição pode informar “Acesso revogado”, mas não mostra WebSocket, sync ou detalhes de infraestrutura.
+
 ## 5. Atualização obrigatória e controle de recursos
 
 Na abertura/autenticação, o app envia plataforma e versão. O backend retorna:

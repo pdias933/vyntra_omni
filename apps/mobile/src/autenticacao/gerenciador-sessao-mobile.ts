@@ -52,4 +52,23 @@ export class GerenciadorSessaoMobile {
     this.acessoExpiraEm = undefined;
     await this.cofre.limparCredencial();
   }
+
+  public async tratarRespostaNaoAutorizada(statusHttp: number): Promise<boolean> {
+    if (statusHttp !== 401) return false;
+    await this.limparSessao();
+    return true;
+  }
+
+  public async tratarDispositivoNaoConfiavel(
+    statusHttp: number,
+    codigoErro: string | undefined,
+  ): Promise<boolean> {
+    if (statusHttp !== 403 || codigoErro !== 'DISPOSITIVO_NAO_CONFIAVEL') {
+      return false;
+    }
+    this.tokenAcesso = undefined;
+    this.acessoExpiraEm = undefined;
+    await this.cofre.substituirIdentidadeInstalacao();
+    return true;
+  }
 }

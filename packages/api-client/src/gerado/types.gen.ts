@@ -38,10 +38,21 @@ export type SessaoMobileDto = {
     token_refresh: string;
     acesso_expira_em: string;
     refresh_expira_em: string;
+    dispositivo_substituido: boolean;
 };
 
 export type EntradaRefreshMobileDto = {
     token_refresh: string;
+};
+
+export type ResumoDispositivoMobileDto = {
+    dispositivo_id: string;
+    atual: boolean;
+    plataforma: 'IOS' | 'ANDROID';
+    modelo_sanitizado?: string;
+    versao_aplicativo: string;
+    ultimo_acesso_em: string;
+    criado_em: string;
 };
 
 export type ContextoSessaoMobileDto = {
@@ -156,6 +167,42 @@ export type RenovarSessaoMobileResponses = {
 };
 
 export type RenovarSessaoMobileResponse = RenovarSessaoMobileResponses[keyof RenovarSessaoMobileResponses];
+
+export type ListarDispositivosMobileData = {
+    body?: never;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/mobile/dispositivos';
+};
+
+export type ListarDispositivosMobileResponses = {
+    200: Array<ResumoDispositivoMobileDto>;
+};
+
+export type ListarDispositivosMobileResponse = ListarDispositivosMobileResponses[keyof ListarDispositivosMobileResponses];
+
+export type RevogarDispositivoMobileDoUsuarioData = {
+    body?: never;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        dispositivoId: string;
+    };
+    query?: never;
+    url: '/api/v1/autenticacao/mobile/dispositivos/{dispositivoId}/revogar';
+};
+
+export type RevogarDispositivoMobileDoUsuarioResponses = {
+    204: void;
+};
+
+export type RevogarDispositivoMobileDoUsuarioResponse = RevogarDispositivoMobileDoUsuarioResponses[keyof RevogarDispositivoMobileDoUsuarioResponses];
 
 export type ObterSessaoMobileData = {
     body?: never;
@@ -313,3 +360,21 @@ export type RevogarSessoesWebAdministrativamenteResponses = {
 };
 
 export type RevogarSessoesWebAdministrativamenteResponse = RevogarSessoesWebAdministrativamenteResponses[keyof RevogarSessoesWebAdministrativamenteResponses];
+
+export type RevogarDispositivosMobileAdministrativamenteData = {
+    body?: never;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        usuarioId: string;
+    };
+    query?: never;
+    url: '/api/v1/autenticacao/web/usuarios/{usuarioId}/revogar-dispositivos-mobile';
+};
+
+export type RevogarDispositivosMobileAdministrativamenteResponses = {
+    204: void;
+};
+
+export type RevogarDispositivosMobileAdministrativamenteResponse = RevogarDispositivosMobileAdministrativamenteResponses[keyof RevogarDispositivosMobileAdministrativamenteResponses];

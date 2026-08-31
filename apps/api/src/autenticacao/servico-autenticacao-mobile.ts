@@ -9,7 +9,12 @@ import { isIP } from 'node:net';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { ServicoAuditoria } from '../auditoria/servico-auditoria.js';
-import { ErroNaoAutenticado } from '../autorizacao/erros-autorizacao.js';
+import {
+  ErroNaoAutenticado,
+  ErroPermissaoNegada,
+} from '../autorizacao/erros-autorizacao.js';
+import type { ContextoSessaoAutorizacao } from '../autorizacao/modelo-autorizacao.js';
+import { ServicoAutorizacao } from '../autorizacao/servico-autorizacao.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import {
@@ -22,6 +27,7 @@ import type {
   CredencialLoginMobile,
   EntradaDispositivoMobile,
   EntradaLoginMobile,
+  ResumoDispositivoMobile,
   SessaoMobileAutenticada,
   SessaoMobileEmitida,
   SessaoMobilePersistida,
@@ -36,6 +42,7 @@ import { ServicoSenha } from './servico-senha.js';
 const JANELA_FALHAS_MS = 15 * 60 * 1_000;
 const LIMITE_CONTA_IP_DISPOSITIVO = 5;
 const LIMITE_IP = 50;
+const LIMITE_DISPOSITIVOS_MOBILE = 2;
 const DURACAO_ACESSO_MS = 15 * 60 * 1_000;
 const DURACAO_REFRESH_MS = 30 * 24 * 60 * 60 * 1_000;
 const SEGREDO_OPACO = /^[A-Za-z0-9_-]{43}$/u;
@@ -63,6 +70,8 @@ export class ServicoAutenticacaoMobile {
     private readonly auditoria: ServicoAuditoria,
     @Inject(ServicoSenha)
     private readonly senhas: ServicoSenha,
+    @Inject(ServicoAutorizacao)
+    private readonly autorizacao: ServicoAutorizacao,
   ) {}
 
   public async entrar(entrada: EntradaLoginMobile): Promise<SessaoMobileEmitida> {
@@ -133,9 +142,9 @@ export class ServicoAutenticacaoMobile {
     const acessoExpiraEm = new Date(agora.getTime() + DURACAO_ACESSO_MS);
     const refreshExpiraEm = new Date(agora.getTime() + DURACAO_REFRESH_MS);
     const resultado = await this.prisma.executarTransacao(async (transacao) => {
-      await this.repositorio.serializarDispositivo(
+      let dispositivosRevogadosPorLimite = 0;
+      await this.repositorio.serializarDispositivosUsuario(
         credencial.usuarioId,
-        dispositivo.identificadorInstalacaoHash,
         transacao,
       );
       let persistido = await this.repositorio.obterDispositivo(
@@ -168,6 +177,55 @@ export class ServicoAutenticacaoMobile {
       }
       await this.confirmarTentativa(reserva.id, transacao);
       if (persistido === undefined) {
+        const dispositivosAtivos =
+          await this.repositorio.listarDispositivosAtivosUsuario(
+            credencial.usuarioId,
+            transacao,
+          );
+        const quantidadeRevogar = Math.max(
+          0,
+          dispositivosAtivos.length - LIMITE_DISPOSITIVOS_MOBILE + 1,
+        );
+        if (quantidadeRevogar > 0) {
+          const dispositivosRevogados = dispositivosAtivos
+            .slice(0, quantidadeRevogar)
+            .map(({ id }) => id);
+          const quantidade = await this.repositorio.revogarDispositivos(
+            credencial.usuarioId,
+            dispositivosRevogados,
+            agora,
+            'LIMITE_DISPOSITIVOS_MOBILE',
+            transacao,
+          );
+          if (quantidade !== dispositivosRevogados.length) {
+            throw new Error('LIMITE_DISPOSITIVOS_MOBILE_NAO_SERIALIZADO');
+          }
+          dispositivosRevogadosPorLimite = quantidade;
+          const sessoesRevogadas =
+            await this.repositorio.revogarSessoesAtivasDispositivos(
+              credencial.usuarioId,
+              dispositivosRevogados,
+              agora,
+              'DISPOSITIVO_REVOGADO_POR_LIMITE',
+              transacao,
+            );
+          await this.auditoria.registrar(
+            {
+              acao: 'SUBSTITUIR_DISPOSITIVO_MOBILE_MAIS_ANTIGO',
+              dadosNovos: {
+                dispositivos_revogados: quantidade,
+                sessoes_revogadas: sessoesRevogadas,
+              },
+              enderecoIp: entrada.enderecoIp,
+              entidadeId: credencial.usuarioId,
+              entidadeTipo: 'USUARIO',
+              origem: 'USUARIO',
+              tipoEvento: 'DISPOSITIVO_MOBILE_ANTIGO_REVOGADO',
+              usuarioId: credencial.usuarioId,
+            },
+            transacao,
+          );
+        }
         const dispositivoId = randomUUID();
         await this.repositorio.criarDispositivo(
           {
@@ -243,7 +301,11 @@ export class ServicoAutenticacaoMobile {
         },
         transacao,
       );
-      return { dispositivoId: persistido.id, dispositivoNaoConfiavel: false } as const;
+      return {
+        dispositivoId: persistido.id,
+        dispositivoNaoConfiavel: false,
+        dispositivosRevogadosPorLimite,
+      } as const;
     });
     if (resultado.dispositivoNaoConfiavel) {
       throw new ErroDispositivoNaoConfiavel();
@@ -251,6 +313,7 @@ export class ServicoAutenticacaoMobile {
     return {
       acessoExpiraEm,
       dispositivoId: resultado.dispositivoId,
+      dispositivoSubstituido: resultado.dispositivosRevogadosPorLimite > 0,
       id: sessaoId,
       nomeExibicao: credencial.nomeExibicao,
       refreshExpiraEm,
@@ -287,6 +350,140 @@ export class ServicoAutenticacaoMobile {
       dispositivoId: sessao.dispositivoId,
       nomeExibicao: sessao.nomeExibicao,
     };
+  }
+
+  public async listarDispositivos(
+    tokenAcesso: string,
+    dispositivoId: string,
+    segredoVinculo: string,
+  ): Promise<readonly ResumoDispositivoMobile[]> {
+    return this.executarComSessaoAtual(
+      tokenAcesso,
+      dispositivoId,
+      segredoVinculo,
+      async (sessao, _agora, transacao) => {
+        const dispositivos =
+          await this.repositorio.listarDispositivosAtivosUsuario(
+            sessao.usuarioId,
+            transacao,
+          );
+        return dispositivos.map((dispositivo) => ({
+          ...dispositivo,
+          atual: dispositivo.id === sessao.dispositivoId,
+        }));
+      },
+    );
+  }
+
+  public async revogarDispositivoDoUsuario(
+    tokenAcesso: string,
+    dispositivoId: string,
+    segredoVinculo: string,
+    dispositivoAlvoId: string,
+  ): Promise<void> {
+    await this.executarComSessaoAtual(
+      tokenAcesso,
+      dispositivoId,
+      segredoVinculo,
+      async (sessao, agora, transacao) => {
+        const quantidade = await this.repositorio.revogarDispositivos(
+          sessao.usuarioId,
+          [dispositivoAlvoId],
+          agora,
+          'REVOGACAO_PELO_USUARIO',
+          transacao,
+        );
+        if (quantidade !== 1) throw new ErroPermissaoNegada();
+        const sessoesRevogadas =
+          await this.repositorio.revogarSessoesAtivasDispositivos(
+            sessao.usuarioId,
+            [dispositivoAlvoId],
+            agora,
+            'DISPOSITIVO_REVOGADO_PELO_USUARIO',
+            transacao,
+          );
+        await this.auditoria.registrar(
+          {
+            acao: 'REVOGAR_DISPOSITIVO_MOBILE',
+            dadosNovos: { sessoes_revogadas: sessoesRevogadas },
+            dispositivoId: sessao.dispositivoId,
+            entidadeId: dispositivoAlvoId,
+            entidadeTipo: 'DISPOSITIVO_MOBILE',
+            origem: 'USUARIO',
+            sessaoId: sessao.id,
+            tipoEvento: 'DISPOSITIVO_MOBILE_REVOGADO_REMOTAMENTE',
+            usuarioId: sessao.usuarioId,
+          },
+          transacao,
+        );
+      },
+    );
+  }
+
+  public async revogarDispositivosAdministrativamente(
+    sessaoAdministrativa: ContextoSessaoAutorizacao,
+    usuarioAlvoId: string,
+    agora: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<void> {
+    await this.autorizacao.autorizar(
+      {
+        permissao: 'ADMINISTRAR_USUARIOS',
+        recurso: { id: usuarioAlvoId, tipo: 'USUARIO' },
+        sessao: sessaoAdministrativa,
+      },
+      async (_autorizacao, transacaoAutorizacao) => ({
+        acessivel:
+          transacaoAutorizacao !== undefined &&
+          (await this.repositorio.usuarioAtivo(
+            usuarioAlvoId,
+            transacaoAutorizacao,
+          )),
+        estadoPermiteAcao: true,
+      }),
+      transacao,
+    );
+    await this.repositorio.serializarDispositivosUsuario(
+      usuarioAlvoId,
+      transacao,
+    );
+    const dispositivos =
+      await this.repositorio.listarDispositivosAtivosUsuario(
+        usuarioAlvoId,
+        transacao,
+      );
+    const dispositivosIds = dispositivos.map(({ id }) => id);
+    const quantidade = await this.repositorio.revogarDispositivos(
+      usuarioAlvoId,
+      dispositivosIds,
+      agora,
+      'REVOGACAO_ADMINISTRATIVA',
+      transacao,
+    );
+    const sessoesRevogadas =
+      await this.repositorio.revogarSessoesAtivasDispositivos(
+        usuarioAlvoId,
+        dispositivosIds,
+        agora,
+        'DISPOSITIVO_REVOGADO_ADMINISTRATIVAMENTE',
+        transacao,
+      );
+    await this.auditoria.registrar(
+      {
+        acao: 'REVOGAR_DISPOSITIVOS_MOBILE_ADMINISTRATIVAMENTE',
+        dadosNovos: {
+          dispositivos_revogados: quantidade,
+          sessoes_revogadas: sessoesRevogadas,
+        },
+        entidadeId: usuarioAlvoId,
+        entidadeTipo: 'USUARIO',
+        origem: 'USUARIO',
+        sessaoId: sessaoAdministrativa.sessaoId,
+        tipoEvento: 'DISPOSITIVOS_MOBILE_REVOGADOS_ADMINISTRATIVAMENTE',
+        usuarioId: sessaoAdministrativa.usuarioId,
+      },
+      transacao,
+    );
   }
 
   public async renovar(
@@ -380,6 +577,7 @@ export class ServicoAutenticacaoMobile {
     return {
       acessoExpiraEm: resultado.acessoExpiraEm,
       dispositivoId: resultado.sessao.dispositivoId,
+      dispositivoSubstituido: false,
       id: resultado.sessao.id,
       nomeExibicao: resultado.sessao.nomeExibicao,
       refreshExpiraEm: resultado.sessao.refreshExpiraEm,
@@ -458,6 +656,52 @@ export class ServicoAutenticacaoMobile {
       segredoVinculoHash: hashHex(entrada.segredoVinculo),
       versaoAplicativo: entrada.versaoAplicativo,
     };
+  }
+
+  private async executarComSessaoAtual<T>(
+    tokenAcesso: string,
+    dispositivoId: string,
+    segredoVinculo: string,
+    operacao: (
+      sessao: SessaoMobilePersistida,
+      agora: Date,
+      transacao: TransacaoPrisma,
+    ) => Promise<T>,
+  ): Promise<T> {
+    this.validarSegredo(tokenAcesso);
+    this.validarIdentidadeApresentada(dispositivoId, segredoVinculo);
+    const tokenHash = hashHex(tokenAcesso);
+    const segredoHash = hashHex(segredoVinculo);
+    const agora = new Date();
+    return this.prisma.executarTransacao(async (transacao) => {
+      const inicial = await this.repositorio.obterSessaoPorAcesso(
+        tokenHash,
+        transacao,
+      );
+      this.validarSessao(
+        inicial,
+        dispositivoId,
+        segredoHash,
+        agora,
+        'ACESSO',
+      );
+      await this.repositorio.serializarDispositivosUsuario(
+        inicial.usuarioId,
+        transacao,
+      );
+      const confirmada = await this.repositorio.obterSessaoPorAcesso(
+        tokenHash,
+        transacao,
+      );
+      this.validarSessao(
+        confirmada,
+        dispositivoId,
+        segredoHash,
+        agora,
+        'ACESSO',
+      );
+      return operacao(confirmada, agora, transacao);
+    });
   }
 
   private validarIdentidadeApresentada(

@@ -30,6 +30,9 @@ export class SessaoMobileDto {
   @ApiProperty({ format: 'date-time' })
   public readonly refresh_expira_em: string;
 
+  @ApiProperty()
+  public readonly dispositivo_substituido: boolean;
+
   public constructor(sessao: SessaoMobileEmitida) {
     this.sessao_id = sessao.id;
     this.usuario_id = sessao.usuarioId;
@@ -39,6 +42,7 @@ export class SessaoMobileDto {
     this.token_refresh = sessao.tokenRefresh;
     this.acesso_expira_em = sessao.acessoExpiraEm.toISOString();
     this.refresh_expira_em = sessao.refreshExpiraEm.toISOString();
+    this.dispositivo_substituido = sessao.dispositivoSubstituido;
   }
 }
 

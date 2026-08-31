@@ -72,6 +72,8 @@ Instalação (uma empresa)
 
 `DispositivoMobile` é o vínculo revogável entre um usuário e uma instalação do app. Conserva somente hashes do identificador da instalação e do segredo de vínculo, plataforma, versão e metadado de modelo sanitizado. O mesmo identificador com segredo divergente não é aceito como o aparelho anterior.
 
+Um usuário possui no máximo dois `DispositivoMobile` ativos. O limite considera aparelho, não quantidade de sessões: logout não libera automaticamente a vaga. Ao entrar por uma terceira instalação, `ultimoAcessoEm`, `criadoEm` e `id` formam a ordenação determinística; o mais antigo é revogado junto de todas as suas sessões antes da criação do novo. Estado revogado nunca volta a ativo: restauração ou troca de vínculo exige nova identidade de instalação conforme política de segurança.
+
 `SessaoMobile` pertence simultaneamente a usuário e dispositivo. Access e refresh tokens opacos são armazenados somente por hash; estado, expirações absoluta/curta, versão, rotação e motivo de revogação permanecem históricos. `TokenRefreshMobileUsado` registra o hash consumido para detectar replay sem conservar o segredo bruto. `TentativaLoginMobile` limita abuso por identificador+IP+instalação e por IP usando apenas hashes e metadados mínimos.
 
 `PerfilAcesso` combina um `PapelBase` — `ADMINISTRADOR`, `SUPERVISOR` ou `ATENDENTE` — com ajustes granulares em `PermissaoPerfil`. Cada ajuste é `CONCEDER` ou `NEGAR`, inclusive para negar uma capacidade herdada quando a matriz base for materializada pelo serviço central. Ausência de decisão efetiva significa negar.
@@ -88,6 +90,8 @@ Regras:
 - sessão web só produz contexto autenticado enquanto estiver ativa, não expirada e vinculada a usuário ativo.
 - sessão mobile só produz contexto autenticado enquanto usuário, dispositivo e sessão estiverem ativos, o access token não tiver expirado e o vínculo apresentado coincidir;
 - refresh mobile é de uso único; reutilização revoga a sessão e exige nova autenticação.
+- dispositivo revogado invalida todas as suas sessões e deixa de produzir contexto para REST, sincronização ou WebSocket;
+- contagem, escolha do mais antigo, revogação e criação do terceiro compartilham a mesma serialização/transação PostgreSQL.
 
 ### 3.2 Decisão central de autorização
 

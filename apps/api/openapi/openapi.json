@@ -168,6 +168,98 @@
         ]
       }
     },
+    "/api/v1/autenticacao/mobile/dispositivos": {
+      "get": {
+        "operationId": "listarDispositivosMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResumoDispositivoMobileDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Lista os dispositivos móveis ativos do usuário atual",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/mobile/dispositivos/{dispositivoId}/revogar": {
+      "post": {
+        "operationId": "revogarDispositivoMobileDoUsuario",
+        "parameters": [
+          {
+            "name": "dispositivoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Revoga um dispositivo móvel do usuário atual",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
     "/api/v1/autenticacao/mobile/sessao": {
       "get": {
         "operationId": "obterSessaoMobile",
@@ -505,6 +597,43 @@
           "autenticacao"
         ]
       }
+    },
+    "/api/v1/autenticacao/web/usuarios/{usuarioId}/revogar-dispositivos-mobile": {
+      "post": {
+        "operationId": "revogarDispositivosMobileAdministrativamente",
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Revoga administrativamente os dispositivos móveis de um usuário",
+        "tags": [
+          "autenticacao"
+        ]
+      }
     }
   },
   "info": {
@@ -668,6 +797,9 @@
           "refresh_expira_em": {
             "type": "string",
             "format": "date-time"
+          },
+          "dispositivo_substituido": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -678,7 +810,8 @@
           "token_acesso",
           "token_refresh",
           "acesso_expira_em",
-          "refresh_expira_em"
+          "refresh_expira_em",
+          "dispositivo_substituido"
         ]
       },
       "EntradaRefreshMobileDto": {
@@ -692,6 +825,47 @@
         },
         "required": [
           "token_refresh"
+        ]
+      },
+      "ResumoDispositivoMobileDto": {
+        "type": "object",
+        "properties": {
+          "dispositivo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "atual": {
+            "type": "boolean"
+          },
+          "plataforma": {
+            "type": "string",
+            "enum": [
+              "IOS",
+              "ANDROID"
+            ]
+          },
+          "modelo_sanitizado": {
+            "type": "string"
+          },
+          "versao_aplicativo": {
+            "type": "string"
+          },
+          "ultimo_acesso_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "dispositivo_id",
+          "atual",
+          "plataforma",
+          "versao_aplicativo",
+          "ultimo_acesso_em",
+          "criado_em"
         ]
       },
       "ContextoSessaoMobileDto": {

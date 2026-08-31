@@ -54,3 +54,31 @@ test('app persiste refresh e vínculo somente no cofre nativo', async () => {
   assert.ok(!gerenciador.includes('SQLite'));
   assert.match(manifesto, /expo-secure-store/);
 });
+
+test('limite e revogação mobile usam autoridade transacional do PostgreSQL', async () => {
+  const [servico, repositorio, controlador] = await Promise.all([
+    ler('apps/api/src/autenticacao/servico-autenticacao-mobile.ts'),
+    ler('apps/api/src/autenticacao/repositorio-autenticacao-mobile-prisma.ts'),
+    ler('apps/api/src/autenticacao/controlador-autenticacao-mobile.ts'),
+  ]);
+  assert.match(servico, /LIMITE_DISPOSITIVOS_MOBILE = 2/);
+  assert.match(servico, /DISPOSITIVO_MOBILE_ANTIGO_REVOGADO/);
+  assert.match(servico, /DISPOSITIVO_MOBILE_REVOGADO_REMOTAMENTE/);
+  assert.match(servico, /ADMINISTRAR_USUARIOS/);
+  assert.match(repositorio, /DISPOSITIVOS_MOBILE:/);
+  assert.match(repositorio, /pg_advisory_xact_lock/);
+  assert.match(repositorio, /ultimoAcessoEm: 'asc'/);
+  assert.match(controlador, /dispositivos\/:dispositivoId\/revogar/);
+  assert.ok(!servico.includes('redis'));
+});
+
+test('app limpa a credencial segura quando o servidor revoga a autoridade', async () => {
+  const gerenciador = await ler(
+    'apps/mobile/src/autenticacao/gerenciador-sessao-mobile.ts',
+  );
+  assert.match(gerenciador, /tratarRespostaNaoAutorizada/);
+  assert.match(gerenciador, /statusHttp !== 401/);
+  assert.match(gerenciador, /this\.limparSessao\(\)/);
+  assert.match(gerenciador, /DISPOSITIVO_NAO_CONFIAVEL/);
+  assert.match(gerenciador, /substituirIdentidadeInstalacao/);
+});

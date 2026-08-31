@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, ListarSessoesWebData, ListarSessoesWebResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
+import type { EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarSessoesWebData, ListarSessoesWebResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -55,6 +55,24 @@ export const renovarSessaoMobile = <ThrowOnError extends boolean = false>(option
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Lista os dispositivos móveis ativos do usuário atual
+ */
+export const listarDispositivosMobile = <ThrowOnError extends boolean = false>(options: Options<ListarDispositivosMobileData, ThrowOnError>): RequestResult<ListarDispositivosMobileResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListarDispositivosMobileResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/autenticacao/mobile/dispositivos',
+    ...options
+});
+
+/**
+ * Revoga um dispositivo móvel do usuário atual
+ */
+export const revogarDispositivoMobileDoUsuario = <ThrowOnError extends boolean = false>(options: Options<RevogarDispositivoMobileDoUsuarioData, ThrowOnError>): RequestResult<RevogarDispositivoMobileDoUsuarioResponses, unknown, ThrowOnError> => (options.client ?? client).post<RevogarDispositivoMobileDoUsuarioResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/autenticacao/mobile/dispositivos/{dispositivoId}/revogar',
+    ...options
 });
 
 /**
@@ -175,5 +193,18 @@ export const revogarSessoesWebAdministrativamente = <ThrowOnError extends boolea
             type: 'apiKey'
         }],
     url: '/api/v1/autenticacao/web/usuarios/{usuarioId}/revogar-sessoes',
+    ...options
+});
+
+/**
+ * Revoga administrativamente os dispositivos móveis de um usuário
+ */
+export const revogarDispositivosMobileAdministrativamente = <ThrowOnError extends boolean = false>(options: Options<RevogarDispositivosMobileAdministrativamenteData, ThrowOnError>): RequestResult<RevogarDispositivosMobileAdministrativamenteResponses, unknown, ThrowOnError> => (options.client ?? client).post<RevogarDispositivosMobileAdministrativamenteResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/autenticacao/web/usuarios/{usuarioId}/revogar-dispositivos-mobile',
     ...options
 });

@@ -68,6 +68,8 @@ Senha usa Argon2id; identificador desconhecido não altera a resposta nem elimin
 
 O mobile usa sessão própria vinculada à instalação e ao dispositivo. Access token de 15 minutos fica somente em memória; refresh rotativo com limite absoluto de 30 dias e segredo de vínculo ficam no cofre nativo. PostgreSQL conserva apenas hashes e detecta replay de refresh para revogar a sessão. Contrato, custódia local e operação estão em [docs/operacoes/PR-015.md](docs/operacoes/PR-015.md); dependências em [docs/dependencias/PR-015.md](docs/dependencias/PR-015.md).
 
+Cada usuário possui no máximo dois aparelhos ativos. Uma terceira instalação substitui atomicamente a mais antiga; o próprio usuário pode listar/revogar aparelhos e a administração pode revogar todos mediante autorização central. Detalhes e aceite estão em [docs/operacoes/PR-016.md](docs/operacoes/PR-016.md); a PR não adiciona dependências, conforme [docs/dependencias/PR-016.md](docs/dependencias/PR-016.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local

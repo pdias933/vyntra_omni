@@ -5,6 +5,7 @@ import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type {
   CredencialLoginMobile,
+  DispositivoMobileListado,
   DispositivoMobilePersistido,
   EntradaDispositivoMobile,
   RegistroTentativaLoginMobile,
@@ -124,15 +125,43 @@ export class RepositorioAutenticacaoMobilePrisma
     return atualizado.count === 1;
   }
 
-  public async serializarDispositivo(
+  public async serializarDispositivosUsuario(
     usuarioId: string,
-    identificadorInstalacaoHash: string,
     transacao: TransacaoPrisma,
   ): Promise<void> {
-    const chave = `DISPOSITIVO_MOBILE:${usuarioId}:${identificadorInstalacaoHash}`;
+    const chave = `DISPOSITIVOS_MOBILE:${usuarioId}`;
     await transacao.$queryRaw(
       Prisma.sql`SELECT CAST(pg_advisory_xact_lock(hashtextextended(${chave}, 0)) AS text) AS bloqueio`,
     );
+  }
+
+  public async listarDispositivosAtivosUsuario(
+    usuarioId: string,
+    transacao?: TransacaoPrisma,
+  ): Promise<readonly DispositivoMobileListado[]> {
+    const contexto = transacao ?? (await this.prisma.obterCliente());
+    const dispositivos = await contexto.dispositivoMobile.findMany({
+      orderBy: [{ ultimoAcessoEm: 'asc' }, { criadoEm: 'asc' }, { id: 'asc' }],
+      select: {
+        criadoEm: true,
+        id: true,
+        modeloSanitizado: true,
+        plataforma: true,
+        ultimoAcessoEm: true,
+        versaoAplicativo: true,
+      },
+      where: { estado: 'ATIVO', usuarioId },
+    });
+    return dispositivos.map((dispositivo) => ({
+      criadoEm: dispositivo.criadoEm,
+      id: dispositivo.id,
+      ...(dispositivo.modeloSanitizado === null
+        ? {}
+        : { modeloSanitizado: dispositivo.modeloSanitizado }),
+      plataforma: dispositivo.plataforma,
+      ultimoAcessoEm: dispositivo.ultimoAcessoEm,
+      versaoAplicativo: dispositivo.versaoAplicativo,
+    }));
   }
 
   public async obterDispositivo(
@@ -201,6 +230,40 @@ export class RepositorioAutenticacaoMobilePrisma
     const resultado = await transacao.sessaoMobile.updateMany({
       data: { estado: 'REVOGADA', motivoRevogacao: motivo, revogadaEm: agora },
       where: { dispositivoId, estado: 'ATIVA' },
+    });
+    return resultado.count;
+  }
+
+  public async revogarDispositivos(
+    usuarioId: string,
+    dispositivosIds: readonly string[],
+    agora: Date,
+    motivo: string,
+    transacao: TransacaoPrisma,
+  ): Promise<number> {
+    if (dispositivosIds.length === 0) return 0;
+    const resultado = await transacao.dispositivoMobile.updateMany({
+      data: { estado: 'REVOGADO', motivoRevogacao: motivo, revogadoEm: agora },
+      where: { estado: 'ATIVO', id: { in: [...dispositivosIds] }, usuarioId },
+    });
+    return resultado.count;
+  }
+
+  public async revogarSessoesAtivasDispositivos(
+    usuarioId: string,
+    dispositivosIds: readonly string[],
+    agora: Date,
+    motivo: string,
+    transacao: TransacaoPrisma,
+  ): Promise<number> {
+    if (dispositivosIds.length === 0) return 0;
+    const resultado = await transacao.sessaoMobile.updateMany({
+      data: { estado: 'REVOGADA', motivoRevogacao: motivo, revogadaEm: agora },
+      where: {
+        dispositivoId: { in: [...dispositivosIds] },
+        estado: 'ATIVA',
+        usuarioId,
+      },
     });
     return resultado.count;
   }
@@ -305,6 +368,17 @@ export class RepositorioAutenticacaoMobilePrisma
       where: { estado: 'ATIVA', id: sessaoId },
     });
     return resultado.count === 1;
+  }
+
+  public async usuarioAtivo(
+    usuarioId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    return (
+      (await transacao.usuario.count({
+        where: { estado: 'ATIVO', id: usuarioId },
+      })) === 1
+    );
   }
 
   private selecaoSessao() {

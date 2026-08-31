@@ -43,6 +43,19 @@ export interface DispositivoMobilePersistido {
   readonly estado: 'ATIVO' | 'REVOGADO';
 }
 
+export interface DispositivoMobileListado {
+  readonly id: string;
+  readonly plataforma: PlataformaMobile;
+  readonly modeloSanitizado?: string;
+  readonly versaoAplicativo: string;
+  readonly ultimoAcessoEm: Date;
+  readonly criadoEm: Date;
+}
+
+export interface ResumoDispositivoMobile extends DispositivoMobileListado {
+  readonly atual: boolean;
+}
+
 export interface SessaoMobilePersistida {
   readonly id: string;
   readonly usuarioId: string;
@@ -68,6 +81,7 @@ export interface SessaoMobileEmitida {
   readonly tokenRefresh: string;
   readonly acessoExpiraEm: Date;
   readonly refreshExpiraEm: Date;
+  readonly dispositivoSubstituido: boolean;
 }
 
 export interface SessaoMobileAutenticada {

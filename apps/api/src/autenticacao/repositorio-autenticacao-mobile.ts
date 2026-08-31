@@ -1,6 +1,7 @@
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type {
   CredencialLoginMobile,
+  DispositivoMobileListado,
   DispositivoMobilePersistido,
   EntradaDispositivoMobile,
   RegistroTentativaLoginMobile,
@@ -37,11 +38,14 @@ export interface RepositorioAutenticacaoMobile {
     resultado: 'FALHA' | 'SUCESSO',
     transacao: TransacaoPrisma,
   ): Promise<boolean>;
-  serializarDispositivo(
+  serializarDispositivosUsuario(
     usuarioId: string,
-    identificadorInstalacaoHash: string,
     transacao: TransacaoPrisma,
   ): Promise<void>;
+  listarDispositivosAtivosUsuario(
+    usuarioId: string,
+    transacao?: TransacaoPrisma,
+  ): Promise<readonly DispositivoMobileListado[]>;
   obterDispositivo(
     usuarioId: string,
     identificadorInstalacaoHash: string,
@@ -63,6 +67,20 @@ export interface RepositorioAutenticacaoMobile {
   ): Promise<boolean>;
   revogarSessoesAtivasDispositivo(
     dispositivoId: string,
+    agora: Date,
+    motivo: string,
+    transacao: TransacaoPrisma,
+  ): Promise<number>;
+  revogarDispositivos(
+    usuarioId: string,
+    dispositivosIds: readonly string[],
+    agora: Date,
+    motivo: string,
+    transacao: TransacaoPrisma,
+  ): Promise<number>;
+  revogarSessoesAtivasDispositivos(
+    usuarioId: string,
+    dispositivosIds: readonly string[],
     agora: Date,
     motivo: string,
     transacao: TransacaoPrisma,
@@ -109,6 +127,10 @@ export interface RepositorioAutenticacaoMobile {
     sessaoId: string,
     agora: Date,
     motivo: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+  usuarioAtivo(
+    usuarioId: string,
     transacao: TransacaoPrisma,
   ): Promise<boolean>;
 }
