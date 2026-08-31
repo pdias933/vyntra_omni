@@ -228,6 +228,8 @@ O acesso inicial usa Prisma 7 estável com o adaptador oficial `pg`. `ServicoPri
 
 `ServicoTransacaoDominio` delimita a unidade de trabalho para efeitos assíncronos. A alteração principal roda primeiro; `EventoDominio` recebe `sequencia_evento` do PostgreSQL e cada `ItemCaixaSaida` referencia esse evento, tudo no mesmo callback transacional Prisma. Falha de validação, constraint ou persistência reverte o conjunto inteiro. Repositórios de evento e caixa de saída não abrem transações próprias e não publicam nada.
 
+Usuários, perfis, permissões e filas também residem no PostgreSQL. Perfil é referência opcional do usuário; permissões são ajustes granulares por código fechado; acesso de fila é relação explícita e revogável. O schema não contém credencial nem sessão antes dos PRs próprios e não calcula autorização: a PR 012 combinará usuário ativo, perfil, permissão, fila, recurso e estado em um único serviço `default deny`.
+
 Migrations rodam em um contêiner/job único antes da API. A API não executa migration no startup e só fica pronta quando a migration obrigatória consta como concluída.
 
 ### 6.2 Redis

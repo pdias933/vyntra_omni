@@ -62,6 +62,88 @@ enum ResultadoTentativaOperacao {
   @@map("resultado_tentativa_operacao")
 }
 
+enum EstadoUsuario {
+  ATIVO
+  INATIVO
+
+  @@map("estado_usuario")
+}
+
+enum PapelBase {
+  ADMINISTRADOR
+  SUPERVISOR
+  ATENDENTE
+
+  @@map("papel_base")
+}
+
+enum EstadoPerfilAcesso {
+  ATIVO
+  INATIVO
+
+  @@map("estado_perfil_acesso")
+}
+
+enum EfeitoPermissaoPerfil {
+  CONCEDER
+  NEGAR
+
+  @@map("efeito_permissao_perfil")
+}
+
+enum CodigoPermissao {
+  VISUALIZAR_FILA
+  RESGATAR_ATENDIMENTO
+  TRANSFERIR_ATENDIMENTO
+  RECEBER_TRANSFERENCIA
+  ENCERRAR_ATENDIMENTO
+  REABRIR_ATENDIMENTO
+  ASSUMIR_ATENDIMENTO
+  ADICIONAR_NOTA_INTERNA
+  VISUALIZAR_NOTA_INTERNA
+  CONSULTAR_CLIENTE
+  VINCULAR_CLIENTE
+  ALTERAR_CONTEXTO_CLIENTE
+  CONSULTAR_CONTRATO
+  CONSULTAR_FINANCEIRO
+  ENVIAR_FATURA
+  VERIFICAR_DESBLOQUEIO_CONFIANCA
+  EXECUTAR_DESBLOQUEIO_CONFIANCA
+  CONSULTAR_SESSAO_ACESSO
+  DESCONECTAR_SESSAO_ACESSO
+  CRIAR_ORDEM_SERVICO
+  SOLICITAR_FORMULARIO_WHATSAPP
+  VISUALIZAR_FLUXO
+  EDITAR_FLUXO
+  TESTAR_FLUXO
+  PUBLICAR_FLUXO
+  REVERTER_FLUXO
+  VISUALIZAR_HISTORICO_TRANSVERSAL
+  VISUALIZAR_NOTAS_TRANSVERSAIS
+  VISUALIZAR_DADO_SENSIVEL
+  EXPORTAR_HISTORICO
+  ADMINISTRAR_USUARIOS
+  ADMINISTRAR_FILAS
+  ADMINISTRAR_INTEGRACOES
+  ADMINISTRAR_RELEASES
+
+  @@map("codigo_permissao")
+}
+
+enum EstadoFila {
+  ATIVA
+  INATIVA
+
+  @@map("estado_fila")
+}
+
+enum EstadoAcessoFila {
+  ATIVO
+  REVOGADO
+
+  @@map("estado_acesso_fila")
+}
+
 model RegistroAuditoria {
   id                         String          @id @db.Uuid
   tipoEvento                 String          @map("tipo_evento") @db.VarChar(100)
@@ -183,4 +265,76 @@ model TentativaOperacao {
   @@unique([operacaoId, numero], map: "tentativa_operacao_numero_key")
   @@index([resultado, iniciadaEm], map: "tentativa_operacao_resultado_idx")
   @@map("tentativa_operacao")
+}
+
+model Usuario {
+  id            String        @id @db.Uuid
+  nomeExibicao  String        @map("nome_exibicao") @db.VarChar(160)
+  estado        EstadoUsuario @default(ATIVO)
+  perfilId      String?       @map("perfil_id") @db.Uuid
+  inativadoEm   DateTime?     @map("inativado_em") @db.Timestamptz(6)
+  criadoEm      DateTime      @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm  DateTime      @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  perfil        PerfilAcesso? @relation(fields: [perfilId], references: [id], onDelete: Restrict)
+  acessosFila   AcessoUsuarioFila[]
+
+  @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
+  @@index([perfilId], map: "usuario_perfil_idx")
+  @@map("usuario")
+}
+
+model PerfilAcesso {
+  id              String               @id @db.Uuid
+  nome            String               @db.VarChar(120)
+  nomeNormalizado String               @unique @map("nome_normalizado") @db.VarChar(120)
+  papelBase       PapelBase            @map("papel_base")
+  estado          EstadoPerfilAcesso   @default(ATIVO)
+  inativadoEm     DateTime?            @map("inativado_em") @db.Timestamptz(6)
+  criadoEm        DateTime             @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm    DateTime             @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  usuarios        Usuario[]
+  permissoes      PermissaoPerfil[]
+
+  @@index([papelBase, estado], map: "perfil_acesso_papel_estado_idx")
+  @@map("perfil_acesso")
+}
+
+model PermissaoPerfil {
+  perfilId  String                 @map("perfil_id") @db.Uuid
+  codigo    CodigoPermissao
+  efeito    EfeitoPermissaoPerfil
+  criadoEm  DateTime               @default(now()) @map("criado_em") @db.Timestamptz(6)
+  perfil    PerfilAcesso           @relation(fields: [perfilId], references: [id], onDelete: Restrict)
+
+  @@id([perfilId, codigo])
+  @@index([codigo, efeito], map: "permissao_perfil_codigo_efeito_idx")
+  @@map("permissao_perfil")
+}
+
+model Fila {
+  id              String       @id @db.Uuid
+  nome            String       @db.VarChar(120)
+  nomeNormalizado String       @unique @map("nome_normalizado") @db.VarChar(120)
+  estado          EstadoFila   @default(ATIVA)
+  inativadaEm     DateTime?    @map("inativada_em") @db.Timestamptz(6)
+  criadoEm        DateTime     @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm    DateTime     @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  acessosUsuarios AcessoUsuarioFila[]
+
+  @@index([estado, nome], map: "fila_estado_nome_idx")
+  @@map("fila")
+}
+
+model AcessoUsuarioFila {
+  usuarioId  String            @map("usuario_id") @db.Uuid
+  filaId     String            @map("fila_id") @db.Uuid
+  estado     EstadoAcessoFila  @default(ATIVO)
+  criadoEm   DateTime          @default(now()) @map("criado_em") @db.Timestamptz(6)
+  revogadoEm DateTime?         @map("revogado_em") @db.Timestamptz(6)
+  usuario    Usuario           @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  fila       Fila              @relation(fields: [filaId], references: [id], onDelete: Restrict)
+
+  @@id([usuarioId, filaId])
+  @@index([filaId, estado, usuarioId], map: "acesso_usuario_fila_fila_estado_idx")
+  @@map("acesso_usuario_fila")
 }

@@ -210,6 +210,11 @@ test('sobe o ambiente local em projeto efêmero e comprova persistência', () =>
   assert.ok(smoke.run.includes('INSERT INTO operacao_recuperavel'));
   assert.ok(smoke.run.includes('Chave idempotente duplicada foi aceita'));
   assert.ok(smoke.run.includes('Estado ativo sem concessão foi aceito'));
+  assert.ok(smoke.run.includes('INSERT INTO perfil_acesso'));
+  assert.ok(smoke.run.includes('INSERT INTO permissao_perfil'));
+  assert.ok(smoke.run.includes('INSERT INTO acesso_usuario_fila'));
+  assert.ok(smoke.run.includes('Nome normalizado duplicado de perfil foi aceito'));
+  assert.ok(smoke.run.includes('Acesso revogado sem timestamp foi aceito'));
   assert.ok(smoke.run.includes('docker compose restart postgres redis minio'));
   assert.ok(smoke.run.includes('docker compose up --wait --no-build'));
   assert.ok(smoke.run.includes('SELECT valor FROM verificacao_pr004'));
@@ -221,7 +226,7 @@ test('sobe o ambiente local em projeto efêmero e comprova persistência', () =>
   assert.ok(smoke.run.includes('local/verificacao-pr004/marcador'));
   assert.ok(smoke.run.includes('verificacao:pr004'));
   assert.ok(smoke.run.includes('down --volumes --remove-orphans'));
-  assert.equal(smoke.run.match(/<\/dev\/null/g)?.length, 20);
+  assert.equal(smoke.run.match(/<\/dev\/null/g)?.length, 25);
   assert.ok(!smoke.run.includes('docker compose config'));
   assert.ok(!smoke.run.includes('docker compose logs'));
 });

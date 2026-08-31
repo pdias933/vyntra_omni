@@ -60,6 +60,22 @@ Instalação (uma empresa)
 | `Fluxo` | Definição administrativa versionada do comportamento automatizado. |
 | `ExecucaoFluxo` | Instância persistente de uma versão de fluxo vinculada a um atendimento. |
 
+### 3.1 Funcionários e escopos de acesso
+
+`Usuario` representa o funcionário dentro da instalação, separado de credencial e sessão. Na fundação ele possui nome de exibição, estado e perfil opcional; identificador de login, senha e sessões entram nos PRs de autenticação. Usuário sem perfil permanece sem capacidade, e perfil não concede fila por simples associação.
+
+`PerfilAcesso` combina um `PapelBase` — `ADMINISTRADOR`, `SUPERVISOR` ou `ATENDENTE` — com ajustes granulares em `PermissaoPerfil`. Cada ajuste é `CONCEDER` ou `NEGAR`, inclusive para negar uma capacidade herdada quando a matriz base for materializada pelo serviço central. Ausência de decisão efetiva significa negar.
+
+`Fila` é um escopo operacional, nunca um papel. Financeiro, Suporte e Comercial são exemplos configuráveis de fila. `AcessoUsuarioFila` registra explicitamente quais filas pertencem ao escopo do usuário e conserva revogação coerente; permissão de uma ação e acesso à fila são condições independentes.
+
+Regras:
+
+- não existe perfil, permissão ou fila atribuída por padrão ao criar usuário;
+- perfil inativo, usuário inativo ou acesso revogado não autoriza ação;
+- código de permissão vem do catálogo fechado no schema e não de texto livre;
+- `VISUALIZAR_DADO_SENSIVEL`, `EXPORTAR_HISTORICO` e `VISUALIZAR_NOTAS_TRANSVERSAIS` continuam específicos e não decorrem apenas de ser Administrador;
+- credenciais, sessão e avaliação do recurso concreto não pertencem a esta fundação do schema.
+
 ## 4. Identidade, contato e cliente ERP
 
 ### 4.1 `Contato`

@@ -88,7 +88,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: migracao
-    image: vyntra/migracoes-desenvolvimento:pr-010
+    image: vyntra/migracoes-desenvolvimento:pr-011
     pull_policy: build
     restart: "no"
     init: true

@@ -359,7 +359,7 @@ Responde se o processo está vivo. Não faz consulta pesada a todas as dependên
 
 Responde se a instância pode receber tráfego, verificando dependências mínimas e estado de inicialização/migration.
 
-Além da conexão com PostgreSQL, a implementação confirma em `_prisma_migrations` que a migration obrigatória mais recente terminou e não foi revertida. Na PR 010, a marca é `20260831000300_criar_idempotencia_operacoes`. A resposta externa continua genérica e não revela schema, tabela ou dependência defeituosa.
+Além da conexão com PostgreSQL, a implementação confirma em `_prisma_migrations` que a migration obrigatória mais recente terminou e não foi revertida. Na PR 011, a marca é `20260831000400_criar_usuarios_perfis_permissoes_filas`. A resposta externa continua genérica e não revela schema, tabela ou dependência defeituosa.
 
 ### Recuperação de operações
 

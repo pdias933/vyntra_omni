@@ -114,6 +114,8 @@ Não propague DTOs/nomenclatura Meta ou MK para domínio, UI ou Motor de Fluxos.
 - Evento só é distribuído após commit.
 - Alteração com efeito assíncrono usa `ServicoTransacaoDominio`; evento e caixa de saída não podem ser persistidos por transações independentes.
 - Remover permissão invalida stream e cache local.
+- Usuário, perfil, permissão e acesso de fila são dimensões distintas; criar usuário não concede nenhuma delas implicitamente.
+- Financeiro, Suporte e Comercial são filas configuráveis, nunca papéis ou permissões codificadas.
 - Encerramento, expiração, deploy ou nova tentativa não apagam histórico/auditoria.
 
 Não atualize estado com `update` genérico. Use caso de uso/método de domínio que valida a transição.

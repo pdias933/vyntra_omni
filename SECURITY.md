@@ -113,6 +113,8 @@ O limite inicial é de 5 gerações em 10 minutos por usuário e 10 tentativas d
 
 Financeiro, Suporte e Comercial são filas, não papéis.
 
+O schema não atribui perfil ao criar usuário, não cria vínculo automático de fila e não semeia concessão. `PermissaoPerfil` registra ajuste explícito `CONCEDER` ou `NEGAR`; a matriz efetiva dos papéis e a decisão central entram na PR 012. Até essa decisão existir, ausência de regra, perfil ou escopo permanece negação.
+
 ### 5.2 Regra de decisão
 
 Toda leitura/escrita valida:

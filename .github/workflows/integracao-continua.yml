@@ -126,6 +126,27 @@ jobs:
             | grep --quiet --line-regexp 1
 
           docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "BEGIN; INSERT INTO perfil_acesso (id, nome, nome_normalizado, papel_base) VALUES ('\''b0000000-0000-4000-8000-000000000001'\'', '\''Administrador sem concessão'\'', '\''administrador-sem-concessao'\'', '\''ADMINISTRADOR'\''), ('\''b0000000-0000-4000-8000-000000000002'\'', '\''Supervisor de aceite'\'', '\''supervisor-de-aceite'\'', '\''SUPERVISOR'\''); INSERT INTO usuario (id, nome_exibicao, perfil_id) VALUES ('\''b0000000-0000-4000-8000-000000000003'\'', '\''Usuário sem perfil'\'', NULL), ('\''b0000000-0000-4000-8000-000000000004'\'', '\''Supervisor sintético'\'', '\''b0000000-0000-4000-8000-000000000002'\''); INSERT INTO permissao_perfil (perfil_id, codigo, efeito) VALUES ('\''b0000000-0000-4000-8000-000000000002'\'', '\''VISUALIZAR_FILA'\'', '\''CONCEDER'\''); INSERT INTO fila (id, nome, nome_normalizado) VALUES ('\''b0000000-0000-4000-8000-000000000005'\'', '\''Fila sintética'\'', '\''fila-sintetica'\''); INSERT INTO acesso_usuario_fila (usuario_id, fila_id) VALUES ('\''b0000000-0000-4000-8000-000000000004'\'', '\''b0000000-0000-4000-8000-000000000005'\''); COMMIT;"' </dev/null
+          docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --tuples-only --no-align --command "SELECT ((SELECT count(*) FROM usuario WHERE id = '\''b0000000-0000-4000-8000-000000000003'\'' AND perfil_id IS NULL) = 1 AND (SELECT count(*) FROM permissao_perfil WHERE perfil_id = '\''b0000000-0000-4000-8000-000000000001'\'') = 0 AND (SELECT count(*) FROM acesso_usuario_fila WHERE usuario_id = '\''b0000000-0000-4000-8000-000000000003'\'') = 0)::int;"' </dev/null \
+            | grep --quiet --line-regexp 1
+          if docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "INSERT INTO perfil_acesso (id, nome, nome_normalizado, papel_base) VALUES ('\''b0000000-0000-4000-8000-000000000006'\'', '\''Nome duplicado'\'', '\''supervisor-de-aceite'\'', '\''ATENDENTE'\'');"' </dev/null >/dev/null 2>&1
+          then
+            echo '::error::Nome normalizado duplicado de perfil foi aceito.'
+            exit 1
+          fi
+          if docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "UPDATE acesso_usuario_fila SET estado = '\''REVOGADO'\'' WHERE usuario_id = '\''b0000000-0000-4000-8000-000000000004'\'' AND fila_id = '\''b0000000-0000-4000-8000-000000000005'\'';"' </dev/null >/dev/null 2>&1
+          then
+            echo '::error::Acesso revogado sem timestamp foi aceito.'
+            exit 1
+          fi
+          docker compose exec -T postgres sh -ceu \
+            'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --tuples-only --no-align --command "SELECT ((SELECT count(*) FROM permissao_perfil WHERE perfil_id = '\''b0000000-0000-4000-8000-000000000002'\'' AND codigo = '\''VISUALIZAR_FILA'\'' AND efeito = '\''CONCEDER'\'') = 1 AND (SELECT count(*) FROM acesso_usuario_fila WHERE usuario_id = '\''b0000000-0000-4000-8000-000000000004'\'' AND fila_id = '\''b0000000-0000-4000-8000-000000000005'\'' AND estado = '\''ATIVO'\'') = 1)::int;"' </dev/null \
+            | grep --quiet --line-regexp 1
+
+          docker compose exec -T postgres sh -ceu \
             'PGPASSWORD="$(cat /run/secrets/senha_postgresql)" exec psql --host 127.0.0.1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-password --set ON_ERROR_STOP=1 --command "CREATE TABLE verificacao_pr004 (valor text PRIMARY KEY); INSERT INTO verificacao_pr004 VALUES ('\''persistiu'\'');"' </dev/null
           docker compose exec -T minio /usr/bin/sh -ceu \
             'export MC_HOST_local="http://$(cat /run/secrets/usuario_minio):$(cat /run/secrets/senha_minio)@127.0.0.1:9000"

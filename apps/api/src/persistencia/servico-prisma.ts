@@ -5,7 +5,8 @@ import { Prisma, PrismaClient } from '../gerado/prisma/client.js';
 import { obterUrlBanco } from './obter-url-banco.js';
 import type { TransacaoPrisma } from './transacao-prisma.js';
 
-const MIGRACAO_OBRIGATORIA = '20260831000300_criar_idempotencia_operacoes';
+const MIGRACAO_OBRIGATORIA =
+  '20260831000400_criar_usuarios_perfis_permissoes_filas';
 
 @Injectable()
 export class ServicoPrisma implements OnModuleDestroy {

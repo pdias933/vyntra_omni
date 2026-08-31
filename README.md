@@ -52,6 +52,10 @@ Efeitos assíncronos usam `EventoDominio` sequenciado e `ItemCaixaSaida` no mesm
 
 Comandos sensíveis usam chave com escopo, concessão temporária e tentativas persistentes. Timeout ou execução interrompida produz resultado incerto e exige reconciliação antes de uma nova tentativa. O contrato operacional está em [docs/operacoes/PR-010.md](docs/operacoes/PR-010.md); a análise de dependências está em [docs/dependencias/PR-010.md](docs/dependencias/PR-010.md).
 
+### Identidade e escopo de funcionários
+
+O PostgreSQL materializa usuários, perfis, ajustes granulares de permissão, filas e vínculos explícitos de escopo. Usuário nasce sem perfil e sem fila; autenticação e decisão central de autorização permanecem nos PRs seguintes. O modelo e o aceite estão em [docs/operacoes/PR-011.md](docs/operacoes/PR-011.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local
