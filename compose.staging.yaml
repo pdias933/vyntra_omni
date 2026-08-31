@@ -123,7 +123,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/api-staging:pr-005
+    image: vyntra/api-staging:pr-006
     pull_policy: build
     restart: *reinicio-staging
     init: true
