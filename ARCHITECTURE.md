@@ -236,7 +236,9 @@ Usuários, perfis, permissões e filas também residem no PostgreSQL. Perfil é 
 
 O cookie da sessão é `HttpOnly`, `Secure`, `SameSite=Strict`, sem `Domain` e com `Path=/`. O cookie CSRF é legível pelo cliente para envio em `x-csrf-token`, mas seu hash é vinculado à sessão; mutações exigem cookie, header idêntico e origem HTTPS na allowlist. CORS usa a mesma allowlist e credenciais explícitas.
 
-Rotação usa `updateMany` condicionado pelo token atual, estado e expiração: concorrentes têm um vencedor e o segredo anterior perde autoridade. Expiração absoluta inicial é de 12 horas e nunca é estendida pela rotação. A PR 014 introduz inatividade, máximo de duas sessões e revogação administrativa. Perfil privilegiado não recebe sessão somente com senha; enquanto TOTP/código de recuperação não estiver disponível, o backend responde `MFA_NECESSARIO` e permanece em negação segura.
+Rotação usa `updateMany` condicionado pelo token atual, estado e expiração: concorrentes têm um vencedor e o segredo anterior perde autoridade. A última atividade confirmada renova a janela de inatividade de 12 horas, com persistência limitada por intervalo para evitar escrita por evento SSE. Perfil privilegiado não recebe sessão somente com senha; enquanto TOTP/código de recuperação não estiver disponível, o backend responde `MFA_NECESSARIO` e permanece em negação segura.
+
+Criação e revogação por limite usam advisory lock transacional derivado apenas do UUID do usuário. Dentro dessa seção serializada, o serviço conta sessões válidas, exige confirmação antes da terceira e, quando confirmado, revoga a mais antiga antes de inserir a nova. O limite não depende de Redis nem de uma instância específica da API. Logout global, revogação própria e administrativa alteram estado e gravam auditoria na mesma transação; a rota administrativa ainda passa por `ServicoAutorizacao` e pelo recurso concreto.
 
 ### 6.1.2 Autorização central
 

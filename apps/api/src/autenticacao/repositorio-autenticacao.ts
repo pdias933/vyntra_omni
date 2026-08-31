@@ -2,6 +2,7 @@ import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type {
   CredencialLoginWeb,
   RegistroTentativaLoginWeb,
+  SessaoWebListada,
   SessaoWebPersistida,
 } from './modelo-autenticacao.js';
 
@@ -38,10 +39,39 @@ export interface RepositorioAutenticacao {
       readonly enderecoIp: string;
       readonly agenteUsuarioHash: string;
       readonly autenticadaEm: Date;
+      readonly ultimaAtividadeEm: Date;
       readonly expiraEm: Date;
     },
     transacao?: TransacaoPrisma,
   ): Promise<void>;
+  serializarSessoesUsuario(
+    usuarioId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<void>;
+  listarSessoesAtivasUsuario(
+    usuarioId: string,
+    agora: Date,
+    transacao?: TransacaoPrisma,
+  ): Promise<readonly SessaoWebListada[]>;
+  registrarAtividadeSessao(
+    sessaoId: string,
+    tokenHash: string,
+    atividadeAnteriorA: Date,
+    agora: Date,
+    expiraEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+  revogarSessoes(
+    usuarioId: string,
+    sessaoIds: readonly string[],
+    agora: Date,
+    motivo: string,
+    transacao: TransacaoPrisma,
+  ): Promise<number>;
+  usuarioAtivo(
+    usuarioId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
   obterSessao(
     tokenHash: string,
     transacao?: TransacaoPrisma,
@@ -52,12 +82,14 @@ export interface RepositorioAutenticacao {
     tokenHashNovo: string,
     csrfHashNovo: string,
     agora: Date,
+    expiraEm: Date,
     transacao: TransacaoPrisma,
   ): Promise<boolean>;
   revogarSessao(
     sessaoId: string,
     tokenHashAtual: string,
     agora: Date,
+    motivo: string,
     transacao: TransacaoPrisma,
   ): Promise<boolean>;
 }

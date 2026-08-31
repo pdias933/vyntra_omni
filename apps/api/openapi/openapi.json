@@ -119,6 +119,36 @@
         ]
       }
     },
+    "/api/v1/autenticacao/web/sessoes": {
+      "get": {
+        "operationId": "listarSessoesWeb",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResumoSessaoWebDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Lista as sessões web ativas do usuário atual",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
     "/api/v1/autenticacao/web/sessao": {
       "get": {
         "operationId": "obterSessaoWeb",
@@ -210,6 +240,109 @@
           "autenticacao"
         ]
       }
+    },
+    "/api/v1/autenticacao/web/sair-todas": {
+      "post": {
+        "operationId": "sairTodasSessoesWeb",
+        "parameters": [
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Revoga todas as sessões web do usuário atual",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/web/sessoes/{sessaoId}/revogar": {
+      "post": {
+        "operationId": "revogarSessaoWebDoUsuario",
+        "parameters": [
+          {
+            "name": "sessaoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Revoga uma sessão web pertencente ao usuário atual",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/web/usuarios/{usuarioId}/revogar-sessoes": {
+      "post": {
+        "operationId": "revogarSessoesWebAdministrativamente",
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Revoga administrativamente as sessões web de um usuário",
+        "tags": [
+          "autenticacao"
+        ]
+      }
     }
   },
   "info": {
@@ -287,6 +420,11 @@
       "EntradaLoginWebDto": {
         "type": "object",
         "properties": {
+          "confirmar_revogacao_sessao_mais_antiga": {
+            "type": "boolean",
+            "default": false,
+            "description": "Confirma a substituição da sessão web ativa mais antiga quando o limite for alcançado."
+          },
           "identificador": {
             "type": "string",
             "example": "maria.silva",
@@ -329,6 +467,37 @@
           "sessao_id",
           "usuario_id",
           "nome_exibicao",
+          "expira_em"
+        ]
+      },
+      "ResumoSessaoWebDto": {
+        "type": "object",
+        "properties": {
+          "sessao_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "atual": {
+            "type": "boolean"
+          },
+          "autenticada_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ultima_atividade_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expira_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "sessao_id",
+          "atual",
+          "autenticada_em",
+          "ultima_atividade_em",
           "expira_em"
         ]
       }

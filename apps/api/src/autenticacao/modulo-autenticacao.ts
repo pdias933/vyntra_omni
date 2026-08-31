@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { ModuloAuditoria } from '../auditoria/modulo-auditoria.js';
 import { ModuloPersistencia } from '../persistencia/modulo-persistencia.js';
+import { ModuloAutorizacao } from '../autorizacao/modulo-autorizacao.js';
 import { ControladorAutenticacaoWeb } from './controlador-autenticacao-web.js';
 import { REPOSITORIO_AUTENTICACAO } from './repositorio-autenticacao.js';
 import { RepositorioAutenticacaoPrisma } from './repositorio-autenticacao-prisma.js';
@@ -12,7 +13,7 @@ import { ServicoSenha } from './servico-senha.js';
 @Module({
   controllers: [ControladorAutenticacaoWeb],
   exports: [ServicoAutenticacaoWeb, ServicoOrigemWeb, ServicoSenha],
-  imports: [ModuloAuditoria, ModuloPersistencia],
+  imports: [ModuloAuditoria, ModuloAutorizacao, ModuloPersistencia],
   providers: [
     RepositorioAutenticacaoPrisma,
     ServicoAutenticacaoWeb,

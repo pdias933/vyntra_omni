@@ -7,6 +7,7 @@ import type { RepositorioAutenticacao } from './repositorio-autenticacao.js';
 import type {
   CredencialLoginWeb,
   RegistroTentativaLoginWeb,
+  SessaoWebListada,
   SessaoWebPersistida,
 } from './modelo-autenticacao.js';
 
@@ -121,12 +122,89 @@ export class RepositorioAutenticacaoPrisma
       readonly enderecoIp: string;
       readonly agenteUsuarioHash: string;
       readonly autenticadaEm: Date;
+      readonly ultimaAtividadeEm: Date;
       readonly expiraEm: Date;
     },
     transacao?: TransacaoPrisma,
   ): Promise<void> {
     const contexto = transacao ?? (await this.prisma.obterCliente());
     await contexto.sessaoWeb.create({ data: sessao });
+  }
+
+  public async serializarSessoesUsuario(
+    usuarioId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<void> {
+    await transacao.$queryRaw(
+      Prisma.sql`SELECT CAST(pg_advisory_xact_lock(hashtextextended(${`SESSOES_WEB:${usuarioId}`}, 0)) AS text) AS bloqueio`,
+    );
+  }
+
+  public async listarSessoesAtivasUsuario(
+    usuarioId: string,
+    agora: Date,
+    transacao?: TransacaoPrisma,
+  ): Promise<readonly SessaoWebListada[]> {
+    const contexto = transacao ?? (await this.prisma.obterCliente());
+    return contexto.sessaoWeb.findMany({
+      orderBy: [{ autenticadaEm: 'asc' }, { criadaEm: 'asc' }],
+      select: {
+        autenticadaEm: true,
+        expiraEm: true,
+        id: true,
+        ultimaAtividadeEm: true,
+      },
+      where: { estado: 'ATIVA', expiraEm: { gt: agora }, usuarioId },
+    });
+  }
+
+  public async registrarAtividadeSessao(
+    sessaoId: string,
+    tokenHash: string,
+    atividadeAnteriorA: Date,
+    agora: Date,
+    expiraEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const resultado = await transacao.sessaoWeb.updateMany({
+      data: { expiraEm, ultimaAtividadeEm: agora },
+      where: {
+        estado: 'ATIVA',
+        expiraEm: { gt: agora },
+        id: sessaoId,
+        tokenHash,
+        ultimaAtividadeEm: { lte: atividadeAnteriorA },
+      },
+    });
+    return resultado.count === 1;
+  }
+
+  public async revogarSessoes(
+    usuarioId: string,
+    sessaoIds: readonly string[],
+    agora: Date,
+    motivo: string,
+    transacao: TransacaoPrisma,
+  ): Promise<number> {
+    if (sessaoIds.length === 0) {
+      return 0;
+    }
+    const resultado = await transacao.sessaoWeb.updateMany({
+      data: { estado: 'REVOGADA', motivoRevogacao: motivo, revogadaEm: agora },
+      where: { estado: 'ATIVA', id: { in: [...sessaoIds] }, usuarioId },
+    });
+    return resultado.count;
+  }
+
+  public async usuarioAtivo(
+    usuarioId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const usuario = await transacao.usuario.findFirst({
+      select: { id: true },
+      where: { estado: 'ATIVO', id: usuarioId },
+    });
+    return usuario !== null;
   }
 
   public async atualizarResultadoTentativa(
@@ -148,11 +226,13 @@ export class RepositorioAutenticacaoPrisma
     const contexto = transacao ?? (await this.prisma.obterCliente());
     const sessao = await contexto.sessaoWeb.findUnique({
       select: {
+        autenticadaEm: true,
         csrfHash: true,
         estado: true,
         expiraEm: true,
         id: true,
         tokenHash: true,
+        ultimaAtividadeEm: true,
         usuario: { select: { estado: true, nomeExibicao: true } },
         usuarioId: true,
         versao: true,
@@ -163,12 +243,14 @@ export class RepositorioAutenticacaoPrisma
       return undefined;
     }
     return {
+      autenticadaEm: sessao.autenticadaEm,
       csrfHash: sessao.csrfHash,
       estado: sessao.estado,
       expiraEm: sessao.expiraEm,
       id: sessao.id,
       nomeExibicao: sessao.usuario.nomeExibicao,
       tokenHash: sessao.tokenHash,
+      ultimaAtividadeEm: sessao.ultimaAtividadeEm,
       usuarioAtivo: sessao.usuario.estado === 'ATIVO',
       usuarioId: sessao.usuarioId,
       versao: sessao.versao,
@@ -181,11 +263,14 @@ export class RepositorioAutenticacaoPrisma
     tokenHashNovo: string,
     csrfHashNovo: string,
     agora: Date,
+    expiraEm: Date,
     transacao: TransacaoPrisma,
   ): Promise<boolean> {
     const resultado = await transacao.sessaoWeb.updateMany({
       data: {
         csrfHash: csrfHashNovo,
+        expiraEm,
+        ultimaAtividadeEm: agora,
         rotacionadaEm: agora,
         tokenHash: tokenHashNovo,
         versao: { increment: 1 },
@@ -204,10 +289,11 @@ export class RepositorioAutenticacaoPrisma
     sessaoId: string,
     tokenHashAtual: string,
     agora: Date,
+    motivo: string,
     transacao: TransacaoPrisma,
   ): Promise<boolean> {
     const resultado = await transacao.sessaoWeb.updateMany({
-      data: { estado: 'REVOGADA', revogadaEm: agora },
+      data: { estado: 'REVOGADA', motivoRevogacao: motivo, revogadaEm: agora },
       where: {
         estado: 'ATIVA',
         id: sessaoId,

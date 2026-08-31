@@ -143,6 +143,8 @@ Todo caso de uso protegido chama `ServicoAutorizacao` antes de consultar conteú
 
 Contexto de sessão web vem somente de `ServicoAutenticacaoWeb`. Nunca aceite `usuario_id`, `sessao_id`, papel ou permissão enviados pelo cliente como identidade autenticada. Token/cookie/CSRF bruto não entra em banco, log, evento, auditoria ou DTO de resposta; persista apenas hash. Mutação web autenticada exige cookie de sessão, dupla apresentação CSRF e origem permitida. Rotação deve substituir token e CSRF em alteração condicional atômica. Conta privilegiada sem MFA confirmado permanece sem sessão; não crie exceção temporária para Administrador.
 
+Limite de sessão web é autoridade do PostgreSQL. Contagem, eventual revogação da mais antiga e criação da nova compartilham serialização/transação; Redis não substitui esse controle. A terceira sessão exige confirmação explícita depois de credencial válida. Toda revogação informa motivo e gera auditoria; inatividade vencida nunca é renovada retroativamente.
+
 Não acrescente permissões transversais, dado sensível ou exportação a papel base. Ajuste `NEGAR` prevalece sobre matriz e `CONCEDER`; Administrador alcança filas ativas somente para permissões que efetivamente possui.
 
 `ServicoIdempotencia` deve participar da transação local que registra a intenção quando aplicável. A chamada externa ocorre após commit, sob concessão persistente. Não substitua constraint/versão PostgreSQL por lock apenas em Redis e não altere estado de operação recuperável diretamente para “forçar” nova tentativa.

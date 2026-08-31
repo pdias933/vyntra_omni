@@ -20,6 +20,10 @@ export type EstadoSaudeDto = {
 };
 
 export type EntradaLoginWebDto = {
+    /**
+     * Confirma a substituição da sessão web ativa mais antiga quando o limite for alcançado.
+     */
+    confirmar_revogacao_sessao_mais_antiga?: boolean;
     identificador: string;
     senha: string;
 };
@@ -28,6 +32,14 @@ export type SessaoWebDto = {
     sessao_id: string;
     usuario_id: string;
     nome_exibicao: string;
+    expira_em: string;
+};
+
+export type ResumoSessaoWebDto = {
+    sessao_id: string;
+    atual: boolean;
+    autenticada_em: string;
+    ultima_atividade_em: string;
     expira_em: string;
 };
 
@@ -95,6 +107,19 @@ export type EntrarSessaoWebResponses = {
 
 export type EntrarSessaoWebResponse = EntrarSessaoWebResponses[keyof EntrarSessaoWebResponses];
 
+export type ListarSessoesWebData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/web/sessoes';
+};
+
+export type ListarSessoesWebResponses = {
+    200: Array<ResumoSessaoWebDto>;
+};
+
+export type ListarSessoesWebResponse = ListarSessoesWebResponses[keyof ListarSessoesWebResponses];
+
 export type ObterSessaoWebData = {
     body?: never;
     path?: never;
@@ -139,3 +164,55 @@ export type SairSessaoWebResponses = {
 };
 
 export type SairSessaoWebResponse = SairSessaoWebResponses[keyof SairSessaoWebResponses];
+
+export type SairTodasSessoesWebData = {
+    body?: never;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/web/sair-todas';
+};
+
+export type SairTodasSessoesWebResponses = {
+    204: void;
+};
+
+export type SairTodasSessoesWebResponse = SairTodasSessoesWebResponses[keyof SairTodasSessoesWebResponses];
+
+export type RevogarSessaoWebDoUsuarioData = {
+    body?: never;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        sessaoId: string;
+    };
+    query?: never;
+    url: '/api/v1/autenticacao/web/sessoes/{sessaoId}/revogar';
+};
+
+export type RevogarSessaoWebDoUsuarioResponses = {
+    204: void;
+};
+
+export type RevogarSessaoWebDoUsuarioResponse = RevogarSessaoWebDoUsuarioResponses[keyof RevogarSessaoWebDoUsuarioResponses];
+
+export type RevogarSessoesWebAdministrativamenteData = {
+    body?: never;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        usuarioId: string;
+    };
+    query?: never;
+    url: '/api/v1/autenticacao/web/usuarios/{usuarioId}/revogar-sessoes';
+};
+
+export type RevogarSessoesWebAdministrativamenteResponses = {
+    204: void;
+};
+
+export type RevogarSessoesWebAdministrativamenteResponse = RevogarSessoesWebAdministrativamenteResponses[keyof RevogarSessoesWebAdministrativamenteResponses];

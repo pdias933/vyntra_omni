@@ -60,5 +60,24 @@ test('login usa Argon2id, enumeração uniforme e transações auditadas', async
   assert.match(repositorio, /updateMany/);
   assert.match(repositorio, /pg_advisory_xact_lock/);
   assert.match(repositorio, /hashtextextended/);
-  assert.ok(!repositorio.includes('findMany'));
+  assert.match(repositorio, /credencialSenha\.findUnique/);
+});
+
+test('limite web serializa a terceira sessão, atividade e revogação', async () => {
+  const [migration, servico, repositorio] = await Promise.all([
+    ler(
+      'apps/api/prisma/migrations/20260831000600_limitar_sessoes_web/migration.sql',
+    ),
+    ler('apps/api/src/autenticacao/servico-autenticacao-web.ts'),
+    ler('apps/api/src/autenticacao/repositorio-autenticacao-prisma.ts'),
+  ]);
+  assert.match(migration, /ultima_atividade_em/);
+  assert.match(migration, /motivo_revogacao/);
+  assert.match(migration, /sessao_web_atividade_expiracao_check/);
+  assert.match(servico, /LIMITE_SESSOES_WEB = 2/);
+  assert.match(servico, /CONFIRMACAO_REVOGACAO_SESSAO_WEB_SOLICITADA/);
+  assert.match(servico, /SESSOES_WEB_REVOGADAS_ADMINISTRATIVAMENTE/);
+  assert.match(repositorio, /SESSOES_WEB:/);
+  assert.match(repositorio, /pg_advisory_xact_lock/);
+  assert.ok(!servico.includes('redis'));
 });

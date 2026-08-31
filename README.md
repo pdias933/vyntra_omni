@@ -62,7 +62,7 @@ O PostgreSQL materializa usuários, perfis, ajustes granulares de permissão, fi
 
 ### Login e sessão web
 
-Senha usa Argon2id; identificador desconhecido não altera a resposta nem elimina o custo criptográfico. Sessões usam cookie `__Host` seguro, token opaco persistido apenas por hash, CSRF vinculado, origem HTTPS explícita, rotação atômica e auditoria. Contas privilegiadas continuam bloqueadas sem MFA. Contratos e operação estão em [docs/operacoes/PR-013.md](docs/operacoes/PR-013.md); a análise de dependências está em [docs/dependencias/PR-013.md](docs/dependencias/PR-013.md).
+Senha usa Argon2id; identificador desconhecido não altera a resposta nem elimina o custo criptográfico. Sessões usam cookie `__Host` seguro, token opaco persistido apenas por hash, CSRF vinculado, origem HTTPS explícita, rotação atômica e auditoria. Há no máximo duas sessões web, a terceira exige confirmação antes de substituir a mais antiga e 12 horas sem atividade encerram a autoridade. Contas privilegiadas continuam bloqueadas sem MFA. Contratos e operação estão em [docs/operacoes/PR-013.md](docs/operacoes/PR-013.md) e [docs/operacoes/PR-014.md](docs/operacoes/PR-014.md); as análises de dependências estão em [docs/dependencias/PR-013.md](docs/dependencias/PR-013.md) e [docs/dependencias/PR-014.md](docs/dependencias/PR-014.md).
 
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 

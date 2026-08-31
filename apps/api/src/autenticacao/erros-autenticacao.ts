@@ -33,3 +33,12 @@ export class ErroMfaNecessario extends Error {
     this.name = 'ErroMfaNecessario';
   }
 }
+
+export class ErroConfirmacaoRevogacaoSessaoNecessaria extends Error {
+  public readonly codigo = 'CONFIRMACAO_REVOGACAO_SESSAO_NECESSARIA';
+
+  public constructor() {
+    super('CONFIRMACAO_REVOGACAO_SESSAO_NECESSARIA');
+    this.name = 'ErroConfirmacaoRevogacaoSessaoNecessaria';
+  }
+}

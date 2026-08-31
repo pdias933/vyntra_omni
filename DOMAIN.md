@@ -66,7 +66,7 @@ Instalação (uma empresa)
 
 `CredencialSenha` associa um identificador normalizado único ao usuário e conserva somente o hash Argon2id da senha. Identificador não é identidade pública, senha nunca é recuperável e revogar a credencial não apaga usuário, auditoria ou sessões históricas.
 
-`SessaoWeb` é uma sessão de navegador com identificador próprio, token opaco armazenado somente por hash, proteção CSRF vinculada, expiração e versão de rotação. O segredo apresentado pelo navegador nunca é persistido. Rotação substitui token e CSRF atomicamente; logout revoga a sessão sem remover seu histórico. A PR 014 acrescenta limite simultâneo, inatividade e revogação administrativa.
+`SessaoWeb` é uma sessão de navegador com identificador próprio, token opaco armazenado somente por hash, proteção CSRF vinculada, última atividade, limite de inatividade e versão de rotação. O segredo apresentado pelo navegador nunca é persistido. Rotação substitui token e CSRF atomicamente e renova a atividade; logout ou revogação alteram estado e motivo sem remover histórico. Um usuário possui no máximo duas sessões web ativas. Ao alcançar o limite, uma nova autenticação válida primeiro exige confirmação explícita e somente então revoga a sessão mais antiga sob serialização do PostgreSQL.
 
 `TentativaLoginWeb` registra somente hash do identificador, IP, resultado e instante. Ela sustenta os limites técnicos sem guardar identificador ou senha em claro.
 

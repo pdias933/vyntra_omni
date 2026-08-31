@@ -10,6 +10,7 @@ import {
 } from '../dist/autenticacao/cookies-sessao-web.js';
 import {
   ErroCredenciaisInvalidas,
+  ErroConfirmacaoRevogacaoSessaoNecessaria,
   ErroLimiteLoginExcedido,
   ErroMfaNecessario,
   ErroRequisicaoWebNaoConfiavel,
@@ -29,6 +30,7 @@ function criarCenario(sobrescritas = {}) {
     falhas: [],
     rotacoes: [],
     revogacoes: [],
+    revogacoesMultiplas: [],
     simulacoes: 0,
   };
   const credencial = {
@@ -49,10 +51,16 @@ function criarCenario(sobrescritas = {}) {
     },
     contarFalhasRecentes: async () => sobrescritas.contagens ?? { contaIp: 0, ip: 0 },
     criarSessao: async (...argumentos) => chamadas.criarSessao.push(argumentos),
+    listarSessoesAtivasUsuario: async () => sobrescritas.sessoesAtivas ?? [],
     obterCredencial: async () =>
       sobrescritas.credencialAusente === true ? undefined : credencial,
     obterSessao: async () => sobrescritas.sessao,
     registrarTentativa: async (...argumentos) => chamadas.falhas.push(argumentos),
+    registrarAtividadeSessao: async () => sobrescritas.atividadeAtualizada ?? true,
+    revogarSessoes: async (...argumentos) => {
+      chamadas.revogacoesMultiplas.push(argumentos);
+      return sobrescritas.quantidadeRevogada ?? argumentos[1].length;
+    },
     revogarSessao: async (...argumentos) => {
       chamadas.revogacoes.push(argumentos);
       return sobrescritas.revogada ?? true;
@@ -62,6 +70,8 @@ function criarCenario(sobrescritas = {}) {
       return sobrescritas.rotacionada ?? true;
     },
     serializarLimiteLogin: async () => undefined,
+    serializarSessoesUsuario: async () => undefined,
+    usuarioAtivo: async () => true,
   };
   const transacao = { id: 'transacao-controlada' };
   const prisma = { executarTransacao: async (operacao) => operacao(transacao) };
@@ -79,6 +89,7 @@ function criarCenario(sobrescritas = {}) {
     prisma,
     auditoria,
     senhas,
+    { autorizar: async () => ({}) },
   );
   return { chamadas, credencial, servico, transacao };
 }
@@ -88,6 +99,7 @@ const entradaLogin = {
   enderecoIp: '127.0.0.1',
   identificador: 'Maria.Silva',
   senha: 'senha longa de teste',
+  confirmarRevogacaoSessaoMaisAntiga: false,
 };
 
 test('cria hash Argon2id calibrado e verifica sem normalizar a senha', async () => {
@@ -196,17 +208,19 @@ test('conta privilegiada não recebe sessão sem MFA', async () => {
   assert.equal(cenario.chamadas.auditoria[0][0].tipoEvento, 'LOGIN_WEB_MFA_NECESSARIO');
 });
 
-test('rotação invalida o segredo anterior atomicamente e preserva expiração', async () => {
+test('rotação invalida o segredo anterior e renova a inatividade atomicamente', async () => {
   const token = 'd'.repeat(43);
   const csrf = 'e'.repeat(43);
   const expiraEm = new Date(Date.now() + 60_000);
   const sessaoPersistida = {
+    autenticadaEm: new Date(Date.now() - 30_000),
     csrfHash: hashHex(csrf),
     estado: 'ATIVA',
     expiraEm,
     id: randomUUID(),
     nomeExibicao: 'Maria Silva',
     tokenHash: hashHex(token),
+    ultimaAtividadeEm: new Date(),
     usuarioAtivo: true,
     usuarioId: randomUUID(),
     versao: 2,
@@ -214,12 +228,13 @@ test('rotação invalida o segredo anterior atomicamente e preserva expiração'
   const cenario = criarCenario({ sessao: sessaoPersistida });
   const nova = await cenario.servico.rotacionar(token, csrf);
 
-  assert.equal(nova.expiraEm, expiraEm);
+  assert.ok(nova.expiraEm > expiraEm);
   assert.notEqual(nova.token, token);
   assert.notEqual(nova.csrf, csrf);
   assert.equal(cenario.chamadas.rotacoes[0][1], hashHex(token));
   assert.equal(cenario.chamadas.rotacoes[0][2], hashHex(nova.token));
   assert.equal(cenario.chamadas.rotacoes[0][3], hashHex(nova.csrf));
+  assert.ok(cenario.chamadas.rotacoes[0][5] instanceof Date);
   assert.equal(cenario.chamadas.auditoria[0][0].dadosNovos.versao, 3);
 
   const perdeuCorrida = criarCenario({ rotacionada: false, sessao: sessaoPersistida });
@@ -233,11 +248,13 @@ test('sessão expirada é negada e logout revoga com auditoria', async () => {
   const token = 'f'.repeat(43);
   const csrf = 'g'.repeat(43);
   const base = {
+    autenticadaEm: new Date(Date.now() - 30_000),
     csrfHash: hashHex(csrf),
     estado: 'ATIVA',
     id: randomUUID(),
     nomeExibicao: 'Maria Silva',
     tokenHash: hashHex(token),
+    ultimaAtividadeEm: new Date(),
     usuarioAtivo: true,
     usuarioId: randomUUID(),
     versao: 0,
@@ -256,5 +273,82 @@ test('sessão expirada é negada e logout revoga com auditoria', async () => {
   await assert.rejects(
     () => ativa.servico.sair(token, 'h'.repeat(43)),
     ErroRequisicaoWebNaoConfiavel,
+  );
+});
+
+test('terceira sessão exige confirmação antes de revogar a mais antiga', async () => {
+  const antigas = [
+    {
+      autenticadaEm: new Date(Date.now() - 120_000),
+      expiraEm: new Date(Date.now() + 60_000),
+      id: randomUUID(),
+      ultimaAtividadeEm: new Date(Date.now() - 60_000),
+    },
+    {
+      autenticadaEm: new Date(Date.now() - 60_000),
+      expiraEm: new Date(Date.now() + 60_000),
+      id: randomUUID(),
+      ultimaAtividadeEm: new Date(Date.now() - 30_000),
+    },
+  ];
+  const semConfirmacao = criarCenario({ sessoesAtivas: antigas });
+  await assert.rejects(
+    () => semConfirmacao.servico.entrar(entradaLogin),
+    ErroConfirmacaoRevogacaoSessaoNecessaria,
+  );
+  assert.equal(semConfirmacao.chamadas.criarSessao.length, 0);
+  assert.equal(semConfirmacao.chamadas.revogacoesMultiplas.length, 0);
+
+  const confirmada = criarCenario({ sessoesAtivas: antigas });
+  await confirmada.servico.entrar({
+    ...entradaLogin,
+    confirmarRevogacaoSessaoMaisAntiga: true,
+  });
+  assert.deepEqual(confirmada.chamadas.revogacoesMultiplas[0][1], [antigas[0].id]);
+  assert.equal(confirmada.chamadas.criarSessao.length, 1);
+});
+
+test('logout global revoga todas as sessões ativas na mesma transação', async () => {
+  const token = 'i'.repeat(43);
+  const csrf = 'j'.repeat(43);
+  const usuarioId = randomUUID();
+  const sessoesAtivas = [
+    {
+      autenticadaEm: new Date(),
+      expiraEm: new Date(Date.now() + 60_000),
+      id: randomUUID(),
+      ultimaAtividadeEm: new Date(),
+    },
+    {
+      autenticadaEm: new Date(),
+      expiraEm: new Date(Date.now() + 60_000),
+      id: randomUUID(),
+      ultimaAtividadeEm: new Date(),
+    },
+  ];
+  const cenario = criarCenario({
+    sessao: {
+      autenticadaEm: new Date(),
+      csrfHash: hashHex(csrf),
+      estado: 'ATIVA',
+      expiraEm: new Date(Date.now() + 60_000),
+      id: sessoesAtivas[0].id,
+      nomeExibicao: 'Maria Silva',
+      tokenHash: hashHex(token),
+      ultimaAtividadeEm: new Date(),
+      usuarioAtivo: true,
+      usuarioId,
+      versao: 0,
+    },
+    sessoesAtivas,
+  });
+  await cenario.servico.sairDeTodas(token, csrf);
+  assert.deepEqual(
+    cenario.chamadas.revogacoesMultiplas[0][1],
+    sessoesAtivas.map(({ id }) => id),
+  );
+  assert.equal(
+    cenario.chamadas.auditoria[0][0].tipoEvento,
+    'SESSOES_WEB_REVOGADAS_GLOBALMENTE',
   );
 });

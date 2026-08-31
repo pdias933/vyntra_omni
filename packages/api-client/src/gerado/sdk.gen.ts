@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { EntrarSessaoWebData, EntrarSessaoWebResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoWebData, ObterSessaoWebResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoWebData, SairSessaoWebResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
+import type { EntrarSessaoWebData, EntrarSessaoWebResponses, ListarSessoesWebData, ListarSessoesWebResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoWebData, ObterSessaoWebResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -46,6 +46,19 @@ export const entrarSessaoWeb = <ThrowOnError extends boolean = false>(options: O
 });
 
 /**
+ * Lista as sessões web ativas do usuário atual
+ */
+export const listarSessoesWeb = <ThrowOnError extends boolean = false>(options?: Options<ListarSessoesWebData, ThrowOnError>): RequestResult<ListarSessoesWebResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListarSessoesWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/autenticacao/web/sessoes',
+    ...options
+});
+
+/**
  * Obtém a sessão web atual
  */
 export const obterSessaoWeb = <ThrowOnError extends boolean = false>(options?: Options<ObterSessaoWebData, ThrowOnError>): RequestResult<ObterSessaoWebResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ObterSessaoWebResponses, unknown, ThrowOnError>({
@@ -81,5 +94,44 @@ export const sairSessaoWeb = <ThrowOnError extends boolean = false>(options: Opt
             type: 'apiKey'
         }],
     url: '/api/v1/autenticacao/web/sair',
+    ...options
+});
+
+/**
+ * Revoga todas as sessões web do usuário atual
+ */
+export const sairTodasSessoesWeb = <ThrowOnError extends boolean = false>(options: Options<SairTodasSessoesWebData, ThrowOnError>): RequestResult<SairTodasSessoesWebResponses, unknown, ThrowOnError> => (options.client ?? client).post<SairTodasSessoesWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/autenticacao/web/sair-todas',
+    ...options
+});
+
+/**
+ * Revoga uma sessão web pertencente ao usuário atual
+ */
+export const revogarSessaoWebDoUsuario = <ThrowOnError extends boolean = false>(options: Options<RevogarSessaoWebDoUsuarioData, ThrowOnError>): RequestResult<RevogarSessaoWebDoUsuarioResponses, unknown, ThrowOnError> => (options.client ?? client).post<RevogarSessaoWebDoUsuarioResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/autenticacao/web/sessoes/{sessaoId}/revogar',
+    ...options
+});
+
+/**
+ * Revoga administrativamente as sessões web de um usuário
+ */
+export const revogarSessoesWebAdministrativamente = <ThrowOnError extends boolean = false>(options: Options<RevogarSessoesWebAdministrativamenteData, ThrowOnError>): RequestResult<RevogarSessoesWebAdministrativamenteResponses, unknown, ThrowOnError> => (options.client ?? client).post<RevogarSessoesWebAdministrativamenteResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/autenticacao/web/usuarios/{usuarioId}/revogar-sessoes',
     ...options
 });

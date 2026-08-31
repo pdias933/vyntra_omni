@@ -16,6 +16,7 @@ import { contextoCorrelacao } from '../observabilidade/contexto-correlacao.js';
 import type { RegistradorTecnico } from '../observabilidade/logger-estruturado.js';
 import {
   ErroCredenciaisInvalidas,
+  ErroConfirmacaoRevogacaoSessaoNecessaria,
   ErroLimiteLoginExcedido,
   ErroMfaNecessario,
   ErroRequisicaoWebNaoConfiavel,
@@ -58,6 +59,10 @@ const ERRO_INTERNO: CorpoErroCanonico = {
 };
 
 const ERROS_AUTENTICACAO = {
+  CONFIRMACAO_REVOGACAO_SESSAO_NECESSARIA: {
+    codigo: 'CONFIRMACAO_REVOGACAO_SESSAO_NECESSARIA',
+    mensagem: 'Confirme a substituição da sessão web ativa mais antiga para continuar.',
+  },
   CREDENCIAIS_INVALIDAS: {
     codigo: 'CREDENCIAIS_INVALIDAS',
     mensagem: 'Não foi possível autenticar com as credenciais informadas.',
@@ -129,6 +134,9 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
   }
 
   private obterStatus(excecao: unknown): number {
+    if (excecao instanceof ErroConfirmacaoRevogacaoSessaoNecessaria) {
+      return HttpStatus.CONFLICT;
+    }
     if (excecao instanceof ErroCredenciaisInvalidas) {
       return HttpStatus.UNAUTHORIZED;
     }
@@ -154,6 +162,9 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
   }
 
   private obterCorpoAutenticacao(excecao: unknown): CorpoErroCanonico | undefined {
+    if (excecao instanceof ErroConfirmacaoRevogacaoSessaoNecessaria) {
+      return ERROS_AUTENTICACAO.CONFIRMACAO_REVOGACAO_SESSAO_NECESSARIA;
+    }
     if (excecao instanceof ErroCredenciaisInvalidas) {
       return ERROS_AUTENTICACAO.CREDENCIAIS_INVALIDAS;
     }
