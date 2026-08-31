@@ -147,6 +147,8 @@ Refresh tokens:
 - vinculados à instalação e ao dispositivo;
 - revogáveis individualmente.
 
+Na implementação da PR 015, o access token vale 15 minutos e permanece somente na memória do processo. O refresh token tem validade absoluta máxima de 30 dias e fica no SecureStore junto do UUID do dispositivo; identificador e segredo da instalação também ficam nesse cofre com política restrita ao aparelho. SQLite, AsyncStorage, logs e telemetria não recebem qualquer token. Cada acesso apresenta token, dispositivo e segredo de vínculo; cada renovação substitui access e refresh. Resposta `401` limpa a sessão local e conduz a uma nova autenticação sem expor estado técnico na interface normal.
+
 Novo login é forçado em troca de senha, dispositivo revogado, suspeita, restauração indevida ou política administrativa.
 
 ### 4.2 Pareamento QR

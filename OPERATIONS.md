@@ -359,13 +359,15 @@ Responde se o processo está vivo. Não faz consulta pesada a todas as dependên
 
 Responde se a instância pode receber tráfego, verificando dependências mínimas e estado de inicialização/migration.
 
-Além da conexão com PostgreSQL, a implementação confirma em `_prisma_migrations` que a migration obrigatória mais recente terminou e não foi revertida. Na PR 014, a marca é `20260831000600_limitar_sessoes_web`. A resposta externa continua genérica e não revela schema, tabela ou dependência defeituosa.
+Além da conexão com PostgreSQL, a implementação confirma em `_prisma_migrations` que a migration obrigatória mais recente terminou e não foi revertida. Na PR 015, a marca é `20260831000700_criar_sessao_dispositivo_mobile`. A resposta externa continua genérica e não revela schema, tabela ou dependência defeituosa.
 
 A PR 012 não altera schema; por isso a marca de prontidão continua sendo a migration da PR 011. A imagem da API passa a incluir o serviço central de autorização e só deve ser promovida após os testes de outra fila, UUID conhecido sem acesso, recurso inexistente, estado inválido e permissões sempre explícitas produzirem a mesma negação canônica.
 
 A PR 013 exige `ORIGENS_WEB_PERMITIDAS` como lista exata de origens HTTPS separadas por vírgula. Staging usa somente `https://staging.vyntra.local`; produção deve declarar o domínio real antes da promoção. Cookie seguro não possui exceção HTTP. Parâmetros Argon2id iniciais são 64 MiB, três iterações e paralelismo um; a calibração de 100–250 ms no hardware final continua obrigatória antes do piloto.
 
 A PR 014 não acrescenta configuração nem segredo. Alertar para crescimento anormal de `CONFIRMACAO_REVOGACAO_SESSAO_WEB_SOLICITADA`, revogações administrativas e sessões ativas com `expira_em` vencido; estas últimas já não autenticam e podem ser saneadas por manutenção posterior. Nunca reativar sessão por SQL: o usuário deve autenticar novamente.
+
+A PR 015 também não acrescenta segredo de infraestrutura. Monitorar `LOGIN_MOBILE_BLOQUEADO`, `DISPOSITIVO_MOBILE_RECUSADO`, `REPLAY_TOKEN_REFRESH_MOBILE`, taxa de renovação negada e sessões/dispositivos ativos com expiração vencida. Replay deve revogar a sessão; nunca apagar `TokenRefreshMobileUsado`, reativar sessão/dispositivo por SQL nem registrar token, segredo de vínculo ou identificador bruto da instalação. Rollback de imagem preserva as tabelas aditivas e não exige removê-las.
 
 ### Recuperação de operações
 

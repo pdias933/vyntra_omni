@@ -6,10 +6,11 @@
       "severidade": "moderate",
       "versoes": ["7.0.3"],
       "raiz_caminho": "apps__mobile",
-      "entradas_caminho": ["expo", "expo-dev-client"],
+      "entradas_caminho": ["expo", "expo-crypto", "expo-dev-client"],
       "segmentos_caminho_permitidos": [
         "apps__mobile",
         "expo",
+        "expo-crypto",
         "expo-dev-client",
         "expo-dev-launcher",
         "expo-dev-menu",

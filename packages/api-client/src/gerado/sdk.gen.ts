@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { EntrarSessaoWebData, EntrarSessaoWebResponses, ListarSessoesWebData, ListarSessoesWebResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoWebData, ObterSessaoWebResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
+import type { EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, ListarSessoesWebData, ListarSessoesWebResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -32,6 +32,48 @@ export const verificarProcessoVivo = <ThrowOnError extends boolean = false>(opti
  * Informa se a API pode receber tráfego.
  */
 export const verificarAplicacaoPronta = <ThrowOnError extends boolean = false>(options?: Options<VerificarAplicacaoProntaData, ThrowOnError>): RequestResult<VerificarAplicacaoProntaResponses, VerificarAplicacaoProntaErrors, ThrowOnError> => (options?.client ?? client).get<VerificarAplicacaoProntaResponses, VerificarAplicacaoProntaErrors, ThrowOnError>({ url: '/api/v1/saude/pronto', ...options });
+
+/**
+ * Autentica e vincula uma sessão mobile ao aparelho
+ */
+export const entrarSessaoMobile = <ThrowOnError extends boolean = false>(options: Options<EntrarSessaoMobileData, ThrowOnError>): RequestResult<EntrarSessaoMobileResponses, unknown, ThrowOnError> => (options.client ?? client).post<EntrarSessaoMobileResponses, unknown, ThrowOnError>({
+    url: '/api/v1/autenticacao/mobile/entrar',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Rotaciona access e refresh tokens mobile
+ */
+export const renovarSessaoMobile = <ThrowOnError extends boolean = false>(options: Options<RenovarSessaoMobileData, ThrowOnError>): RequestResult<RenovarSessaoMobileResponses, unknown, ThrowOnError> => (options.client ?? client).post<RenovarSessaoMobileResponses, unknown, ThrowOnError>({
+    url: '/api/v1/autenticacao/mobile/renovar',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Valida a sessão mobile atual
+ */
+export const obterSessaoMobile = <ThrowOnError extends boolean = false>(options: Options<ObterSessaoMobileData, ThrowOnError>): RequestResult<ObterSessaoMobileResponses, unknown, ThrowOnError> => (options.client ?? client).get<ObterSessaoMobileResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/autenticacao/mobile/sessao',
+    ...options
+});
+
+/**
+ * Revoga a sessão mobile atual
+ */
+export const sairSessaoMobile = <ThrowOnError extends boolean = false>(options: Options<SairSessaoMobileData, ThrowOnError>): RequestResult<SairSessaoMobileResponses, unknown, ThrowOnError> => (options.client ?? client).post<SairSessaoMobileResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/autenticacao/mobile/sair',
+    ...options
+});
 
 /**
  * Autentica e cria uma sessão web

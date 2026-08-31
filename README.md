@@ -64,6 +64,10 @@ O PostgreSQL materializa usuários, perfis, ajustes granulares de permissão, fi
 
 Senha usa Argon2id; identificador desconhecido não altera a resposta nem elimina o custo criptográfico. Sessões usam cookie `__Host` seguro, token opaco persistido apenas por hash, CSRF vinculado, origem HTTPS explícita, rotação atômica e auditoria. Há no máximo duas sessões web, a terceira exige confirmação antes de substituir a mais antiga e 12 horas sem atividade encerram a autoridade. Contas privilegiadas continuam bloqueadas sem MFA. Contratos e operação estão em [docs/operacoes/PR-013.md](docs/operacoes/PR-013.md) e [docs/operacoes/PR-014.md](docs/operacoes/PR-014.md); as análises de dependências estão em [docs/dependencias/PR-013.md](docs/dependencias/PR-013.md) e [docs/dependencias/PR-014.md](docs/dependencias/PR-014.md).
 
+### Sessão e dispositivo mobile
+
+O mobile usa sessão própria vinculada à instalação e ao dispositivo. Access token de 15 minutos fica somente em memória; refresh rotativo com limite absoluto de 30 dias e segredo de vínculo ficam no cofre nativo. PostgreSQL conserva apenas hashes e detecta replay de refresh para revogar a sessão. Contrato, custódia local e operação estão em [docs/operacoes/PR-015.md](docs/operacoes/PR-015.md); dependências em [docs/dependencias/PR-015.md](docs/dependencias/PR-015.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local

@@ -70,6 +70,10 @@ Instalação (uma empresa)
 
 `TentativaLoginWeb` registra somente hash do identificador, IP, resultado e instante. Ela sustenta os limites técnicos sem guardar identificador ou senha em claro.
 
+`DispositivoMobile` é o vínculo revogável entre um usuário e uma instalação do app. Conserva somente hashes do identificador da instalação e do segredo de vínculo, plataforma, versão e metadado de modelo sanitizado. O mesmo identificador com segredo divergente não é aceito como o aparelho anterior.
+
+`SessaoMobile` pertence simultaneamente a usuário e dispositivo. Access e refresh tokens opacos são armazenados somente por hash; estado, expirações absoluta/curta, versão, rotação e motivo de revogação permanecem históricos. `TokenRefreshMobileUsado` registra o hash consumido para detectar replay sem conservar o segredo bruto. `TentativaLoginMobile` limita abuso por identificador+IP+instalação e por IP usando apenas hashes e metadados mínimos.
+
 `PerfilAcesso` combina um `PapelBase` — `ADMINISTRADOR`, `SUPERVISOR` ou `ATENDENTE` — com ajustes granulares em `PermissaoPerfil`. Cada ajuste é `CONCEDER` ou `NEGAR`, inclusive para negar uma capacidade herdada quando a matriz base for materializada pelo serviço central. Ausência de decisão efetiva significa negar.
 
 `Fila` é um escopo operacional, nunca um papel. Financeiro, Suporte e Comercial são exemplos configuráveis de fila. `AcessoUsuarioFila` registra explicitamente quais filas pertencem ao escopo do usuário e conserva revogação coerente; permissão de uma ação e acesso à fila são condições independentes.
@@ -82,6 +86,8 @@ Regras:
 - `VISUALIZAR_DADO_SENSIVEL`, `EXPORTAR_HISTORICO` e `VISUALIZAR_NOTAS_TRANSVERSAIS` continuam específicos e não decorrem apenas de ser Administrador;
 - credencial válida autentica identidade, mas não concede perfil, fila ou permissão;
 - sessão web só produz contexto autenticado enquanto estiver ativa, não expirada e vinculada a usuário ativo.
+- sessão mobile só produz contexto autenticado enquanto usuário, dispositivo e sessão estiverem ativos, o access token não tiver expirado e o vínculo apresentado coincidir;
+- refresh mobile é de uso único; reutilização revoga a sessão e exige nova autenticação.
 
 ### 3.2 Decisão central de autorização
 

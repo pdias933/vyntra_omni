@@ -11,8 +11,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ServicoAuditoria } from '../auditoria/servico-auditoria.js';
 import { ErroNaoAutenticado } from '../autorizacao/erros-autorizacao.js';
 import { ErroPermissaoNegada } from '../autorizacao/erros-autorizacao.js';
-import { MATRIZ_PERMISSOES_BASE } from '../autorizacao/matriz-permissoes.js';
-import type { CodigoPermissaoAutorizacao } from '../autorizacao/modelo-autorizacao.js';
 import { ServicoAutorizacao } from '../autorizacao/servico-autorizacao.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
@@ -36,6 +34,7 @@ import {
   type RepositorioAutenticacao,
 } from './repositorio-autenticacao.js';
 import { ServicoSenha } from './servico-senha.js';
+import { credencialExigeMfa } from './politica-mfa.js';
 
 const JANELA_FALHAS_MS = 15 * 60 * 1_000;
 const LIMITE_CONTA_IP = 5;
@@ -45,12 +44,6 @@ const INTERVALO_REGISTRO_ATIVIDADE_MS = 5 * 60 * 1_000;
 const LIMITE_SESSOES_WEB = 2;
 const SEGREDO_OPACO = /^[A-Za-z0-9_-]{43}$/u;
 const IDENTIFICADOR_LOGIN = /^[\p{L}\p{N}._@+-]{3,120}$/u;
-const PERMISSOES_PRIVILEGIADAS = new Set<CodigoPermissaoAutorizacao>([
-  'ADMINISTRAR_USUARIOS',
-  'ADMINISTRAR_INTEGRACOES',
-  'PUBLICAR_FLUXO',
-  'EXPORTAR_HISTORICO',
-]);
 
 function hashHex(valor: string): string {
   return createHash('sha256').update(valor, 'utf8').digest('hex');
@@ -119,7 +112,7 @@ export class ServicoAutenticacaoWeb {
       throw new ErroCredenciaisInvalidas();
     }
 
-    if (this.exigeMfa(credencial)) {
+    if (credencialExigeMfa(credencial)) {
       await this.prisma.executarTransacao(async (transacao) => {
         await this.confirmarTentativa(reserva.id, transacao);
         await this.auditoria.registrar(
@@ -560,26 +553,6 @@ export class ServicoAutenticacaoWeb {
       return false;
     }
     return this.senhas.verificar(senha, credencial.senhaHash);
-  }
-
-  private exigeMfa(credencial: CredencialLoginWeb): boolean {
-    const papelBase = credencial.papelBase;
-    if (!credencial.perfilAtivo || papelBase === undefined) {
-      return false;
-    }
-    if (papelBase === 'ADMINISTRADOR') {
-      return true;
-    }
-    return [...PERMISSOES_PRIVILEGIADAS].some((permissao) => {
-      const ajuste = credencial.ajustes.find(({ codigo }) => codigo === permissao);
-      if (ajuste?.efeito === 'NEGAR') {
-        return false;
-      }
-      return (
-        ajuste?.efeito === 'CONCEDER' ||
-        MATRIZ_PERMISSOES_BASE[papelBase].includes(permissao)
-      );
-    });
   }
 
   private async reservarTentativa(

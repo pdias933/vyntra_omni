@@ -145,6 +145,8 @@ Contexto de sessão web vem somente de `ServicoAutenticacaoWeb`. Nunca aceite `u
 
 Limite de sessão web é autoridade do PostgreSQL. Contagem, eventual revogação da mais antiga e criação da nova compartilham serialização/transação; Redis não substitui esse controle. A terceira sessão exige confirmação explícita depois de credencial válida. Toda revogação informa motivo e gera auditoria; inatividade vencida nunca é renovada retroativamente.
 
+Sessão mobile é separada da web e sempre vinculada ao dispositivo. Access token fica somente em memória; refresh, UUID do dispositivo, identificador e segredo da instalação ficam no SecureStore/Keychain/Keystore, nunca em SQLite ou AsyncStorage. Backend persiste apenas hashes, valida usuário+dispositivo+sessão a cada acesso, rotaciona access e refresh atomicamente e revoga a sessão quando um refresh consumido reaparece. Não aceite identidade, papel ou permissão declarados pelo app e não registre tokens/segredos em log, auditoria, evento ou telemetria.
+
 Não acrescente permissões transversais, dado sensível ou exportação a papel base. Ajuste `NEGAR` prevalece sobre matriz e `CONCEDER`; Administrador alcança filas ativas somente para permissões que efetivamente possui.
 
 `ServicoIdempotencia` deve participar da transação local que registra a intenção quando aplicável. A chamada externa ocorre após commit, sob concessão persistente. Não substitua constraint/versão PostgreSQL por lock apenas em Redis e não altere estado de operação recuperável diretamente para “forçar” nova tentativa.

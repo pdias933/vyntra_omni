@@ -4,6 +4,7 @@
     "slug": "vyntra-omni",
     "scheme": "vyntraomni",
     "version": "0.0.0",
+    "plugins": ["expo-secure-store"],
     "platforms": ["ios", "android"],
     "orientation": "portrait",
     "userInterfaceStyle": "light",

@@ -42,3 +42,12 @@ export class ErroConfirmacaoRevogacaoSessaoNecessaria extends Error {
     this.name = 'ErroConfirmacaoRevogacaoSessaoNecessaria';
   }
 }
+
+export class ErroDispositivoNaoConfiavel extends Error {
+  public readonly codigo = 'DISPOSITIVO_NAO_CONFIAVEL';
+
+  public constructor() {
+    super('DISPOSITIVO_NAO_CONFIAVEL');
+    this.name = 'ErroDispositivoNaoConfiavel';
+  }
+}

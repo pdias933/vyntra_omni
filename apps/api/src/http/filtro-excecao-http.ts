@@ -17,6 +17,7 @@ import type { RegistradorTecnico } from '../observabilidade/logger-estruturado.j
 import {
   ErroCredenciaisInvalidas,
   ErroConfirmacaoRevogacaoSessaoNecessaria,
+  ErroDispositivoNaoConfiavel,
   ErroLimiteLoginExcedido,
   ErroMfaNecessario,
   ErroRequisicaoWebNaoConfiavel,
@@ -66,6 +67,10 @@ const ERROS_AUTENTICACAO = {
   CREDENCIAIS_INVALIDAS: {
     codigo: 'CREDENCIAIS_INVALIDAS',
     mensagem: 'Não foi possível autenticar com as credenciais informadas.',
+  },
+  DISPOSITIVO_NAO_CONFIAVEL: {
+    codigo: 'DISPOSITIVO_NAO_CONFIAVEL',
+    mensagem: 'O vínculo deste dispositivo não pôde ser validado.',
   },
   LIMITE_LOGIN_EXCEDIDO: {
     codigo: 'LIMITE_DE_REQUISICOES',
@@ -144,6 +149,7 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
       return HttpStatus.TOO_MANY_REQUESTS;
     }
     if (
+      excecao instanceof ErroDispositivoNaoConfiavel ||
       excecao instanceof ErroMfaNecessario ||
       excecao instanceof ErroRequisicaoWebNaoConfiavel
     ) {
@@ -167,6 +173,9 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
     }
     if (excecao instanceof ErroCredenciaisInvalidas) {
       return ERROS_AUTENTICACAO.CREDENCIAIS_INVALIDAS;
+    }
+    if (excecao instanceof ErroDispositivoNaoConfiavel) {
+      return ERROS_AUTENTICACAO.DISPOSITIVO_NAO_CONFIAVEL;
     }
     if (excecao instanceof ErroLimiteLoginExcedido) {
       return ERROS_AUTENTICACAO.LIMITE_LOGIN_EXCEDIDO;

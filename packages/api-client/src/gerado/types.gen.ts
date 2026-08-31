@@ -19,6 +19,39 @@ export type EstadoSaudeDto = {
     estado: 'VIVO' | 'PRONTO';
 };
 
+export type EntradaLoginMobileDto = {
+    identificador: string;
+    senha: string;
+    identificador_instalacao: string;
+    segredo_vinculo: string;
+    plataforma: 'IOS' | 'ANDROID';
+    modelo_sanitizado?: string;
+    versao_aplicativo: string;
+};
+
+export type SessaoMobileDto = {
+    sessao_id: string;
+    usuario_id: string;
+    dispositivo_id: string;
+    nome_exibicao: string;
+    token_acesso: string;
+    token_refresh: string;
+    acesso_expira_em: string;
+    refresh_expira_em: string;
+};
+
+export type EntradaRefreshMobileDto = {
+    token_refresh: string;
+};
+
+export type ContextoSessaoMobileDto = {
+    sessao_id: string;
+    usuario_id: string;
+    dispositivo_id: string;
+    nome_exibicao: string;
+    acesso_expira_em: string;
+};
+
 export type EntradaLoginWebDto = {
     /**
      * Confirma a substituição da sessão web ativa mais antiga quando o limite for alcançado.
@@ -93,6 +126,70 @@ export type VerificarAplicacaoProntaResponses = {
 };
 
 export type VerificarAplicacaoProntaResponse = VerificarAplicacaoProntaResponses[keyof VerificarAplicacaoProntaResponses];
+
+export type EntrarSessaoMobileData = {
+    body: EntradaLoginMobileDto;
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/mobile/entrar';
+};
+
+export type EntrarSessaoMobileResponses = {
+    200: SessaoMobileDto;
+};
+
+export type EntrarSessaoMobileResponse = EntrarSessaoMobileResponses[keyof EntrarSessaoMobileResponses];
+
+export type RenovarSessaoMobileData = {
+    body: EntradaRefreshMobileDto;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/mobile/renovar';
+};
+
+export type RenovarSessaoMobileResponses = {
+    200: SessaoMobileDto;
+};
+
+export type RenovarSessaoMobileResponse = RenovarSessaoMobileResponses[keyof RenovarSessaoMobileResponses];
+
+export type ObterSessaoMobileData = {
+    body?: never;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/mobile/sessao';
+};
+
+export type ObterSessaoMobileResponses = {
+    200: ContextoSessaoMobileDto;
+};
+
+export type ObterSessaoMobileResponse = ObterSessaoMobileResponses[keyof ObterSessaoMobileResponses];
+
+export type SairSessaoMobileData = {
+    body?: never;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/autenticacao/mobile/sair';
+};
+
+export type SairSessaoMobileResponses = {
+    204: void;
+};
+
+export type SairSessaoMobileResponse = SairSessaoMobileResponses[keyof SairSessaoMobileResponses];
 
 export type EntrarSessaoWebData = {
     body: EntradaLoginWebDto;

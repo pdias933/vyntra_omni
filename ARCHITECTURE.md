@@ -240,7 +240,15 @@ Rotação usa `updateMany` condicionado pelo token atual, estado e expiração: 
 
 Criação e revogação por limite usam advisory lock transacional derivado apenas do UUID do usuário. Dentro dessa seção serializada, o serviço conta sessões válidas, exige confirmação antes da terceira e, quando confirmado, revoga a mais antiga antes de inserir a nova. O limite não depende de Redis nem de uma instância específica da API. Logout global, revogação própria e administrativa alteram estado e gravam auditoria na mesma transação; a rota administrativa ainda passa por `ServicoAutorizacao` e pelo recurso concreto.
 
-### 6.1.2 Autorização central
+### 6.1.2 Autenticação mobile
+
+`ServicoAutenticacaoMobile` compartilha credencial/MFA com a autenticação web, mas possui repositório, sessão e ciclo de tokens próprios. O backend emite segredos opacos de 256 bits, persiste somente hashes e exige um vínculo criptográfico adicional da instalação. O access token vale 15 minutos; o limite absoluto do refresh é 30 dias e não é ampliado por rotação.
+
+Renovação serializa o hash do refresh no PostgreSQL, registra o hash consumido e troca access/refresh em uma alteração condicional. A segunda apresentação do refresh consumido revoga a sessão e audita replay. Login no mesmo dispositivo revoga sessões anteriores desse vínculo antes de criar uma nova. Rate limit e criação do dispositivo/sessão são transacionais; Redis não é autoridade.
+
+No app, `CofreSessaoMobile` usa SecureStore, que delega a Keychain/Keystore. Identificador da instalação, segredo de vínculo, UUID do dispositivo e refresh ficam no cofre com política restrita ao aparelho. O access token existe somente em memória no `GerenciadorSessaoMobile`; SQLite e AsyncStorage não recebem tokens. Contratos HTTP continuam no SDK OpenAPI gerado; essas classes cuidam apenas da custódia local.
+
+### 6.1.3 Autorização central
 
 ```text
 contexto de sessão autenticada

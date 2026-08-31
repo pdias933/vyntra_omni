@@ -61,6 +61,8 @@ Controller escondendo botão, filtro na UI ou `if` local não substitui esses se
 - sessão revogada deixa de sincronizar, abrir WebSocket ou emitir novas URLs de mídia. Uma URL S3 já assinada pode permanecer válida até seu TTL curto; revogação imediata exigiria download intermediado por token introspectável/revogável.
 - acesso ao cache sem rede exige autorização offline assinada com validade máxima de 4 horas, vinculada a instalação, usuário, dispositivo, sessão, versão de permissões e escopos; revogação conhecida invalida imediatamente e aparelho totalmente offline bloqueia o cache ao expirar.
 
+A PR 015 materializa a sessão mobile separada da web. Access e refresh tokens têm 256 bits aleatórios; o PostgreSQL recebe somente SHA-256. O access token vale 15 minutos e permanece apenas na memória do app. O refresh token tem limite absoluto de 30 dias, é guardado com o segredo de vínculo em Keychain/Keystore e rotaciona a cada renovação. Cada requisição autenticada apresenta access token, UUID do dispositivo e segredo da instalação; estado do usuário, dispositivo e sessão são revalidados no servidor. Refresh já utilizado é prova de replay: a sessão inteira é revogada e o fato auditado. A trilha de força bruta persiste somente hashes do identificador e da instalação, IP, resultado e instante; senha, tokens e segredo de vínculo nunca entram em log ou auditoria.
+
 ### 4.2 Pareamento QR
 
 O QR:

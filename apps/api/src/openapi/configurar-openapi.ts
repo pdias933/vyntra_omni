@@ -14,6 +14,10 @@ const configuracaoDocumento = new DocumentBuilder()
     in: 'cookie',
     type: 'apiKey',
   }, 'sessaoWeb')
+  .addBearerAuth(
+    { bearerFormat: 'opaque', scheme: 'bearer', type: 'http' },
+    'sessaoMobile',
+  )
   .build();
 
 export function criarDocumentoOpenApi(

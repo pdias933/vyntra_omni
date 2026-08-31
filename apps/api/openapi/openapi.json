@@ -87,6 +87,168 @@
         ]
       }
     },
+    "/api/v1/autenticacao/mobile/entrar": {
+      "post": {
+        "operationId": "entrarSessaoMobile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaLoginMobileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoMobileDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Autentica e vincula uma sessão mobile ao aparelho",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/mobile/renovar": {
+      "post": {
+        "operationId": "renovarSessaoMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaRefreshMobileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoMobileDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Rotaciona access e refresh tokens mobile",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/mobile/sessao": {
+      "get": {
+        "operationId": "obterSessaoMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextoSessaoMobileDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Valida a sessão mobile atual",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/api/v1/autenticacao/mobile/sair": {
+      "post": {
+        "operationId": "sairSessaoMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Revoga a sessão mobile atual",
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
     "/api/v1/autenticacao/web/entrar": {
       "post": {
         "operationId": "entrarSessaoWeb",
@@ -359,6 +521,11 @@
         "type": "apiKey",
         "in": "cookie",
         "name": "__Host-vyntra_sessao"
+      },
+      "sessaoMobile": {
+        "scheme": "bearer",
+        "bearerFormat": "opaque",
+        "type": "http"
       }
     },
     "schemas": {
@@ -415,6 +582,147 @@
         },
         "required": [
           "estado"
+        ]
+      },
+      "EntradaLoginMobileDto": {
+        "type": "object",
+        "properties": {
+          "identificador": {
+            "type": "string",
+            "example": "maria.silva",
+            "maxLength": 120,
+            "minLength": 3
+          },
+          "senha": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 12
+          },
+          "identificador_instalacao": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "segredo_vinculo": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43
+          },
+          "plataforma": {
+            "type": "string",
+            "enum": [
+              "IOS",
+              "ANDROID"
+            ]
+          },
+          "modelo_sanitizado": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "versao_aplicativo": {
+            "type": "string",
+            "example": "1.0.0",
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "identificador",
+          "senha",
+          "identificador_instalacao",
+          "segredo_vinculo",
+          "plataforma",
+          "versao_aplicativo"
+        ]
+      },
+      "SessaoMobileDto": {
+        "type": "object",
+        "properties": {
+          "sessao_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "usuario_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dispositivo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome_exibicao": {
+            "type": "string"
+          },
+          "token_acesso": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43
+          },
+          "token_refresh": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43
+          },
+          "acesso_expira_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "refresh_expira_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "sessao_id",
+          "usuario_id",
+          "dispositivo_id",
+          "nome_exibicao",
+          "token_acesso",
+          "token_refresh",
+          "acesso_expira_em",
+          "refresh_expira_em"
+        ]
+      },
+      "EntradaRefreshMobileDto": {
+        "type": "object",
+        "properties": {
+          "token_refresh": {
+            "type": "string",
+            "maxLength": 43,
+            "minLength": 43
+          }
+        },
+        "required": [
+          "token_refresh"
+        ]
+      },
+      "ContextoSessaoMobileDto": {
+        "type": "object",
+        "properties": {
+          "sessao_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "usuario_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dispositivo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome_exibicao": {
+            "type": "string"
+          },
+          "acesso_expira_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "sessao_id",
+          "usuario_id",
+          "dispositivo_id",
+          "nome_exibicao",
+          "acesso_expira_em"
         ]
       },
       "EntradaLoginWebDto": {
