@@ -373,6 +373,8 @@ A PR 015 também não acrescenta segredo de infraestrutura. Monitorar `LOGIN_MOB
 
 A PR 016 não possui migration e mantém como marca obrigatória `20260831000700_criar_sessao_dispositivo_mobile`. Monitorar `DISPOSITIVO_MOBILE_ANTIGO_REVOGADO`, revogações próprias/administrativas, usuários com mais de dois dispositivos ativos e sessões ativas ligadas a aparelho revogado; os dois últimos sinais indicam quebra de invariantes. Nunca corrigir reativando/alterando linhas manualmente. O rollback de imagem preserva os estados já revogados; novo login legítimo cria o vínculo permitido pela versão em execução.
 
+A PR 019 não possui migration e mantém como marca obrigatória `20260831000900_criar_controles_recurso_versao`. O simulador de mensageria pode ser exercitado no build/staging, mas não é selecionado por configuração, não abre webhook e não possui credencial. Promover a imagem não habilita envio Meta. Se o simulador aparecer no grafo de dependências da aplicação, a promoção deve ser bloqueada.
+
 ### Recuperação de operações
 
 Um processo periódico recupera concessões vencidas em lotes pequenos. Ele encerra a tentativa como `RESULTADO_INCERTO`, limpa a concessão e agenda reconciliação imediata. O operador pode observar tipo, estado, idade, quantidade de tentativas e código normalizado; token, payload bruto e dado sensível não aparecem em log ou painel.

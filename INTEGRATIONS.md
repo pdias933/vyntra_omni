@@ -147,6 +147,12 @@ Validar no ambiente real:
 - fallback quando indisponível;
 - campos/categorias liberados para a conta.
 
+### 2.9 Porta interna e simulador contratual
+
+A PR 019 materializa `CanalMensageria` e `ConsumidorEventosMensageria`. O primeiro recebe apenas `ComandoEnvioMensagem` interno e devolve aceite ou falha normalizada; o segundo recebe mensagem/estado já convertidos para português. A chave idempotente é obrigatória, e aceite significa somente que o provedor aceitou o envio — é então que o caso de uso pode avançar para `ENVIADA`.
+
+`AdaptadorMetaCloudSimulado` é um test double determinístico. Ele cobre aceite, falhas temporária/definitiva/configuração, repetição de envio, duplicidade concorrente na entrada e conversão `sent`/`delivered`/`read`/`failed`. Vocabulário externo permanece nesse arquivo. O simulador não representa o DTO HTTP oficial, não carrega credencial, não é registrado no runtime de produção e sua memória não é autoridade de idempotência real. O adapter real continua bloqueado até versão/capacidades oficiais e fixtures sanitizadas serem caracterizadas.
+
 ## 3. Porta `AdaptadorErp`
 
 Contrato interno dividido por consulta e escrita.

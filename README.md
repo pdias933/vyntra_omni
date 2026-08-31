@@ -74,6 +74,8 @@ O pareamento QR usa token de 90 segundos e comprovante separado, ambos persistid
 
 Controles de recurso permitem piloto por administrador, usuário, fila ou percentual estável, sempre subordinados ao desligamento emergencial. A política mobile define mínima/recomendada por plataforma e o backend bloqueia sessão abaixo da mínima com HTTP 426. Contratos, concorrência e rollback estão em [docs/operacoes/PR-018.md](docs/operacoes/PR-018.md); nenhuma dependência foi acrescentada, conforme [docs/dependencias/PR-018.md](docs/dependencias/PR-018.md).
 
+A porta `CanalMensageria` troca somente comandos, eventos e falhas internos normalizados. O simulador Meta é determinístico, cobre aceite/falha/duplicidade e não é uma integração de produção nem um DTO oficial. Contrato, limites e validação estão em [docs/operacoes/PR-019.md](docs/operacoes/PR-019.md); não houve nova dependência, conforme [docs/dependencias/PR-019.md](docs/dependencias/PR-019.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local

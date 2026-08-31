@@ -351,6 +351,7 @@ Replay ou duplicidade retorna sucesso compatível sem repetir o efeito. Status f
 - consultas e escritas podem usar perfis separados;
 - URL com token/query sensível nunca é logada;
 - resposta externa é tratada como não confiável e validada pelo adapter;
+- simulador Meta não recebe segredo, não é registrado no runtime e nunca substitui assinatura, deduplicação PostgreSQL ou validação do webhook real;
 - snapshot desatualizado nunca executa escrita;
 - cada escrita externa exige idempotência e auditoria.
 

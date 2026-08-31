@@ -516,6 +516,8 @@ codigo_falha?
 
 `identificador_externo_mensagem` é único por conta quando presente. `mensagem_cliente_id`, combinado com dispositivo/usuário ou comando, implementa idempotência da criação.
 
+A porta interna de mensageria não altera esta máquina. `ACEITA` é resultado técnico normalizado da tentativa externa e autoriza o caso de uso a persistir `ENVIADA`; não é um estado adicional de `Mensagem`. Falhas saem do adapter como `TEMPORARIA`, `DEFINITIVA` ou `CONFIGURACAO`, com código interno estável. Evento recebido pelo domínio já usa `MENSAGEM_RECEBIDA`, `ESTADO_MENSAGEM_ATUALIZADO`, estados em português e identidade normalizada.
+
 ### 10.2 Mensagem de entrada
 
 Mensagens de entrada são persistidas antes de automação, notificação ou confirmação. Elas não reutilizam artificialmente o estado de envio. Deduplicação ocorre por identificador externo e conta.

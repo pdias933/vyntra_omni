@@ -171,6 +171,7 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 ## 8. Integrações
 
 - Não inventar DTO/campo do MK ou Meta.
+- Simulador Meta usa somente cenários/tipos internos e pode nomear estados externos dentro do adapter; não o registre como provider de produção nem trate memória como idempotência real.
 - Antes de congelar adapter, usar contrato oficial vigente e fixtures sanitizadas de chamadas reais controladas.
 - Classificar erro externo em código interno estável.
 - Aplicar timeout, circuit breaker, limite de concorrência e sanitização no adapter.
