@@ -232,7 +232,7 @@ Usuários, perfis, permissões e filas também residem no PostgreSQL. Perfil é 
 
 ### 6.1.1 Autenticação web
 
-`ServicoAutenticacaoWeb` normaliza o identificador, aplica limites persistentes, verifica Argon2id e cria sessão/auditoria na mesma transação. Usuário desconhecido executa derivação simulada e recebe a mesma resposta de senha incorreta. O token de 256 bits e o CSRF são entregues em cookies `__Host`; o PostgreSQL recebe apenas SHA-256 dos segredos de alta entropia.
+`ServicoAutenticacaoWeb` normaliza o identificador, reserva a tentativa sob advisory lock transacional curto, verifica Argon2id fora da transação e cria sessão/auditoria na mesma transação. O lock usa somente chaves internas derivadas de identificador+IP e IP e existe porque Prisma não oferece primitiva equivalente; ele fecha a corrida do limite sem manter a derivação criptográfica dentro da transação. Usuário desconhecido executa derivação simulada e recebe a mesma resposta de senha incorreta. O token de 256 bits e o CSRF são entregues em cookies `__Host`; o PostgreSQL recebe apenas SHA-256 dos segredos de alta entropia.
 
 O cookie da sessão é `HttpOnly`, `Secure`, `SameSite=Strict`, sem `Domain` e com `Path=/`. O cookie CSRF é legível pelo cliente para envio em `x-csrf-token`, mas seu hash é vinculado à sessão; mutações exigem cookie, header idêntico e origem HTTPS na allowlist. CORS usa a mesma allowlist e credenciais explícitas.
 

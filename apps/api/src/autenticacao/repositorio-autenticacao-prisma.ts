@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { Prisma } from '../gerado/prisma/client.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type { RepositorioAutenticacao } from './repositorio-autenticacao.js';
@@ -66,9 +67,10 @@ export class RepositorioAutenticacaoPrisma
     identificadorHash: string,
     enderecoIp: string,
     desde: Date,
+    transacao?: TransacaoPrisma,
   ): Promise<{ readonly contaIp: number; readonly ip: number }> {
-    const cliente = await this.prisma.obterCliente();
-    const contaIp = await cliente.tentativaLoginWeb.count({
+    const contexto = transacao ?? (await this.prisma.obterCliente());
+    const contaIp = await contexto.tentativaLoginWeb.count({
       where: {
         criadoEm: { gte: desde },
         enderecoIp,
@@ -76,7 +78,7 @@ export class RepositorioAutenticacaoPrisma
         resultado: { in: ['FALHA', 'BLOQUEADA'] },
       },
     });
-    const ip = await cliente.tentativaLoginWeb.count({
+    const ip = await contexto.tentativaLoginWeb.count({
       where: {
         criadoEm: { gte: desde },
         enderecoIp,
@@ -84,6 +86,22 @@ export class RepositorioAutenticacaoPrisma
       },
     });
     return { contaIp, ip };
+  }
+
+  public async serializarLimiteLogin(
+    identificadorHash: string,
+    enderecoIp: string,
+    transacao: TransacaoPrisma,
+  ): Promise<void> {
+    const chaves = [
+      `LOGIN_CONTA_IP:${identificadorHash}:${enderecoIp}`,
+      `LOGIN_IP:${enderecoIp}`,
+    ].sort();
+    for (const chave of chaves) {
+      await transacao.$queryRaw(
+        Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${chave}, 0))`,
+      );
+    }
   }
 
   public async registrarTentativa(
@@ -109,6 +127,18 @@ export class RepositorioAutenticacaoPrisma
   ): Promise<void> {
     const contexto = transacao ?? (await this.prisma.obterCliente());
     await contexto.sessaoWeb.create({ data: sessao });
+  }
+
+  public async atualizarResultadoTentativa(
+    tentativaId: string,
+    resultado: 'FALHA' | 'SUCESSO',
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const atualizado = await transacao.tentativaLoginWeb.updateMany({
+      data: { resultado },
+      where: { id: tentativaId, resultado: 'FALHA' },
+    });
+    return atualizado.count === 1;
   }
 
   public async obterSessao(

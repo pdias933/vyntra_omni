@@ -13,6 +13,7 @@ import { ErroNaoAutenticado } from '../autorizacao/erros-autorizacao.js';
 import { MATRIZ_PERMISSOES_BASE } from '../autorizacao/matriz-permissoes.js';
 import type { CodigoPermissaoAutorizacao } from '../autorizacao/modelo-autorizacao.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
+import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import {
   ErroCredenciaisInvalidas,
   ErroLimiteLoginExcedido,
@@ -73,19 +74,12 @@ export class ServicoAutenticacaoWeb {
     this.validarContextoCliente(entrada.enderecoIp, entrada.agenteUsuario);
     const identificadorHash = hashHex(identificadorNormalizado);
     const agora = new Date();
-    const falhas = await this.repositorio.contarFalhasRecentes(
+    const reserva = await this.reservarTentativa(
       identificadorHash,
       entrada.enderecoIp,
-      new Date(agora.getTime() - JANELA_FALHAS_MS),
+      agora,
     );
-    if (falhas.contaIp >= LIMITE_CONTA_IP || falhas.ip >= LIMITE_IP) {
-      await this.registrarFalha(
-        identificadorHash,
-        entrada.enderecoIp,
-        'BLOQUEADA',
-        'LOGIN_WEB_BLOQUEADO',
-        agora,
-      );
+    if (reserva.bloqueada) {
       throw new ErroLimiteLoginExcedido();
     }
 
@@ -102,19 +96,25 @@ export class ServicoAutenticacaoWeb {
       !credencial.credencialAtiva ||
       !credencial.usuarioAtivo
     ) {
-      await this.registrarFalha(
-        identificadorHash,
-        entrada.enderecoIp,
-        'FALHA',
-        'LOGIN_WEB_FALHOU',
-        agora,
+      await this.prisma.executarTransacao(async (transacao) =>
+        this.auditoria.registrar(
+          {
+            acao: 'LOGIN_WEB_FALHOU',
+            dadosNovos: { resultado: 'FALHA' },
+            enderecoIp: entrada.enderecoIp,
+            origem: 'SISTEMA',
+            tipoEvento: 'LOGIN_WEB_FALHOU',
+          },
+          transacao,
+        ),
       );
       throw new ErroCredenciaisInvalidas();
     }
 
     if (this.exigeMfa(credencial)) {
-      await this.prisma.executarTransacao(async (transacao) =>
-        this.auditoria.registrar(
+      await this.prisma.executarTransacao(async (transacao) => {
+        await this.confirmarTentativa(reserva.id, transacao);
+        await this.auditoria.registrar(
           {
             acao: 'LOGIN_WEB_MFA_NECESSARIO',
             dadosNovos: { resultado: 'MFA_NECESSARIO' },
@@ -125,8 +125,8 @@ export class ServicoAutenticacaoWeb {
             tipoEvento: 'LOGIN_WEB_MFA_NECESSARIO',
           },
           transacao,
-        ),
-      );
+        );
+      });
       throw new ErroMfaNecessario();
     }
 
@@ -135,6 +135,7 @@ export class ServicoAutenticacaoWeb {
     const sessaoId = randomUUID();
     const expiraEm = new Date(agora.getTime() + DURACAO_SESSAO_MS);
     await this.prisma.executarTransacao(async (transacao) => {
+      await this.confirmarTentativa(reserva.id, transacao);
       await this.repositorio.criarSessao(
         {
           agenteUsuarioHash: hashHex(entrada.agenteUsuario),
@@ -145,16 +146,6 @@ export class ServicoAutenticacaoWeb {
           id: sessaoId,
           tokenHash: hashHex(token),
           usuarioId: credencial.usuarioId,
-        },
-        transacao,
-      );
-      await this.repositorio.registrarTentativa(
-        {
-          criadoEm: agora,
-          enderecoIp: entrada.enderecoIp,
-          id: randomUUID(),
-          identificadorHash,
-          resultado: 'SUCESSO',
         },
         transacao,
       );
@@ -339,35 +330,64 @@ export class ServicoAutenticacaoWeb {
     });
   }
 
-  private async registrarFalha(
+  private async reservarTentativa(
     identificadorHash: string,
     enderecoIp: string,
-    resultado: 'BLOQUEADA' | 'FALHA',
-    tipoEvento: 'LOGIN_WEB_BLOQUEADO' | 'LOGIN_WEB_FALHOU',
     agora: Date,
-  ): Promise<void> {
-    await this.prisma.executarTransacao(async (transacao) => {
+  ): Promise<{ readonly bloqueada: boolean; readonly id: string }> {
+    return this.prisma.executarTransacao(async (transacao) => {
+      await this.repositorio.serializarLimiteLogin(
+        identificadorHash,
+        enderecoIp,
+        transacao,
+      );
+      const falhas = await this.repositorio.contarFalhasRecentes(
+        identificadorHash,
+        enderecoIp,
+        new Date(agora.getTime() - JANELA_FALHAS_MS),
+        transacao,
+      );
+      const bloqueada =
+        falhas.contaIp >= LIMITE_CONTA_IP || falhas.ip >= LIMITE_IP;
+      const tentativaId = randomUUID();
       await this.repositorio.registrarTentativa(
         {
           criadoEm: agora,
           enderecoIp,
-          id: randomUUID(),
+          id: tentativaId,
           identificadorHash,
-          resultado,
+          resultado: bloqueada ? 'BLOQUEADA' : 'FALHA',
         },
         transacao,
       );
-      await this.auditoria.registrar(
-        {
-          acao: tipoEvento,
-          dadosNovos: { resultado },
-          enderecoIp,
-          origem: 'SISTEMA',
-          tipoEvento,
-        },
-        transacao,
-      );
+      if (bloqueada) {
+        await this.auditoria.registrar(
+          {
+            acao: 'LOGIN_WEB_BLOQUEADO',
+            dadosNovos: { resultado: 'BLOQUEADA' },
+            enderecoIp,
+            origem: 'SISTEMA',
+            tipoEvento: 'LOGIN_WEB_BLOQUEADO',
+          },
+          transacao,
+        );
+      }
+      return { bloqueada, id: tentativaId };
     });
+  }
+
+  private async confirmarTentativa(
+    tentativaId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<void> {
+    const atualizada = await this.repositorio.atualizarResultadoTentativa(
+      tentativaId,
+      'SUCESSO',
+      transacao,
+    );
+    if (!atualizada) {
+      throw new Error('TENTATIVA_LOGIN_NAO_CONFIRMADA');
+    }
   }
 
   private normalizarIdentificador(identificador: string): string {

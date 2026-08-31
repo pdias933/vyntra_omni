@@ -24,6 +24,7 @@ const hashHex = (valor) => createHash('sha256').update(valor).digest('hex');
 function criarCenario(sobrescritas = {}) {
   const chamadas = {
     auditoria: [],
+    atualizacoesTentativa: [],
     criarSessao: [],
     falhas: [],
     rotacoes: [],
@@ -42,6 +43,10 @@ function criarCenario(sobrescritas = {}) {
     ...sobrescritas.credencial,
   };
   const repositorio = {
+    atualizarResultadoTentativa: async (...argumentos) => {
+      chamadas.atualizacoesTentativa.push(argumentos);
+      return true;
+    },
     contarFalhasRecentes: async () => sobrescritas.contagens ?? { contaIp: 0, ip: 0 },
     criarSessao: async (...argumentos) => chamadas.criarSessao.push(argumentos),
     obterCredencial: async () =>
@@ -56,6 +61,7 @@ function criarCenario(sobrescritas = {}) {
       chamadas.rotacoes.push(argumentos);
       return sobrescritas.rotacionada ?? true;
     },
+    serializarLimiteLogin: async () => undefined,
   };
   const transacao = { id: 'transacao-controlada' };
   const prisma = { executarTransacao: async (operacao) => operacao(transacao) };
@@ -154,8 +160,10 @@ test('login persiste apenas hashes e auditoria na mesma transação', async () =
   assert.equal(persistida.tokenHash, hashHex(sessao.token));
   assert.equal(persistida.csrfHash, hashHex(sessao.csrf));
   assert.ok(!JSON.stringify(persistida).includes(sessao.token));
-  assert.equal(chamadas.falhas[0][0].resultado, 'SUCESSO');
+  assert.equal(chamadas.falhas[0][0].resultado, 'FALHA');
   assert.equal(chamadas.falhas[0][1], transacao);
+  assert.equal(chamadas.atualizacoesTentativa[0][1], 'SUCESSO');
+  assert.equal(chamadas.atualizacoesTentativa[0][2], transacao);
   assert.equal(chamadas.auditoria[0][1], transacao);
   assert.equal(chamadas.auditoria[0][0].tipoEvento, 'SESSAO_WEB_CRIADA');
 });

@@ -9,15 +9,26 @@ export const REPOSITORIO_AUTENTICACAO = Symbol('REPOSITORIO_AUTENTICACAO');
 
 export interface RepositorioAutenticacao {
   obterCredencial(identificadorNormalizado: string): Promise<CredencialLoginWeb | undefined>;
+  serializarLimiteLogin(
+    identificadorHash: string,
+    enderecoIp: string,
+    transacao: TransacaoPrisma,
+  ): Promise<void>;
   contarFalhasRecentes(
     identificadorHash: string,
     enderecoIp: string,
     desde: Date,
+    transacao?: TransacaoPrisma,
   ): Promise<{ readonly contaIp: number; readonly ip: number }>;
   registrarTentativa(
     tentativa: RegistroTentativaLoginWeb,
     transacao?: TransacaoPrisma,
   ): Promise<void>;
+  atualizarResultadoTentativa(
+    tentativaId: string,
+    resultado: 'FALHA' | 'SUCESSO',
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
   criarSessao(
     sessao: {
       readonly id: string;

@@ -58,5 +58,7 @@ test('login usa Argon2id, enumeração uniforme e transações auditadas', async
   assert.match(servico, /LOGIN_WEB_MFA_NECESSARIO/);
   assert.match(repositorio, /tokenHashAtual/);
   assert.match(repositorio, /updateMany/);
+  assert.match(repositorio, /pg_advisory_xact_lock/);
+  assert.match(repositorio, /hashtextextended/);
   assert.ok(!repositorio.includes('findMany'));
 });
