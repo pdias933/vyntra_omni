@@ -38,7 +38,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 014 | CONCLUÍDA | `high` |
 | 015 | CONCLUÍDA | `xhigh` |
 | 016 | CONCLUÍDA | `xhigh` |
-| 017 | EM ANDAMENTO | `xhigh` |
+| 017 | CONCLUÍDA | `xhigh` |
 | 018 | PENDENTE | `high` |
 | 019 | PENDENTE | `high` |
 | 020 | PENDENTE | `high` |
@@ -221,6 +221,10 @@ Aceite concluído em 31 de agosto de 2026: sessão mobile separada da web, acces
 ### PR 016 — Limites e revogação mobile
 
 Aceite concluído em 31 de agosto de 2026: o PostgreSQL passou a impor no máximo dois aparelhos por usuário; o terceiro login substitui atomicamente o mais antigo, encerra todas as suas sessões e informa a substituição. Listagem própria, revogação de um aparelho, revogação administrativa autorizada e limpeza segura do app foram entregues sem antecipar o WebSocket da PR 056. Lint, tipos, 129 testes, build iOS/Android, contratos, Expo e auditoria de dependências foram aprovados. Não houve migration; a imagem `vyntra/api-staging:pr-016` ficou saudável com prontidão `PRONTO`. Em staging, a lista inicial apresentou dois aparelhos e um atual; o terceiro login retornou `200` e `dispositivo_substituido=true`; access e refresh antigos retornaram `401`; alvo alheio retornou `403`; revogações própria e administrativa retornaram `204`. O banco confirmou três aparelhos revogados, nenhuma sessão ativa e exatamente um fato para substituição, revogação própria e revogação administrativa. Dados mutáveis sintéticos foram removidos; não houve erro de nível 50.
+
+### PR 017 — Pareamento por QR
+
+Aceite concluído em 31 de agosto de 2026: token QR de 90 segundos e comprovante de resgate separado passaram a ser persistidos somente por hash; novo QR cancela o anterior, confirmação exige a sessão web criadora com autenticação recente e apenas o aparelho vinculado recebe access/refresh. Limites por usuário, IP e instalação, estados finais, cancelamento por revogação web e auditoria foram entregues com autoridade PostgreSQL. Lint, tipos, 138 testes, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831000800_criar_pareamento_qr` terminou com código zero e a imagem `vyntra/api-staging:pr-017` ficou saudável com prontidão `PRONTO`. Em staging, quatro resgates concorrentes produziram um `200` e três `401`; QR substituído, sessão web alheia, autenticação antiga, replay e QR após logout foram recusados; aguardo retornou `409`, confirmação `204`, conclusão e validação mobile `200`. O banco confirmou três pareamentos, um concluído, dois cancelados, zero ativo, hashes de 64 caracteres, seis tentativas e um único sucesso. Dados mutáveis sintéticos foram removidos; a auditoria imutável foi preservada e não houve erro de nível 50.
 
 ## 5. Portas internas
 
