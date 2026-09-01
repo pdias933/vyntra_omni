@@ -64,7 +64,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 040 | CONCLUÍDA | `xhigh` |
 | 041 | CONCLUÍDA | `xhigh` |
 | 042 | CONCLUÍDA | `xhigh` |
-| 043 | EM ANDAMENTO | `xhigh` |
+| 043 | CONCLUÍDA | `xhigh` |
 | 044 | PENDENTE | `xhigh` |
 | 045 | PENDENTE | `xhigh` |
 | 046 | PENDENTE | `high` |
@@ -357,6 +357,10 @@ Aceite concluído em 1º de setembro de 2026: `Mensagem` passou a pertencer simu
 ### PR 042 — mídia e storage
 
 Aceite concluído em 1º de setembro de 2026: imagem JPEG/PNG/WebP, áudio MPEG/Ogg, vídeo MP4 e PDF passaram a ser reconhecidos por assinatura binária, com MIME declarado obrigatoriamente igual ao detectado e limites por categoria. A mídia pertence a uma `Mensagem` de tipo compatível e persiste somente bucket privado, chave opaca, MIME, tamanho e hash; URL pública ou assinada não integra o domínio. O PostgreSQL replica os limites estruturais, valida a correspondência categoria–mensagem e torna a referência imutável. Lint, tipos, 190 testes da API, 146 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002600_criar_midia_mensagem` terminou com código zero e `vyntra/api-staging:pr-042` ficou saudável com prontidão `PRONTO`. Em staging, uma imagem PNG válida foi vinculada ao bucket `vyntra-staging-midias`; MIME/tipo divergentes e mutação foram recusados, não houve URL pública, a transação foi revertida e nenhum erro de nível 50 foi emitido.
+
+### PR 043 — caracterização real da Meta
+
+Aceite concluído em 1º de setembro de 2026: a coleção oficial da Meta e o material oficial de usernames/BSUID foram registrados como evidência revisada. O adapter exige versão explícita `vN.0`, considera BSUID identificador estável, mantém username e telefone opcionais e trata capacidades/throughput por conta como observações, nunca constantes globais. Fixtures sanitizadas cobrem webhook com BSUID sem telefone. Como não foi fornecida conta Meta real nem token, a própria caracterização impede ativação com evidência sintética ou capacidade `NAO_OBSERVADA`; a versão `v25.0` da fixture não é promovida a recomendação de produção. Lint, tipos, 193 testes da API, 148 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-043` ficou saudável com prontidão `PRONTO`. Em staging, fixture/versão e identidade BSUID sem telefone foram aceitas, ativação real permaneceu `false`, migration encerrou com código zero e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
