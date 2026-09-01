@@ -18,12 +18,16 @@ import { ServicoAutenticacaoMobile } from '../autenticacao/servico-autenticacao-
 import { ServicoAutenticacaoWeb } from '../autenticacao/servico-autenticacao-web.js';
 import { ErroNaoAutenticado } from '../autorizacao/erros-autorizacao.js';
 import { ExcecaoHttpCanonica } from '../http/excecao-http-canonica.js';
-import { LoteSincronizacaoDto } from './dto/sincronizacao.dto.js';
+import {
+  LoteSincronizacaoDto,
+  SnapshotSincronizacaoDto,
+} from './dto/sincronizacao.dto.js';
 import {
   ErroCursorSincronizacaoInvalido,
   ErroRessincronizacaoCompletaNecessaria,
 } from './erros-sincronizacao.js';
 import { ServicoSincronizacaoIncremental } from './servico-sincronizacao-incremental.js';
+import { ServicoRessincronizacaoCompleta } from './servico-ressincronizacao-completa.js';
 
 function obterTokenAcesso(cabecalho: string): string {
   const resultado = /^Bearer ([A-Za-z0-9_-]{43})$/u.exec(cabecalho);
@@ -41,7 +45,43 @@ export class ControladorSincronizacao {
     private readonly autenticacaoWeb: ServicoAutenticacaoWeb,
     @Inject(ServicoAutenticacaoMobile)
     private readonly autenticacaoMobile: ServicoAutenticacaoMobile,
+    @Inject(ServicoRessincronizacaoCompleta)
+    private readonly ressincronizacao: ServicoRessincronizacaoCompleta,
   ) {}
+
+  @Get('completa')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiBearerAuth('sessaoMobile')
+  @ApiHeader({ name: NOME_HEADER_DISPOSITIVO_MOBILE, required: false })
+  @ApiHeader({ name: NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE, required: false })
+  @ApiOperation({ operationId: 'ressincronizarCompleta', summary: 'Reconstrói a réplica autorizada em leitura consistente' })
+  @ApiOkResponse({ type: SnapshotSincronizacaoDto })
+  public async ressincronizarCompleta(
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredoDispositivo: string | undefined,
+  ): Promise<SnapshotSincronizacaoDto> {
+    if (autorizacao !== undefined) {
+      if (dispositivoId === undefined || segredoDispositivo === undefined) {
+        throw new ErroNaoAutenticado();
+      }
+      const sessao = await this.autenticacaoMobile.autenticar(
+        obterTokenAcesso(autorizacao),
+        dispositivoId,
+        segredoDispositivo,
+      );
+      return new SnapshotSincronizacaoDto(
+        await this.ressincronizacao.reconstruir(sessao.contexto),
+      );
+    }
+    const sessao = await this.autenticacaoWeb.autenticar(
+      obterTokenSessaoWeb(cookies),
+    );
+    return new SnapshotSincronizacaoDto(
+      await this.ressincronizacao.reconstruir(sessao.contexto),
+    );
+  }
 
   @Get()
   @ApiCookieAuth('sessaoWeb')

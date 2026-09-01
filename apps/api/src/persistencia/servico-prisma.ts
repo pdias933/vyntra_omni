@@ -57,6 +57,23 @@ export class ServicoPrisma implements OnModuleDestroy {
     });
   }
 
+  public async executarLeituraConsistente<Resultado>(
+    operacao: (transacao: TransacaoPrisma) => Promise<Resultado>,
+  ): Promise<Resultado> {
+    const cliente = await this.obterCliente();
+    return cliente.$transaction(
+      async (transacao) => {
+        await transacao.$executeRaw(Prisma.sql`SET TRANSACTION READ ONLY`);
+        return operacao(transacao);
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        maxWait: 5_000,
+        timeout: 30_000,
+      },
+    );
+  }
+
   public async onModuleDestroy(): Promise<void> {
     if (this.cliente !== undefined) {
       await this.cliente.$disconnect();

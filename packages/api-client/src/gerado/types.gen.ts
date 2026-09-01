@@ -205,6 +205,33 @@ export type EntradaAtualizacaoPoliticaVersaoMobileDto = {
     versao_esperada: number;
 };
 
+export type SnapshotSincronizacaoDto = {
+    sequencia_base: string;
+    gerado_em: string;
+    permissoes: Array<string>;
+    filas: Array<{
+        [key: string]: unknown;
+    }>;
+    atendimentos: Array<{
+        [key: string]: unknown;
+    }>;
+    conversas: Array<{
+        [key: string]: unknown;
+    }>;
+    mensagens_recentes: Array<{
+        [key: string]: unknown;
+    }>;
+    notas_internas_recentes: Array<{
+        [key: string]: unknown;
+    }>;
+    controles_recurso: {
+        [key: string]: boolean;
+    };
+    politicas_versao: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
 export type LoteSincronizacaoDto = {
     eventos: Array<{
         [key: string]: unknown;
@@ -702,6 +729,23 @@ export type AtualizarPoliticaVersaoMobileResponses = {
 };
 
 export type AtualizarPoliticaVersaoMobileResponse = AtualizarPoliticaVersaoMobileResponses[keyof AtualizarPoliticaVersaoMobileResponses];
+
+export type RessincronizarCompletaData = {
+    body?: never;
+    headers?: {
+        'x-segredo-dispositivo'?: string;
+        'x-dispositivo-id'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/sincronizacao/completa';
+};
+
+export type RessincronizarCompletaResponses = {
+    200: SnapshotSincronizacaoDto;
+};
+
+export type RessincronizarCompletaResponse = RessincronizarCompletaResponses[keyof RessincronizarCompletaResponses];
 
 export type SincronizarIncrementalData = {
     body?: never;

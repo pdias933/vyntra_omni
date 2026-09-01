@@ -1125,6 +1125,53 @@
         ]
       }
     },
+    "/api/v1/sincronizacao/completa": {
+      "get": {
+        "operationId": "ressincronizarCompleta",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnapshotSincronizacaoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          },
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Reconstrói a réplica autorizada em leitura consistente",
+        "tags": [
+          "sincronizacao"
+        ]
+      }
+    },
     "/api/v1/sincronizacao": {
       "get": {
         "operationId": "sincronizarIncremental",
@@ -2009,6 +2056,79 @@
           "versao_minima",
           "versao_recomendada",
           "versao_esperada"
+        ]
+      },
+      "SnapshotSincronizacaoDto": {
+        "type": "object",
+        "properties": {
+          "sequencia_base": {
+            "type": "string",
+            "example": "123"
+          },
+          "gerado_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "permissoes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "filas": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "atendimentos": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "conversas": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "mensagens_recentes": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "notas_internas_recentes": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "controles_recurso": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "politicas_versao": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "sequencia_base",
+          "gerado_em",
+          "permissoes",
+          "filas",
+          "atendimentos",
+          "conversas",
+          "mensagens_recentes",
+          "notas_internas_recentes",
+          "controles_recurso",
+          "politicas_versao"
         ]
       },
       "LoteSincronizacaoDto": {
