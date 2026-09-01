@@ -114,7 +114,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 090 | CONCLUÍDA | `high` |
 | 091 | CONCLUÍDA | `xhigh` |
 | 092 | CONCLUÍDA | `xhigh` |
-| 093 | PENDENTE | `xhigh` |
+| 093 | CONCLUÍDA | `xhigh` |
 | 094 | PENDENTE | `high` |
 | 095 | PENDENTE | `xhigh` |
 | 096 | PENDENTE | `xhigh` |
@@ -622,6 +622,10 @@ Aceite concluído em 1º de setembro de 2026: a busca textual e as galerias `Mí
 ### PR 092 — contato, contexto e ações ERP
 
 Aceite concluído em 1º de setembro de 2026: nome/avatar abre Detalhes do Contato sem desmontar timeline nem composer, e o painel concentra identidade WhatsApp, dados mascarados, vínculos, contratos, contexto ativo, protocolo, histórico e contagens conforme RBAC. O backend autoriza atendimento e cada capacidade antes de consultar ou projetar conteúdo; BSUID exige permissão sensível e identificadores externos do ERP não atravessam o DTO. Cadastro de contingência declara `SNAPSHOT` e idade/estado, enquanto financeiro aceita apenas `TEMPO_REAL` ou `INDISPONIVEL`. Troca de cliente/contrato usa seleção, confirmação, fila derivada no servidor e versão esperada. Desbloqueio e ordem de serviço passam por prévia, confirmação literal, nova autorização, contexto atual e serviços idempotentes; integração ausente não finge sucesso. O web usa exclusivamente o SDK OpenAPI gerado. Não houve migration; `20260901015500_busca_galeria_web` permanece a marca mais recente. Lint, tipos, 419 testes da API e 232 testes de arquitetura foram aprovados. Effort `xhigh` foi confirmado pela matriz RBAC, separação Snapshot/Tempo Real e ações externas recuperáveis.
+
+### PR 093 — administração de usuários/RBAC
+
+Aceite concluído em 1º de setembro de 2026: a área `Usuários e acessos` lista equipe, perfis base, concessões/negações, filas, sessões web, dispositivos mobile e auditoria recente em uma composição desktop própria. A projeção inteira exige `ADMINISTRAR_USUARIOS` antes de tocar dados. Perfil e filas mudam em uma transação com versão esperada, validação de alvos ativos, proteção contra auto-rebaixamento e preservação do último administrador. A mudança incrementa `versao_permissoes`, publica invalidação e audita no mesmo commit. Revogações de sessão/dispositivo reutilizam os serviços seguros existentes e exigem confirmação visual. O web usa somente o SDK OpenAPI gerado. Não houve migration. Lint, tipos, 421 testes da API e 234 testes de arquitetura foram aprovados. Effort `xhigh` foi mantido pela prevenção de lockout, concorrência otimista e invalidação distribuída.
 
 ## 12. Mobile
 

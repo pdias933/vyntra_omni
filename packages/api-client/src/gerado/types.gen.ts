@@ -19,6 +19,65 @@ export type EstadoSaudeDto = {
     estado: 'VIVO' | 'PRONTO';
 };
 
+export type PerfilResumoAdministracaoUsuarioDto = {
+    id: string;
+    nome: string;
+    papel_base: string;
+};
+
+export type FilaAdministracaoUsuarioDto = {
+    id: string;
+    nome: string;
+};
+
+export type ResumoAdministracaoUsuarioDto = {
+    id: string;
+    nome_exibicao: string;
+    estado: string;
+    perfil?: PerfilResumoAdministracaoUsuarioDto;
+    filas: Array<FilaAdministracaoUsuarioDto>;
+    sessoes_web_ativas: number;
+    dispositivos_mobile_ativos: number;
+    versao_permissoes: number;
+};
+
+export type PermissaoPerfilAdministracaoDto = {
+    codigo: string;
+    efeito: 'CONCEDER' | 'NEGAR';
+};
+
+export type PerfilAdministracaoUsuarioDto = {
+    id: string;
+    nome: string;
+    papel_base: string;
+    permissoes: Array<PermissaoPerfilAdministracaoDto>;
+};
+
+export type ItemAuditoriaAdministracaoUsuarioDto = {
+    id: string;
+    acao: string;
+    criado_em: string;
+    entidade_id?: string;
+    usuario_ator_id?: string;
+};
+
+export type PainelAdministracaoUsuariosDto = {
+    usuarios: Array<ResumoAdministracaoUsuarioDto>;
+    perfis: Array<PerfilAdministracaoUsuarioDto>;
+    filas: Array<FilaAdministracaoUsuarioDto>;
+    auditoria_recente: Array<ItemAuditoriaAdministracaoUsuarioDto>;
+};
+
+export type EntradaAlteracaoAcessoUsuarioDto = {
+    perfil_id: string;
+    fila_ids: Array<string>;
+    versao_esperada: number;
+};
+
+export type ResultadoAlteracaoAcessoUsuarioDto = {
+    versao_permissoes: number;
+};
+
 export type EntradaResgatePareamentoQrDto = {
     token_qr: string;
     identificador_instalacao: string;
@@ -648,6 +707,37 @@ export type VerificarAplicacaoProntaResponses = {
 };
 
 export type VerificarAplicacaoProntaResponse = VerificarAplicacaoProntaResponses[keyof VerificarAplicacaoProntaResponses];
+
+export type ListarAdministracaoUsuariosData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/administracao/usuarios';
+};
+
+export type ListarAdministracaoUsuariosResponses = {
+    200: PainelAdministracaoUsuariosDto;
+};
+
+export type ListarAdministracaoUsuariosResponse = ListarAdministracaoUsuariosResponses[keyof ListarAdministracaoUsuariosResponses];
+
+export type AlterarAcessoUsuarioAdministracaoData = {
+    body: EntradaAlteracaoAcessoUsuarioDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        usuarioId: string;
+    };
+    query?: never;
+    url: '/api/v1/administracao/usuarios/{usuarioId}/acesso';
+};
+
+export type AlterarAcessoUsuarioAdministracaoResponses = {
+    200: ResultadoAlteracaoAcessoUsuarioDto;
+};
+
+export type AlterarAcessoUsuarioAdministracaoResponse = AlterarAcessoUsuarioAdministracaoResponses[keyof AlterarAcessoUsuarioAdministracaoResponses];
 
 export type ResgatarPareamentoQrMobileData = {
     body: EntradaResgatePareamentoQrDto;

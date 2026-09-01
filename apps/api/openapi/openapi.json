@@ -87,6 +87,87 @@
         ]
       }
     },
+    "/api/v1/administracao/usuarios": {
+      "get": {
+        "operationId": "listarAdministracaoUsuarios",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PainelAdministracaoUsuariosDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Lista usuários, RBAC, filas, sessões e auditoria autorizados",
+        "tags": [
+          "administracao-usuarios"
+        ]
+      }
+    },
+    "/api/v1/administracao/usuarios/{usuarioId}/acesso": {
+      "put": {
+        "operationId": "alterarAcessoUsuarioAdministracao",
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaAlteracaoAcessoUsuarioDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoAlteracaoAcessoUsuarioDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Altera perfil e filas com versão esperada e invalidação imediata",
+        "tags": [
+          "administracao-usuarios"
+        ]
+      }
+    },
     "/api/v1/autenticacao/mobile/pareamentos-qr/resgatar": {
       "post": {
         "operationId": "resgatarPareamentoQrMobile",
@@ -2626,6 +2707,230 @@
         },
         "required": [
           "estado"
+        ]
+      },
+      "PerfilResumoAdministracaoUsuarioDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "papel_base": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "papel_base"
+        ]
+      },
+      "FilaAdministracaoUsuarioDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome"
+        ]
+      },
+      "ResumoAdministracaoUsuarioDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome_exibicao": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "perfil": {
+            "$ref": "#/components/schemas/PerfilResumoAdministracaoUsuarioDto"
+          },
+          "filas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilaAdministracaoUsuarioDto"
+            }
+          },
+          "sessoes_web_ativas": {
+            "type": "number"
+          },
+          "dispositivos_mobile_ativos": {
+            "type": "number"
+          },
+          "versao_permissoes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "nome_exibicao",
+          "estado",
+          "filas",
+          "sessoes_web_ativas",
+          "dispositivos_mobile_ativos",
+          "versao_permissoes"
+        ]
+      },
+      "PermissaoPerfilAdministracaoDto": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "efeito": {
+            "type": "string",
+            "enum": [
+              "CONCEDER",
+              "NEGAR"
+            ]
+          }
+        },
+        "required": [
+          "codigo",
+          "efeito"
+        ]
+      },
+      "PerfilAdministracaoUsuarioDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "papel_base": {
+            "type": "string"
+          },
+          "permissoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissaoPerfilAdministracaoDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "papel_base",
+          "permissoes"
+        ]
+      },
+      "ItemAuditoriaAdministracaoUsuarioDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "acao": {
+            "type": "string"
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "entidade_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "usuario_ator_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "acao",
+          "criado_em"
+        ]
+      },
+      "PainelAdministracaoUsuariosDto": {
+        "type": "object",
+        "properties": {
+          "usuarios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumoAdministracaoUsuarioDto"
+            }
+          },
+          "perfis": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PerfilAdministracaoUsuarioDto"
+            }
+          },
+          "filas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilaAdministracaoUsuarioDto"
+            }
+          },
+          "auditoria_recente": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemAuditoriaAdministracaoUsuarioDto"
+            }
+          }
+        },
+        "required": [
+          "usuarios",
+          "perfis",
+          "filas",
+          "auditoria_recente"
+        ]
+      },
+      "EntradaAlteracaoAcessoUsuarioDto": {
+        "type": "object",
+        "properties": {
+          "perfil_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fila_ids": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "versao_esperada": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "perfil_id",
+          "fila_ids",
+          "versao_esperada"
+        ]
+      },
+      "ResultadoAlteracaoAcessoUsuarioDto": {
+        "type": "object",
+        "properties": {
+          "versao_permissoes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "versao_permissoes"
         ]
       },
       "EntradaResgatePareamentoQrDto": {

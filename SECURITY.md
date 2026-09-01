@@ -696,3 +696,12 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - saída ausente, cenário incompatível ou limite atingido são estados visíveis e conservadores;
 - a resposta fixa `efeitosReaisExecutados` como falso e não cria mensagem, atendimento, operação recuperável, evento ou auditoria de conteúdo;
 - logs e erros não recebem a definição nem a prévia; métricas devem contar somente código e duração agregados.
+
+## 27. Administração de usuários da PR 093
+
+- toda projeção exige sessão atual e `ADMINISTRAR_USUARIOS`; abrir a rota web não concede acesso;
+- mutação exige origem permitida, dupla apresentação CSRF e versão de permissões esperada;
+- o cliente envia apenas UUIDs internos de perfil e filas; estado, papel, permissões efetivas e alvos ativos são revalidados no PostgreSQL;
+- auto-rebaixamento e remoção do último administrador falham fechados;
+- mudança produz invalidação imediata e auditoria sanitizada no mesmo commit;
+- revogações remotas exigem confirmação visual e continuam sob os serviços de sessão e dispositivo.
