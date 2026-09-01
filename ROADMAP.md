@@ -91,7 +91,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 067 | CONCLUÍDA | `xhigh` |
 | 068 | CONDICIONAL | `xhigh` |
 | 069 | CONCLUÍDA | `high` |
-| 070 | EM ANDAMENTO | `xhigh` |
+| 070 | CONCLUÍDA | `xhigh` |
 | 071 | PENDENTE | `xhigh` |
 | 072 | PENDENTE | `xhigh` |
 | 073 | PENDENTE | `xhigh` |
@@ -453,6 +453,10 @@ Aceite concluído em 1º de setembro de 2026: comentário de finalização e enc
 ### PR 069 — fluxo, versão e ponteiro publicado
 
 Aceite concluído em 1º de setembro de 2026: `Fluxo` passou a ser a identidade estável e `VersaoFluxo` a definição numerada. Criação de fluxo e versão 1 em `RASCUNHO` compartilha transação; novas versões recebem número sob lock; alteração de rascunho exige revisão esperada. PostgreSQL limita a definição a objeto JSON de 256 KiB, impõe uma única versão `PUBLICADA`, valida por referência composta e constraint diferida que o ponteiro pertença ao mesmo fluxo e protege definição, autoria e datas publicadas contra reescrita ou exclusão. O seletor para futura execução devolve exatamente a versão apontada, não a versão mais recente. Não há controller, editor, executor, worker ou adapter antecipado. Lint, tipos, 307 testes da API, 187 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901010000_fluxos_versionados` terminou com código zero e `vyntra/api-staging:pr-069` ficou saudável com prontidão `PRONTO`. Em staging, o serviço e repositório reais criaram as versões 1 e 2, fixaram o ponteiro na versão 1, editaram somente o rascunho e o trigger recusou alterar a definição publicada; a transação de aceite foi revertida integralmente, os dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
+
+### PR 070 — publicação, arquivamento e reversão
+
+Aceite concluído em 1º de setembro de 2026: publicação, arquivamento e reversão passaram a ser serializados por fluxo, comparar `revisao` e exigir `PUBLICAR_FLUXO` ou `REVERTER_FLUXO`. Publicação aceita somente `EM_TESTE`; reversão aceita somente `ARQUIVADA` e conserva definição, autoria e data originais. Versão atual, alvo, ponteiro e revisão mudam na mesma transação, que também acrescenta `HistoricoPublicacaoFluxo` e auditoria sanitizada. O histórico vincula versões do mesmo fluxo, tem revisão resultante única e é imutável contra update, delete e truncate. Nenhuma rota foi exposta antes do validador integral. Lint, tipos, 313 testes da API, 190 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901010500_historico_publicacao_fluxo` terminou com código zero e `vyntra/api-staging:pr-070` ficou saudável com prontidão `PRONTO`. Em staging, serviços, repositórios, auditoria e PostgreSQL reais percorreram publicação v1, publicação v2, reversão para v1 e arquivamento nas revisões 2–5; estados, ponteiro e quatro históricos permaneceram coerentes, e o trigger recusou reescrita. A transação de aceite foi revertida, os dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
