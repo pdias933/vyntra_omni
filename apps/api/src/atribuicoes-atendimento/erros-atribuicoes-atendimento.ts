@@ -20,3 +20,10 @@ export class ErroConflitoResgateAtendimento extends Error {
     this.name = 'ErroConflitoResgateAtendimento';
   }
 }
+
+export class ErroConflitoTransferenciaAtendimento extends Error {
+  public constructor() {
+    super('CONFLITO_TRANSFERENCIA_ATENDIMENTO');
+    this.name = 'ErroConflitoTransferenciaAtendimento';
+  }
+}

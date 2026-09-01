@@ -109,6 +109,18 @@ export class MaquinaEstadoAtendimento {
           motivoEspera: 'AGUARDANDO_HUMANO',
           usuarioResponsavelId: undefined,
         });
+      case 'TRANSFERIR_FILA':
+        this.exigir(
+          atual.estado === 'AGUARDANDO' || atual.estado === 'EM_ATENDIMENTO',
+          comando.filaId,
+        );
+        return this.atualizarAtribuicao(atual, agora, {
+          estado: 'AGUARDANDO',
+          filaAtualId: comando.filaId,
+          modo: 'FILA_HUMANA',
+          motivoEspera: 'AGUARDANDO_HUMANO',
+          usuarioResponsavelId: undefined,
+        });
       case 'ALTERAR_MOTIVO_ESPERA':
         this.exigir(
           atual.estado === 'AGUARDANDO' || atual.estado === 'EM_ATENDIMENTO',

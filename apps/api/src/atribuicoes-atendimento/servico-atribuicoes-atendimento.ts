@@ -11,6 +11,7 @@ import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import {
   ErroAtendimentoAtribuicaoAusente,
   ErroConflitoResgateAtendimento,
+  ErroConflitoTransferenciaAtendimento,
   ErroEntradaAtribuicaoAtendimentoInvalida,
 } from './erros-atribuicoes-atendimento.js';
 import {
@@ -153,6 +154,111 @@ export class ServicoAtribuicoesAtendimento {
     return proximo;
   }
 
+  public async transferirParaFila(
+    sessao: ContextoSessaoAutorizacao,
+    atendimentoId: string,
+    filaDestinoId: string,
+    versaoAtribuicaoEsperada: number,
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<AtendimentoPersistido> {
+    this.validarEntrada(atendimentoId, filaDestinoId, versaoAtribuicaoEsperada);
+    const atual = await this.repositorio.obter(atendimentoId, transacao);
+    if (atual === undefined || atual.filaAtualId === undefined) {
+      throw new ErroAtendimentoAtribuicaoAusente();
+    }
+    if (
+      atual.filaAtualId === filaDestinoId ||
+      !['AGUARDANDO', 'EM_ATENDIMENTO'].includes(atual.estado) ||
+      atual.versaoAtribuicao !== versaoAtribuicaoEsperada
+    ) {
+      throw new ErroConflitoTransferenciaAtendimento();
+    }
+    const filaOrigemId = atual.filaAtualId;
+    await this.autorizarTransferencia(
+      sessao,
+      atendimentoId,
+      filaOrigemId,
+      true,
+      transacao,
+    );
+    await this.autorizarTransferencia(
+      sessao,
+      atendimentoId,
+      filaDestinoId,
+      false,
+      transacao,
+    );
+    const agora = relogio();
+    const proximo = this.maquina.transitar(
+      atual,
+      { filaId: filaDestinoId, tipo: 'TRANSFERIR_FILA' },
+      agora,
+    );
+    if (
+      !(await this.repositorio.transferirParaFilaCondicional(
+        proximo,
+        filaOrigemId,
+        versaoAtribuicaoEsperada,
+        transacao,
+      ))
+    ) {
+      throw new ErroConflitoTransferenciaAtendimento();
+    }
+    await this.historico.substituir(
+      atendimentoId,
+      {
+        executadoPorUsuarioId: sessao.usuarioId,
+        filaId: filaDestinoId,
+        tipo: 'TRANSFERENCIA_FILA',
+      },
+      transacao,
+      () => agora,
+    );
+    await this.eventos.acrescentar(
+      {
+        atendimentoId,
+        classificacaoDados: 'OPERACIONAL',
+        conversaId: proximo.conversaId,
+        dados: {
+          filaDestinoId,
+          filaOrigemId,
+          versaoAtribuicao: proximo.versaoAtribuicao,
+        },
+        entidadeId: atendimentoId,
+        entidadeTipo: 'ATENDIMENTO',
+        tipo: 'ATENDIMENTO_TRANSFERIDO_PARA_FILA',
+        usuarioAtorId: sessao.usuarioId,
+      },
+      transacao,
+    );
+    await this.auditoria.registrar(
+      {
+        acao: 'TRANSFERIR_ATENDIMENTO',
+        atendimentoId,
+        dadosAnteriores: {
+          filaId: filaOrigemId,
+          usuarioResponsavelId: atual.usuarioResponsavelId ?? null,
+          versaoAtribuicao: atual.versaoAtribuicao,
+        },
+        dadosNovos: {
+          filaId: filaDestinoId,
+          usuarioResponsavelId: null,
+          versaoAtribuicao: proximo.versaoAtribuicao,
+        },
+        entidadeId: atendimentoId,
+        entidadeTipo: 'ATENDIMENTO',
+        filaId: filaDestinoId,
+        origem: 'USUARIO',
+        sessaoId: sessao.sessaoId,
+        tipoEvento: 'ATENDIMENTO_TRANSFERIDO_PARA_FILA',
+        usuarioId: sessao.usuarioId,
+      },
+      transacao,
+    );
+    return proximo;
+  }
+
   private async autorizar(
     sessao: ContextoSessaoAutorizacao,
     permissao: 'VISUALIZAR_FILA' | 'RESGATAR_ATENDIMENTO',
@@ -175,6 +281,39 @@ export class ServicoAtribuicoesAtendimento {
         return {
           acessivel: atendimento?.filaAtualId === filaId,
           estadoPermiteAcao: true,
+        };
+      },
+      transacao,
+    );
+  }
+
+  private async autorizarTransferencia(
+    sessao: ContextoSessaoAutorizacao,
+    atendimentoId: string,
+    filaId: string,
+    conferirFilaAtual: boolean,
+    transacao: TransacaoPrisma,
+  ): Promise<void> {
+    await this.autorizacao.autorizar(
+      {
+        filaId,
+        permissao: 'TRANSFERIR_ATENDIMENTO',
+        recurso: { id: atendimentoId, tipo: 'ATENDIMENTO' },
+        sessao,
+      },
+      async () => {
+        if (!conferirFilaAtual) {
+          return { acessivel: true, estadoPermiteAcao: true };
+        }
+        const atendimento = await this.repositorio.obter(
+          atendimentoId,
+          transacao,
+        );
+        return {
+          acessivel: atendimento?.filaAtualId === filaId,
+          estadoPermiteAcao:
+            atendimento !== undefined &&
+            ['AGUARDANDO', 'EM_ATENDIMENTO'].includes(atendimento.estado),
         };
       },
       transacao,

@@ -16,4 +16,10 @@ export interface RepositorioAtribuicoesAtendimento {
     versaoAtribuicaoEsperada: number,
     transacao: TransacaoPrisma,
   ): Promise<boolean>;
+  transferirParaFilaCondicional(
+    proximo: AtendimentoPersistido,
+    filaOrigemEsperadaId: string,
+    versaoAtribuicaoEsperada: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
 }

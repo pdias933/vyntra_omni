@@ -87,4 +87,31 @@ export class RepositorioAtribuicoesAtendimentoPrisma
     });
     return resultado.count === 1;
   }
+
+  public async transferirParaFilaCondicional(
+    proximo: AtendimentoPersistido,
+    filaOrigemEsperadaId: string,
+    versaoAtribuicaoEsperada: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const resultado = await transacao.atendimento.updateMany({
+      data: {
+        atualizadoEm: proximo.atualizadoEm,
+        estado: 'AGUARDANDO',
+        filaAtualId: proximo.filaAtualId!,
+        modo: 'FILA_HUMANA',
+        motivoEspera: 'AGUARDANDO_HUMANO',
+        usuarioResponsavelId: null,
+        versaoAtribuicao: proximo.versaoAtribuicao,
+        versaoEstado: proximo.versaoEstado,
+      },
+      where: {
+        estado: { in: ['AGUARDANDO', 'EM_ATENDIMENTO'] },
+        filaAtualId: filaOrigemEsperadaId,
+        id: proximo.id,
+        versaoAtribuicao: versaoAtribuicaoEsperada,
+      },
+    });
+    return resultado.count === 1;
+  }
 }
