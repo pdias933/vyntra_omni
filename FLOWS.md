@@ -462,3 +462,9 @@ Se a conta/versão do aplicativo do contato não suportar o formulário, o nó s
 - Simulador não chama Meta/MK e não altera produção.
 - Submissão de formulário repetida não duplica vínculo/ação.
 - Usuário sem `PUBLICAR_FLUXO` não publica via API manual.
+
+## 17. Fundação persistente entregue na PR 069
+
+O catálogo separa a identidade `Fluxo` da definição `VersaoFluxo`. Criar um fluxo também cria a versão 1 em `RASCUNHO` na mesma transação. O editor futuro altera somente rascunho e precisa apresentar `revisao` atual; uma revisão concorrente falha sem auditoria de alteração inexistente. Criar nova versão ocorre sob lock do fluxo e recebe o próximo número monotônico.
+
+O ponteiro publicado é uma referência composta para garantir que a versão pertença ao mesmo fluxo, além de exigir estado `PUBLICADA` no commit. O contrato interno `obterVersaoPublicadaParaNovaExecucao` seleciona exatamente esse registro e nunca “a mais recente”. A PR 069 não expõe controller, não executa nó, não publica versão e não registra worker ou adapter. Publicação/reversão, validação semântica e `ExecucaoFluxo` permanecem, respectivamente, nos PRs 070, 071 e 072.

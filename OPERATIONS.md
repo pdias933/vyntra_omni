@@ -541,3 +541,9 @@ Não antecipar Kubernetes ou microserviços sem evidência.
 - contrato real de disparo ERP, consentimento/opt-out e callbacks aprovados antes de habilitar o endpoint;
 - RPO/RTO medidos e aceitos;
 - deploy de produção manual.
+
+## 20. Operação do catálogo de fluxos da PR 069
+
+A migration obrigatória passa a ser `20260901010000_fluxos_versionados`. Ela cria tabelas, enums, índices, FKs compostas e triggers; é aditiva e não ativa automação. Depois do deploy, prontidão deve permanecer `PRONTO`, e não deve existir controller, worker ou adapter de fluxo registrado.
+
+Monitorar conflito repetido de revisão, falha de constraint do ponteiro, definição acima do limite e tentativa de mutação/exclusão histórica. Não corrigir uma versão publicada por SQL: criar nova versão e usar o processo autorizado de publicação/reversão quando a PR 070 estiver disponível. Rollback de imagem preserva as tabelas e não remove a migration; antes de voltar para uma imagem sem o catálogo, comprovar que nenhum componente posterior depende dele.

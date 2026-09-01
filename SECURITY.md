@@ -516,6 +516,8 @@ O snapshot da PR 026 aceita apenas o vocabulário interno permitido e documento/
 
 A conversa única da PR 027 não amplia visibilidade. Ela consolida identidade da timeline, enquanto autorização por atendimento/fila e permissões transversais continuam obrigatórias na consulta futura. Conta participante não concede acesso nem apaga a origem dos itens. Resolução exige contato existente e conta ativa, serializa por contato e não publica controller; FKs restritivas preservam origem histórica após desativação.
 
+O catálogo da PR 069 exige `EDITAR_FLUXO` no backend antes de qualquer escrita. Definições aceitam somente JSON finito, em objeto, com profundidade controlada e até 256 KiB; nenhuma definição pode transportar função ou tipo não serializável. Essa validação estrutural não substitui o validador semântico da PR 071: até ele existir, o catálogo não oferece publicação. Auditoria guarda IDs, tipo, número, revisão e versão de schema, nunca a definição integral. PostgreSQL impede exclusão de qualquer versão, alteração do conteúdo publicado/arquivado, publicação simultânea de duas versões e ponteiro para versão de outro fluxo ou em estado incorreto. Execução futura deve persistir o ID selecionado e não confiar no ponteiro mutável depois de iniciar.
+
 ## 15. Regras de código seguro
 
 - Não adicionar dependência sem necessidade, análise e justificativa.

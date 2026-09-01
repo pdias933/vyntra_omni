@@ -302,3 +302,7 @@ O painel operacional deve priorizar:
 - saúde de Meta, MK, banco, Redis, workers, storage e push.
 
 Relatórios sofisticados não devem atrasar o núcleo operacional.
+
+## 8. Comportamento de versões de fluxo
+
+Salvar uma automação não altera o que está atendendo clientes. O produto trata o fluxo como identidade estável e cada definição como versão numerada; somente uma publicação explícita futura troca o ponteiro usado por novos atendimentos. Atendimentos em curso continuam na versão com que começaram. Na PR 069 essa fundação é apenas interna: editor, simulação, publicação e execução ainda não aparecem na interface.

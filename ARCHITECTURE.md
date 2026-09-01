@@ -623,6 +623,8 @@ Na PR 067, `acoes-atendimento-erp` cobre comentário de finalização e encerram
 
 Na PR 027, `conversas` resolve exclusivamente por `contato_id` sob lock transacional. A conta WhatsApp ativa entra como uma participação da conversa — não como chave para criar outra timeline — e primeiro/último instante aceitam entrega fora de ordem sem regredir atividade. PostgreSQL impõe uma conversa por contato e uma participação por conversa+conta. O módulo é interno, sem controller; mensagens e atendimentos futuros ainda deverão carregar seus próprios `conta_whatsapp_id`.
 
+Na PR 069, `fluxos` introduz o catálogo interno do Motor de Fluxos. `ServicoCatalogoFluxos` autoriza com `EDITAR_FLUXO`, normaliza e limita a definição e mantém criação, versionamento, lock e auditoria na transação fornecida. O repositório Prisma usa PostgreSQL como autoridade para unicidade, revisão e ponteiro composto. Uma constraint diferida valida o ponteiro ao final do commit; índice parcial impede duas versões `PUBLICADA`; trigger protege definição e atribuição histórica depois da publicação. O módulo exporta somente o serviço interno e não antecipa controller, editor, executor, worker ou integração externa.
+
 ## 14. Observabilidade
 
 Quatro sinais distintos:

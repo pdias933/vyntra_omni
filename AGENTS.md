@@ -413,3 +413,12 @@ Ao revisar, priorize achados que possam:
 - exibir dado sensível sem mascaramento e permissão.
 
 Formatação que o CI corrige não deve obscurecer risco funcional.
+
+## 18. Regras do catálogo de fluxos
+
+- Trate `Fluxo` como identidade e `VersaoFluxo` como definição imutável depois de publicada.
+- Nunca edite ou exclua uma versão publicada/arquivada, nem “corrija” histórico por migration ou SQL operacional.
+- Salvar rascunho exige revisão esperada; nova versão recebe número sob lock do fluxo.
+- Nova execução fixa o `versao_fluxo_id` apontado no início e nunca relê o ponteiro para migrar em curso.
+- Não acrescente controller, publicação, executor, worker ou nó antes do PR correspondente.
+- Definição não aceita código, função, SQL, shell, URL arbitrária ou segredo; publicação futura exige validação semântica completa.

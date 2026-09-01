@@ -805,3 +805,15 @@ O schema e os testes devem materializar, sempre que possível:
 - testes de transição inválida para todas as máquinas de estado.
 
 Detalhes de segurança, execução de fluxo e sincronização estão em [SECURITY.md](SECURITY.md), [FLOWS.md](FLOWS.md) e [ARCHITECTURE.md](ARCHITECTURE.md).
+
+## 16. Catálogo versionado do Motor de Fluxos
+
+Desde a PR 069, `Fluxo` é a identidade estável de uma automação e `VersaoFluxo` é uma definição numerada pertencente a ela. Um fluxo nasce ativo com a versão 1 em `RASCUNHO`; novas definições sempre criam outra versão ou alteram um rascunho por revisão esperada. Nome normalizado é único, número é único dentro do fluxo e a definição é um objeto JSON controlado, limitado a 256 KiB e versionado por `versao_schema_definicao`.
+
+```text
+RASCUNHO → EM_TESTE → PUBLICADA → ARQUIVADA
+```
+
+`Fluxo.versao_publicada_id` pode ser nulo, mas, quando preenchido, aponta obrigatoriamente para uma versão do mesmo fluxo em `PUBLICADA`. Existe no máximo uma versão publicada por fluxo. Definição, numeração, autoria e instante de publicação de versões publicadas ou arquivadas são imutáveis no PostgreSQL, e nenhuma versão pode ser excluída. Mudança de estado e troca do ponteiro pertencem ao serviço de publicação da PR 070; o catálogo da PR 069 não publica por atalho.
+
+Toda execução futura deve copiar `fluxo_id` e o `versao_fluxo_id` indicado no instante da criação. Publicar outra versão afeta somente execuções novas; execução já iniciada nunca consulta novamente o ponteiro nem migra de definição silenciosamente.
