@@ -60,7 +60,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 036 | CONCLUÍDA | `xhigh` |
 | 037 | CONCLUÍDA | `high` |
 | 038 | CONCLUÍDA | `xhigh` |
-| 039 | EM ANDAMENTO | `xhigh` |
+| 039 | CONCLUÍDA | `xhigh` |
 | 040 | PENDENTE | `xhigh` |
 | 041 | PENDENTE | `xhigh` |
 | 042 | PENDENTE | `xhigh` |
@@ -341,6 +341,10 @@ Aceite concluído em 1º de setembro de 2026: calendários de conta ou fila pass
 ### PR 038 — SLA e escalonamento
 
 Aceite concluído em 1º de setembro de 2026: `PoliticaSla` passou a definir os marcos crescentes por fila e cada obrigação humana cria um ciclo de `RelogioSlaAtendimento` com política/versão e vencimentos congelados. Automação e fila sem política não inventam relógio. A avaliação atrasada emite, em ordem, alertas idempotentes para atendente, supervisor e administrador; concluir a obrigação fecha o ciclo e permite o seguinte. Eventos operacionais são produzidos na mesma transação, sem alterar fila, responsável ou versão de atribuição e sem transferência automática. Lint, tipos, 175 testes da API, 138 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002200_criar_sla_escalonamento` terminou com código zero e `vyntra/api-staging:pr-038` ficou saudável com prontidão `PRONTO`. Em staging, política inválida e segundo relógio ativo foram recusados; dois ciclos sequenciais e os três alertas coexistiram, enquanto responsável permaneceu nulo e `versao_atribuicao` permaneceu 7; houve rollback e nenhum erro de nível 50.
+
+### PR 039 — janela de atendimento do canal
+
+Aceite concluído em 1º de setembro de 2026: `JanelaAtendimentoCanal` passou a manter estado independente para cada par contato + conta WhatsApp, abrindo ou ampliando exatamente 24 horas a partir da entrada mais nova do contato. Replay, duplicidade ou evento atrasado não fazem o prazo regredir. O limite é semiaberto: no instante exato de expiração, texto livre já é recusado. Saída por modelo aprovado permanece permitida sem criar, reabrir ou ampliar janela. Alertas de uma hora, 30 minutos e 10 minutos são idempotentes por versão, preservando o histórico quando uma nova entrada amplia a vigência. O domínio usa termos internos; detalhes de Meta/template ficam para o adapter futuro. Lint, tipos, 179 testes da API, 140 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002300_criar_janela_atendimento_canal` terminou com código zero e `vyntra/api-staging:pr-039` ficou saudável com prontidão `PRONTO`. Em staging, duas contas mantiveram janelas distintas para o mesmo contato, todas as vigências tiveram 86.400 segundos, a conta A avançou para a versão 2, o limite exato ficou fechado e quatro alertas históricos foram preservados; duração inválida e alerta repetido foram recusados, houve rollback e nenhum erro de nível 50.
 
 ## 7. Mensageria Meta
 
