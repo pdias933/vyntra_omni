@@ -54,6 +54,12 @@ function adaptadorComDados() {
           vencimento: '2026-09-10',
         },
       ],
+      elegibilidadesDesbloqueio: [
+        {
+          contratoExternoId: 'contrato-sintetico-001',
+          elegivel: true,
+        },
+      ],
     },
     () => agora,
   );
@@ -98,6 +104,23 @@ test('indisponibilidade de consulta é explícita e não finge snapshot', async 
     codigo: 'ERP_INDISPONIVEL',
     resultado: 'INDISPONIVEL',
   });
+});
+
+test('elegibilidade de desbloqueio é consulta normalizada em tempo real', async () => {
+  const adaptador = adaptadorComDados();
+  assert.deepEqual(
+    await adaptador.verificarElegibilidadeDesbloqueio(
+      'contrato-sintetico-001',
+    ),
+    {
+      item: {
+        contratoExternoId: 'contrato-sintetico-001',
+        elegivel: true,
+      },
+      origem: 'TEMPO_REAL',
+      resultado: 'SUCESSO',
+    },
+  );
 });
 
 test('criação confirmada é idempotente e produz um protocolo oficial', async () => {

@@ -560,24 +560,25 @@ model RegistroIdempotencia {
 }
 
 model OperacaoRecuperavel {
-  id                     String                    @id @db.Uuid
-  registroIdempotenciaId String                    @unique @map("registro_idempotencia_id") @db.Uuid
-  tipo                   String                    @db.VarChar(100)
-  entidadeTipo           String?                   @map("entidade_tipo") @db.VarChar(100)
-  entidadeId             String?                   @map("entidade_id") @db.Uuid
-  estado                 EstadoOperacaoRecuperavel @default(PENDENTE)
-  tentativas             Int                       @default(0)
-  versao                 Int                       @default(0)
-  concessaoTokenHash     String?                   @map("concessao_token_hash") @db.Char(64)
-  concessaoAte           DateTime?                 @map("concessao_ate") @db.Timestamptz(6)
-  proximaAcaoEm          DateTime?                 @default(now()) @map("proxima_acao_em") @db.Timestamptz(6)
-  codigoUltimoErro       String?                   @map("codigo_ultimo_erro") @db.VarChar(100)
-  resultadoProtegido     Json?                     @map("resultado_protegido")
-  criadoEm               DateTime                  @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm           DateTime                  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  concluidoEm            DateTime?                 @map("concluido_em") @db.Timestamptz(6)
-  registroIdempotencia   RegistroIdempotencia      @relation(fields: [registroIdempotenciaId], references: [id], onDelete: Restrict)
+  id                     String                        @id @db.Uuid
+  registroIdempotenciaId String                        @unique @map("registro_idempotencia_id") @db.Uuid
+  tipo                   String                        @db.VarChar(100)
+  entidadeTipo           String?                       @map("entidade_tipo") @db.VarChar(100)
+  entidadeId             String?                       @map("entidade_id") @db.Uuid
+  estado                 EstadoOperacaoRecuperavel     @default(PENDENTE)
+  tentativas             Int                           @default(0)
+  versao                 Int                           @default(0)
+  concessaoTokenHash     String?                       @map("concessao_token_hash") @db.Char(64)
+  concessaoAte           DateTime?                     @map("concessao_ate") @db.Timestamptz(6)
+  proximaAcaoEm          DateTime?                     @default(now()) @map("proxima_acao_em") @db.Timestamptz(6)
+  codigoUltimoErro       String?                       @map("codigo_ultimo_erro") @db.VarChar(100)
+  resultadoProtegido     Json?                         @map("resultado_protegido")
+  criadoEm               DateTime                      @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm           DateTime                      @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  concluidoEm            DateTime?                     @map("concluido_em") @db.Timestamptz(6)
+  registroIdempotencia   RegistroIdempotencia          @relation(fields: [registroIdempotenciaId], references: [id], onDelete: Restrict)
   historicoTentativas    TentativaOperacao[]
+  desbloqueioConfianca   RegistroDesbloqueioConfianca?
 
   @@index([estado, proximaAcaoEm, criadoEm], map: "operacao_recuperavel_pendente_idx")
   @@index([entidadeTipo, entidadeId, criadoEm], map: "operacao_recuperavel_entidade_idx")
@@ -1010,6 +1011,7 @@ model Atendimento {
   relogiosSla                 RelogioSlaAtendimento[]
   notasInternas               NotaInterna[]
   mensagens                   Mensagem[]
+  desbloqueiosConfianca       RegistroDesbloqueioConfianca[]
 
   @@unique([id, conversaId], map: "atendimento_id_conversa_key")
   @@index([conversaId, iniciadoEm, id], map: "atendimento_conversa_inicio_idx")
@@ -1469,6 +1471,21 @@ model ProtocoloErp {
 
   @@index([estado, criadoEm, atendimentoId], map: "protocolo_erp_estado_criado_idx")
   @@map("protocolo_erp")
+}
+
+model RegistroDesbloqueioConfianca {
+  id                    String              @id @db.Uuid
+  atendimentoId         String              @map("atendimento_id") @db.Uuid
+  operacaoRecuperavelId String              @unique(map: "registro_desbloqueio_operacao_key") @map("operacao_recuperavel_id") @db.Uuid
+  contratoExternoId     String              @map("contrato_externo_id") @db.VarChar(256)
+  confirmadoEm          DateTime            @map("confirmado_em") @db.Timestamptz(6)
+  criadoEm              DateTime            @map("criado_em") @db.Timestamptz(6)
+  atendimento           Atendimento         @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  operacaoRecuperavel   OperacaoRecuperavel @relation(fields: [operacaoRecuperavelId], references: [id], onDelete: Restrict)
+
+  @@index([contratoExternoId, confirmadoEm, id], map: "registro_desbloqueio_contrato_confirmado_idx")
+  @@index([atendimentoId, confirmadoEm, id], map: "registro_desbloqueio_atendimento_confirmado_idx")
+  @@map("registro_desbloqueio_confianca")
 }
 
 model IdentidadeWhatsApp {

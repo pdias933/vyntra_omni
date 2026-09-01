@@ -43,6 +43,26 @@ export interface DadosPagamentoFaturaErpNormalizados {
   readonly linhaDigitavel?: string;
 }
 
+export interface ElegibilidadeDesbloqueioErpNormalizada {
+  readonly contratoExternoId: string;
+  readonly elegivel: boolean;
+}
+
+export type ResultadoElegibilidadeDesbloqueioErp =
+  | {
+      readonly resultado: 'SUCESSO';
+      readonly origem: OrigemConsultaErp;
+      readonly item: ElegibilidadeDesbloqueioErpNormalizada;
+    }
+  | {
+      readonly resultado: 'NAO_ENCONTRADO';
+      readonly origem: OrigemConsultaErp;
+    }
+  | {
+      readonly resultado: 'INDISPONIVEL';
+      readonly codigo: 'CAPACIDADE_NAO_HABILITADA' | 'ERP_INDISPONIVEL';
+    };
+
 export type ResultadoComplementoFaturaErp<T> =
   | {
       readonly resultado: 'SUCESSO';

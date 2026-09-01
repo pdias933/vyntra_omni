@@ -385,6 +385,8 @@ A PR 062 eleva a marca de prontidão para `20260901003500_estado_snapshot_client
 
 A PR 063 não acrescenta migration e mantém a marca da PR 062. O deploy também não registra adaptador MK, credencial, endpoint ou worker real. Em staging, validar o ciclo persistente `PENDENTE → RESULTADO_INCERTO → EM_RECONCILIACAO → CONCLUIDA` e confirmar que há um único `ProtocoloErp(OFICIAL)`. A conclusão do protocolo e da operação deve compartilhar a transação; se uma delas falhar, nenhuma pode ficar confirmada isoladamente.
 
+A PR 064 aplica `20260901004000_historico_desbloqueio_confianca` e eleva essa migration à marca de prontidão. A tabela é aditiva, começa vazia, relaciona cada confirmação futura a atendimento e operação e bloqueia atualização ou exclusão. O módulo implantado apenas verifica elegibilidade; não registra adapter MK, rota ou capacidade de execução. Rollback da imagem preserva o histórico. Monitorar consultas indisponíveis separadamente de negações ERP e da janela local de 30 dias.
+
 ### Recuperação de operações
 
 Um processo periódico recupera concessões vencidas em lotes pequenos. Ele encerra a tentativa como `RESULTADO_INCERTO`, limpa a concessão e agenda reconciliação imediata. O operador pode observar tipo, estado, idade, quantidade de tentativas e código normalizado; token, payload bruto e dado sensível não aparecem em log ou painel.

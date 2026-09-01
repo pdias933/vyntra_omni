@@ -628,6 +628,12 @@ SNAPSHOT
 
 `SNAPSHOT` pode sustentar identificação, nome, documento mascarado, vínculos, contratos conhecidos, plano, velocidade e endereços. Fatura atual, Pix, financeiro atual, desbloqueio, protocolo, OS e qualquer escrita exigem `TEMPO_REAL`.
 
+### 12.1 Elegibilidade de desbloqueio de confiança
+
+A verificação é leitura e não produz efeito externo. Ela exige atendimento aberto, fila autorizada, contrato ativo exatamente igual ao contexto atual e permissão `VERIFICAR_DESBLOQUEIO_CONFIANCA`. Depois da autorização local, uma nova consulta ao ERP precisa responder com origem `TEMPO_REAL`; indisponibilidade ou capacidade ausente não cai para snapshot.
+
+O resultado final é elegível somente quando o ERP autoriza e não existe desbloqueio confirmado do mesmo contrato nos 30 dias anteriores. O intervalo é de 30 × 24 horas a partir de `confirmado_em`; no instante exato do término, a restrição local deixa de bloquear. `RegistroDesbloqueioConfianca` é histórico imutável ligado ao atendimento e à operação recuperável que futuramente confirmar o efeito. A PR 064 apenas lê esse histórico e não oferece método, controller ou nó para executar desbloqueio.
+
 Sessão de acesso usa porta própria e estados `ATIVA`, `INATIVA` ou `DESCONHECIDA`. Conexão cadastrada, contrato ativo ou presença em snapshot nunca promove o estado para `ATIVA`. `NAO_CONFIGURADO` e `DESATIVADO` são disponibilidade do recurso/fonte, não estados da sessão. Desconexão só pode atingir sessão explicitamente `ATIVA`; resposta perdida vira `RESULTADO_INCERTO` e exige reconciliação.
 
 ## 13. Eventos e sincronização

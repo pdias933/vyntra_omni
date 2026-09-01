@@ -305,6 +305,8 @@ auditoria + evento
 
 Não assumir que um parâmetro externo isolado implementa toda a política de 30 dias.
 
+A PR 064 acrescenta à porta de consulta `verificarElegibilidadeDesbloqueio`. O adapter devolve apenas contrato e decisão booleana normalizados; campo externo desconhecido, contrato divergente ou origem diferente de `TEMPO_REAL` falha fechado. O serviço combina essa decisão com `RegistroDesbloqueioConfianca`, que preserva somente ações confirmadas, e informa separadamente `ERP_NAO_AUTORIZOU` e `INTERVALO_30_DIAS`. A janela local é de 30 × 24 horas. A verificação exige contexto ativo e RBAC, mas não adquire concessão, não chama escrita e não registra desbloqueio. Indisponibilidade e capacidade não habilitada continuam explícitas; snapshot é recusado.
+
 ## 5. `SnapshotCliente` (Customer Snapshot)
 
 ### 5.1 Natureza

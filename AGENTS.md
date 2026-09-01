@@ -114,6 +114,7 @@ Não propague DTOs/nomenclatura Meta ou MK para domínio, UI ou Motor de Fluxos.
 - Nota interna nunca entra no pipeline Meta ou transcrição pública.
 - Snapshot serve para identificação/contexto, nunca para escrita.
 - `SnapshotCliente` é autoridade de contingência somente no PostgreSQL; exponha `origem=SNAPSHOT` e idade. Aceite apenas modelo interno protegido e mascarado, não invente limiar de obsolescência e nunca use Redis, atualidade aparente ou presença do snapshot para autorizar ação externa.
+- Verificar desbloqueio e executar desbloqueio são casos de uso separados. A verificação exige contexto/contrato exatos, RBAC, consulta ERP `TEMPO_REAL` e histórico confirmado dos últimos 30 × 24 horas; ela nunca executa nem cria registro de sucesso.
 - Toda escrita externa sensível é idempotente e auditada.
 - Chave idempotente sempre possui escopo e assinatura do comando; chave e token de concessão persistem somente como hash.
 - Timeout, resposta perdida ou concessão expirada viram `RESULTADO_INCERTO`; nunca repetir efeito externo ambíguo sem reconciliar.

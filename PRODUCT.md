@@ -208,7 +208,7 @@ No composer, `/` abre respostas rápidas pesquisáveis. O botão dedicado de aç
 - `AdaptadorErp` genérico, implementado inicialmente por `AdaptadorMkSolutions`.
 - Consulta de cliente, contratos, conexões cadastradas, planos/velocidades quando retornados, endereços, financeiro e faturas.
 - Segunda via, Pix e linha digitável/código de barras conforme API real.
-- Verificação e execução de desbloqueio de confiança, com política de um a cada 30 dias validada pelo domínio e pelo ERP.
+- Verificação e execução de desbloqueio de confiança são passos separados. A verificação consulta o ERP em tempo real e combina a resposta com a política interna de um desbloqueio confirmado a cada 30 dias; nunca executa a ação.
 - Criação e atualização de atendimento/protocolo, comentários/link da transcrição e ordens de serviço, conforme APIs liberadas.
 - Escritas com autorização, auditoria e idempotência.
 - `SnapshotCliente` persistente no PostgreSQL para identificação e contexto durante indisponibilidade.

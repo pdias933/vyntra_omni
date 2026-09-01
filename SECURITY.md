@@ -408,6 +408,8 @@ ServicoDesbloqueio
 AdaptadorErp
 ```
 
+A PR 064 materializa apenas a fase de verificação. Autorização e correspondência exata entre fila, atendimento e contrato ativo são resolvidas no PostgreSQL antes da consulta ERP. A resposta precisa ser `TEMPO_REAL`; snapshot, contrato divergente e campo não normalizado são recusados. A política local considera somente registros confirmados e imutáveis dos 30 dias anteriores. Nenhum resultado dessa consulta constitui confirmação para executar: a PR 065 deve revalidar todos os controles imediatamente antes da escrita.
+
 ## 13. Auditoria
 
 `RegistroAuditoria` é imutável para usuários da plataforma:

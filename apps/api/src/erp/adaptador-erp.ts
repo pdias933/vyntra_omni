@@ -7,6 +7,7 @@ import type {
   FaturaErpNormalizada,
   DadosPagamentoFaturaErpNormalizados,
   DocumentoFaturaErpNormalizado,
+  ResultadoElegibilidadeDesbloqueioErp,
   ResultadoComplementoFaturaErp,
   ResultadoConsultaErp,
   ResultadoConsultaUnicaErp,
@@ -50,6 +51,10 @@ export interface ConsultasErp {
   ): Promise<
     ResultadoComplementoFaturaErp<DadosPagamentoFaturaErpNormalizados>
   >;
+
+  verificarElegibilidadeDesbloqueio(
+    contratoExternoId: string,
+  ): Promise<ResultadoElegibilidadeDesbloqueioErp>;
 }
 
 export interface EscritasErp {

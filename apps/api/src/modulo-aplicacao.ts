@@ -11,6 +11,7 @@ import { ModuloContextosCliente } from './contextos-cliente/modulo-contextos-cli
 import { ModuloConversas } from './conversas/modulo-conversas.js';
 import { ModuloEventos } from './eventos/modulo-eventos.js';
 import { ModuloDisponibilidade } from './disponibilidade/modulo-disponibilidade.js';
+import { ModuloDesbloqueiosConfianca } from './desbloqueios-confianca/modulo-desbloqueios-confianca.js';
 import { ModuloFilas } from './filas/modulo-filas.js';
 import { ModuloHistoricoAtribuicao } from './historico-atribuicao/modulo-historico-atribuicao.js';
 import { ModuloIdempotencia } from './idempotencia/modulo-idempotencia.js';
@@ -45,6 +46,7 @@ import { ModuloSincronizacao } from './sincronizacao/modulo-sincronizacao.js';
     ModuloContatos,
     ModuloContextosCliente,
     ModuloConversas,
+    ModuloDesbloqueiosConfianca,
     ModuloEventos,
     ModuloDisponibilidade,
     ModuloFilas,

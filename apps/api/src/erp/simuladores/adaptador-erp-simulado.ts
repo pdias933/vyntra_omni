@@ -15,10 +15,12 @@ import type {
   FaturaErpNormalizada,
   DadosPagamentoFaturaErpNormalizados,
   DocumentoFaturaErpNormalizado,
+  ElegibilidadeDesbloqueioErpNormalizada,
   ResultadoComplementoFaturaErp,
   ResultadoConsultaErp,
   ResultadoConsultaUnicaErp,
   ResultadoCriacaoAtendimentoErp,
+  ResultadoElegibilidadeDesbloqueioErp,
   ResultadoReconciliacaoAtendimentoErp,
 } from '../modelo-erp.js';
 
@@ -37,6 +39,7 @@ export interface DadosErpSimulados {
   readonly faturas?: readonly FaturaErpNormalizada[];
   readonly documentosFatura?: readonly DocumentoFaturaErpNormalizado[];
   readonly dadosPagamentoFatura?: readonly DadosPagamentoFaturaErpNormalizados[];
+  readonly elegibilidadesDesbloqueio?: readonly ElegibilidadeDesbloqueioErpNormalizada[];
 }
 
 type CenarioCriacaoAtendimento =
@@ -260,6 +263,24 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
       return { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' };
     }
     return { item: { ...dados }, origem: 'TEMPO_REAL', resultado: 'SUCESSO' };
+  }
+
+  public async verificarElegibilidadeDesbloqueio(
+    contratoExternoId: string,
+  ): Promise<ResultadoElegibilidadeDesbloqueioErp> {
+    this.validarIdentificadorExterno(contratoExternoId);
+    if (!this.consultasDisponiveis) return this.indisponivel();
+    const elegibilidade = (this.dados.elegibilidadesDesbloqueio ?? []).find(
+      (item) => item.contratoExternoId === contratoExternoId,
+    );
+    if (elegibilidade === undefined) {
+      return { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' };
+    }
+    return {
+      item: { ...elegibilidade },
+      origem: 'TEMPO_REAL',
+      resultado: 'SUCESSO',
+    };
   }
 
   public async criarAtendimento(

@@ -613,6 +613,8 @@ Na PR 026, `snapshots-cliente` é um módulo persistente e interno: serializa po
 
 Na PR 062, o módulo recebe lotes incrementais ou reconciliações comprovadamente completas. Tombstone e ausência completa convertem o snapshot em `EXCLUIDO` ou `OBSOLETO` sem apagar o último documento; motivo, instante e versão são persistidos e expostos na leitura. Atualização posterior mais nova volta a `ATUAL`. O serviço não interpreta cursor/paginação MK e não registra job externo enquanto essa semântica não for caracterizada. A migration é aditiva e snapshots existentes nascem `ATUAL`.
 
+Na PR 064, `desbloqueios-confianca` implementa somente a consulta de elegibilidade. Uma leitura consistente autoriza sessão, permissão e fila, valida o contrato contra o contexto ativo do atendimento e lê o último registro confirmado. A transação termina antes da consulta externa. `ServicoElegibilidadeDesbloqueioConfianca` então chama `ConsultasErp`, exige resposta normalizada `TEMPO_REAL` e combina a decisão externa com o intervalo local de 30 dias. A porta externa entra como argumento e não como provider; o módulo não possui controller, escrita, idempotência de execução ou adapter MK real.
+
 Na PR 027, `conversas` resolve exclusivamente por `contato_id` sob lock transacional. A conta WhatsApp ativa entra como uma participação da conversa — não como chave para criar outra timeline — e primeiro/último instante aceitam entrega fora de ordem sem regredir atividade. PostgreSQL impõe uma conversa por contato e uma participação por conversa+conta. O módulo é interno, sem controller; mensagens e atendimentos futuros ainda deverão carregar seus próprios `conta_whatsapp_id`.
 
 ## 14. Observabilidade
