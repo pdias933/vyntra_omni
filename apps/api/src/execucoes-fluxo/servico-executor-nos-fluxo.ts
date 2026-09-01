@@ -61,15 +61,63 @@ export class ServicoExecutorNosFluxo {
     if (!Number.isInteger(limite) || limite < 1 || limite > 100) {
       throw new ErroExecucaoFluxoInvalida();
     }
-    return this.prisma.executarTransacao(async (transacao) => {
-      const prontas = await this.repositorioExecucoes.listarProntasParaExecutar(
-        limite,
+    let processadas = 0;
+    while (processadas < limite) {
+      let selecionada: ExecucaoFluxoPersistida | undefined;
+      try {
+        const encontrou = await this.prisma.executarTransacao(
+          async (transacao) => {
+            const [execucao] =
+              await this.repositorioExecucoes.listarProntasParaExecutar(
+                1,
+                transacao,
+              );
+            selecionada = execucao;
+            if (execucao === undefined) return false;
+            await this.executarNo(execucao, transacao, relogio);
+            return true;
+          },
+        );
+        if (!encontrou) break;
+      } catch (erro) {
+        if (
+          !(erro instanceof ErroExecucaoFluxoInvalida) ||
+          selecionada === undefined
+        ) {
+          throw erro;
+        }
+        await this.falharDefinicaoInvalida(selecionada, relogio);
+      }
+      processadas += 1;
+    }
+    return processadas;
+  }
+
+  private async falharDefinicaoInvalida(
+    selecionada: ExecucaoFluxoPersistida,
+    relogio: () => Date,
+  ): Promise<void> {
+    await this.prisma.executarTransacao(async (transacao) => {
+      const atual = await this.repositorioExecucoes.obterPorId(
+        selecionada.id,
         transacao,
       );
-      for (const execucao of prontas) {
-        await this.executarNo(execucao, transacao, relogio);
+      if (
+        atual === undefined ||
+        atual.estado !== 'EXECUTANDO' ||
+        atual.revisao !== selecionada.revisao
+      ) {
+        return;
       }
-      return prontas.length;
+      await this.execucoes.transitar(
+        {
+          comando: { codigo: 'DEFINICAO_FLUXO_INVALIDA', tipo: 'FALHAR' },
+          execucaoFluxoId: atual.id,
+          revisaoEsperada: atual.revisao,
+        },
+        transacao,
+        relogio,
+      );
     });
   }
 

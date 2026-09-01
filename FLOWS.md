@@ -530,7 +530,7 @@ Queda antes do commit deixa o agendamento disponível para nova varredura. Queda
 
 ## 22. Nós de mensagem e lista da PR 074
 
-O executor seleciona `ExecucaoFluxo.estado=EXECUTANDO` em lotes com `FOR UPDATE SKIP LOCKED`, relê exclusivamente `versao_fluxo_id` fixado e localiza `no_atual_id` nessa definição imutável. Ele suporta nesta etapa `INICIO`, `FIM`, `ENVIAR_MENSAGEM` e `ENVIAR_BOTOES_OU_LISTA`; as demais capacidades continuam negadas até sua PR.
+O executor seleciona `ExecucaoFluxo.estado=EXECUTANDO` com `FOR UPDATE SKIP LOCKED`, uma execução por transação, relê exclusivamente `versao_fluxo_id` fixado e localiza `no_atual_id` nessa definição imutável. Ele suporta nesta etapa `INICIO`, `FIM`, `ENVIAR_MENSAGEM` e `ENVIAR_BOTOES_OU_LISTA`; as demais capacidades continuam negadas até sua PR. Uma definição fixa inconsistente encerra somente aquela execução como `FALHOU/DEFINICAO_FLUXO_INVALIDA`; ela não reverte nem bloqueia as demais execuções prontas.
 
 Parâmetros publicados são fechados:
 

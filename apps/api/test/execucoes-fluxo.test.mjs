@@ -365,8 +365,14 @@ function criarExecutor({ no, resultadoMensagem }) {
     variaveis: [],
     versaoSchema: 1,
   };
+  let entregue = false;
   const repositorioExecucoes = {
-    listarProntasParaExecutar: async () => [atual],
+    listarProntasParaExecutar: async () => {
+      if (entregue) return [];
+      entregue = true;
+      return [atual];
+    },
+    obterPorId: async () => atual,
   };
   const repositorioPassos = {
     finalizar: async (passo) => {
@@ -490,4 +496,66 @@ test('lista e falhas seguem saídas nominais sem chamar adapter', async () => {
     falha.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
     'FALHA_DEFINITIVA',
   );
+});
+
+test('definição inválida falha isolada e não envenena a próxima execução', async () => {
+  const invalida = execucao({ id: randomUUID(), noAtualId: 'ausente' });
+  const valida = execucao({ id: randomUUID(), noAtualId: 'fim' });
+  const fila = [invalida, valida];
+  const falhas = [];
+  const conclusoes = [];
+  const repositorioExecucoes = {
+    listarProntasParaExecutar: async (limite) => fila.splice(0, limite),
+    obterPorId: async (id) => [invalida, valida].find((item) => item.id === id),
+  };
+  const repositorioPassos = {
+    finalizar: async () => true,
+    iniciar: async () => true,
+  };
+  const catalogo = {
+    obterVersaoFixaExecucao: async () => ({
+      definicao: {
+        conexoes: [],
+        inicioNoId: 'fim',
+        nos: [
+          {
+            id: 'fim',
+            parametros: {},
+            referencias: [],
+            tipo: 'FIM',
+            variaveisEntrada: [],
+            variaveisSaida: [],
+          },
+        ],
+        variaveis: [],
+        versaoSchema: 1,
+      },
+    }),
+  };
+  const execucoes = {
+    avancarNo: async () => undefined,
+    transitar: async (entrada) => {
+      if (entrada.comando.tipo === 'FALHAR') falhas.push(entrada);
+      if (entrada.comando.tipo === 'CONCLUIR') conclusoes.push(entrada);
+    },
+  };
+  const prisma = {
+    executarTransacao: async (operacao) => operacao({ id: randomUUID() }),
+  };
+  const executor = new ServicoExecutorNosFluxo(
+    repositorioExecucoes,
+    repositorioPassos,
+    catalogo,
+    { criarAutomatica: async () => assert.fail('mensagem inesperada') },
+    execucoes,
+    prisma,
+  );
+
+  assert.equal(await executor.executarCiclo(10, () => depois(10)), 2);
+  assert.equal(falhas.length, 1);
+  assert.deepEqual(falhas[0].comando, {
+    codigo: 'DEFINICAO_FLUXO_INVALIDA',
+    tipo: 'FALHAR',
+  });
+  assert.equal(conclusoes.length, 1);
 });

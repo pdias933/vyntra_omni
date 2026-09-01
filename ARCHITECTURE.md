@@ -597,7 +597,7 @@ Meta Cloud API
 
 Nenhum adapter expõe credencial, DTO bruto ou código externo ao domínio. [FLOWS.md](FLOWS.md) e [INTEGRATIONS.md](INTEGRATIONS.md) detalham os contratos.
 
-Na PR 074, o worker passa a selecionar execuções `EXECUTANDO` diretamente no PostgreSQL com `FOR UPDATE SKIP LOCKED`. O executor lê a versão fixada na execução, cria um `PassoExecucaoFluxo` sanitizado e delega qualquer saída ao contato para `ServicoMensagensSaida`. O commit reúne mensagem `NA_FILA`, evento, caixa de saída, passo final e avanço de revisão/nó. Uma queda anterior ao commit não deixa efeito parcial; depois do commit, o novo nó e a intenção de envio são recuperáveis. O executor não importa porta, adapter ou vocabulário Meta e não depende de Redis.
+Na PR 074, o worker passa a selecionar execuções `EXECUTANDO` diretamente no PostgreSQL com `FOR UPDATE SKIP LOCKED`, isolando uma execução por transação. O executor lê a versão fixada na execução, cria um `PassoExecucaoFluxo` sanitizado e delega qualquer saída ao contato para `ServicoMensagensSaida`. O commit reúne mensagem `NA_FILA`, evento, caixa de saída, passo final e avanço de revisão/nó. Uma queda anterior ao commit não deixa efeito parcial; depois do commit, o novo nó e a intenção de envio são recuperáveis. Definição fixa inconsistente falha somente sua própria execução com código controlado, sem envenenar o lote. O executor não importa porta, adapter ou vocabulário Meta e não depende de Redis.
 
 `ENVIAR_BOTOES_OU_LISTA` degrada para texto enumerado pelo serviço de domínio enquanto não existir capacidade estruturada real comprovada e conectada. O resultado é `FALLBACK`, nunca `SUCESSO` fictício. A futura implementação do formato interativo deverá continuar entrando pelo domínio e manter a mesma saída nominal.
 
