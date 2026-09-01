@@ -5,9 +5,10 @@ import { test } from 'node:test';
 const raiz = new URL('../', import.meta.url);
 
 test('calendário pertence a conta ou fila e materializa todas as variações aprovadas', async () => {
-  const [schema, migration] = await Promise.all([
+  const [schema, migration, correcaoIntervalos] = await Promise.all([
     readFile(new URL('apps/api/prisma/schema.prisma', raiz), 'utf8'),
     readFile(new URL('apps/api/prisma/migrations/20260901002100_criar_calendarios/migration.sql', raiz), 'utf8'),
+    readFile(new URL('apps/api/prisma/migrations/20260901002110_corrigir_validacao_intervalos_calendario/migration.sql', raiz), 'utf8'),
   ]);
   assert.match(schema, /model CalendarioAtendimento/);
   assert.match(schema, /model PeriodoSemanalCalendario/);
@@ -17,6 +18,9 @@ test('calendário pertence a conta ou fila e materializa todas as variações ap
   assert.match(migration, /calendario_atendimento_alvo_check/);
   assert.match(migration, /VINTE_QUATRO_SETE/);
   assert.match(migration, /PERIODO_CALENDARIO_SOBREPOSTO/);
+  assert.match(correcaoIntervalos, /IF TG_TABLE_NAME = 'periodo_semanal_calendario' THEN/);
+  assert.match(correcaoIntervalos, /ELSIF TG_TABLE_NAME = 'periodo_excecao_calendario' THEN/);
+  assert.doesNotMatch(correcaoIntervalos, /TG_TABLE_NAME = 'periodo_semanal_calendario' AND EXISTS/);
 });
 
 test('override é autorizado, auditado e imutável', async () => {
