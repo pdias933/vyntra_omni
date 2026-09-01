@@ -171,6 +171,13 @@ enum OrigemEncerramentoAtendimento {
   @@map("origem_encerramento_atendimento")
 }
 
+enum EstadoProtocoloErp {
+  PENDENTE
+  OFICIAL
+
+  @@map("estado_protocolo_erp")
+}
+
 enum EstadoAcessoFila {
   ATIVO
   REVOGADO
@@ -784,12 +791,27 @@ model Atendimento {
   usuarioResponsavel              Usuario?                        @relation("UsuarioResponsavelAtendimento", fields: [usuarioResponsavelId], references: [id], onDelete: Restrict)
   filaFallbackReabertura          Fila?                           @relation("FilaFallbackReaberturaAtendimento", fields: [filaFallbackReaberturaId], references: [id], onDelete: Restrict)
   contexto                        ContextoAtendimento?
+  protocoloErp                    ProtocoloErp?
 
   @@index([conversaId, iniciadoEm, id], map: "atendimento_conversa_inicio_idx")
   @@index([contaWhatsAppOrigemId, estado, iniciadoEm], map: "atendimento_origem_estado_idx")
   @@index([filaAtualId, estado, atualizadoEm], map: "atendimento_fila_estado_idx")
   @@index([usuarioResponsavelId, estado, atualizadoEm], map: "atendimento_responsavel_estado_idx")
   @@map("atendimento")
+}
+
+model ProtocoloErp {
+  atendimentoId     String             @id @map("atendimento_id") @db.Uuid
+  estado            EstadoProtocoloErp @default(PENDENTE)
+  protocoloOficial  String?            @unique(map: "protocolo_erp_oficial_key") @map("protocolo_oficial") @db.VarChar(256)
+  confirmadoEm      DateTime?          @map("confirmado_em") @db.Timestamptz(6)
+  versao            Int                @default(1)
+  criadoEm          DateTime           @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm      DateTime           @map("atualizado_em") @db.Timestamptz(6)
+  atendimento       Atendimento        @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+
+  @@index([estado, criadoEm, atendimentoId], map: "protocolo_erp_estado_criado_idx")
+  @@map("protocolo_erp")
 }
 
 model IdentidadeWhatsApp {

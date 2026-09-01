@@ -10,6 +10,7 @@ import { ModuloConversas } from './conversas/modulo-conversas.js';
 import { ModuloEventos } from './eventos/modulo-eventos.js';
 import { ModuloIdempotencia } from './idempotencia/modulo-idempotencia.js';
 import { ModuloPersistencia } from './persistencia/modulo-persistencia.js';
+import { ModuloProtocolosErp } from './protocolos-erp/modulo-protocolos-erp.js';
 import { ControladorInformacoesApi } from './sistema/controlador-informacoes-api.js';
 import { ControladorRotasDesconhecidas } from './sistema/controlador-rotas-desconhecidas.js';
 import { ServicoInformacoesApi } from './sistema/servico-informacoes-api.js';
@@ -35,6 +36,7 @@ import { ModuloSnapshotsCliente } from './snapshots-cliente/modulo-snapshots-cli
     ModuloEventos,
     ModuloIdempotencia,
     ModuloPersistencia,
+    ModuloProtocolosErp,
     ModuloReleases,
     ModuloSnapshotsCliente,
   ],
