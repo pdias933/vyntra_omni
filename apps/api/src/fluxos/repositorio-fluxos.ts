@@ -1,6 +1,7 @@
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type {
   FluxoPersistido,
+  HistoricoPublicacaoFluxoPersistido,
   VersaoFluxoPersistida,
 } from './modelo-fluxo.js';
 
@@ -36,4 +37,35 @@ export interface RepositorioFluxos {
     fluxoId: string,
     transacao: TransacaoPrisma,
   ): Promise<VersaoFluxoPersistida | undefined>;
+  publicarVersao(
+    versaoFluxoId: string,
+    fluxoId: string,
+    publicadaPorUsuarioId: string,
+    publicadaEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+  arquivarVersao(
+    versaoFluxoId: string,
+    fluxoId: string,
+    atualizadoEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+  reativarVersaoArquivada(
+    versaoFluxoId: string,
+    fluxoId: string,
+    atualizadoEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+  alterarPonteiroPublicado(
+    fluxoId: string,
+    revisaoEsperada: number,
+    versaoAnteriorId: string | undefined,
+    versaoNovaId: string | undefined,
+    atualizadoEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+  registrarHistoricoPublicacao(
+    historico: HistoricoPublicacaoFluxoPersistido,
+    transacao: TransacaoPrisma,
+  ): Promise<void>;
 }

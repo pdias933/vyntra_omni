@@ -518,6 +518,8 @@ A conversa única da PR 027 não amplia visibilidade. Ela consolida identidade d
 
 O catálogo da PR 069 exige `EDITAR_FLUXO` no backend antes de qualquer escrita. Definições aceitam somente JSON finito, em objeto, com profundidade controlada e até 256 KiB; nenhuma definição pode transportar função ou tipo não serializável. Essa validação estrutural não substitui o validador semântico da PR 071: até ele existir, o catálogo não oferece publicação. Auditoria guarda IDs, tipo, número, revisão e versão de schema, nunca a definição integral. PostgreSQL impede exclusão de qualquer versão, alteração do conteúdo publicado/arquivado, publicação simultânea de duas versões e ponteiro para versão de outro fluxo ou em estado incorreto. Execução futura deve persistir o ID selecionado e não confiar no ponteiro mutável depois de iniciar.
 
+A PR 070 separa editar, publicar e reverter no RBAC. Lock e revisão esperada impedem corrida de dois administradores; checks condicionais e a constraint diferida tornam estados e ponteiro indivisíveis no commit. Apenas `EM_TESTE` pode ser publicada e apenas `ARQUIVADA` pode ser reativada. A reversão não altera conteúdo, autoria ou instante original. Cada transição acrescenta histórico imutável e auditoria sanitizada, sem copiar a definição. O serviço não possui controller; publicação externa continua bloqueada até o validador integral da PR 071.
+
 ## 15. Regras de código seguro
 
 - Não adicionar dependência sem necessidade, análise e justificativa.

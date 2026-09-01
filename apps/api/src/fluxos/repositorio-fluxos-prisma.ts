@@ -5,6 +5,7 @@ import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type {
   DefinicaoFluxo,
   FluxoPersistido,
+  HistoricoPublicacaoFluxoPersistido,
   VersaoFluxoPersistida,
 } from './modelo-fluxo.js';
 import type { RepositorioFluxos } from './repositorio-fluxos.js';
@@ -161,6 +162,108 @@ export class RepositorioFluxosPrisma implements RepositorioFluxos {
       },
     });
     return versao === null ? undefined : this.mapearVersao(versao);
+  }
+
+  public async publicarVersao(
+    versaoFluxoId: string,
+    fluxoId: string,
+    publicadaPorUsuarioId: string,
+    publicadaEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const resultado = await transacao.versaoFluxo.updateMany({
+      data: {
+        atualizadaEm: publicadaEm,
+        estado: 'PUBLICADA',
+        publicadaEm,
+        publicadaPorUsuarioId,
+        revisao: { increment: 1 },
+      },
+      where: {
+        estado: { in: ['RASCUNHO', 'EM_TESTE'] },
+        fluxoId,
+        id: versaoFluxoId,
+        publicadaEm: null,
+        publicadaPorUsuarioId: null,
+      },
+    });
+    return resultado.count === 1;
+  }
+
+  public async arquivarVersao(
+    versaoFluxoId: string,
+    fluxoId: string,
+    atualizadoEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const resultado = await transacao.versaoFluxo.updateMany({
+      data: {
+        atualizadaEm: atualizadoEm,
+        estado: 'ARQUIVADA',
+        revisao: { increment: 1 },
+      },
+      where: { estado: 'PUBLICADA', fluxoId, id: versaoFluxoId },
+    });
+    return resultado.count === 1;
+  }
+
+  public async reativarVersaoArquivada(
+    versaoFluxoId: string,
+    fluxoId: string,
+    atualizadoEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const resultado = await transacao.versaoFluxo.updateMany({
+      data: {
+        atualizadaEm: atualizadoEm,
+        estado: 'PUBLICADA',
+        revisao: { increment: 1 },
+      },
+      where: { estado: 'ARQUIVADA', fluxoId, id: versaoFluxoId },
+    });
+    return resultado.count === 1;
+  }
+
+  public async alterarPonteiroPublicado(
+    fluxoId: string,
+    revisaoEsperada: number,
+    versaoAnteriorId: string | undefined,
+    versaoNovaId: string | undefined,
+    atualizadoEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const resultado = await transacao.fluxo.updateMany({
+      data: {
+        atualizadoEm,
+        revisao: { increment: 1 },
+        versaoPublicadaId: versaoNovaId ?? null,
+      },
+      where: {
+        ativo: true,
+        id: fluxoId,
+        revisao: revisaoEsperada,
+        versaoPublicadaId: versaoAnteriorId ?? null,
+      },
+    });
+    return resultado.count === 1;
+  }
+
+  public async registrarHistoricoPublicacao(
+    historico: HistoricoPublicacaoFluxoPersistido,
+    transacao: TransacaoPrisma,
+  ): Promise<void> {
+    await transacao.historicoPublicacaoFluxo.create({
+      data: {
+        executadoEm: historico.executadoEm,
+        executadoPorUsuarioId: historico.executadoPorUsuarioId,
+        fluxoId: historico.fluxoId,
+        id: historico.id,
+        revisaoFluxoResultante: historico.revisaoFluxoResultante,
+        tipo: historico.tipo,
+        versaoAnteriorId: historico.versaoAnteriorId ?? null,
+        versaoNovaId: historico.versaoNovaId ?? null,
+      },
+    });
   }
 
   private mapearVersao(versao: {

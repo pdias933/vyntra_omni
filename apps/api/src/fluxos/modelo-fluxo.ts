@@ -19,6 +19,10 @@ export const ESTADOS_VERSAO_FLUXO = [
 export type TipoFluxo = (typeof TIPOS_FLUXO)[number];
 export type EstadoVersaoFluxo = (typeof ESTADOS_VERSAO_FLUXO)[number];
 export type DefinicaoFluxo = ObjetoJsonProtegido;
+export type TipoMudancaPublicacaoFluxo =
+  | 'ARQUIVAMENTO'
+  | 'PUBLICACAO'
+  | 'REVERSAO';
 
 export interface FluxoPersistido {
   readonly id: string;
@@ -73,4 +77,40 @@ export interface EntradaAlteracaoVersaoFluxo {
   readonly revisaoEsperada: unknown;
   readonly definicao: unknown;
   readonly versaoSchemaDefinicao?: unknown;
+}
+
+export interface EntradaPublicacaoFluxo {
+  readonly fluxoId: unknown;
+  readonly versaoFluxoId: unknown;
+  readonly revisaoFluxoEsperada: unknown;
+}
+
+export interface EntradaArquivamentoFluxo {
+  readonly fluxoId: unknown;
+  readonly revisaoFluxoEsperada: unknown;
+}
+
+export interface EntradaReversaoFluxo {
+  readonly fluxoId: unknown;
+  readonly versaoFluxoId: unknown;
+  readonly revisaoFluxoEsperada: unknown;
+}
+
+export interface HistoricoPublicacaoFluxoPersistido {
+  readonly id: string;
+  readonly fluxoId: string;
+  readonly tipo: TipoMudancaPublicacaoFluxo;
+  readonly versaoAnteriorId?: string;
+  readonly versaoNovaId?: string;
+  readonly revisaoFluxoResultante: number;
+  readonly executadoPorUsuarioId: string;
+  readonly executadoEm: Date;
+}
+
+export interface ResultadoMudancaPublicacaoFluxo {
+  readonly fluxoId: string;
+  readonly tipo: TipoMudancaPublicacaoFluxo;
+  readonly versaoAnteriorId?: string;
+  readonly versaoPublicadaId?: string;
+  readonly revisaoFluxo: number;
 }

@@ -422,3 +422,7 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - Nova execução fixa o `versao_fluxo_id` apontado no início e nunca relê o ponteiro para migrar em curso.
 - Não acrescente controller, publicação, executor, worker ou nó antes do PR correspondente.
 - Definição não aceita código, função, SQL, shell, URL arbitrária ou segredo; publicação futura exige validação semântica completa.
+- Publicação aceita somente `EM_TESTE`; reversão aceita somente `ARQUIVADA`. Não contorne esses estados para acelerar testes ou UI.
+- Troque estado atual, alvo, ponteiro, revisão, histórico e auditoria na mesma transação sob lock do fluxo.
+- `PUBLICAR_FLUXO` não concede `REVERTER_FLUXO`; editar não concede nenhuma das duas.
+- Não registre controller de publicação antes do validador completo da PR 071.

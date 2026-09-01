@@ -625,6 +625,8 @@ Na PR 027, `conversas` resolve exclusivamente por `contato_id` sob lock transaci
 
 Na PR 069, `fluxos` introduz o catálogo interno do Motor de Fluxos. `ServicoCatalogoFluxos` autoriza com `EDITAR_FLUXO`, normaliza e limita a definição e mantém criação, versionamento, lock e auditoria na transação fornecida. O repositório Prisma usa PostgreSQL como autoridade para unicidade, revisão e ponteiro composto. Uma constraint diferida valida o ponteiro ao final do commit; índice parcial impede duas versões `PUBLICADA`; trigger protege definição e atribuição histórica depois da publicação. O módulo exporta somente o serviço interno e não antecipa controller, editor, executor, worker ou integração externa.
 
+Na PR 070, `ServicoPublicacaoFluxos` concentra as transições de ponteiro sob `PUBLICAR_FLUXO` ou `REVERTER_FLUXO`. A transação externa serializa o fluxo, compara revisão e estado, arquiva a versão atual, promove ou reativa o alvo, troca o ponteiro e acrescenta histórico e auditoria. `HistoricoPublicacaoFluxo` é append-only e sua revisão resultante é única por fluxo. O serviço permanece interno e sem controller; o validador da PR 071 é o portão que produzirá `EM_TESTE` antes de qualquer exposição administrativa.
+
 ## 14. Observabilidade
 
 Quatro sinais distintos:

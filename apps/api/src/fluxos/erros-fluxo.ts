@@ -46,3 +46,17 @@ export class ErroVersaoPublicadaIndisponivel extends Error {
     this.name = 'ErroVersaoPublicadaIndisponivel';
   }
 }
+
+export class ErroVersaoFluxoNaoPublicavel extends Error {
+  public constructor() {
+    super('VERSAO_FLUXO_NAO_PUBLICAVEL');
+    this.name = 'ErroVersaoFluxoNaoPublicavel';
+  }
+}
+
+export class ErroTransicaoPublicacaoFluxoInvalida extends Error {
+  public constructor() {
+    super('TRANSICAO_PUBLICACAO_FLUXO_INVALIDA');
+    this.name = 'ErroTransicaoPublicacaoFluxoInvalida';
+  }
+}

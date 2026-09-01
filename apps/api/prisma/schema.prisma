@@ -96,6 +96,14 @@ enum EstadoVersaoFluxo {
   @@map("estado_versao_fluxo")
 }
 
+enum TipoMudancaPublicacaoFluxo {
+  PUBLICACAO
+  ARQUIVAMENTO
+  REVERSAO
+
+  @@map("tipo_mudanca_publicacao_fluxo")
+}
+
 enum EstadoDisponibilidadeUsuario {
   DISPONIVEL
   INDISPONIVEL
@@ -666,6 +674,7 @@ model Usuario {
   fluxosCriados                  Fluxo[]                           @relation("UsuarioCriacaoFluxo")
   versoesFluxoCriadas            VersaoFluxo[]                     @relation("UsuarioCriacaoVersaoFluxo")
   versoesFluxoPublicadas         VersaoFluxo[]                     @relation("UsuarioPublicacaoVersaoFluxo")
+  mudancasPublicacaoFluxo        HistoricoPublicacaoFluxo[]        @relation("UsuarioMudancaPublicacaoFluxo")
 
   @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
   @@index([perfilId], map: "usuario_perfil_idx")
@@ -673,20 +682,21 @@ model Usuario {
 }
 
 model Fluxo {
-  id                 String        @id @db.Uuid
-  nome               String        @db.VarChar(120)
-  nomeNormalizado    String        @unique(map: "fluxo_nome_normalizado_key") @map("nome_normalizado") @db.VarChar(120)
-  descricao          String?       @db.VarChar(500)
-  tipo               TipoFluxo
-  ativo              Boolean       @default(true)
-  versaoPublicadaId  String?       @map("versao_publicada_id") @db.Uuid
-  revisao            Int           @default(1)
-  criadoPorUsuarioId String        @map("criado_por_usuario_id") @db.Uuid
-  criadoEm           DateTime      @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm       DateTime      @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  criadoPor          Usuario       @relation("UsuarioCriacaoFluxo", fields: [criadoPorUsuarioId], references: [id], onDelete: Restrict)
-  versoes            VersaoFluxo[] @relation("FluxoVersoes")
-  versaoPublicada    VersaoFluxo?  @relation("FluxoVersaoPublicada", fields: [versaoPublicadaId, id], references: [id, fluxoId], onDelete: Restrict)
+  id                  String                     @id @db.Uuid
+  nome                String                     @db.VarChar(120)
+  nomeNormalizado     String                     @unique(map: "fluxo_nome_normalizado_key") @map("nome_normalizado") @db.VarChar(120)
+  descricao           String?                    @db.VarChar(500)
+  tipo                TipoFluxo
+  ativo               Boolean                    @default(true)
+  versaoPublicadaId   String?                    @map("versao_publicada_id") @db.Uuid
+  revisao             Int                        @default(1)
+  criadoPorUsuarioId  String                     @map("criado_por_usuario_id") @db.Uuid
+  criadoEm            DateTime                   @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm        DateTime                   @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  criadoPor           Usuario                    @relation("UsuarioCriacaoFluxo", fields: [criadoPorUsuarioId], references: [id], onDelete: Restrict)
+  versoes             VersaoFluxo[]              @relation("FluxoVersoes")
+  versaoPublicada     VersaoFluxo?               @relation("FluxoVersaoPublicada", fields: [versaoPublicadaId, id], references: [id, fluxoId], onDelete: Restrict)
+  historicoPublicacao HistoricoPublicacaoFluxo[]
 
   @@unique([versaoPublicadaId, id], map: "fluxo_versao_publicada_id_id_key")
   @@index([ativo, tipo, nome, id], map: "fluxo_ativo_tipo_nome_idx")
@@ -695,27 +705,48 @@ model Fluxo {
 }
 
 model VersaoFluxo {
-  id                       String            @id @db.Uuid
-  fluxoId                  String            @map("fluxo_id") @db.Uuid
-  numeroVersao             Int               @map("numero_versao")
-  estado                   EstadoVersaoFluxo @default(RASCUNHO)
-  versaoSchemaDefinicao    Int               @default(1) @map("versao_schema_definicao")
+  id                       String                     @id @db.Uuid
+  fluxoId                  String                     @map("fluxo_id") @db.Uuid
+  numeroVersao             Int                        @map("numero_versao")
+  estado                   EstadoVersaoFluxo          @default(RASCUNHO)
+  versaoSchemaDefinicao    Int                        @default(1) @map("versao_schema_definicao")
   definicao                Json
-  revisao                  Int               @default(1)
-  criadaPorUsuarioId       String            @map("criada_por_usuario_id") @db.Uuid
-  criadaEm                 DateTime          @default(now()) @map("criada_em") @db.Timestamptz(6)
-  atualizadaEm             DateTime          @default(now()) @updatedAt @map("atualizada_em") @db.Timestamptz(6)
-  publicadaPorUsuarioId    String?           @map("publicada_por_usuario_id") @db.Uuid
-  publicadaEm              DateTime?         @map("publicada_em") @db.Timestamptz(6)
-  fluxo                    Fluxo             @relation("FluxoVersoes", fields: [fluxoId], references: [id], onDelete: Restrict)
-  fluxoComoVersaoPublicada Fluxo?            @relation("FluxoVersaoPublicada")
-  criadaPor                Usuario           @relation("UsuarioCriacaoVersaoFluxo", fields: [criadaPorUsuarioId], references: [id], onDelete: Restrict)
-  publicadaPor             Usuario?          @relation("UsuarioPublicacaoVersaoFluxo", fields: [publicadaPorUsuarioId], references: [id], onDelete: Restrict)
+  revisao                  Int                        @default(1)
+  criadaPorUsuarioId       String                     @map("criada_por_usuario_id") @db.Uuid
+  criadaEm                 DateTime                   @default(now()) @map("criada_em") @db.Timestamptz(6)
+  atualizadaEm             DateTime                   @default(now()) @updatedAt @map("atualizada_em") @db.Timestamptz(6)
+  publicadaPorUsuarioId    String?                    @map("publicada_por_usuario_id") @db.Uuid
+  publicadaEm              DateTime?                  @map("publicada_em") @db.Timestamptz(6)
+  fluxo                    Fluxo                      @relation("FluxoVersoes", fields: [fluxoId], references: [id], onDelete: Restrict)
+  fluxoComoVersaoPublicada Fluxo?                     @relation("FluxoVersaoPublicada")
+  criadaPor                Usuario                    @relation("UsuarioCriacaoVersaoFluxo", fields: [criadaPorUsuarioId], references: [id], onDelete: Restrict)
+  publicadaPor             Usuario?                   @relation("UsuarioPublicacaoVersaoFluxo", fields: [publicadaPorUsuarioId], references: [id], onDelete: Restrict)
+  historicoComoAnterior    HistoricoPublicacaoFluxo[] @relation("VersaoAnteriorHistoricoPublicacao")
+  historicoComoNova        HistoricoPublicacaoFluxo[] @relation("VersaoNovaHistoricoPublicacao")
 
   @@unique([fluxoId, numeroVersao], map: "versao_fluxo_numero_key")
   @@unique([id, fluxoId], map: "versao_fluxo_id_fluxo_key")
   @@index([fluxoId, estado, numeroVersao], map: "versao_fluxo_estado_numero_idx")
   @@map("versao_fluxo")
+}
+
+model HistoricoPublicacaoFluxo {
+  id                     String                     @id @db.Uuid
+  fluxoId                String                     @map("fluxo_id") @db.Uuid
+  tipo                   TipoMudancaPublicacaoFluxo
+  versaoAnteriorId       String?                    @map("versao_anterior_id") @db.Uuid
+  versaoNovaId           String?                    @map("versao_nova_id") @db.Uuid
+  revisaoFluxoResultante Int                        @map("revisao_fluxo_resultante")
+  executadoPorUsuarioId  String                     @map("executado_por_usuario_id") @db.Uuid
+  executadoEm            DateTime                   @default(now()) @map("executado_em") @db.Timestamptz(6)
+  fluxo                  Fluxo                      @relation(fields: [fluxoId], references: [id], onDelete: Restrict)
+  versaoAnterior         VersaoFluxo?               @relation("VersaoAnteriorHistoricoPublicacao", fields: [versaoAnteriorId], references: [id], onDelete: Restrict)
+  versaoNova             VersaoFluxo?               @relation("VersaoNovaHistoricoPublicacao", fields: [versaoNovaId], references: [id], onDelete: Restrict)
+  executadoPor           Usuario                    @relation("UsuarioMudancaPublicacaoFluxo", fields: [executadoPorUsuarioId], references: [id], onDelete: Restrict)
+
+  @@unique([fluxoId, revisaoFluxoResultante], map: "historico_publicacao_fluxo_revisao_key")
+  @@index([fluxoId, executadoEm, id], map: "historico_publicacao_fluxo_data_idx")
+  @@map("historico_publicacao_fluxo")
 }
 
 model DisponibilidadeUsuario {

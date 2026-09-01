@@ -306,3 +306,5 @@ Relatórios sofisticados não devem atrasar o núcleo operacional.
 ## 8. Comportamento de versões de fluxo
 
 Salvar uma automação não altera o que está atendendo clientes. O produto trata o fluxo como identidade estável e cada definição como versão numerada; somente uma publicação explícita futura troca o ponteiro usado por novos atendimentos. Atendimentos em curso continuam na versão com que começaram. Na PR 069 essa fundação é apenas interna: editor, simulação, publicação e execução ainda não aparecem na interface.
+
+Publicar, arquivar e reverter são decisões explícitas e separadas de salvar. A PR 070 garante a troca atômica e a trilha de quem fez cada decisão. Reverter aponta novas execuções para uma versão anterior sem alterar atendimentos em curso ou reescrever a versão escolhida. A interface administrativa continua fora deste PR e só poderá expor publicação depois do validador aprovado.

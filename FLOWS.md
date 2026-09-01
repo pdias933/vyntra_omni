@@ -468,3 +468,9 @@ Se a conta/versão do aplicativo do contato não suportar o formulário, o nó s
 O catálogo separa a identidade `Fluxo` da definição `VersaoFluxo`. Criar um fluxo também cria a versão 1 em `RASCUNHO` na mesma transação. O editor futuro altera somente rascunho e precisa apresentar `revisao` atual; uma revisão concorrente falha sem auditoria de alteração inexistente. Criar nova versão ocorre sob lock do fluxo e recebe o próximo número monotônico.
 
 O ponteiro publicado é uma referência composta para garantir que a versão pertença ao mesmo fluxo, além de exigir estado `PUBLICADA` no commit. O contrato interno `obterVersaoPublicadaParaNovaExecucao` seleciona exatamente esse registro e nunca “a mais recente”. A PR 069 não expõe controller, não executa nó, não publica versão e não registra worker ou adapter. Publicação/reversão, validação semântica e `ExecucaoFluxo` permanecem, respectivamente, nos PRs 070, 071 e 072.
+
+## 18. Publicação, arquivamento e reversão da PR 070
+
+As três operações são serializadas por lock do fluxo e exigem `revisaoFluxoEsperada`. Publicação usa `PUBLICAR_FLUXO` e somente promove `EM_TESTE`; arquivamento usa a mesma capacidade e remove explicitamente o ponteiro; reversão usa `REVERTER_FLUXO` e somente reativa uma versão `ARQUIVADA`. Em publicação ou reversão, a versão atual é arquivada antes da promoção e a constraint diferida valida o estado final do commit.
+
+Ponteiro, estados, revisão, `HistoricoPublicacaoFluxo` e `RegistroAuditoria` pertencem à mesma transação fornecida. Uma falha em qualquer escrita reverte o conjunto. Reversão conserva `publicada_por` e `publicada_em` originais; o ator da reversão aparece no histórico novo. O módulo continua sem controller. Até a PR 071 concluir a validação semântica e promover um rascunho válido a `EM_TESTE`, não existe caminho público para publicar.
