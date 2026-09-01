@@ -57,7 +57,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 033 | CONCLUÍDA | `xhigh` |
 | 034 | CONCLUÍDA | `high` |
 | 035 | CONCLUÍDA | `xhigh` |
-| 036 | EM ANDAMENTO | `xhigh` |
+| 036 | CONCLUÍDA | `xhigh` |
 | 037 | PENDENTE | `high` |
 | 038 | PENDENTE | `xhigh` |
 | 039 | PENDENTE | `xhigh` |
@@ -329,6 +329,10 @@ Aceite concluído em 1º de setembro de 2026: `TRANSFERIR_FILA` passou a ser com
 ### PR 035 — transferência direta
 
 Aceite concluído em 1º de setembro de 2026: a transferência direta passou a exigir fila destino explícita, `TRANSFERIR_ATENDIMENTO` nas filas de origem/destino e validação RBAC central de `RECEBER_TRANSFERENCIA` para o destinatário. O alvo deve estar `DISPONIVEL`; essa condição é lida antes do comando e repetida dentro do `UPDATE` atômico para cobrir mudança concorrente. O resultado é atribuição imediata `EM_ATENDIMENTO/HUMANO`, sem aceite intermediário, com versão incrementada, histórico `TRANSFERENCIA_USUARIO`, evento apto à notificação e auditoria na mesma transação. Lint, tipos, 162 testes da API, 132 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-035` ficou saudável com prontidão `PRONTO`. Em staging, a atribuição foi imediata com versão 9, mudança do alvo para indisponível fez a segunda escrita afetar zero registros, não existe coluna de aceite, o histórico ficou único, houve rollback sintético e nenhum erro de nível 50.
+
+### PR 036 — assunção de supervisor
+
+Aceite concluído em 1º de setembro de 2026: `ASSUMIR_SUPERVISOR` passou a trocar atomicamente o responsável de um atendimento aberto, comparando fila, responsável anterior e versão. Somente `SUPERVISOR` ou `ADMINISTRADOR` com `ASSUMIR_ATENDIMENTO` pode executar; supervisão exige vínculo ativo à fila e administração mantém o bypass de escopo aprovado. O novo responsável fica em `EM_ATENDIMENTO/HUMANO` e a versão aumenta. A verificação de autoridade exige atendimento, responsável e versão correntes, portanto o operador anterior perde poder de envio imediatamente. Histórico `ASSUNCAO_SUPERVISOR`, evento canônico e auditoria compartilham a transação. Lint, tipos, 166 testes da API, 134 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-036` ficou saudável com prontidão `PRONTO`. Em staging, a autoridade anterior caiu de um registro para zero, o supervisor ganhou exatamente uma autoridade na versão 15 e restou um histórico aberto, com rollback sintético e nenhum erro de nível 50.
 
 ## 7. Mensageria Meta
 
