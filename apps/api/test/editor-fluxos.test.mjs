@@ -89,6 +89,7 @@ function criarCenario(sobrescritas = {}) {
     novasVersoes: [],
     preparacoes: [],
     publicacoes: [],
+    reversoes: [],
     salvamentos: [],
   };
   const fluxoAtual = sobrescritas.fluxo ?? fluxo();
@@ -154,7 +155,15 @@ function criarCenario(sobrescritas = {}) {
         versaoPublicadaId: ids.versao,
       };
     },
-    reverter: async () => undefined,
+    reverter: async (...argumentos) => {
+      chamadas.reversoes.push(argumentos);
+      return {
+        fluxoId: ids.fluxo,
+        revisaoFluxo: 2,
+        tipo: 'REVERSAO',
+        versaoPublicadaId: ids.versao,
+      };
+    },
   };
   return {
     chamadas,
@@ -295,5 +304,21 @@ test('simular exige TESTAR_FLUXO e não chama catálogo, validação ou publica�
   );
   assert.equal(cenario.chamadas.salvamentos.length, 0);
   assert.equal(cenario.chamadas.preparacoes.length, 0);
+  assert.equal(cenario.chamadas.publicacoes.length, 0);
+});
+
+test('reversão administrativa permanece comando explícito do serviço de publicação', async () => {
+  const cenario = criarCenario();
+  const resultado = await cenario.servico.reverter(
+    sessao,
+    {
+      fluxoId: ids.fluxo,
+      revisaoFluxoEsperada: 1,
+      versaoFluxoId: ids.versao,
+    },
+    cenario.transacao,
+  );
+  assert.equal(resultado.tipo, 'REVERSAO');
+  assert.equal(cenario.chamadas.reversoes.length, 1);
   assert.equal(cenario.chamadas.publicacoes.length, 0);
 });

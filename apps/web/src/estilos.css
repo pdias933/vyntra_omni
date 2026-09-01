@@ -507,6 +507,16 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
 .editor-fluxo {
   display: grid;
   grid-template-rows: 76px auto minmax(0, 1fr);
@@ -567,13 +577,30 @@ textarea:focus-visible {
   gap: 10px;
 }
 
-.identidade-fluxo h1 {
+.identidade-fluxo h1,
+.seletor-fluxo select {
   overflow: hidden;
   margin: 0;
   font-size: 16px;
   letter-spacing: -0.02em;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.seletor-fluxo select {
+  max-width: min(34vw, 460px);
+  padding: 5px 28px 5px 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--texto);
+  background: transparent;
+  cursor: pointer;
+  font-weight: 760;
+}
+
+.seletor-fluxo select:hover:not(:disabled) {
+  border-color: #dce4df;
+  background: #f7f9f8;
 }
 
 .identidade-fluxo p {
@@ -682,6 +709,18 @@ textarea:focus-visible {
   transform: translateY(1px);
 }
 
+.botao--versoes > span {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 5px;
+  place-items: center;
+  border-radius: 999px;
+  color: #647068;
+  background: #edf1ee;
+  font-size: 10px;
+}
+
 .faixa-editor {
   z-index: 8;
   display: flex;
@@ -703,6 +742,161 @@ textarea:focus-visible {
   color: white;
   background: #ce6947;
   font-weight: 800;
+}
+
+.historico-versoes {
+  position: fixed;
+  z-index: 40;
+  top: 88px;
+  right: 18px;
+  display: grid;
+  width: min(370px, calc(100vw - 36px));
+  max-height: calc(100vh - 106px);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid rgba(213, 222, 216, 0.9);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 24px 70px rgba(17, 35, 24, 0.2);
+  backdrop-filter: blur(18px);
+  animation: elevar 160ms ease-out;
+}
+
+.historico-versoes > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 20px 15px;
+  border-bottom: 1px solid #edf1ee;
+}
+
+.historico-versoes > header span {
+  color: #19884b;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.historico-versoes > header h2 {
+  margin: 4px 0 0;
+  font-size: 17px;
+  letter-spacing: -.025em;
+}
+
+.historico-versoes > header button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 9px;
+  color: #5e6b63;
+  background: #f2f5f3;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.historico-versoes__aviso {
+  margin: 12px 14px 0;
+  padding: 9px 11px;
+  border-radius: 9px;
+  color: #765910;
+  background: #fff7dc;
+  font-size: 11px;
+}
+
+.historico-versoes__lista {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  padding: 13px;
+  overflow: auto;
+}
+
+.item-versao {
+  overflow: hidden;
+  border: 1px solid #e3e9e5;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.item-versao--atual {
+  border-color: #aad9bd;
+  box-shadow: 0 0 0 3px rgba(24, 151, 80, .07);
+}
+
+.item-versao > button:first-child {
+  display: grid;
+  width: 100%;
+  min-height: 66px;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 11px;
+  padding: 11px;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.item-versao > button:first-child:disabled {
+  cursor: default;
+}
+
+.item-versao__numero {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 11px;
+  color: #167f46;
+  background: #edf8f1;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.item-versao strong,
+.item-versao small {
+  display: block;
+}
+
+.item-versao strong {
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.item-versao small {
+  margin-top: 3px;
+  color: #7e8982;
+  font-size: 10px;
+}
+
+.item-versao b {
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: #167d46;
+  background: #eaf7ef;
+  font-size: 9px;
+}
+
+.item-versao__reverter {
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-top: 1px solid #edf1ee;
+  color: #5b4c99;
+  background: #faf9ff;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.historico-versoes > footer {
+  padding: 11px 18px;
+  border-top: 1px solid #edf1ee;
+  color: #76827a;
+  background: #f8faf9;
+  font-size: 10px;
 }
 
 .editor-fluxo__corpo {
@@ -1340,6 +1534,11 @@ textarea:focus-visible {
   background: linear-gradient(145deg, #1aa158, #0c783e);
   box-shadow: 0 9px 20px rgba(17, 136, 71, 0.2);
   font-size: 22px;
+}
+
+.modal-publicacao__icone--reversao {
+  background: linear-gradient(145deg, #7658d8, #5840b4);
+  box-shadow: 0 9px 20px rgba(94, 68, 184, 0.2);
 }
 
 .modal-publicacao h2 {

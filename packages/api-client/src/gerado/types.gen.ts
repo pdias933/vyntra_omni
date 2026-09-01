@@ -1655,6 +1655,25 @@ export type PublicarVersaoFluxoEditorResponses = {
 
 export type PublicarVersaoFluxoEditorResponse = PublicarVersaoFluxoEditorResponses[keyof PublicarVersaoFluxoEditorResponses];
 
+export type ReverterVersaoFluxoEditorData = {
+    body: EntradaRevisaoFluxoDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        fluxoId: string;
+        versaoFluxoId: string;
+    };
+    query?: never;
+    url: '/api/v1/administracao/fluxos/{fluxoId}/versoes/{versaoFluxoId}/reverter';
+};
+
+export type ReverterVersaoFluxoEditorResponses = {
+    200: ResultadoPublicacaoFluxoDto;
+};
+
+export type ReverterVersaoFluxoEditorResponse = ReverterVersaoFluxoEditorResponses[keyof ReverterVersaoFluxoEditorResponses];
+
 export type AvaliarVersaoMobileData = {
     body: EntradaAvaliacaoVersaoMobileDto;
     path?: never;

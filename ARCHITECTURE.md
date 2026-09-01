@@ -766,3 +766,9 @@ A PR 093 projeta usuários, perfis, ajustes de permissão, filas, quantidades de
 A PR 094 resolve separadamente `ADMINISTRAR_INTEGRACOES`, `ADMINISTRAR_FILAS` e `ADMINISTRAR_CALENDARIOS` antes de consultar cada projeção. Contas de canal não expõem identificadores externos; filas agregam somente contagens operacionais, calendário e limites SLA. O estado de integração vem da presença do provider no runtime, nunca de variável declarada pelo cliente: adapter ausente aparece como `NAO_CONFIGURADA`.
 
 Criação/inativação de fila e override temporário de calendário reutilizam `ServicoFilas` e `ServicoCalendarios`, preservando RBAC, locks, invalidação e auditoria existentes. Política SLA é somente projetada nesta etapa; não existe editor que grave limites sem um serviço de domínio correspondente.
+
+### 13.19 Administração do Motor de Fluxos
+
+A PR 095 completa a superfície administrativa iniciada no editor visual: o catálogo permite alternar entre fluxos, o histórico imutável permite inspecionar qualquer versão e somente rascunhos aceitam edição. Simulação continua puramente fictícia; validar e publicar são comandos distintos. Publicação exige confirmação visual e afeta apenas novas execuções.
+
+Reversão não copia nem reescreve a versão arquivada. O endpoint autenticado encaminha a versão alvo e a revisão esperada ao `ServicoPublicacaoFluxos`, que autoriza `REVERTER_FLUXO`, bloqueia o fluxo, compara a revisão, arquiva a versão atual, reativa a anterior e acrescenta histórico e auditoria na mesma transação. Execuções existentes permanecem presas à versão com que nasceram.

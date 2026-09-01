@@ -5,6 +5,7 @@ import {
   listarFluxosEditor,
   prepararPublicacaoFluxoEditor,
   publicarVersaoFluxoEditor,
+  reverterVersaoFluxoEditor,
   salvarRascunhoFluxoEditor,
   simularFluxoEditor,
   type FluxoEditorDto,
@@ -106,6 +107,7 @@ export function AplicacaoEditorFluxos() {
   const [ocupada, definirOcupada] = useState(false);
   const [aviso, definirAviso] = useState<string>();
   const [confirmarPublicacao, definirConfirmarPublicacao] = useState(false);
+  const [confirmarReversaoId, definirConfirmarReversaoId] = useState<string>();
 
   const carregar = useCallback(
     async (preferencia?: { fluxoId?: string; versaoId?: string }) => {
@@ -142,6 +144,9 @@ export function AplicacaoEditorFluxos() {
   const definicao = tentarLerDefinicao(versao);
   const versaoPublicada = fluxo?.versoes.find(
     ({ id }) => id === fluxo.versao_publicada_id,
+  );
+  const versaoReversao = fluxo?.versoes.find(
+    ({ id }) => id === confirmarReversaoId,
   );
 
   async function executar(operacao: () => Promise<void>): Promise<void> {
@@ -206,11 +211,35 @@ export function AplicacaoEditorFluxos() {
         aviso={aviso}
         definicao={definicao}
         estadoVersao={versao.estado}
+        fluxoId={fluxo.id}
         fluxoNome={fluxo.nome}
+        fluxos={fluxos.map(({ id, nome }) => ({ id, nome }))}
         key={`${fluxo.id}:${versao.id}:${versao.revisao}`}
         numeroVersao={versao.numero_versao}
         ocupada={ocupada}
+        versaoId={versao.id}
         versaoPublicadaNumero={versaoPublicada?.numero_versao}
+        versoes={fluxo.versoes.map((item) => ({
+          atualizadaEm: item.atualizada_em,
+          estado: item.estado,
+          id: item.id,
+          numeroVersao: item.numero_versao,
+        }))}
+        aoSelecionarFluxo={(proximoFluxoId) => {
+          const proximoFluxo = fluxos.find(({ id }) => id === proximoFluxoId);
+          definirFluxoId(proximoFluxo?.id);
+          definirVersaoId(
+            proximoFluxo === undefined
+              ? undefined
+              : escolherVersao(proximoFluxo)?.id,
+          );
+          definirAviso(undefined);
+        }}
+        aoSelecionarVersao={(proximaVersaoId) => {
+          definirVersaoId(proximaVersaoId);
+          definirAviso(undefined);
+        }}
+        aoSolicitarReversao={definirConfirmarReversaoId}
         aoCriarRascunho={(novaDefinicao) =>
           executar(async () => {
             const resposta = await criarVersaoFluxoEditor({
@@ -336,6 +365,75 @@ export function AplicacaoEditorFluxos() {
                 type="button"
               >
                 Confirmar publicação
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+      {versaoReversao !== undefined && (
+        <div className="modal-publicacao" role="presentation">
+          <section
+            aria-labelledby="titulo-reversao"
+            aria-modal="true"
+            role="dialog"
+          >
+            <span className="modal-publicacao__icone modal-publicacao__icone--reversao" aria-hidden="true">
+              ↶
+            </span>
+            <h2 id="titulo-reversao">
+              Restaurar versão {versaoReversao.numero_versao}?
+            </h2>
+            <p>
+              A versão arquivada voltará a atender somente novas execuções.
+              O histórico e as execuções em andamento permanecem intactos.
+            </p>
+            <div className="modal-publicacao__comparacao">
+              <span>
+                Produção atual
+                <strong>
+                  {versaoPublicada === undefined
+                    ? 'Sem versão'
+                    : `Versão ${versaoPublicada.numero_versao}`}
+                </strong>
+              </span>
+              <b aria-hidden="true">→</b>
+              <span>
+                Após restaurar
+                <strong>Versão {versaoReversao.numero_versao}</strong>
+              </span>
+            </div>
+            <div className="modal-publicacao__acoes">
+              <button
+                className="botao botao--secundario"
+                onClick={() => definirConfirmarReversaoId(undefined)}
+                type="button"
+              >
+                Cancelar
+              </button>
+              <button
+                className="botao botao--primario"
+                disabled={ocupada}
+                onClick={() => {
+                  definirConfirmarReversaoId(undefined);
+                  void executar(async () => {
+                    await reverterVersaoFluxoEditor({
+                      body: { revisao_fluxo_esperada: fluxo.revisao },
+                      headers: { 'x-csrf-token': obterCsrf() },
+                      path: {
+                        fluxoId: fluxo.id,
+                        versaoFluxoId: versaoReversao.id,
+                      },
+                      throwOnError: true,
+                    });
+                    await carregar({
+                      fluxoId: fluxo.id,
+                      versaoId: versaoReversao.id,
+                    });
+                  });
+                }}
+                type="button"
+              >
+                Confirmar restauração
               </button>
             </div>
           </section>

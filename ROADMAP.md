@@ -116,7 +116,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 092 | CONCLUÍDA | `xhigh` |
 | 093 | CONCLUÍDA | `xhigh` |
 | 094 | CONCLUÍDA | `high` |
-| 095 | PENDENTE | `xhigh` |
+| 095 | CONCLUÍDA | `xhigh` |
 | 096 | PENDENTE | `xhigh` |
 | 097 | PENDENTE | `xhigh` |
 | 098 | PENDENTE | `high` |
@@ -630,6 +630,10 @@ Aceite concluído em 1º de setembro de 2026: a área `Usuários e acessos` list
 ### PR 094 — administração operacional
 
 Aceite concluído em 1º de setembro de 2026: `Configuração operacional` recebeu inventário de contas WhatsApp, filas com calendário/SLA/contagens, calendários com override vigente e estado observado das integrações. Cada seção é projetada somente depois da sua permissão administrativa; nenhuma credencial ou identificador externo atravessa a API. Provider não registrado aparece `Não configurada`, sem saúde fictícia. Criar/inativar fila e aplicar override temporário reutilizam os serviços de domínio auditados, com sessão+origem+CSRF e confirmação antes da inativação. SLA permanece leitura enquanto não existe serviço de configuração aprovado. O web usa apenas o SDK gerado. Não houve migration. Lint, tipos, 422 testes da API e 236 testes de arquitetura foram aprovados. Effort `high` foi confirmado pela projeção por capacidade e reaproveitamento das invariantes operacionais.
+
+### PR 095 — administração do Motor de Fluxos
+
+Aceite concluído em 1º de setembro de 2026: o editor desktop permite alternar entre fluxos, consultar o histórico imutável de versões, abrir qualquer versão e restaurar uma versão arquivada com preview e confirmação explícita. Rascunho, validação, simulação fictícia, publicação e reversão permanecem comandos distintos. O endpoint de reversão exige sessão+origem+CSRF e delega ao serviço que autoriza `REVERTER_FLUXO`, bloqueia o fluxo, compara a revisão, troca a versão publicada e acrescenta histórico e auditoria na mesma transação. Execuções em curso não migram de versão. O web usa somente o SDK OpenAPI gerado, impede troca com alterações locais não salvas e respeita redução de movimento. Não houve migration. Lint, tipos, 423 testes da API e 236 testes de arquitetura foram aprovados. Effort `xhigh` foi mantido pela segurança da reversão e pelo ciclo administrativo completo.
 
 ## 12. Mobile
 

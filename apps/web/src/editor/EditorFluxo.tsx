@@ -32,11 +32,26 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 interface PropsEditorFluxo {
   readonly definicao: DefinicaoEditor;
   readonly estadoVersao: 'ARQUIVADA' | 'EM_TESTE' | 'PUBLICADA' | 'RASCUNHO';
+  readonly fluxoId: string;
   readonly fluxoNome: string;
+  readonly fluxos: readonly {
+    readonly id: string;
+    readonly nome: string;
+  }[];
   readonly numeroVersao: number;
+  readonly versaoId: string;
   readonly versaoPublicadaNumero?: number | undefined;
+  readonly versoes: readonly {
+    readonly atualizadaEm: string;
+    readonly estado: 'ARQUIVADA' | 'EM_TESTE' | 'PUBLICADA' | 'RASCUNHO';
+    readonly id: string;
+    readonly numeroVersao: number;
+  }[];
   readonly ocupada: boolean;
   readonly aviso?: string | undefined;
+  readonly aoSelecionarFluxo: (fluxoId: string) => void;
+  readonly aoSelecionarVersao: (versaoId: string) => void;
+  readonly aoSolicitarReversao: (versaoId: string) => void;
   readonly aoSalvar: (definicao: Record<string, unknown>) => Promise<void>;
   readonly aoValidar: () => Promise<void>;
   readonly aoPublicar: () => Promise<void>;
@@ -86,11 +101,18 @@ function Campo({
 export function EditorFluxo({
   definicao,
   estadoVersao,
+  fluxoId,
   fluxoNome,
+  fluxos,
   numeroVersao,
+  versaoId,
   versaoPublicadaNumero,
+  versoes,
   ocupada,
   aviso,
+  aoSelecionarFluxo,
+  aoSelecionarVersao,
+  aoSolicitarReversao,
   aoSalvar,
   aoValidar,
   aoPublicar,
@@ -106,6 +128,7 @@ export function EditorFluxo({
   const [alterado, definirAlterado] = useState(false);
   const [busca, definirBusca] = useState('');
   const [simuladorAberto, definirSimuladorAberto] = useState(false);
+  const [versoesAbertas, definirVersoesAbertas] = useState(false);
   const [simulando, definirSimulando] = useState(false);
   const [cenarioSimulacao, definirCenarioSimulacao] =
     useState<CenarioSimulacaoEditor>('CAMINHO_FELIZ');
@@ -251,7 +274,19 @@ export function EditorFluxo({
         <div className="identidade-fluxo">
           <div>
             <div className="identidade-fluxo__linha">
-              <h1>{fluxoNome}</h1>
+              <label className="seletor-fluxo">
+                <span className="sr-only">Selecionar fluxo</span>
+                <select
+                  aria-label="Selecionar fluxo"
+                  disabled={ocupada || alterado}
+                  onChange={(evento) => aoSelecionarFluxo(evento.target.value)}
+                  value={fluxoId}
+                >
+                  {fluxos.map((item) => (
+                    <option key={item.id} value={item.id}>{item.nome}</option>
+                  ))}
+                </select>
+              </label>
               <span className={`selo-estado selo-estado--${estadoVersao.toLocaleLowerCase('pt-BR')}`}>
                 {estadoVersao.replaceAll('_', ' ').toLocaleLowerCase('pt-BR')}
               </span>
@@ -265,6 +300,15 @@ export function EditorFluxo({
           </div>
         </div>
         <div className="acoes-editor">
+          <button
+            aria-expanded={versoesAbertas}
+            className="botao botao--secundario botao--versoes"
+            disabled={ocupada}
+            onClick={() => definirVersoesAbertas((aberto) => !aberto)}
+            type="button"
+          >
+            Versões <span>{versoes.length}</span>
+          </button>
           <button
             className="botao botao--teste"
             disabled={ocupada || simulando}
@@ -322,6 +366,71 @@ export function EditorFluxo({
           <span>!</span>
           {aviso}
         </div>
+      )}
+
+      {versoesAbertas && (
+        <aside aria-label="Histórico de versões" className="historico-versoes">
+          <header>
+            <div>
+              <span>Histórico imutável</span>
+              <h2>Versões de {fluxoNome}</h2>
+            </div>
+            <button
+              aria-label="Fechar histórico de versões"
+              onClick={() => definirVersoesAbertas(false)}
+              type="button"
+            >
+              ×
+            </button>
+          </header>
+          {alterado && (
+            <p className="historico-versoes__aviso">
+              Salve o rascunho antes de trocar de versão.
+            </p>
+          )}
+          <div className="historico-versoes__lista">
+            {versoes.map((item) => (
+              <section
+                className={`item-versao ${item.id === versaoId ? 'item-versao--atual' : ''}`}
+                key={item.id}
+              >
+                <button
+                  disabled={ocupada || alterado || item.id === versaoId}
+                  onClick={() => {
+                    aoSelecionarVersao(item.id);
+                    definirVersoesAbertas(false);
+                  }}
+                  type="button"
+                >
+                  <span className="item-versao__numero">v{item.numeroVersao}</span>
+                  <span>
+                    <strong>{item.estado.replaceAll('_', ' ').toLocaleLowerCase('pt-BR')}</strong>
+                    <small>
+                      {new Intl.DateTimeFormat('pt-BR', {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                      }).format(new Date(item.atualizadaEm))}
+                    </small>
+                  </span>
+                  {item.id === versaoId && <b>Aberta</b>}
+                </button>
+                {item.estado === 'ARQUIVADA' && (
+                  <button
+                    className="item-versao__reverter"
+                    disabled={ocupada || alterado}
+                    onClick={() => aoSolicitarReversao(item.id)}
+                    type="button"
+                  >
+                    Restaurar em produção
+                  </button>
+                )}
+              </section>
+            ))}
+          </div>
+          <footer>
+            Publicar ou restaurar afeta somente novas execuções.
+          </footer>
+        </aside>
       )}
 
       <section className="editor-fluxo__corpo">

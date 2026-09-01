@@ -19,9 +19,12 @@ test('editor usa SDK gerado, XYFlow e comandos explícitos separados', async () 
   assert.match(editor, /Validar versão/);
   assert.match(editor, /Publicar versão/);
   assert.match(editor, /Criar novo rascunho/);
+  assert.match(editor, /Histórico de versões/);
+  assert.match(editor, /Restaurar em produção/);
   assert.match(cliente, /salvarRascunhoFluxoEditor/);
   assert.match(cliente, /prepararPublicacaoFluxoEditor/);
   assert.match(cliente, /publicarVersaoFluxoEditor/);
+  assert.match(cliente, /reverterVersaoFluxoEditor/);
 });
 
 test('API do editor exige sessão, origem, CSRF, RBAC e revisão', async () => {
@@ -36,6 +39,7 @@ test('API do editor exige sessão, origem, CSRF, RBAC e revisão', async () => {
   assert.match(servico, /VISUALIZAR_FLUXO/);
   assert.match(servico, /EDITAR_FLUXO/);
   assert.match(servico, /PUBLICAR_FLUXO/);
+  assert.match(servico, /this\.publicacao\.reverter/);
   assert.match(servico, /validarRascunho/);
   assert.doesNotMatch(servico, /JSON\.parse|eval\(|new Function|https?:\/\//);
 });

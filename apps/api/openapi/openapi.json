@@ -2416,6 +2416,68 @@
         ]
       }
     },
+    "/api/v1/administracao/fluxos/{fluxoId}/versoes/{versaoFluxoId}/reverter": {
+      "post": {
+        "operationId": "reverterVersaoFluxoEditor",
+        "parameters": [
+          {
+            "name": "fluxoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "versaoFluxoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaRevisaoFluxoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoPublicacaoFluxoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Reativa explicitamente uma versão arquivada",
+        "tags": [
+          "motor-de-fluxos"
+        ]
+      }
+    },
     "/api/v1/configuracao/mobile/avaliar": {
       "post": {
         "operationId": "avaliarVersaoMobile",

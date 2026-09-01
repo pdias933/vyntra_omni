@@ -309,6 +309,40 @@ export class ControladorEditorFluxos {
     return new ResultadoPublicacaoFluxoDto(resultado);
   }
 
+  @Post(':fluxoId/versoes/:versaoFluxoId/reverter')
+  @ApiHeader({ name: NOME_HEADER_CSRF_WEB, required: true })
+  @ApiOperation({
+    operationId: 'reverterVersaoFluxoEditor',
+    summary: 'Reativa explicitamente uma versão arquivada',
+  })
+  @ApiBody({ type: EntradaRevisaoFluxoDto })
+  @ApiOkResponse({ type: ResultadoPublicacaoFluxoDto })
+  public async reverter(
+    @Param('fluxoId', new ParseUUIDPipe()) fluxoId: string,
+    @Param('versaoFluxoId', new ParseUUIDPipe()) versaoFluxoId: string,
+    @Body() entrada: EntradaRevisaoFluxoDto,
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_CSRF_WEB) csrfCabecalho: string | undefined,
+    @Headers('origin') origem: string | undefined,
+  ): Promise<ResultadoPublicacaoFluxoDto> {
+    this.origens.validar(origem);
+    const resultado = await this.autenticacao.executarComSessaoAtual(
+      obterTokenSessaoWeb(cookies),
+      obterTokenCsrfWeb(cookies, csrfCabecalho),
+      (sessao, _agora, transacao) =>
+        this.editor.reverter(
+          this.contexto(sessao),
+          {
+            fluxoId,
+            revisaoFluxoEsperada: entrada.revisao_fluxo_esperada,
+            versaoFluxoId,
+          },
+          transacao,
+        ),
+    );
+    return new ResultadoPublicacaoFluxoDto(resultado);
+  }
+
   private contexto(sessao: SessaoWebPersistida): ContextoSessaoAutorizacao {
     return {
       estado: 'ATIVA',
