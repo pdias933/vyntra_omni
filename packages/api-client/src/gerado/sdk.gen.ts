@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AtualizarControleRecursoData, AtualizarControleRecursoResponses, AtualizarPoliticaVersaoMobileData, AtualizarPoliticaVersaoMobileResponses, AvaliarVersaoMobileData, AvaliarVersaoMobileResponses, CancelarPareamentoQrWebData, CancelarPareamentoQrWebResponses, ConcluirPareamentoQrMobileData, ConcluirPareamentoQrMobileResponses, ConfirmarPareamentoQrWebData, ConfirmarPareamentoQrWebResponses, ConsultarPareamentoQrMobileData, ConsultarPareamentoQrMobileResponses, ConsultarPareamentoQrWebData, ConsultarPareamentoQrWebResponses, EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, GerarPareamentoQrWebData, GerarPareamentoQrWebResponses, ListarAdministracaoReleasesData, ListarAdministracaoReleasesResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarSessoesWebData, ListarSessoesWebResponses, ObterConfiguracaoMobileAtualData, ObterConfiguracaoMobileAtualResponses, ObterConfiguracaoWebAtualData, ObterConfiguracaoWebAtualResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, ResgatarPareamentoQrMobileData, ResgatarPareamentoQrMobileResponses, RessincronizarCompletaData, RessincronizarCompletaResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, SincronizarIncrementalData, SincronizarIncrementalResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
+import type { AcompanharEventosWebData, AcompanharEventosWebResponses, AtualizarControleRecursoData, AtualizarControleRecursoResponses, AtualizarPoliticaVersaoMobileData, AtualizarPoliticaVersaoMobileResponses, AvaliarVersaoMobileData, AvaliarVersaoMobileResponses, CancelarPareamentoQrWebData, CancelarPareamentoQrWebResponses, ConcluirPareamentoQrMobileData, ConcluirPareamentoQrMobileResponses, ConfirmarPareamentoQrWebData, ConfirmarPareamentoQrWebResponses, ConsultarPareamentoQrMobileData, ConsultarPareamentoQrMobileResponses, ConsultarPareamentoQrWebData, ConsultarPareamentoQrWebResponses, EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, GerarPareamentoQrWebData, GerarPareamentoQrWebResponses, ListarAdministracaoReleasesData, ListarAdministracaoReleasesResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarSessoesWebData, ListarSessoesWebResponses, ObterConfiguracaoMobileAtualData, ObterConfiguracaoMobileAtualResponses, ObterConfiguracaoWebAtualData, ObterConfiguracaoWebAtualResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, ResgatarPareamentoQrMobileData, ResgatarPareamentoQrMobileResponses, RessincronizarCompletaData, RessincronizarCompletaResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, SincronizarIncrementalData, SincronizarIncrementalResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -380,6 +380,19 @@ export const atualizarPoliticaVersaoMobile = <ThrowOnError extends boolean = fal
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Acompanha eventos web confirmados sem lacuna
+ */
+export const acompanharEventosWeb = <ThrowOnError extends boolean = false>(options?: Options<AcompanharEventosWebData, ThrowOnError>): RequestResult<AcompanharEventosWebResponses, unknown, ThrowOnError> => (options?.client ?? client).get<AcompanharEventosWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/sincronizacao/eventos',
+    ...options
 });
 
 /**

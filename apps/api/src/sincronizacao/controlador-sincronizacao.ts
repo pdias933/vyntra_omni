@@ -1,13 +1,24 @@
-import { Controller, Get, Headers, Inject, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Header,
+  Headers,
+  Inject,
+  type MessageEvent,
+  Query,
+  Sse,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCookieAuth,
   ApiHeader,
   ApiOkResponse,
   ApiOperation,
+  ApiProduces,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { Observable } from 'rxjs';
 
 import {
   NOME_HEADER_DISPOSITIVO_MOBILE,
@@ -22,6 +33,7 @@ import {
   LoteSincronizacaoDto,
   SnapshotSincronizacaoDto,
 } from './dto/sincronizacao.dto.js';
+import { CoordenadorSseSemLacuna } from './coordenador-sse-sem-lacuna.js';
 import {
   ErroCursorSincronizacaoInvalido,
   ErroRessincronizacaoCompletaNecessaria,
@@ -47,7 +59,53 @@ export class ControladorSincronizacao {
     private readonly autenticacaoMobile: ServicoAutenticacaoMobile,
     @Inject(ServicoRessincronizacaoCompleta)
     private readonly ressincronizacao: ServicoRessincronizacaoCompleta,
+    @Inject(CoordenadorSseSemLacuna)
+    private readonly coordenadorSse: CoordenadorSseSemLacuna,
   ) {}
+
+  @Sse('eventos')
+  @Header('Cache-Control', 'no-cache, no-transform')
+  @Header('X-Accel-Buffering', 'no')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiProduces('text/event-stream')
+  @ApiOperation({ operationId: 'acompanharEventosWeb', summary: 'Acompanha eventos web confirmados sem lacuna' })
+  public async acompanharEventosWeb(
+    @Headers('cookie') cookies: string | undefined,
+    @Headers('last-event-id') ultimoEvento = '0',
+  ): Promise<Observable<MessageEvent>> {
+    if (!/^(0|[1-9][0-9]{0,18})$/u.test(ultimoEvento)) {
+      throw new ExcecaoHttpCanonica(
+        400,
+        'CURSOR_SSE_INVALIDO',
+        'O último evento informado é inválido.',
+      );
+    }
+    const sessao = await this.autenticacaoWeb.autenticar(
+      obterTokenSessaoWeb(cookies),
+    );
+    return new Observable<MessageEvent>((assinante) => {
+      try {
+        return this.coordenadorSse.abrir(
+          sessao.contexto,
+          ultimoEvento,
+          {
+            enviar: (evento) =>
+              assinante.next({
+                data: evento,
+                id: evento.sequenciaEvento,
+                type: 'evento',
+              }),
+            falhar: (erro) => assinante.error(erro),
+            heartbeat: () =>
+              assinante.next({ data: { estado: 'ATIVO' }, type: 'heartbeat' }),
+          },
+        );
+      } catch (erro) {
+        assinante.error(erro);
+        return undefined;
+      }
+    });
+  }
 
   @Get('completa')
   @ApiCookieAuth('sessaoWeb')

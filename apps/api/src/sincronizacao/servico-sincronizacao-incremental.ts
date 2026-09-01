@@ -72,6 +72,18 @@ export class ServicoSincronizacaoIncremental {
     };
   }
 
+  public async obterMarcaDagua(
+    sessao: ContextoSessaoAutorizacao,
+    relogio: () => Date = () => new Date(),
+  ): Promise<string> {
+    const agora = relogio();
+    this.validarSessao(sessao, agora);
+    const limites = await this.repositorio.obterLimitesRetencao(
+      new Date(agora.getTime() - DURACAO_RETENCAO_MS),
+    );
+    return limites.maiorSequencia.toString();
+  }
+
   private lerCursor(valor: string): bigint {
     if (!/^(0|[1-9][0-9]{0,18})$/u.test(valor)) {
       throw new ErroCursorSincronizacaoInvalido();

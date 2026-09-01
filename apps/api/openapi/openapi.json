@@ -1125,6 +1125,26 @@
         ]
       }
     },
+    "/api/v1/sincronizacao/eventos": {
+      "get": {
+        "operationId": "acompanharEventosWeb",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Acompanha eventos web confirmados sem lacuna",
+        "tags": [
+          "sincronizacao"
+        ]
+      }
+    },
     "/api/v1/sincronizacao/completa": {
       "get": {
         "operationId": "ressincronizarCompleta",

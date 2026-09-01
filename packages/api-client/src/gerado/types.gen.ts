@@ -730,6 +730,17 @@ export type AtualizarPoliticaVersaoMobileResponses = {
 
 export type AtualizarPoliticaVersaoMobileResponse = AtualizarPoliticaVersaoMobileResponses[keyof AtualizarPoliticaVersaoMobileResponses];
 
+export type AcompanharEventosWebData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sincronizacao/eventos';
+};
+
+export type AcompanharEventosWebResponses = {
+    200: unknown;
+};
+
 export type RessincronizarCompletaData = {
     body?: never;
     headers?: {
