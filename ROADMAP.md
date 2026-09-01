@@ -87,7 +87,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 063 | CONCLUÍDA | `xhigh` |
 | 064 | CONCLUÍDA | `xhigh` |
 | 065 | CONCLUÍDA | `xhigh` |
-| 066 | EM ANDAMENTO | `xhigh` |
+| 066 | CONCLUÍDA | `xhigh` |
 | 067 | PENDENTE | `xhigh` |
 | 068 | CONDICIONAL | `xhigh` |
 | 069 | PENDENTE | `high` |
@@ -441,6 +441,10 @@ Aceite concluído em 1º de setembro de 2026: `SnapshotCliente` passou a persist
 ### PR 065 — execução de desbloqueio
 
 Aceite concluído em 1º de setembro de 2026: a execução de desbloqueio passou a exigir confirmação explícita, permissão própria, contexto exato e nova elegibilidade ERP em tempo real. Um advisory lock e uma reserva única por contrato fecham a corrida entre chaves distintas. Confirmação grava histórico imutável, conclui idempotência, audita e libera a reserva atomicamente; resposta perdida conserva operação e reserva até reconciliação, sem repetição cega. Campo externo inválido falha conservadoramente, snapshot é recusado e o adapter MK real permanece desligado. Lint, tipos, 276 testes da API, 178 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. O primeiro exercício PostgreSQL revelou e corrigiu o retorno `void` do advisory lock antes da aceitação. A migration `20260901004500_reserva_desbloqueio_confianca` terminou com código zero e `vyntra/api-staging:pr-065` ficou saudável com prontidão `PRONTO`. Em staging, execução e replay produziram um único efeito, histórico e auditoria; a reserva terminou vazia, outra chave foi bloqueada por `INTERVALO_30_DIAS`, dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
+
+### PR 066 — ordem de serviço
+
+Aceite concluído em 1º de setembro de 2026: criação e atualização de ordem de serviço passaram a exigir confirmação explícita, `CRIAR_ORDEM_SERVICO`, atendimento/fila autorizados e correspondência exata de cliente, contrato e protocolo oficial. A criação é única pela operação e pelo identificador externo. Atualizações usam versão otimista, advisory lock, reserva exclusiva por ordem e histórico imutável; confirmação atualiza domínio, conclui idempotência, audita e libera a reserva atomicamente. Resultado ambíguo exige reconciliação e não permite repetição cega; snapshot, controller e provider MK real permanecem fora do módulo. Lint, tipos, 287 testes da API, 181 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901005000_ordens_servico_erp` terminou com código zero e `vyntra/api-staging:pr-066` ficou saudável com prontidão `PRONTO`. Em staging, criação e atualização produziram um efeito externo cada, ambos os replays foram estáveis, a ordem terminou na versão 2 com um histórico, a reserva terminou vazia, versão obsoleta foi recusada antes do adapter, a auditoria permaneceu sanitizada, dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
