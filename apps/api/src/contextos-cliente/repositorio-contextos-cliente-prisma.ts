@@ -20,7 +20,7 @@ export class RepositorioContextosClientePrisma
   > {
     const atendimento = await transacao.atendimento.findUnique({
       select: {
-        contaWhatsAppId: true,
+        contaWhatsAppOrigemId: true,
         conversa: { select: { contatoId: true } },
       },
       where: { id: atendimentoId },
@@ -28,7 +28,7 @@ export class RepositorioContextosClientePrisma
     return atendimento === null
       ? undefined
       : {
-          contaWhatsAppId: atendimento.contaWhatsAppId,
+          contaWhatsAppId: atendimento.contaWhatsAppOrigemId,
           contatoId: atendimento.conversa.contatoId,
         };
   }

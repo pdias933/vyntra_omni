@@ -7,6 +7,7 @@ import {
   ErroConflitoVersaoContexto,
   ErroContextoAtendimentoInvalido,
 } from '../dist/contextos-cliente/erros-contexto-cliente.js';
+import { RepositorioContextosClientePrisma } from '../dist/contextos-cliente/repositorio-contextos-cliente-prisma.js';
 import { ServicoContextosCliente } from '../dist/contextos-cliente/servico-contextos-cliente.js';
 
 const agora = new Date('2026-09-01T01:00:00.000Z');
@@ -102,6 +103,33 @@ function criarCenario(sobrescritas = {}) {
     transacao: { id: 'transacao-sintetica' },
   };
 }
+
+test('repositório projeta a conta de origem real do atendimento', async () => {
+  let consulta;
+  const repositorio = new RepositorioContextosClientePrisma();
+  const resultado = await repositorio.obterOrigemDoAtendimento(
+    ids.atendimento,
+    {
+      atendimento: {
+        findUnique: async (entrada) => {
+          consulta = entrada;
+          return {
+            contaWhatsAppOrigemId: ids.contaWhatsApp,
+            conversa: { contatoId: ids.contato },
+          };
+        },
+      },
+    },
+  );
+  assert.deepEqual(resultado, {
+    contaWhatsAppId: ids.contaWhatsApp,
+    contatoId: ids.contato,
+  });
+  assert.deepEqual(consulta.select, {
+    contaWhatsAppOrigemId: true,
+    conversa: { select: { contatoId: true } },
+  });
+});
 
 test('inicializa alvo explícito e audita sem identificadores externos', async () => {
   const cenario = criarCenario();
