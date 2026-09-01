@@ -56,7 +56,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 032 | CONCLUÍDA | `high` |
 | 033 | CONCLUÍDA | `xhigh` |
 | 034 | CONCLUÍDA | `high` |
-| 035 | EM ANDAMENTO | `xhigh` |
+| 035 | CONCLUÍDA | `xhigh` |
 | 036 | PENDENTE | `xhigh` |
 | 037 | PENDENTE | `high` |
 | 038 | PENDENTE | `xhigh` |
@@ -325,6 +325,10 @@ Aceite concluído em 1º de setembro de 2026: o resgate passou a exigir cumulati
 ### PR 034 — transferência para fila
 
 Aceite concluído em 1º de setembro de 2026: `TRANSFERIR_FILA` passou a ser comando explícito da máquina de atendimento. A operação exige `TRANSFERIR_ATENDIMENTO` tanto na fila de origem quanto na de destino, compara origem e versão atomicamente e resulta em `AGUARDANDO/FILA_HUMANA`, motivo `AGUARDANDO_HUMANO`, fila destino e responsável nulo, incrementando as duas versões. Somente campos de estado/atribuição são escritos; conversa/timeline, conta de origem, protocolo, contexto e demais relações permanecem. Histórico `TRANSFERENCIA_FILA`, evento e auditoria compartilham a transação. Lint, tipos, 158 testes da API, 130 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve nova migration; `vyntra/api-staging:pr-034` ficou saudável com prontidão `PRONTO`. Em staging, a versão avançou de 5 para 6, responsável foi limpo, destino/histórico foram trocados e timeline, origem e protocolo permaneceram, com rollback sintético e nenhum erro de nível 50.
+
+### PR 035 — transferência direta
+
+Aceite concluído em 1º de setembro de 2026: a transferência direta passou a exigir fila destino explícita, `TRANSFERIR_ATENDIMENTO` nas filas de origem/destino e validação RBAC central de `RECEBER_TRANSFERENCIA` para o destinatário. O alvo deve estar `DISPONIVEL`; essa condição é lida antes do comando e repetida dentro do `UPDATE` atômico para cobrir mudança concorrente. O resultado é atribuição imediata `EM_ATENDIMENTO/HUMANO`, sem aceite intermediário, com versão incrementada, histórico `TRANSFERENCIA_USUARIO`, evento apto à notificação e auditoria na mesma transação. Lint, tipos, 162 testes da API, 132 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-035` ficou saudável com prontidão `PRONTO`. Em staging, a atribuição foi imediata com versão 9, mudança do alvo para indisponível fez a segunda escrita afetar zero registros, não existe coluna de aceite, o histórico ficou único, houve rollback sintético e nenhum erro de nível 50.
 
 ## 7. Mensageria Meta
 
