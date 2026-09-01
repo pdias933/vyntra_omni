@@ -6,6 +6,7 @@ import type {
   CriteriosLocalizacaoClienteErp,
   FaturaErpNormalizada,
   ResultadoConsultaErp,
+  ResultadoConsultaUnicaErp,
   ResultadoCriacaoAtendimentoErp,
   ResultadoReconciliacaoAtendimentoErp,
 } from './modelo-erp.js';
@@ -17,9 +18,17 @@ export interface ConsultasErp {
     criterios: CriteriosLocalizacaoClienteErp,
   ): Promise<ResultadoConsultaErp<ClienteErpNormalizado>>;
 
+  consultarCliente(
+    clienteExternoId: string,
+  ): Promise<ResultadoConsultaUnicaErp<ClienteErpNormalizado>>;
+
   listarContratos(
     clienteExternoId: string,
   ): Promise<ResultadoConsultaErp<ContratoErpNormalizado>>;
+
+  consultarContrato(
+    contratoExternoId: string,
+  ): Promise<ResultadoConsultaUnicaErp<ContratoErpNormalizado>>;
 
   listarFaturas(
     contratoExternoId: string,

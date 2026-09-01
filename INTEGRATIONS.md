@@ -213,6 +213,8 @@ A PR 020 materializa `AdaptadorErp` como composição de `ConsultasErp` e `Escri
 
 O simulador não contém DTO MK, credencial, endpoint ou inferência sobre campos reais e não é registrado no runtime. `AdaptadorMkSolutions` permanece bloqueado até a caracterização da seção 4.3; `AdaptadorSessaoAcesso` continua uma porta separada.
 
+A PR 060 completa a semântica interna de busca e detalhe com `consultarCliente` e `consultarContrato`. `ServicoConsultasClienteContratoErp` valida critérios antes da porta e revalida a resposta normalizada: limites, identificadores relacionados, estados canônicos e allowlist de campos. Campo desconhecido ou contrato pertencente a outro cliente falha fechado como `RESPOSTA_CONSULTA_ERP_INVALIDA`; ausência exata é distinta de indisponibilidade. Toda resposta bem-sucedida informa `TEMPO_REAL`. O serviço, a porta e seus consumidores não conhecem nomes MK, famílias WSMK ou DTOs externos. O adapter real continua sem provider até existirem fixtures reais aprovadas; os testes desta etapa usam somente o simulador sintético.
+
 ## 4. `AdaptadorMkSolutions`
 
 É a primeira implementação de `AdaptadorErp`.

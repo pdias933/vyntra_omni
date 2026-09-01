@@ -41,6 +41,21 @@ export type ResultadoConsultaErp<T> =
       readonly codigo: 'ERP_INDISPONIVEL';
     };
 
+export type ResultadoConsultaUnicaErp<T> =
+  | {
+      readonly resultado: 'SUCESSO';
+      readonly origem: OrigemConsultaErp;
+      readonly item: T;
+    }
+  | {
+      readonly resultado: 'NAO_ENCONTRADO';
+      readonly origem: OrigemConsultaErp;
+    }
+  | {
+      readonly resultado: 'INDISPONIVEL';
+      readonly codigo: 'ERP_INDISPONIVEL';
+    };
+
 export interface ComandoCriarAtendimentoErp {
   readonly atendimentoId: string;
   readonly chaveIdempotencia: string;

@@ -14,6 +14,7 @@ import type {
   CriteriosLocalizacaoClienteErp,
   FaturaErpNormalizada,
   ResultadoConsultaErp,
+  ResultadoConsultaUnicaErp,
   ResultadoCriacaoAtendimentoErp,
   ResultadoReconciliacaoAtendimentoErp,
 } from '../modelo-erp.js';
@@ -90,6 +91,12 @@ function clonarCliente(cliente: ClienteErpSimulado): ClienteErpNormalizado {
   };
 }
 
+function clonarContrato(
+  contrato: ContratoErpNormalizado,
+): ContratoErpNormalizado {
+  return { ...contrato };
+}
+
 export class AdaptadorErpSimulado implements AdaptadorErp {
   private consultasDisponiveis = true;
   private reconciliacaoDisponivel = true;
@@ -151,8 +158,44 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     if (!this.consultasDisponiveis) return this.indisponivel();
     const itens = (this.dados.contratos ?? [])
       .filter((contrato) => contrato.clienteExternoId === clienteExternoId)
-      .map((contrato) => ({ ...contrato }));
+      .map(clonarContrato);
     return { itens, origem: 'TEMPO_REAL', resultado: 'SUCESSO' };
+  }
+
+  public async consultarCliente(
+    clienteExternoId: string,
+  ): Promise<ResultadoConsultaUnicaErp<ClienteErpNormalizado>> {
+    this.validarIdentificadorExterno(clienteExternoId);
+    if (!this.consultasDisponiveis) return this.indisponivel();
+    const cliente = (this.dados.clientes ?? []).find(
+      (item) => item.clienteExternoId === clienteExternoId,
+    );
+    if (cliente === undefined) {
+      return { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' };
+    }
+    return {
+      item: clonarCliente(cliente),
+      origem: 'TEMPO_REAL',
+      resultado: 'SUCESSO',
+    };
+  }
+
+  public async consultarContrato(
+    contratoExternoId: string,
+  ): Promise<ResultadoConsultaUnicaErp<ContratoErpNormalizado>> {
+    this.validarIdentificadorExterno(contratoExternoId);
+    if (!this.consultasDisponiveis) return this.indisponivel();
+    const contrato = (this.dados.contratos ?? []).find(
+      (item) => item.contratoExternoId === contratoExternoId,
+    );
+    if (contrato === undefined) {
+      return { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' };
+    }
+    return {
+      item: clonarContrato(contrato),
+      origem: 'TEMPO_REAL',
+      resultado: 'SUCESSO',
+    };
   }
 
   public async listarFaturas(
