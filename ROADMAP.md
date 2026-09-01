@@ -93,7 +93,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 069 | CONCLUÍDA | `high` |
 | 070 | CONCLUÍDA | `xhigh` |
 | 071 | CONCLUÍDA | `xhigh` |
-| 072 | EM ANDAMENTO | `xhigh` |
+| 072 | CONCLUÍDA | `xhigh` |
 | 073 | PENDENTE | `xhigh` |
 | 074 | PENDENTE | `high` |
 | 075 | PENDENTE | `xhigh` |
@@ -461,6 +461,10 @@ Aceite concluído em 1º de setembro de 2026: publicação, arquivamento e rever
 ### PR 071 — validador de publicação
 
 Aceite concluído em 1º de setembro de 2026: a promoção de `RASCUNHO` para `EM_TESTE` passou a exigir `PUBLICAR_FLUXO`, revisão esperada e validação semântica integral. O schema fechado verifica início/fim, alcance, conexões e saídas, variáveis disponíveis em todos os caminhos, sensibilidade, ciclos limitados com saída, capacidades habilitadas, referências ativas e parâmetros proibidos. O contexto é obtido no backend; a implementação conservadora nega capacidades externas não registradas. Falha conserva o rascunho e não audita sucesso, enquanto a promoção válida e a auditoria compartilham a transação. Lint, tipos, 321 testes da API, 192 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-071` ficou saudável com prontidão `PRONTO` e sem migrations pendentes. Em staging, os serviços e repositórios reais validaram e publicaram o grafo nativo válido, mantiveram a segunda versão inválida em `RASCUNHO`, produziram uma auditoria de validação e um histórico de publicação, confirmaram ponteiro coerente e fizeram rollback integral dos dados sintéticos; nenhum erro de nível 50 foi emitido.
+
+### PR 072 — máquina persistente de execução
+
+Aceite concluído em 1º de setembro de 2026: `ExecucaoFluxo` passou a fixar atendimento, fluxo, versão publicada inicial, nó atual, contexto protegido, estado, revisão e datas no PostgreSQL. A máquina admite somente transições explícitas; estados terminais são imutáveis e não retomam após reinício. O início exige atendimento `AGUARDANDO/BOT/PROCESSANDO_BOT`, sem responsável, e usa criação condicional com uma única execução ativa por atendimento. Repetição do mesmo fluxo devolve a execução ativa e uma troca posterior do ponteiro publicado não migra a execução em curso. Transição condicional e auditoria sanitizada compartilham a transação; contexto não entra na auditoria. Lint, tipos, 328 testes da API, 195 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901011000_execucoes_fluxo` terminou com código zero e `vyntra/api-staging:pr-072` ficou saudável com prontidão `PRONTO`. Em staging, o ciclo `EXECUTANDO→AGUARDANDO_RESPOSTA→EXECUTANDO→CONCLUIDA` gerou quatro auditorias, preservou a versão 1 após publicação da versão 2, recusou retomada com uma nova instância do serviço e teve a reabertura terminal bloqueada pelo trigger; a transação sintética foi revertida integralmente e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
