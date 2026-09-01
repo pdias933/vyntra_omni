@@ -228,6 +228,13 @@ enum EstadoContaWhatsApp {
   @@map("estado_conta_whatsapp")
 }
 
+enum EstadoContato {
+  NORMAL
+  BLOQUEADO
+
+  @@map("estado_contato")
+}
+
 model RegistroAuditoria {
   id                         String          @id @db.Uuid
   tipoEvento                 String          @map("tipo_evento") @db.VarChar(100)
@@ -622,10 +629,48 @@ model ContaWhatsApp {
   versao                          Int                  @default(1)
   criadoEm                        DateTime             @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm                    DateTime             @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  identidadesUltimaObservacao     IdentidadeWhatsApp[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorCanalExterno], map: "conta_whatsapp_identidade_externa_key")
   @@index([estado, nomeExibicao, id], map: "conta_whatsapp_estado_nome_idx")
   @@map("conta_whatsapp")
+}
+
+model Contato {
+  id                    String                @id @db.Uuid
+  nomeExibicao          String?               @map("nome_exibicao") @db.VarChar(200)
+  estado                EstadoContato         @default(NORMAL)
+  bloqueadoEm           DateTime?             @map("bloqueado_em") @db.Timestamptz(6)
+  bloqueadoAte          DateTime?             @map("bloqueado_ate") @db.Timestamptz(6)
+  motivoBloqueio        String?               @map("motivo_bloqueio") @db.VarChar(500)
+  ultimaInteracaoEm     DateTime?             @map("ultima_interacao_em") @db.Timestamptz(6)
+  criadoEm              DateTime              @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm          DateTime              @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  identidadesWhatsApp   IdentidadeWhatsApp[]
+
+  @@index([estado, ultimaInteracaoEm, id], map: "contato_estado_ultima_interacao_idx")
+  @@map("contato")
+}
+
+model IdentidadeWhatsApp {
+  id                               String          @id @db.Uuid
+  contatoId                        String          @map("contato_id") @db.Uuid
+  portfolioEmpresarialExternoId    String          @map("portfolio_empresarial_externo_id") @db.VarChar(256)
+  identificadorExternoEstavel      String          @map("identificador_externo_estavel") @db.VarChar(256)
+  nomeUsuario                      String?         @map("nome_usuario") @db.VarChar(100)
+  telefoneE164                     String?         @map("telefone_e164") @db.VarChar(16)
+  nomePerfil                       String?         @map("nome_perfil") @db.VarChar(200)
+  contaWhatsAppUltimaObservacaoId  String          @map("conta_whatsapp_ultima_observacao_id") @db.Uuid
+  criadaEm                         DateTime        @default(now()) @map("criada_em") @db.Timestamptz(6)
+  atualizadaEm                     DateTime        @default(now()) @updatedAt @map("atualizada_em") @db.Timestamptz(6)
+  contato                          Contato         @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  contaWhatsAppUltimaObservacao    ContaWhatsApp   @relation(fields: [contaWhatsAppUltimaObservacaoId], references: [id], onDelete: Restrict)
+
+  @@unique([portfolioEmpresarialExternoId, identificadorExternoEstavel], map: "identidade_whatsapp_estavel_key")
+  @@index([contatoId, criadaEm, id], map: "identidade_whatsapp_contato_idx")
+  @@index([nomeUsuario, id], map: "identidade_whatsapp_nome_usuario_idx")
+  @@index([telefoneE164, id], map: "identidade_whatsapp_telefone_idx")
+  @@map("identidade_whatsapp")
 }
 
 model LiberacaoControleRecursoUsuario {

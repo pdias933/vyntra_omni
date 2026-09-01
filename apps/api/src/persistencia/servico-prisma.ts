@@ -6,7 +6,7 @@ import { obterUrlBanco } from './obter-url-banco.js';
 import type { TransacaoPrisma } from './transacao-prisma.js';
 
 const MIGRACAO_OBRIGATORIA =
-  '20260831001100_criar_conta_whatsapp';
+  '20260831001200_criar_contato_identidade_whatsapp';
 
 @Injectable()
 export class ServicoPrisma implements OnModuleDestroy {

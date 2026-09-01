@@ -45,14 +45,12 @@ test('repositório preserva histórico ao não expor exclusão', async () => {
 });
 
 test('módulo de conta é real, mas não registra adapter ou segredo Meta', async () => {
-  const [modulo, aplicacao, persistencia] = await Promise.all([
+  const [modulo, aplicacao] = await Promise.all([
     ler('apps/api/src/contas-whatsapp/modulo-contas-whatsapp.ts'),
     ler('apps/api/src/modulo-aplicacao.ts'),
-    ler('apps/api/src/persistencia/servico-prisma.ts'),
   ]);
   assert.match(aplicacao, /ModuloContasWhatsApp/);
   assert.match(modulo, /RepositorioContaWhatsAppPrisma/);
   assert.ok(!modulo.includes('AdaptadorMetaCloud'));
   assert.ok(!modulo.toLowerCase().includes('token'));
-  assert.match(persistencia, /20260831001100_criar_conta_whatsapp/);
 });

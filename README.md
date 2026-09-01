@@ -82,6 +82,8 @@ A porta `AdaptadorErp` separa consultas e escritas normalizadas. O simulador dis
 
 `ContaWhatsApp` materializa cada origem empresarial com UUID interno estável e permite múltiplas contas na instalação. Todo cadastro nasce inativo e não possui token, segredo ou certificado; credenciais futuras permanecem no adaptador/cofre. Modelo, operação e aceite estão em [docs/operacoes/PR-022.md](docs/operacoes/PR-022.md); não houve nova dependência, conforme [docs/dependencias/PR-022.md](docs/dependencias/PR-022.md).
 
+`Contato` e `IdentidadeWhatsApp` preservam um UUID interno mesmo sem username ou telefone. A correlação inicial usa apenas o identificador estável normalizado no escopo do portfólio da conta ativa, com serialização PostgreSQL. Modelo e aceite estão em [docs/operacoes/PR-023.md](docs/operacoes/PR-023.md); não houve nova dependência, conforme [docs/dependencias/PR-023.md](docs/dependencias/PR-023.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local

@@ -152,7 +152,7 @@ Campos conceituais mínimos:
 ```text
 Contato
 id: UUID
-nome_exibicao
+nome_exibicao?
 estado: NORMAL | BLOQUEADO
 bloqueado_em?
 bloqueado_ate?
@@ -191,6 +191,8 @@ Regras:
 - Identificadores anteriores devem permanecer em histórico/alias auditável para deduplicação e diagnóstico.
 - O telefone nunca é chave primária de `Contato`, `Conversa` ou `Atendimento`.
 - Uma identidade nova sem correlação confiável cria contato separado. Eventual mesclagem manual é decisão futura; na V1, contatos permanecem separados.
+
+A PR 023 materializa `Contato` e `IdentidadeWhatsApp`. O serviço recebe do adaptador apenas a observação já normalizada, obtém o portfólio pela `ContaWhatsApp` ativa e serializa por `portfolio + identificador_externo_estavel` antes de consultar/criar. Reobservação devolve o mesmo contato. Nome de perfil, username e telefone podem estar ausentes; nenhum deles participa da chave, e a ausência não gera valor inventado. O primeiro nome de exibição usa nome de perfil ou username observado, sem transformar telefone em identidade do contato.
 
 ### 4.4 `VinculoCliente`
 

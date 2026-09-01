@@ -101,6 +101,7 @@ Não propague DTOs/nomenclatura Meta ou MK para domínio, UI ou Motor de Fluxos.
 - Uma instalação pode possuir várias `ContaWhatsApp`; use sempre seu UUID interno estável como origem. Conta nasce `INATIVA`, não é singleton e não é excluída quando possui histórico.
 - Token, segredo, certificado e credencial de canal pertencem somente ao adaptador/cofre. Nunca os adicione a `ContaWhatsApp`, DTO interno, evento, auditoria, log, web ou mobile.
 - Um contato possui uma timeline contínua na instalação.
+- `Contato` usa UUID interno; a identidade WhatsApp é correlacionada pelo identificador estável no portfólio. Username, telefone e nome de perfil são opcionais/mutáveis e nunca viram chave, prova de cliente ERP ou substituto inventado.
 - Mensagem e atendimento preservam conta WhatsApp de origem.
 - Protocolo exibido é oficial do ERP; indisponibilidade gera protocolo pendente, não número local parecido.
 - Atendimento e janela Meta são estados separados.

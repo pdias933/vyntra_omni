@@ -151,6 +151,8 @@ Saude
 
 `ContasWhatsApp` é um módulo de domínio real e persistente. Ele usa UUID interno estável, aceita múltiplas contas, cria cada registro como `INATIVA` e não conhece token, segredo, certificado, SDK ou DTO da Meta. A configuração protegida do adaptador referencia esse UUID; mensagens e atendimentos futuros persistem o mesmo `conta_whatsapp_id` para preservar a origem. Não existe exclusão da entidade com histórico.
 
+`Contatos` resolve a identidade já normalizada sob transação PostgreSQL. Um advisory lock transacional estreito por portfólio+identificador estável evita dois contatos para a mesma primeira observação; a constraint única permanece a garantia final. O módulo não recebe payload Meta, não usa telefone/username como chave e não consulta ERP para decidir identidade.
+
 ### 4.1 Dependências permitidas
 
 ```text

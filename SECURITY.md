@@ -216,6 +216,8 @@ Nota exige `VISUALIZAR_NOTA_INTERNA` e permanece vinculada à fila em que foi cr
 
 BSUID/identificador externo resolve correlação técnica; não prova autorização para agir em nome de qualquer cliente ERP. Username e telefone também não são prova isolada.
 
+A resolução inicial exige `ContaWhatsApp` ativa e usa somente portfólio+identificador estável normalizado. Username, telefone e nome de perfil são atributos opcionais e mutáveis, não chaves nem prova de identidade civil. Auditoria da criação registra apenas presença desses atributos, sem seus valores. Concorrência é serializada no PostgreSQL e a constraint única impede contatos duplicados para a mesma identidade técnica.
+
 Regras:
 
 - vínculo persistente registra método, autor, data e revogação;
