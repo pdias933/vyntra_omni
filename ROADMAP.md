@@ -59,7 +59,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 035 | CONCLUÍDA | `xhigh` |
 | 036 | CONCLUÍDA | `xhigh` |
 | 037 | CONCLUÍDA | `high` |
-| 038 | EM ANDAMENTO | `xhigh` |
+| 038 | CONCLUÍDA | `xhigh` |
 | 039 | PENDENTE | `xhigh` |
 | 040 | PENDENTE | `xhigh` |
 | 041 | PENDENTE | `xhigh` |
@@ -337,6 +337,10 @@ Aceite concluído em 1º de setembro de 2026: `ASSUMIR_SUPERVISOR` passou a troc
 ### PR 037 — calendários operacionais
 
 Aceite concluído em 1º de setembro de 2026: calendários de conta ou fila passaram a suportar fuso IANA, múltiplos períodos semanais, feriados, exceções, modo 24x7 e overrides administrativos temporários. A avaliação determinística prioriza override vigente, exceção da data, feriado, 24x7 e grade semanal. Períodos usam intervalos semiabertos e sobreposição é recusada no domínio e no PostgreSQL. Overrides exigem `ADMINISTRAR_CALENDARIOS`, motivo e vigência, são auditados na mesma transação e imutáveis depois de criados. Lint, tipos, 171 testes da API, 136 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. As migrations `20260901002100_criar_calendarios` e `20260901002110_corrigir_validacao_intervalos_calendario` terminaram com código zero e `vyntra/api-staging:pr-037` ficou saudável com prontidão `PRONTO`. O primeiro ensaio revelou e corrigiu a avaliação cruzada do gatilho; na repetição, dois períodos não sobrepostos, feriado, exceção e override coexistiram, sobreposição e mutação do override foram recusadas, a transação foi revertida e não houve erro de nível 50.
+
+### PR 038 — SLA e escalonamento
+
+Aceite concluído em 1º de setembro de 2026: `PoliticaSla` passou a definir os marcos crescentes por fila e cada obrigação humana cria um ciclo de `RelogioSlaAtendimento` com política/versão e vencimentos congelados. Automação e fila sem política não inventam relógio. A avaliação atrasada emite, em ordem, alertas idempotentes para atendente, supervisor e administrador; concluir a obrigação fecha o ciclo e permite o seguinte. Eventos operacionais são produzidos na mesma transação, sem alterar fila, responsável ou versão de atribuição e sem transferência automática. Lint, tipos, 175 testes da API, 138 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002200_criar_sla_escalonamento` terminou com código zero e `vyntra/api-staging:pr-038` ficou saudável com prontidão `PRONTO`. Em staging, política inválida e segundo relógio ativo foram recusados; dois ciclos sequenciais e os três alertas coexistiram, enquanto responsável permaneceu nulo e `versao_atribuicao` permaneceu 7; houve rollback e nenhum erro de nível 50.
 
 ## 7. Mensageria Meta
 
