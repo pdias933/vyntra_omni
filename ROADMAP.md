@@ -51,7 +51,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 027 | CONCLUÍDA | `xhigh` |
 | 028 | CONCLUÍDA | `xhigh` |
 | 029 | CONCLUÍDA | `high` |
-| 030 | EM ANDAMENTO | `high` |
+| 030 | CONCLUÍDA | `high` |
 | 031 | PENDENTE | `medium` |
 | 032 | PENDENTE | `high` |
 | 033 | PENDENTE | `xhigh` |
@@ -305,6 +305,10 @@ Aceite concluído em 31 de agosto de 2026: `Atendimento` passou a materializar e
 ### PR 029 — protocolo ERP pendente
 
 Aceite concluído em 31 de agosto de 2026: cada `Atendimento` pode ter exatamente um `ProtocoloErp`, que nasce `PENDENTE` sem número e só muda para `OFICIAL` diante de confirmação explícita da criação ou reconciliação do ERP. Resultado indisponível, ausente ou incerto não altera a pendência. O UUID interno e o marcador `PENDENTE` são recusados como número externo; protocolo oficial é globalmente único e imutável no serviço e no PostgreSQL. O simulador da porta ERP atribuiu um único protocolo oficial, sem ser registrado como integração real ou expor uma rota pública. Lint, tipos, 136 testes da API, 119 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001800_criar_protocolo_erp_pendente` terminou com código zero e `vyntra/api-staging:pr-029` ficou saudável com prontidão `PRONTO`. Em staging, dois protocolos nasceram sem número; somente um foi confirmado, alteração, duplicidade e uso do UUID interno foram recusados, a transação sintética foi revertida e não houve erro de nível 50.
+
+### PR 030 — filas e vínculos de usuário
+
+Aceite concluído em 31 de agosto de 2026: `ServicoFilas` passou a cadastrar/inativar filas e conceder/revogar `AcessoUsuarioFila` com `ADMINISTRAR_FILAS`, locks transacionais, alvos ativos, idempotência e auditoria na mesma transação. O vínculo representa somente escopo: ele não cria nem altera permissões, e uma ação ausente ou negada no RBAC continua recusada. Inativar a fila torna o escopo ineficaz sem apagar o vínculo histórico; revogação é explícita. O módulo não publica controller administrativo prematuro. Lint, tipos, 142 testes da API, 122 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-030` ficou saudável com prontidão `PRONTO`. Em staging, fila e vínculo ativos coexistiram com negação explícita de resgate, nome duplicado foi recusado, inativação preservou o vínculo e revogação registrou instante próprio; a transação sintética foi revertida e não houve erro de nível 50.
 
 ## 7. Mensageria Meta
 
