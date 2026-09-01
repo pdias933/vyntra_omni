@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { ModuloAuditoria } from '../auditoria/modulo-auditoria.js';
+import { ModuloAtribuicoesAtendimento } from '../atribuicoes-atendimento/modulo-atribuicoes-atendimento.js';
 import { ModuloCalendarios } from '../calendarios/modulo-calendarios.js';
 import { ModuloContextosCliente } from '../contextos-cliente/modulo-contextos-cliente.js';
 import { ModuloComposicoes } from '../composicoes/modulo-composicoes.js';
@@ -30,6 +31,7 @@ import { ServicoRecuperacaoExecucoesFluxo } from './servico-recuperacao-execucoe
   ],
   imports: [
     ModuloAuditoria,
+    ModuloAtribuicoesAtendimento,
     ModuloCalendarios,
     ModuloComposicoes,
     ModuloContextosCliente,

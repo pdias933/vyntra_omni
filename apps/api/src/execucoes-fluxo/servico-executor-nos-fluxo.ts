@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
 
+import { ServicoAtribuicoesAtendimento } from '../atribuicoes-atendimento/servico-atribuicoes-atendimento.js';
 import {
   ErroCalendarioAusente,
   ErroCalendarioInvalido,
@@ -86,6 +87,7 @@ const TIPOS_SUPORTADOS = new Set([
   'ENVIAR_BOTOES_OU_LISTA',
   'ENVIAR_MENSAGEM',
   'ENVIAR_FATURA',
+  'ENCERRAR_ATENDIMENTO',
   'EXECUTAR_DESBLOQUEIO_CONFIANCA',
   'FIM',
   'HORARIO_ATENDIMENTO',
@@ -95,7 +97,9 @@ const TIPOS_SUPORTADOS = new Set([
   'SELECIONAR_CONTRATO',
   'SOLICITAR_DADOS_CONTATO',
   'SOLICITAR_FORMULARIO_WHATSAPP',
+  'TRANSFERIR_PARA_FILA',
   'VERIFICAR_DESBLOQUEIO_CONFIANCA',
+  'AGUARDAR_ATENDENTE',
 ]);
 
 interface ResultadoExecucaoNo {
@@ -103,9 +107,13 @@ interface ResultadoExecucaoNo {
   readonly agendamento?: {
     readonly estadoEspera:
       | 'AGUARDANDO_RESPOSTA'
-      | 'AGUARDANDO_SISTEMA';
+      | 'AGUARDANDO_SISTEMA'
+      | 'AGUARDANDO_ATENDENTE';
     readonly retomarEm: Date;
   };
+  readonly conclusaoEspecial?:
+    | 'CONCLUIR'
+    | 'SUSPENDER_POR_ATENDIMENTO_HUMANO';
   readonly codigo?: string | undefined;
   readonly contextoProtegido?: ObjetoJsonProtegido | undefined;
   readonly mensagem?: { readonly id: string } | undefined;
@@ -153,6 +161,8 @@ export class ServicoExecutorNosFluxo {
     private readonly protocolosOrdens: ServicoProtocolosOrdensFluxo,
     @Inject(ServicoDesbloqueiosFluxo)
     private readonly desbloqueios: ServicoDesbloqueiosFluxo,
+    @Inject(ServicoAtribuicoesAtendimento)
+    private readonly atribuicoes: ServicoAtribuicoesAtendimento,
   ) {}
 
   public async executarCiclo(
@@ -505,7 +515,6 @@ export class ServicoExecutorNosFluxo {
       return;
     }
     const saida = this.validarSaida(no, resultado.resultado);
-    const destino = this.obterDestino(definicao.conexoes, no.id, saida);
     const codigo = resultado.codigo;
     const mensagemId = resultado.mensagem?.id;
     await this.finalizarPasso(
@@ -518,6 +527,19 @@ export class ServicoExecutorNosFluxo {
       agora,
       transacao,
     );
+    if (resultado.conclusaoEspecial !== undefined) {
+      await this.execucoes.transitar(
+        {
+          comando: { tipo: resultado.conclusaoEspecial },
+          execucaoFluxoId: execucao.id,
+          revisaoEsperada: execucao.revisao,
+        },
+        transacao,
+        () => agora,
+      );
+      return;
+    }
+    const destino = this.obterDestino(definicao.conexoes, no.id, saida);
     await this.execucoes.avancarNo(
       {
         ...(resultado.contextoProtegido === undefined
@@ -602,6 +624,20 @@ export class ServicoExecutorNosFluxo {
         no,
         iteracao.contexto,
         acaoDesbloqueio,
+      );
+    }
+    if (
+      no.tipo === 'TRANSFERIR_PARA_FILA' ||
+      no.tipo === 'AGUARDAR_ATENDENTE' ||
+      no.tipo === 'ENCERRAR_ATENDIMENTO'
+    ) {
+      return this.executarRoteamentoAtendimento(
+        no,
+        definicao,
+        execucao,
+        iteracao.contexto,
+        transacao,
+        relogio,
       );
     }
     if (
@@ -691,6 +727,201 @@ export class ServicoExecutorNosFluxo {
       contextoProtegido: contexto,
       resultado: acao.resultado.resultado,
     };
+  }
+
+  private async executarRoteamentoAtendimento(
+    no: NoDefinicaoFluxo,
+    definicao: DefinicaoFluxoV1,
+    execucao: ExecucaoFluxoPersistida,
+    contexto: ObjetoJsonProtegido,
+    transacao: TransacaoPrisma,
+    relogio: () => Date,
+  ): Promise<ResultadoExecucaoNo> {
+    const referencia =
+      no.referencias.length === 1 && no.referencias[0]?.tipo === 'FILA'
+        ? no.referencias[0]
+        : undefined;
+    if (
+      referencia === undefined ||
+      no.variaveisEntrada.length !== 0 ||
+      no.variaveisSaida.length !== 0
+    ) {
+      return {
+        codigo: 'CONFIGURACAO_ROTEAMENTO_INVALIDA',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    const ator = {
+      execucaoFluxoId: execucao.id,
+      fluxoId: execucao.fluxoId,
+      versaoFluxoId: execucao.versaoFluxoId,
+    };
+    if (no.tipo === 'TRANSFERIR_PARA_FILA') {
+      const destinosTransferidos = definicao.conexoes.filter(
+        ({ origemNoId, saida }) =>
+          origemNoId === no.id && saida === 'TRANSFERIDO',
+      );
+      const destino = definicao.nos.find(
+        ({ id }) => id === destinosTransferidos[0]?.destinoNoId,
+      );
+      if (
+        !this.temExatamenteChaves(no.parametros, []) ||
+        destinosTransferidos.length !== 1 ||
+        destino?.tipo !== 'AGUARDAR_ATENDENTE' ||
+        destino.referencias.length !== 1 ||
+        destino.referencias[0]?.tipo !== 'FILA' ||
+        destino.referencias[0].recursoId !== referencia.recursoId
+      ) {
+        return {
+          codigo: 'CONFIGURACAO_TRANSFERENCIA_INVALIDA',
+          contextoProtegido: contexto,
+          resultado: 'FALHA',
+        };
+      }
+      const transferido = await this.atribuicoes.encaminharParaFilaPorFluxo(
+        ator,
+        execucao.atendimentoId,
+        referencia.recursoId,
+        transacao,
+        relogio,
+      );
+      return transferido
+        ? { contextoProtegido: contexto, resultado: 'TRANSFERIDO' }
+        : {
+            codigo: 'TRANSFERENCIA_PARA_FILA_NEGADA',
+            contextoProtegido: contexto,
+            resultado: 'FALHA',
+          };
+    }
+    if (no.tipo === 'ENCERRAR_ATENDIMENTO') {
+      const motivo = Reflect.get(no.parametros, 'motivo');
+      if (
+        !this.temExatamenteChaves(no.parametros, ['motivo']) ||
+        typeof motivo !== 'string' ||
+        motivo.trim().length < 1 ||
+        motivo.length > 500
+      ) {
+        return {
+          codigo: 'CONFIGURACAO_ENCERRAMENTO_INVALIDA',
+          contextoProtegido: contexto,
+          resultado: 'FALHA',
+        };
+      }
+      const encerrado = await this.atribuicoes.encerrarPorFluxo(
+        ator,
+        execucao.atendimentoId,
+        referencia.recursoId,
+        motivo.trim(),
+        transacao,
+        relogio,
+      );
+      return encerrado
+        ? {
+            conclusaoEspecial: 'CONCLUIR',
+            contextoProtegido: contexto,
+            resultado: 'ENCERRADO',
+          }
+        : {
+            codigo: 'ENCERRAMENTO_POR_FLUXO_NEGADO',
+            contextoProtegido: contexto,
+            resultado: 'FALHA',
+          };
+    }
+    const tempoLimiteSegundos = Reflect.get(
+      no.parametros,
+      'tempoLimiteSegundos',
+    );
+    if (
+      no.tipo !== 'AGUARDAR_ATENDENTE' ||
+      !this.temExatamenteChaves(no.parametros, ['tempoLimiteSegundos']) ||
+      typeof tempoLimiteSegundos !== 'number' ||
+      !Number.isInteger(tempoLimiteSegundos) ||
+      tempoLimiteSegundos < 1 ||
+      tempoLimiteSegundos > 86_400
+    ) {
+      return {
+        codigo: 'CONFIGURACAO_ESPERA_ATENDENTE_INVALIDA',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    const estado = await this.atribuicoes.consultarEsperaAtendentePorFluxo(
+      ator,
+      execucao.atendimentoId,
+      referencia.recursoId,
+      transacao,
+    );
+    if (estado === 'ATENDIDO') {
+      return {
+        conclusaoEspecial: 'SUSPENDER_POR_ATENDIMENTO_HUMANO',
+        contextoProtegido:
+          removerEsperaFluxo(contexto, no.id) ?? contexto,
+        resultado: 'ATENDIDO',
+      };
+    }
+    if (estado === 'INVALIDO') {
+      return {
+        codigo: 'CONTEXTO_ESPERA_ATENDENTE_INVALIDO',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    const existente = lerEsperaFluxo(contexto, no.id);
+    if (existente.estado === 'INVALIDA') {
+      return {
+        codigo: 'CONTEXTO_ESPERA_ATENDENTE_INVALIDO',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    const agora = relogio();
+    if (!Number.isFinite(agora.getTime())) {
+      throw new ErroExecucaoFluxoInvalida();
+    }
+    if (existente.estado === 'PRESENTE') {
+      if (
+        existente.espera.tipo !== 'ATENDENTE' ||
+        agora < new Date(existente.espera.retomarEm)
+      ) {
+        return {
+          codigo: 'RETOMADA_ESPERA_ATENDENTE_INVALIDA',
+          contextoProtegido: contexto,
+          resultado: 'FALHA',
+        };
+      }
+      const atualizado = removerEsperaFluxo(contexto, no.id);
+      return atualizado === undefined
+        ? {
+            codigo: 'CONTEXTO_ESPERA_ATENDENTE_INVALIDO',
+            contextoProtegido: contexto,
+            resultado: 'FALHA',
+          }
+        : { contextoProtegido: atualizado, resultado: 'TIMEOUT' };
+    }
+    const retomarEm = new Date(
+      agora.getTime() + tempoLimiteSegundos * 1_000,
+    );
+    const atualizado = agendarEsperaFluxo(
+      contexto,
+      no.id,
+      'ATENDENTE',
+      retomarEm,
+    );
+    return atualizado === undefined
+      ? {
+          codigo: 'CONTEXTO_ESPERA_ATENDENTE_INVALIDO',
+          contextoProtegido: contexto,
+          resultado: 'FALHA',
+        }
+      : {
+          agendamento: {
+            estadoEspera: 'AGUARDANDO_ATENDENTE',
+            retomarEm,
+          },
+          contextoProtegido: atualizado,
+          resultado: 'AGENDADO',
+        };
   }
 
   private async executarFormulario(
@@ -1370,7 +1601,10 @@ export class ServicoExecutorNosFluxo {
     | 'CRIADO'
     | 'CRIADA'
     | 'RESULTADO_INCERTO'
-    | 'INDISPONIVEL' {
+    | 'INDISPONIVEL'
+    | 'TRANSFERIDO'
+    | 'ATENDIDO'
+    | 'ENCERRADO' {
     const permitidas = (() => {
       if (no.tipo === 'ENVIAR_BOTOES_OU_LISTA') {
         return new Set([
@@ -1458,6 +1692,15 @@ export class ServicoExecutorNosFluxo {
           'FALHA',
         ]);
       }
+      if (no.tipo === 'TRANSFERIR_PARA_FILA') {
+        return new Set(['TRANSFERIDO', 'FALHA']);
+      }
+      if (no.tipo === 'AGUARDAR_ATENDENTE') {
+        return new Set(['ATENDIDO', 'TIMEOUT', 'FALHA']);
+      }
+      if (no.tipo === 'ENCERRAR_ATENDIMENTO') {
+        return new Set(['ENCERRADO', 'FALHA']);
+      }
       return new Set(['SUCESSO']);
     })();
     if (!permitidas.has(resultado)) throw new ErroExecucaoFluxoInvalida();
@@ -1485,7 +1728,10 @@ export class ServicoExecutorNosFluxo {
       | 'CRIADO'
       | 'CRIADA'
       | 'RESULTADO_INCERTO'
-      | 'INDISPONIVEL';
+      | 'INDISPONIVEL'
+      | 'TRANSFERIDO'
+      | 'ATENDIDO'
+      | 'ENCERRADO';
   }
 
   private obterDestino(

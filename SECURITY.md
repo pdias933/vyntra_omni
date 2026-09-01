@@ -636,3 +636,14 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - resposta perdida nunca vira sucesso: conserva a operação incerta e só reconciliação pode confirmar ou provar ausência;
 - passo, log e auditoria não recebem contrato, motivo ERP, chave ou instante da política; efeito confirmado é auditado como `FLUXO`;
 - ausência de provider falha antes de criar operação, e simulador não pode ocupar a porta de runtime.
+
+## 23. Controles de fila e encerramento da PR 082
+
+- fila é uma referência interna ativa resolvida pelo backend; nome, ID externo, usuário e sessão não são aceitos na definição;
+- publicação e execução defensiva exigem `TRANSFERIDO → AGUARDAR_ATENDENTE` na mesma fila antes de alterar o atendimento;
+- lock e alteração condicional revalidam atendimento BOT sem fila/responsável e execução/fluxo/versão exatos;
+- transferência, histórico de atribuição, evento e auditoria confirmam juntos e usam ator `FLUXO`, sem usuário técnico;
+- `retomar_em` em `AGUARDANDO_ATENDENTE` é futuro e reconstruível; resgate e timeout concorrem pelo PostgreSQL, nunca por memória ou Redis;
+- encerramento exige fila de fallback ativa, congela a reabertura e torna a execução terminal; nova mensagem não retoma automação antiga;
+- motivo de encerramento permanece no registro protegido do atendimento e não entra em passo, evento, auditoria ou log;
+- estado, fila ou autoridade divergente falham fechados e não são corrigidos por escolha implícita ou SQL operacional.

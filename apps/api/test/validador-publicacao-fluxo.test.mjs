@@ -885,6 +885,104 @@ test('verificação e execução de desbloqueio são separadas e fechadas', () =
   }
 });
 
+test('roteamento humano exige fila única, espera compatível e encerramento explícito', () => {
+  const referencia = { recursoId: ids.recurso, tipo: 'FILA' };
+  const definicao = definicaoBasica({
+    conexoes: [
+      conexao('inicio', 'SUCESSO', 'transferir'),
+      conexao('transferir', 'TRANSFERIDO', 'esperar'),
+      conexao('transferir', 'FALHA', 'fim'),
+      conexao('esperar', 'ATENDIDO', 'fim'),
+      conexao('esperar', 'TIMEOUT', 'fim'),
+      conexao('esperar', 'FALHA', 'fim'),
+    ],
+    nos: [
+      no('inicio', 'INICIO'),
+      no('transferir', 'TRANSFERIR_PARA_FILA', {
+        referencias: [referencia],
+      }),
+      no('esperar', 'AGUARDAR_ATENDENTE', {
+        parametros: { tempoLimiteSegundos: 300 },
+        referencias: [referencia],
+      }),
+      no('fim', 'FIM'),
+    ],
+  });
+  const contextoValido = contexto({
+    capacidadesHabilitadas: [
+      'TRANSFERIR_PARA_FILA',
+      'AGUARDAR_ATENDENTE',
+    ],
+    referenciasAtivas: [referencia],
+  });
+  assert.equal(
+    new ValidadorPublicacaoFluxo().validar(definicao, contextoValido).valido,
+    true,
+  );
+
+  const semEsperaCompativel = {
+    ...definicao,
+    conexoes: definicao.conexoes.map((item) =>
+      item.origemNoId === 'transferir' && item.saida === 'TRANSFERIDO'
+        ? { ...item, destinoNoId: 'fim' }
+        : item,
+    ),
+  };
+  assert.ok(
+    codigos(
+      new ValidadorPublicacaoFluxo().validar(
+        semEsperaCompativel,
+        contextoValido,
+      ),
+    ).includes('TRANSFERENCIA_SEM_ESPERA_ATENDENTE_COMPATIVEL'),
+  );
+
+  const encerramento = definicaoBasica({
+    conexoes: [
+      conexao('inicio', 'SUCESSO', 'encerrar'),
+      conexao('encerrar', 'ENCERRADO', 'fim'),
+      conexao('encerrar', 'FALHA', 'fim'),
+    ],
+    nos: [
+      no('inicio', 'INICIO'),
+      no('encerrar', 'ENCERRAR_ATENDIMENTO', {
+        parametros: { motivo: 'Atendimento concluído pelo fluxo' },
+        referencias: [referencia],
+      }),
+      no('fim', 'FIM'),
+    ],
+  });
+  assert.equal(
+    new ValidadorPublicacaoFluxo().validar(
+      encerramento,
+      contexto({
+        capacidadesHabilitadas: ['ENCERRAR_ATENDIMENTO'],
+        referenciasAtivas: [referencia],
+      }),
+    ).valido,
+    true,
+  );
+  const motivoLivre = {
+    ...encerramento,
+    nos: encerramento.nos.map((item) =>
+      item.id === 'encerrar'
+        ? { ...item, parametros: { motivo: 'ok', protocolo: 'nao-aceitar' } }
+        : item,
+    ),
+  };
+  assert.ok(
+    codigos(
+      new ValidadorPublicacaoFluxo().validar(
+        motivoLivre,
+        contexto({
+          capacidadesHabilitadas: ['ENCERRAR_ATENDIMENTO'],
+          referenciasAtivas: [referencia],
+        }),
+      ),
+    ).includes('DEFINICAO_ESTRUTURAL_INVALIDA'),
+  );
+});
+
 test('identificação e pedido de dados não aceitam variáveis, referências ou payload livre', () => {
   const casos = [
     {

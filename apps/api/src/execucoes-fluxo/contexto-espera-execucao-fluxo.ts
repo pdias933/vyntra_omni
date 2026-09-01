@@ -5,7 +5,7 @@ import type {
 
 const CHAVE_ESPERAS = 'esperasFluxo';
 
-export type TipoEsperaFluxo = 'ATE_INSTANTE' | 'RESPOSTA';
+export type TipoEsperaFluxo = 'ATENDENTE' | 'ATE_INSTANTE' | 'RESPOSTA';
 
 export interface EsperaFluxoPersistida {
   readonly retomarEm: string;
@@ -40,7 +40,7 @@ export function lerEsperaFluxo(
     !ehDataHoraCanonica(espera.retomarEm) ||
     !ehTipoEspera(espera.tipo) ||
     typeof espera.respostaRecebida !== 'boolean' ||
-    (espera.tipo === 'ATE_INSTANTE' && espera.respostaRecebida)
+    (espera.tipo !== 'RESPOSTA' && espera.respostaRecebida)
   ) {
     return { estado: 'INVALIDA' };
   }
@@ -118,7 +118,11 @@ export function removerEsperaFluxo(
 }
 
 function ehTipoEspera(valor: unknown): valor is TipoEsperaFluxo {
-  return valor === 'ATE_INSTANTE' || valor === 'RESPOSTA';
+  return (
+    valor === 'ATENDENTE' ||
+    valor === 'ATE_INSTANTE' ||
+    valor === 'RESPOSTA'
+  );
 }
 
 function ehDataHoraCanonica(valor: string): boolean {

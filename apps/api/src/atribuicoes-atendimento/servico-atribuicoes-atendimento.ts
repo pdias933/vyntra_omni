@@ -25,6 +25,17 @@ import {
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
+export interface AtorFluxoAtribuicaoAtendimento {
+  readonly execucaoFluxoId: string;
+  readonly fluxoId: string;
+  readonly versaoFluxoId: string;
+}
+
+export type EstadoEsperaAtendenteFluxo =
+  | 'AGUARDANDO'
+  | 'ATENDIDO'
+  | 'INVALIDO';
+
 @Injectable()
 export class ServicoAtribuicoesAtendimento {
   private readonly maquina = new MaquinaEstadoAtendimento();
@@ -41,6 +52,229 @@ export class ServicoAtribuicoesAtendimento {
     @Inject(ServicoAuditoria)
     private readonly auditoria: ServicoAuditoria,
   ) {}
+
+  public async encaminharParaFilaPorFluxo(
+    ator: AtorFluxoAtribuicaoAtendimento,
+    atendimentoId: string,
+    filaDestinoId: string,
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<boolean> {
+    this.validarAtorFluxo(ator, atendimentoId, filaDestinoId);
+    await this.repositorio.bloquearParaFluxo(
+      atendimentoId,
+      filaDestinoId,
+      transacao,
+    );
+    const [atual, filaAtiva] = await Promise.all([
+      this.repositorio.obterParaFluxo(
+        atendimentoId,
+        ator.execucaoFluxoId,
+        ator.fluxoId,
+        ator.versaoFluxoId,
+        transacao,
+      ),
+      this.repositorio.filaEstaAtiva(filaDestinoId, transacao),
+    ]);
+    if (
+      atual === undefined ||
+      !filaAtiva ||
+      atual.estado !== 'AGUARDANDO' ||
+      atual.modo !== 'BOT' ||
+      atual.motivoEspera !== 'PROCESSANDO_BOT' ||
+      atual.filaAtualId !== undefined ||
+      atual.usuarioResponsavelId !== undefined
+    ) {
+      return false;
+    }
+    const agora = relogio();
+    const proximo = this.maquina.transitar(
+      atual,
+      { filaId: filaDestinoId, tipo: 'ENCAMINHAR_FILA' },
+      agora,
+    );
+    if (
+      !(await this.repositorio.encaminharParaFilaPorFluxoCondicional(
+        proximo,
+        ator.execucaoFluxoId,
+        ator.fluxoId,
+        ator.versaoFluxoId,
+        atual.versaoEstado,
+        atual.versaoAtribuicao,
+        transacao,
+      ))
+    ) {
+      return false;
+    }
+    await this.historico.inicializar(
+      atendimentoId,
+      { filaId: filaDestinoId, tipo: 'ENTRADA_FILA' },
+      transacao,
+      () => agora,
+    );
+    await this.eventos.acrescentar(
+      {
+        atendimentoId,
+        classificacaoDados: 'OPERACIONAL',
+        conversaId: proximo.conversaId,
+        dados: {
+          filaDestinoId,
+          versaoAtribuicao: proximo.versaoAtribuicao,
+          versaoEstado: proximo.versaoEstado,
+        },
+        entidadeId: atendimentoId,
+        entidadeTipo: 'ATENDIMENTO',
+        tipo: 'ATENDIMENTO_ENCAMINHADO_POR_FLUXO',
+      },
+      transacao,
+    );
+    await this.auditarFluxo(
+      ator,
+      atendimentoId,
+      filaDestinoId,
+      'ATENDIMENTO_ENCAMINHADO_POR_FLUXO',
+      'ENCAMINHAR_ATENDIMENTO_PARA_FILA',
+      {
+        estado: proximo.estado,
+        modo: proximo.modo,
+        versaoAtribuicao: proximo.versaoAtribuicao,
+        versaoEstado: proximo.versaoEstado,
+      },
+      transacao,
+    );
+    return true;
+  }
+
+  public async consultarEsperaAtendentePorFluxo(
+    ator: AtorFluxoAtribuicaoAtendimento,
+    atendimentoId: string,
+    filaId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<EstadoEsperaAtendenteFluxo> {
+    this.validarAtorFluxo(ator, atendimentoId, filaId);
+    const atual = await this.repositorio.obterParaFluxo(
+      atendimentoId,
+      ator.execucaoFluxoId,
+      ator.fluxoId,
+      ator.versaoFluxoId,
+      transacao,
+    );
+    if (
+      atual?.estado === 'EM_ATENDIMENTO' &&
+      atual.modo === 'HUMANO' &&
+      atual.filaAtualId === filaId &&
+      atual.usuarioResponsavelId !== undefined
+    ) {
+      return 'ATENDIDO';
+    }
+    if (
+      atual?.estado === 'AGUARDANDO' &&
+      atual.modo === 'FILA_HUMANA' &&
+      atual.motivoEspera === 'AGUARDANDO_HUMANO' &&
+      atual.filaAtualId === filaId &&
+      atual.usuarioResponsavelId === undefined &&
+      (await this.repositorio.filaEstaAtiva(filaId, transacao))
+    ) {
+      return 'AGUARDANDO';
+    }
+    return 'INVALIDO';
+  }
+
+  public async encerrarPorFluxo(
+    ator: AtorFluxoAtribuicaoAtendimento,
+    atendimentoId: string,
+    filaFallbackReaberturaId: string,
+    motivo: string,
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<boolean> {
+    this.validarAtorFluxo(
+      ator,
+      atendimentoId,
+      filaFallbackReaberturaId,
+    );
+    await this.repositorio.bloquearParaFluxo(
+      atendimentoId,
+      filaFallbackReaberturaId,
+      transacao,
+    );
+    const [atual, filaAtiva] = await Promise.all([
+      this.repositorio.obterParaFluxo(
+        atendimentoId,
+        ator.execucaoFluxoId,
+        ator.fluxoId,
+        ator.versaoFluxoId,
+        transacao,
+      ),
+      this.repositorio.filaEstaAtiva(filaFallbackReaberturaId, transacao),
+    ]);
+    if (
+      atual === undefined ||
+      !filaAtiva ||
+      atual.estado !== 'AGUARDANDO' ||
+      atual.modo !== 'BOT' ||
+      atual.motivoEspera !== 'PROCESSANDO_BOT' ||
+      atual.filaAtualId !== undefined ||
+      atual.usuarioResponsavelId !== undefined
+    ) {
+      return false;
+    }
+    const agora = relogio();
+    const proximo = this.maquina.transitar(
+      atual,
+      {
+        atorId: ator.fluxoId,
+        filaFallbackReaberturaId,
+        motivo,
+        origem: 'FLUXO',
+        tipo: 'ENCERRAR',
+      },
+      agora,
+    );
+    if (
+      !(await this.repositorio.encerrarPorFluxoCondicional(
+        proximo,
+        ator.execucaoFluxoId,
+        ator.fluxoId,
+        ator.versaoFluxoId,
+        atual.versaoEstado,
+        atual.versaoAtribuicao,
+        transacao,
+      ))
+    ) {
+      return false;
+    }
+    await this.eventos.acrescentar(
+      {
+        atendimentoId,
+        classificacaoDados: 'OPERACIONAL',
+        conversaId: proximo.conversaId,
+        dados: {
+          estado: proximo.estado,
+          versaoAtribuicao: proximo.versaoAtribuicao,
+          versaoEstado: proximo.versaoEstado,
+        },
+        entidadeId: atendimentoId,
+        entidadeTipo: 'ATENDIMENTO',
+        tipo: 'ATENDIMENTO_ENCERRADO',
+      },
+      transacao,
+    );
+    await this.auditarFluxo(
+      ator,
+      atendimentoId,
+      filaFallbackReaberturaId,
+      'ATENDIMENTO_ENCERRADO_POR_FLUXO',
+      'ENCERRAR_ATENDIMENTO_POR_FLUXO',
+      {
+        estado: proximo.estado,
+        versaoAtribuicao: proximo.versaoAtribuicao,
+        versaoEstado: proximo.versaoEstado,
+      },
+      transacao,
+    );
+    return true;
+  }
 
   public async resgatar(
     sessao: ContextoSessaoAutorizacao,
@@ -608,6 +842,50 @@ export class ServicoAtribuicoesAtendimento {
       },
       transacao,
     );
+  }
+
+  private async auditarFluxo(
+    ator: AtorFluxoAtribuicaoAtendimento,
+    atendimentoId: string,
+    filaId: string,
+    tipoEvento: string,
+    acao: string,
+    dadosNovos: Readonly<Record<string, unknown>>,
+    transacao: TransacaoPrisma,
+  ): Promise<void> {
+    await this.auditoria.registrar(
+      {
+        acao,
+        atendimentoId,
+        dadosNovos,
+        entidadeId: atendimentoId,
+        entidadeTipo: 'ATENDIMENTO',
+        filaId,
+        fluxoId: ator.fluxoId,
+        origem: 'FLUXO',
+        tipoEvento,
+        versaoFluxoId: ator.versaoFluxoId,
+      },
+      transacao,
+    );
+  }
+
+  private validarAtorFluxo(
+    ator: AtorFluxoAtribuicaoAtendimento,
+    atendimentoId: string,
+    filaId: string,
+  ): void {
+    if (
+      ![
+        ator.execucaoFluxoId,
+        ator.fluxoId,
+        ator.versaoFluxoId,
+        atendimentoId,
+        filaId,
+      ].every((id) => UUID.test(id))
+    ) {
+      throw new ErroEntradaAtribuicaoAtendimentoInvalida();
+    }
   }
 
   private validarEntrada(

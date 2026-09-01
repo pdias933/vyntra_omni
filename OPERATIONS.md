@@ -621,3 +621,11 @@ Em teste isolado com adapter determinístico, comprovar uma operação por execu
 Não há migration nova. Implantar API e todas as instâncias de `worker_fluxos` com a mesma imagem e manter `20260901012500_espera_resposta_fluxo` como marca de prontidão. Sem provider ERP, validar `INDISPONIVEL` na verificação, `FALHA` na execução e ausência de operação, reserva, histórico ou auditoria de sucesso. Com adapter determinístico exclusivo de teste, comprovar consulta separada, nova elegibilidade antes da escrita, uma chave por execução+nó e auditoria `FLUXO` sanitizada.
 
 Monitorar operações `RESULTADO_INCERTO`, reservas antigas e concorrência por contrato. Nunca liberar reserva, criar histórico ou marcar sucesso por SQL. Rollback preserva todo histórico; antes de voltar ao worker PR 080, interromper novas execuções e comprovar que nenhum nó da PR 081 permanece não terminal.
+
+## 29. Operação dos nós de fila e encerramento da PR 082
+
+A migration obrigatória passa a `20260901013000_espera_atendente_fluxo`. Ela amplia a constraint e o trigger de agendamento para `AGUARDANDO_ATENDENTE`, preservando as regras anteriores de espera por sistema e resposta. Implantar API e todos os `worker_fluxos` com a mesma imagem antes de publicar os novos nós.
+
+Monitorar esperas por atendente vencidas, `TRANSFERENCIA_PARA_FILA_NEGADA`, `CONTEXTO_ESPERA_ATENDENTE_INVALIDO`, `RETOMADA_ESPERA_ATENDENTE_INVALIDA`, `ENCERRAMENTO_POR_FLUXO_NEGADO`, histórico de fila aberto sem atendimento correspondente e divergência de imagem entre workers. Timeout é saída de negócio; backlog vencido, duas atribuições abertas ou execução ativa depois de assunção/encerramento são incidentes.
+
+No aceite, comprovar transferência para fila ativa, timeout recuperado após reinício, concorrência de dois workers, suspensão após resgate humano e encerramento com fallback congelado. Passos e logs não podem conter motivo, usuário fabricado ou dado de cliente. Não alterar fila, histórico, marcador, `retomar_em`, estado ou revisão por SQL. Rollback preserva atribuições e encerramentos; antes de usar worker PR 081, comprovar que nenhuma execução não terminal depende desses nós.

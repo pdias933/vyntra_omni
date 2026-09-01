@@ -704,3 +704,9 @@ A chave é derivada deterministicamente de execução+nó e não depende da revi
 Na PR 081, `ServicoDesbloqueiosFluxo` é a fronteira entre o executor e os serviços existentes de elegibilidade/execução. O worker prepara tipo, ator interno, atendimento, contrato derivado e chave estável em uma transação curta; a consulta ou escrita ERP acontece depois do commit. Ao voltar, o executor relê execução, revisão e nó antes de persistir o passo e avançar.
 
 `RepositorioDesbloqueiosConfiancaPrisma` possui uma projeção específica para fluxo: atendimento `AGUARDANDO/BOT` sem fila/responsável, vínculo verificado e execução `EXECUTANDO` da mesma versão. O caminho humano preserva fila e autorização central. A execução automática usa o mesmo domínio recuperável da ação humana, inclusive nova elegibilidade em tempo real, lock e reserva por contrato, mas audita como `FLUXO`. O adapter ERP continua opcional e nenhum simulador é registrado em runtime.
+
+### 13.10 Fila, espera humana e encerramento pelo Motor de Fluxos
+
+O executor delega a mudança operacional a `ServicoAtribuicoesAtendimento`; ele não escreve atribuição, histórico, evento ou auditoria diretamente. O repositório bloqueia atendimento/histórico e fila pelas mesmas chaves usadas pelos casos humanos, relê a `ExecucaoFluxo` exata e aplica alteração condicional somente enquanto ela permanece `EXECUTANDO` na versão fixa e o atendimento conserva autoridade BOT.
+
+A transferência confirma atribuição, intervalo histórico, evento e auditoria numa transação. A espera humana reutiliza o agendamento reconstruível: `AGUARDANDO_ATENDENTE + retomar_em` é consultado em lote pelos workers, sem Redis autoritativo ou temporizador em memória. A assunção humana e o timeout concorrem pelo estado persistido; somente um caminho progride. O encerramento passa pela máquina de atendimento, congela a fila de fallback, fecha histórico, conclui a execução e preserva o protocolo para eventual reabertura de 30 minutos.

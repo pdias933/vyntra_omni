@@ -169,6 +169,17 @@ export class ServicoExecucoesFluxo {
         throw new ErroExecucaoFluxoInvalida();
       }
     }
+    if (estadoEspera === 'AGUARDANDO_ATENDENTE') {
+      const espera = lerEsperaFluxo(contextoProtegido, atual.noAtualId);
+      if (
+        espera.estado !== 'PRESENTE' ||
+        espera.espera.tipo !== 'ATENDENTE' ||
+        espera.espera.respostaRecebida ||
+        espera.espera.retomarEm !== retomarEm.toISOString()
+      ) {
+        throw new ErroExecucaoFluxoInvalida();
+      }
+    }
     const proxima = this.maquina.agendarRetomada(
       atual,
       retomarEm,
@@ -346,11 +357,15 @@ export class ServicoExecucoesFluxo {
 
   private validarEstadoEspera(
     valor: unknown,
-  ): 'AGUARDANDO_RESPOSTA' | 'AGUARDANDO_SISTEMA' {
+  ):
+    | 'AGUARDANDO_RESPOSTA'
+    | 'AGUARDANDO_SISTEMA'
+    | 'AGUARDANDO_ATENDENTE' {
     if (valor === undefined || valor === 'AGUARDANDO_SISTEMA') {
       return 'AGUARDANDO_SISTEMA';
     }
     if (valor === 'AGUARDANDO_RESPOSTA') return valor;
+    if (valor === 'AGUARDANDO_ATENDENTE') return valor;
     throw new ErroExecucaoFluxoInvalida();
   }
 

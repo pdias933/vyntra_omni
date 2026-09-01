@@ -346,6 +346,49 @@ test('espera de resposta agenda timeout e aceita retomada antecipada marcada', a
   );
 });
 
+test('espera por atendente só retoma no vencimento persistido', async () => {
+  const contextoProtegido = {
+    esperasFluxo: {
+      esperar_atendente: {
+        respostaRecebida: false,
+        retomarEm: depois(60).toISOString(),
+        tipo: 'ATENDENTE',
+      },
+    },
+  };
+  const cenario = criarCenario({
+    atual: execucao({ noAtualId: 'esperar_atendente' }),
+  });
+  const agendada = await cenario.servico.agendarRetomada(
+    {
+      contextoProtegido,
+      estadoEspera: 'AGUARDANDO_ATENDENTE',
+      execucaoFluxoId: ids.execucao,
+      retomarEm: depois(60),
+      revisaoEsperada: 1,
+    },
+    cenario.transacao,
+    () => depois(1),
+  );
+  assert.equal(agendada.estado, 'AGUARDANDO_ATENDENTE');
+  assert.throws(
+    () =>
+      new MaquinaEstadoExecucaoFluxo().transitar(
+        agendada,
+        { tipo: 'RETOMAR' },
+        depois(59),
+      ),
+    ErroTransicaoExecucaoFluxoInvalida,
+  );
+  const retomada = new MaquinaEstadoExecucaoFluxo().transitar(
+    agendada,
+    { tipo: 'RETOMAR' },
+    depois(60),
+  );
+  assert.equal(retomada.estado, 'EXECUTANDO');
+  assert.equal(retomada.retomarEm, undefined);
+});
+
 test('recusa agendamento vencido, inválido ou fora de EXECUTANDO', async () => {
   const maquina = new MaquinaEstadoExecucaoFluxo();
   assert.throws(
@@ -419,6 +462,9 @@ function criarExecutor({
   formularioAtivo = true,
   resultadoSelecaoCliente = true,
   resultadoSelecaoContrato = true,
+  estadoEsperaAtendente = 'AGUARDANDO',
+  resultadoEncerrarFluxo = true,
+  resultadoTransferirFluxo = true,
   variaveis = [],
 }) {
   const chamadas = {
@@ -430,6 +476,7 @@ function criarExecutor({
     faturas: [],
     formularios: [],
     protocolosOrdens: [],
+    roteamento: [],
     mensagens: [],
     passosFinalizados: [],
     passosIniciados: [],
@@ -437,6 +484,16 @@ function criarExecutor({
   };
   const atual = execucao({ contextoProtegido, noAtualId: no.id, revisao: 7 });
   const fim = { id: 'fim', parametros: {}, referencias: [], tipo: 'FIM', variaveisEntrada: [], variaveisSaida: [] };
+  const esperaTransferencia = no.tipo === 'TRANSFERIR_PARA_FILA'
+    ? {
+        id: 'espera_transferencia',
+        parametros: { tempoLimiteSegundos: 30 },
+        referencias: no.referencias,
+        tipo: 'AGUARDAR_ATENDENTE',
+        variaveisEntrada: [],
+        variaveisSaida: [],
+      }
+    : undefined;
   const saidas = {
     CONDICAO: ['VERDADEIRO', 'FALSO', 'FALHA'],
     AGUARDAR: ['CONCLUIDO', 'TIMEOUT', 'FALHA'],
@@ -454,11 +511,21 @@ function criarExecutor({
     ENVIAR_FATURA: ['SUCESSO', 'DADOS_INCOMPLETOS', 'ERP_INDISPONIVEL', 'FALHA'],
     CRIAR_ATENDIMENTO: ['CRIADO', 'RESULTADO_INCERTO', 'INDISPONIVEL', 'FALHA'],
     CRIAR_ORDEM_SERVICO: ['CRIADA', 'RESULTADO_INCERTO', 'INDISPONIVEL', 'FALHA'],
+    TRANSFERIR_PARA_FILA: ['TRANSFERIDO', 'FALHA'],
+    AGUARDAR_ATENDENTE: ['ATENDIDO', 'TIMEOUT', 'FALHA'],
+    ENCERRAR_ATENDIMENTO: ['ENCERRADO', 'FALHA'],
   }[no.tipo] ?? [];
   const definicao = {
-    conexoes: saidas.map((saida) => ({ destinoNoId: 'fim', origemNoId: no.id, saida })),
+    conexoes: saidas.map((saida) => ({
+      destinoNoId:
+        no.tipo === 'TRANSFERIR_PARA_FILA' && saida === 'TRANSFERIDO'
+          ? 'espera_transferencia'
+          : 'fim',
+      origemNoId: no.id,
+      saida,
+    })),
     inicioNoId: no.tipo === 'INICIO' ? no.id : 'inicio',
-    nos: [no, fim],
+    nos: [no, ...(esperaTransferencia === undefined ? [] : [esperaTransferencia]), fim],
     variaveis,
     versaoSchema: 1,
   };
@@ -564,6 +631,20 @@ function criarExecutor({
       return preparacaoProtocoloOrdem;
     },
   };
+  const atribuicoes = {
+    consultarEsperaAtendentePorFluxo: async (...argumentos) => {
+      chamadas.roteamento.push(['AGUARDAR', ...argumentos]);
+      return estadoEsperaAtendente;
+    },
+    encaminharParaFilaPorFluxo: async (...argumentos) => {
+      chamadas.roteamento.push(['TRANSFERIR', ...argumentos]);
+      return resultadoTransferirFluxo;
+    },
+    encerrarPorFluxo: async (...argumentos) => {
+      chamadas.roteamento.push(['ENCERRAR', ...argumentos]);
+      return resultadoEncerrarFluxo;
+    },
+  };
   return {
     chamadas,
     executor: new ServicoExecutorNosFluxo(
@@ -578,6 +659,8 @@ function criarExecutor({
       faturas,
       formularios,
       protocolosOrdens,
+      {},
+      atribuicoes,
     ),
     transacao,
   };
@@ -685,6 +768,105 @@ test('espera persiste agenda e depois percorre timeout sem dormir no worker', as
   assert.equal(
     retomada.chamadas.avancos[0][0].contextoProtegido.esperasFluxo,
     undefined,
+  );
+});
+
+test('transferência do fluxo usa fila referenciada e espera atendente com timeout persistido', async () => {
+  const filaId = randomUUID();
+  const transferencia = criarExecutor({
+    no: {
+      id: 'transferir',
+      parametros: {},
+      referencias: [{ recursoId: filaId, tipo: 'FILA' }],
+      tipo: 'TRANSFERIR_PARA_FILA',
+      variaveisEntrada: [],
+      variaveisSaida: [],
+    },
+  });
+  await transferencia.executor.executarCiclo(1, () => depois(10));
+  assert.equal(transferencia.chamadas.roteamento[0][0], 'TRANSFERIR');
+  assert.equal(transferencia.chamadas.roteamento[0][3], filaId);
+  assert.equal(
+    transferencia.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
+    'TRANSFERIDO',
+  );
+
+  const noEspera = {
+    id: 'esperar_atendente',
+    parametros: { tempoLimiteSegundos: 30 },
+    referencias: [{ recursoId: filaId, tipo: 'FILA' }],
+    tipo: 'AGUARDAR_ATENDENTE',
+    variaveisEntrada: [],
+    variaveisSaida: [],
+  };
+  const espera = criarExecutor({ no: noEspera });
+  await espera.executor.executarCiclo(1, () => depois(10));
+  assert.equal(espera.chamadas.agendamentos.length, 1);
+  assert.equal(
+    espera.chamadas.agendamentos[0][0].estadoEspera,
+    'AGUARDANDO_ATENDENTE',
+  );
+  assert.equal(
+    espera.chamadas.agendamentos[0][0].contextoProtegido.esperasFluxo
+      .esperar_atendente.tipo,
+    'ATENDENTE',
+  );
+
+  const retomada = criarExecutor({
+    contextoProtegido:
+      espera.chamadas.agendamentos[0][0].contextoProtegido,
+    no: noEspera,
+  });
+  await retomada.executor.executarCiclo(1, () => depois(40));
+  assert.equal(
+    retomada.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
+    'TIMEOUT',
+  );
+  assert.equal(retomada.chamadas.avancos.length, 1);
+});
+
+test('atendente assumido suspende fluxo e encerramento fecha execução', async () => {
+  const filaId = randomUUID();
+  const atendido = criarExecutor({
+    estadoEsperaAtendente: 'ATENDIDO',
+    no: {
+      id: 'esperar_atendente',
+      parametros: { tempoLimiteSegundos: 30 },
+      referencias: [{ recursoId: filaId, tipo: 'FILA' }],
+      tipo: 'AGUARDAR_ATENDENTE',
+      variaveisEntrada: [],
+      variaveisSaida: [],
+    },
+  });
+  await atendido.executor.executarCiclo(1, () => depois(10));
+  assert.equal(atendido.chamadas.avancos.length, 0);
+  assert.deepEqual(atendido.chamadas.transicoes[0][0].comando, {
+    tipo: 'SUSPENDER_POR_ATENDIMENTO_HUMANO',
+  });
+
+  const encerramento = criarExecutor({
+    no: {
+      id: 'encerrar',
+      parametros: { motivo: 'Fluxo concluído' },
+      referencias: [{ recursoId: filaId, tipo: 'FILA' }],
+      tipo: 'ENCERRAR_ATENDIMENTO',
+      variaveisEntrada: [],
+      variaveisSaida: [],
+    },
+  });
+  await encerramento.executor.executarCiclo(1, () => depois(10));
+  assert.equal(encerramento.chamadas.avancos.length, 0);
+  assert.deepEqual(encerramento.chamadas.transicoes[0][0].comando, {
+    tipo: 'CONCLUIR',
+  });
+  assert.equal(
+    encerramento.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
+    'ENCERRADO',
+  );
+  assert.ok(
+    !JSON.stringify(encerramento.chamadas.passosFinalizados).includes(
+      'Fluxo concluído',
+    ),
   );
 });
 

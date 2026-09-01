@@ -281,3 +281,50 @@ test('desbloqueio separa verificação de efeito e revalida autoridade automatiz
   assert.doesNotMatch(modulo, /ADAPTADOR_ERP|AdaptadorErpSimulado/);
   assert.doesNotMatch(fronteira, /Snapshot|MkSolutions|WSMK|https?:\/\//);
 });
+
+test('roteamento humano e encerramento preservam máquinas, fila ativa e autoridade do fluxo', async () => {
+  const [
+    executor,
+    atribuicoes,
+    repositorio,
+    validador,
+    maquina,
+    recuperacao,
+    migration,
+    modulo,
+  ] = await Promise.all([
+    ler('apps/api/src/execucoes-fluxo/servico-executor-nos-fluxo.ts'),
+    ler(
+      'apps/api/src/atribuicoes-atendimento/servico-atribuicoes-atendimento.ts',
+    ),
+    ler(
+      'apps/api/src/atribuicoes-atendimento/repositorio-atribuicoes-atendimento-prisma.ts',
+    ),
+    ler('apps/api/src/fluxos/validador-publicacao-fluxo.ts'),
+    ler('apps/api/src/execucoes-fluxo/maquina-estado-execucao-fluxo.ts'),
+    ler(
+      'apps/api/src/execucoes-fluxo/repositorio-execucoes-fluxo-prisma.ts',
+    ),
+    ler(
+      'apps/api/prisma/migrations/20260901013000_espera_atendente_fluxo/migration.sql',
+    ),
+    ler('apps/api/src/execucoes-fluxo/modulo-execucoes-fluxo.ts'),
+  ]);
+  assert.match(executor, /executarRoteamentoAtendimento/);
+  assert.match(executor, /estadoEspera: 'AGUARDANDO_ATENDENTE'/);
+  assert.match(executor, /SUSPENDER_POR_ATENDIMENTO_HUMANO/);
+  assert.match(atribuicoes, /encaminharParaFilaPorFluxo/);
+  assert.match(atribuicoes, /encerrarPorFluxo/);
+  assert.match(atribuicoes, /origem: 'FLUXO'/);
+  assert.match(atribuicoes, /filaFallbackReaberturaId/);
+  assert.match(repositorio, /modo: 'BOT'/);
+  assert.match(repositorio, /motivoEspera: 'PROCESSANDO_BOT'/);
+  assert.match(repositorio, /filaEstaAtiva/);
+  assert.match(validador, /TRANSFERENCIA_SEM_ESPERA_ATENDENTE_COMPATIVEL/);
+  assert.match(maquina, /AGUARDANDO_ATENDENTE/);
+  assert.match(recuperacao, /'AGUARDANDO_ATENDENTE'::"estado_execucao_fluxo"/);
+  assert.match(migration, /RETOMADA_EXECUCAO_FLUXO_PREMATURA/);
+  assert.match(migration, /'ATENDENTE'/);
+  assert.match(modulo, /ModuloAtribuicoesAtendimento/);
+  assert.doesNotMatch(atribuicoes, /MkSolutions|MetaCloud|https?:\/\//);
+});

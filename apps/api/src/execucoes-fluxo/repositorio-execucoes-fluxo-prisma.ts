@@ -126,7 +126,8 @@ export class RepositorioExecucoesFluxoPrisma
       FROM "execucao_fluxo"
       WHERE "estado" IN (
           'AGUARDANDO_SISTEMA'::"estado_execucao_fluxo",
-          'AGUARDANDO_RESPOSTA'::"estado_execucao_fluxo"
+          'AGUARDANDO_RESPOSTA'::"estado_execucao_fluxo",
+          'AGUARDANDO_ATENDENTE'::"estado_execucao_fluxo"
         )
         AND "retomar_em" <= ${agora}
       ORDER BY "retomar_em" ASC, "id" ASC

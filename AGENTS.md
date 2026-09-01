@@ -433,7 +433,7 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - Publicação aceita somente `EM_TESTE`; reversão aceita somente `ARQUIVADA`. Não contorne esses estados para acelerar testes ou UI.
 - `ExecucaoFluxo` fixa atendimento, fluxo e versão no início; nenhuma publicação ou retomada relê o ponteiro para migrar execução existente.
 - Estados terminais de execução são imutáveis e nunca retomam. Toda transição usa estado e revisão esperados; Redis não guarda autoridade.
-- `retomar_em` só existe em `AGUARDANDO_SISTEMA` ou `AGUARDANDO_RESPOSTA`, aponta para instante futuro e é a autoridade reconstruível do agendamento.
+- `retomar_em` só existe em `AGUARDANDO_SISTEMA`, `AGUARDANDO_RESPOSTA` ou `AGUARDANDO_ATENDENTE`, aponta para instante futuro e é a autoridade reconstruível do agendamento.
 - Worker consulta vencidos no PostgreSQL em lote com bloqueio concorrente; não cria timer longo por atendimento e não depende de job Redis para recuperar estado.
 - Queda antes do commit conserva o agendamento; queda depois do commit conserva `EXECUTANDO`. Não reponha estado por SQL.
 - Não escreva contexto arbitrário nem execute nó antes do PR correspondente.
@@ -464,3 +464,7 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - No Motor de Fluxos, verificar e executar desbloqueio são nós distintos. Verificação nunca escreve; execução aceita somente `confirmacaoExplicita: true`, refaz a elegibilidade em tempo real e usa chave estável execução+nó.
 - Derive contrato do contexto e exija atendimento BOT sem fila/responsável, execução/versão corrente e vínculo automatizável verificado. Ação humana mantém fila+RBAC; não fabrique usuário, sessão ou fila para fluxo.
 - Não exponha contrato, motivos, chave, instantes ou resposta ERP em passo/log/auditoria. Resultado incerto só reconcilia; sem provider, nenhum efeito ou operação pode nascer.
+- `TRANSFERIR_PARA_FILA` exige fila interna ativa e conduz diretamente a `AGUARDAR_ATENDENTE` da mesma fila; valide a topologia também no runtime antes da mutação.
+- Transferência automática usa o serviço de atribuição, autoridade BOT e ator `FLUXO`; nunca invente usuário/sessão nem escreva fila, histórico, evento ou auditoria diretamente no executor.
+- Espera humana persiste `AGUARDANDO_ATENDENTE`, marcador e `retomar_em`; resgate suspende a execução e timeout avança o grafo. Redis e timers em memória não são autoridade.
+- Encerramento por fluxo exige motivo fechado e fila de fallback ativa, aplica a máquina de atendimento e conclui a execução. Reabertura nunca retoma a execução antiga; motivo não entra em passo/log/auditoria.

@@ -149,6 +149,7 @@ export class ValidadorPublicacaoFluxo {
     const nosPorId = new Map(definicao.nos.map((no) => [no.id, no]));
     this.validarInicioEFim(definicao, nosPorId, problemas);
     this.validarConexoes(definicao, nosPorId, problemas);
+    this.validarRoteamentoHumano(definicao, nosPorId, problemas);
     this.validarCapacidadesEReferencias(definicao, contexto, problemas);
     const alcancaveis = this.obterAlcancaveis(definicao, nosPorId);
     for (const no of definicao.nos) {
@@ -430,6 +431,24 @@ export class ValidadorPublicacaoFluxo {
         this.textoValido(parametros.descricao, 4_000)
       );
     }
+    if (tipo === 'TRANSFERIR_PARA_FILA') {
+      return this.temExatamenteChaves(parametros, []);
+    }
+    if (tipo === 'AGUARDAR_ATENDENTE') {
+      return (
+        this.temExatamenteChaves(parametros, ['tempoLimiteSegundos']) &&
+        typeof parametros.tempoLimiteSegundos === 'number' &&
+        Number.isInteger(parametros.tempoLimiteSegundos) &&
+        parametros.tempoLimiteSegundos >= 1 &&
+        parametros.tempoLimiteSegundos <= 86_400
+      );
+    }
+    if (tipo === 'ENCERRAR_ATENDIMENTO') {
+      return (
+        this.temExatamenteChaves(parametros, ['motivo']) &&
+        this.textoValido(parametros.motivo, 500)
+      );
+    }
     if (tipo === 'INICIO' || tipo === 'FIM') {
       return this.temExatamenteChaves(parametros, []);
     }
@@ -699,6 +718,7 @@ export class ValidadorPublicacaoFluxo {
       this.validarNoFormulario(no, problemas);
       this.validarNoFatura(no, problemas);
       this.validarNoProtocoloOuOrdem(no, problemas);
+      this.validarNoRoteamentoHumano(no, problemas);
       for (const nome of [...no.variaveisEntrada, ...no.variaveisSaida]) {
         if (!variaveis.has(nome)) {
           this.adicionar(problemas, {
@@ -804,6 +824,59 @@ export class ValidadorPublicacaoFluxo {
         codigo: 'CONFIGURACAO_OPERACAO_ERP_INVALIDA',
         noId: no.id,
       });
+    }
+  }
+
+  private validarNoRoteamentoHumano(
+    no: NoDefinicaoFluxo,
+    problemas: ProblemaValidacaoFluxo[],
+  ): void {
+    if (
+      no.tipo !== 'TRANSFERIR_PARA_FILA' &&
+      no.tipo !== 'AGUARDAR_ATENDENTE' &&
+      no.tipo !== 'ENCERRAR_ATENDIMENTO'
+    ) {
+      return;
+    }
+    if (
+      no.referencias.length !== 1 ||
+      no.referencias[0]?.tipo !== 'FILA' ||
+      no.variaveisEntrada.length !== 0 ||
+      no.variaveisSaida.length !== 0
+    ) {
+      this.adicionar(problemas, {
+        codigo: 'CONFIGURACAO_ROTEAMENTO_HUMANO_INVALIDA',
+        noId: no.id,
+      });
+    }
+  }
+
+  private validarRoteamentoHumano(
+    definicao: DefinicaoFluxoV1,
+    nosPorId: ReadonlyMap<string, NoDefinicaoFluxo>,
+    problemas: ProblemaValidacaoFluxo[],
+  ): void {
+    for (const no of definicao.nos) {
+      if (no.tipo !== 'TRANSFERIR_PARA_FILA') continue;
+      const destinoId = definicao.conexoes.find(
+        ({ origemNoId, saida }) =>
+          origemNoId === no.id && saida === 'TRANSFERIDO',
+      )?.destinoNoId;
+      const destino =
+        destinoId === undefined ? undefined : nosPorId.get(destinoId);
+      if (
+        destino?.tipo !== 'AGUARDAR_ATENDENTE' ||
+        no.referencias.length !== 1 ||
+        destino.referencias.length !== 1 ||
+        no.referencias[0]?.tipo !== 'FILA' ||
+        destino.referencias[0]?.tipo !== 'FILA' ||
+        no.referencias[0].recursoId !== destino.referencias[0].recursoId
+      ) {
+        this.adicionar(problemas, {
+          codigo: 'TRANSFERENCIA_SEM_ESPERA_ATENDENTE_COMPATIVEL',
+          noId: no.id,
+        });
+      }
     }
   }
 

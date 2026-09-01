@@ -704,3 +704,28 @@ saidas: CONCLUIDO | NAO_ELEGIVEL | RESULTADO_INCERTO | FALHA
 Contrato e autoridade vêm do atendimento; a chave vem de execução+nó. Mesmo depois de `ELEGIVEL`, a execução refaz a consulta em tempo real e revalida contexto, vínculo, execução/versão e intervalo local antes do efeito. Ambos exigem atendimento `AGUARDANDO/BOT` sem fila/responsável e vínculo automatizável verificado.
 
 Chamadas ERP ocorrem fora da transação do executor, e o passo só é aplicado se execução, revisão e nó permanecerem iguais. Sem provider, a verificação segue `INDISPONIVEL` e a execução falha antes de criar operação. Motivos, contrato, chave, instante e resposta externa não entram em passo, log ou auditoria.
+
+## 30. Nós de fila e encerramento da PR 082
+
+```text
+TRANSFERIR_PARA_FILA
+parametros/variaveis: vazios
+referencias: exatamente uma FILA ativa
+saidas: TRANSFERIDO | FALHA
+
+AGUARDAR_ATENDENTE
+parametros: tempoLimiteSegundos inteiro entre 1 e 86400
+variaveis: vazias
+referencias: exatamente a mesma FILA
+saidas: ATENDIDO | TIMEOUT | FALHA
+
+ENCERRAR_ATENDIMENTO
+parametros: motivo não vazio, até 500 caracteres
+variaveis: vazias
+referencias: exatamente uma FILA ativa de fallback
+saidas: ENCERRADO | FALHA
+```
+
+Publicação e runtime exigem que `TRANSFERIDO` aponte diretamente para `AGUARDAR_ATENDENTE` da mesma fila. A transferência só confirma se atendimento e execução ainda conservarem a autoridade BOT exata; fila, atribuição, histórico, evento e auditoria mudam no mesmo commit. Não existe usuário técnico.
+
+A espera usa estado persistido `AGUARDANDO_ATENDENTE`, marcador protegido e `retomar_em`; o worker reconstrói timeout pelo PostgreSQL. Resgate humano suspende terminalmente a execução, enquanto o timeout avança pelo grafo. Encerramento aplica a máquina de atendimento, congela a fila de fallback e encerra a execução no próprio nó; o caminho `ENCERRADO` existe no contrato publicado, mas não executa outro efeito após a conclusão terminal.

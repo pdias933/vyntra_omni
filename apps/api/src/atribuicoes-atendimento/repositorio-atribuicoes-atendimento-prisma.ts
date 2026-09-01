@@ -9,6 +9,31 @@ import type { RepositorioAtribuicoesAtendimento } from './repositorio-atribuicoe
 export class RepositorioAtribuicoesAtendimentoPrisma
   implements RepositorioAtribuicoesAtendimento
 {
+  public async bloquearParaFluxo(
+    atendimentoId: string,
+    filaId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<void> {
+    await transacao.$executeRaw(
+      Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`historico-atribuicao\u0000${atendimentoId}`}, 0))`,
+    );
+    await transacao.$executeRaw(
+      Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`fila\u0000${filaId}`}, 0))`,
+    );
+  }
+
+  public async filaEstaAtiva(
+    filaId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    return (
+      (await transacao.fila.findFirst({
+        select: { id: true },
+        where: { estado: 'ATIVA', id: filaId },
+      })) !== null
+    );
+  }
+
   public async obter(
     atendimentoId: string,
     transacao: TransacaoPrisma,
@@ -59,6 +84,119 @@ export class RepositorioAtribuicoesAtendimentoPrisma
         ? {}
         : { usuarioResponsavelId: atendimento.usuarioResponsavelId }),
     };
+  }
+
+  public async obterParaFluxo(
+    atendimentoId: string,
+    execucaoFluxoId: string,
+    fluxoId: string,
+    versaoFluxoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<AtendimentoPersistido | undefined> {
+    const corresponde = await transacao.atendimento.findFirst({
+      select: { id: true },
+      where: {
+        execucoesFluxo: {
+          some: {
+            estado: 'EXECUTANDO',
+            fluxoId,
+            id: execucaoFluxoId,
+            versaoFluxoId,
+          },
+        },
+        id: atendimentoId,
+      },
+    });
+    return corresponde === null
+      ? undefined
+      : this.obter(atendimentoId, transacao);
+  }
+
+  public async encaminharParaFilaPorFluxoCondicional(
+    proximo: AtendimentoPersistido,
+    execucaoFluxoId: string,
+    fluxoId: string,
+    versaoFluxoId: string,
+    versaoEstadoEsperada: number,
+    versaoAtribuicaoEsperada: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const resultado = await transacao.atendimento.updateMany({
+      data: {
+        atualizadoEm: proximo.atualizadoEm,
+        filaAtualId: proximo.filaAtualId!,
+        modo: 'FILA_HUMANA',
+        motivoEspera: 'AGUARDANDO_HUMANO',
+        usuarioResponsavelId: null,
+        versaoAtribuicao: proximo.versaoAtribuicao,
+        versaoEstado: proximo.versaoEstado,
+      },
+      where: {
+        estado: 'AGUARDANDO',
+        execucoesFluxo: {
+          some: {
+            estado: 'EXECUTANDO',
+            fluxoId,
+            id: execucaoFluxoId,
+            versaoFluxoId,
+          },
+        },
+        filaAtualId: null,
+        id: proximo.id,
+        modo: 'BOT',
+        motivoEspera: 'PROCESSANDO_BOT',
+        usuarioResponsavelId: null,
+        versaoAtribuicao: versaoAtribuicaoEsperada,
+        versaoEstado: versaoEstadoEsperada,
+      },
+    });
+    return resultado.count === 1;
+  }
+
+  public async encerrarPorFluxoCondicional(
+    proximo: AtendimentoPersistido,
+    execucaoFluxoId: string,
+    fluxoId: string,
+    versaoFluxoId: string,
+    versaoEstadoEsperada: number,
+    versaoAtribuicaoEsperada: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const resultado = await transacao.atendimento.updateMany({
+      data: {
+        atualizadoEm: proximo.atualizadoEm,
+        encerradoEm: proximo.encerradoEm!,
+        encerradoPorId: proximo.encerradoPorId!,
+        encerradoPorTipo: 'FLUXO',
+        estado: 'ENCERRADO_REABRIVEL',
+        filaFallbackReaberturaId: proximo.filaFallbackReaberturaId!,
+        finalizadoDefinitivamenteEm: null,
+        motivoEncerramento: proximo.motivoEncerramento!,
+        podeReabrirAte: proximo.podeReabrirAte!,
+        usuarioResponsavelId: null,
+        versaoAtribuicao: proximo.versaoAtribuicao,
+        versaoEstado: proximo.versaoEstado,
+      },
+      where: {
+        estado: 'AGUARDANDO',
+        execucoesFluxo: {
+          some: {
+            estado: 'EXECUTANDO',
+            fluxoId,
+            id: execucaoFluxoId,
+            versaoFluxoId,
+          },
+        },
+        filaAtualId: null,
+        id: proximo.id,
+        modo: 'BOT',
+        motivoEspera: 'PROCESSANDO_BOT',
+        usuarioResponsavelId: null,
+        versaoAtribuicao: versaoAtribuicaoEsperada,
+        versaoEstado: versaoEstadoEsperada,
+      },
+    });
+    return resultado.count === 1;
   }
 
   public async destinatarioEstaDisponivel(

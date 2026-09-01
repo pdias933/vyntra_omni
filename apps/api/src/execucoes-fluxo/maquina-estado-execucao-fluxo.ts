@@ -62,7 +62,8 @@ export class MaquinaEstadoExecucaoFluxo {
     agora: Date,
     estadoEspera:
       | 'AGUARDANDO_RESPOSTA'
-      | 'AGUARDANDO_SISTEMA' = 'AGUARDANDO_SISTEMA',
+      | 'AGUARDANDO_SISTEMA'
+      | 'AGUARDANDO_ATENDENTE' = 'AGUARDANDO_SISTEMA',
     contextoProtegido: unknown = atual.contextoProtegido,
   ): ExecucaoFluxoPersistida {
     this.validar(atual);
@@ -79,7 +80,9 @@ export class MaquinaEstadoExecucaoFluxo {
         tipo:
           estadoEspera === 'AGUARDANDO_RESPOSTA'
             ? 'AGUARDAR_RESPOSTA'
-            : 'AGUARDAR_SISTEMA',
+            : estadoEspera === 'AGUARDANDO_ATENDENTE'
+              ? 'AGUARDAR_ATENDENTE'
+              : 'AGUARDAR_SISTEMA',
       },
       agora,
     );
@@ -139,6 +142,13 @@ export class MaquinaEstadoExecucaoFluxo {
     ) {
       throw new ErroTransicaoExecucaoFluxoInvalida();
     }
+    if (
+      comando.tipo === 'RETOMAR' &&
+      atual.estado === 'AGUARDANDO_ATENDENTE' &&
+      atual.retomarEm === undefined
+    ) {
+      throw new ErroTransicaoExecucaoFluxoInvalida();
+    }
     const proximoEstado = this.obterProximoEstado(atual.estado, comando);
     const codigoFinalizacao = this.obterCodigoFinalizacao(comando);
     const terminal = ESTADOS_TERMINAIS.has(proximoEstado);
@@ -175,7 +185,11 @@ export class MaquinaEstadoExecucaoFluxo {
       !this.ehObjetoJsonProtegido(execucao.contextoProtegido) ||
       (execucao.retomarEm !== undefined &&
         (!Number.isFinite(execucao.retomarEm.getTime()) ||
-          !['AGUARDANDO_RESPOSTA', 'AGUARDANDO_SISTEMA'].includes(
+          ![
+            'AGUARDANDO_RESPOSTA',
+            'AGUARDANDO_SISTEMA',
+            'AGUARDANDO_ATENDENTE',
+          ].includes(
             execucao.estado,
           ) ||
           execucao.retomarEm <= execucao.atualizadaEm)) ||
@@ -291,6 +305,7 @@ export class MaquinaEstadoExecucaoFluxo {
         ]);
       case 'AGUARDANDO_ATENDENTE':
         return new Set([
+          'EXECUTANDO',
           'SUSPENSA_POR_ATENDIMENTO_HUMANO',
           'CANCELADA',
         ]);

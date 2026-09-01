@@ -6,10 +6,44 @@ export const REPOSITORIO_ATRIBUICOES_ATENDIMENTO = Symbol(
 );
 
 export interface RepositorioAtribuicoesAtendimento {
+  bloquearParaFluxo(
+    atendimentoId: string,
+    filaId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<void>;
+  filaEstaAtiva(
+    filaId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
   obter(
     atendimentoId: string,
     transacao: TransacaoPrisma,
   ): Promise<AtendimentoPersistido | undefined>;
+  obterParaFluxo(
+    atendimentoId: string,
+    execucaoFluxoId: string,
+    fluxoId: string,
+    versaoFluxoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<AtendimentoPersistido | undefined>;
+  encaminharParaFilaPorFluxoCondicional(
+    proximo: AtendimentoPersistido,
+    execucaoFluxoId: string,
+    fluxoId: string,
+    versaoFluxoId: string,
+    versaoEstadoEsperada: number,
+    versaoAtribuicaoEsperada: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+  encerrarPorFluxoCondicional(
+    proximo: AtendimentoPersistido,
+    execucaoFluxoId: string,
+    fluxoId: string,
+    versaoFluxoId: string,
+    versaoEstadoEsperada: number,
+    versaoAtribuicaoEsperada: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
   resgatarCondicional(
     proximo: AtendimentoPersistido,
     filaEsperadaId: string,
