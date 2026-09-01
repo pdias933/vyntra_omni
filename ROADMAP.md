@@ -98,7 +98,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 074 | CONCLUÍDA | `high` |
 | 075 | CONCLUÍDA | `xhigh` |
 | 076 | CONCLUÍDA | `high` |
-| 077 | EM ANDAMENTO | `xhigh` |
+| 077 | CONCLUÍDA | `xhigh` |
 | 078 | PENDENTE | `xhigh` |
 | 079 | PENDENTE | `xhigh` |
 | 080 | PENDENTE | `xhigh` |
@@ -477,6 +477,10 @@ Aceite concluído em 1º de setembro de 2026: o executor passou a interpretar `I
 ### PR 075 — nós de condição e variável
 
 Aceite concluído em 1º de setembro de 2026: `CONDICAO` e `DEFINIR_VARIAVEL` passaram a usar schemas exatos, variáveis declaradas e literais tipados como `BOOLEANO`, `DATA_HORA`, `DECIMAL`, `INTEIRO`, `TEXTO` ou `UUID`, sem expressão, código ou coerção implícita. Decimal é comparado por inteiro escalado e contexto/contadores mudam atomicamente com passo e revisão. O validador recusa segredo literal, operador incompatível, subciclo sem limite e limite cuja `FALHA` retorne ao ciclo; runtime defensivo produz códigos controlados para configuração, variável, contador ou limite inválido. Lint, tipos, 346 testes da API, 198 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-075` e duas instâncias de `vyntra/worker-fluxos-staging:pr-075` ficaram saudáveis com `20260901012000_nos_mensagem_lista` como marca mais recente. Em staging, o fluxo sintético concluiu 10 passos em 10 revisões únicas: condição verdadeira, condição falsa, duas voltas no auto-ciclo, `LIMITE_ITERACOES_EXCEDIDO` na terceira tentativa e `VARIAVEL_INDISPONIVEL` na leitura ausente. Contexto terminou com contador 3, houve zero mensagem e passos/auditorias não expuseram nome ou literal. Uma segunda execução aguardando foi preservada durante a recriação dos dois workers, retomou da revisão 5, respeitou o contador 2 já persistido e concluiu na revisão 9 com três passos únicos e nenhum erro de worker. Os registros sintéticos identificados foram preservados como histórico imutável.
+
+### PR 077 — nós de identidade, cliente e contrato
+
+Aceite concluído em 1º de setembro de 2026: os nós `IDENTIFICAR_CONTATO`, `SOLICITAR_DADOS_CONTATO`, `SELECIONAR_CLIENTE` e `SELECIONAR_CONTRATO` passaram a operar por contexto explícito e vínculo exato, sem inferir identidade por telefone, username, ordem ou preferência. Seleção exige UUID sensível estruturado, vínculo automatizável do mesmo contato e contrato sob o cliente atual; vínculo temporário, revogado, sem prova ou cruzado falha fechado. A mutação versionada e a auditoria compartilham a transação, e o pedido de dados usa fallback seguro enquanto não existe capacidade oficial. Lint, tipos, 361 testes da API, 200 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-077` e duas instâncias de `vyntra/worker-fluxos-staging:pr-077` ficaram saudáveis com prontidão `PRONTO`. Em staging, quatro execuções concluíram 22 passos únicos: o vínculo exato venceu outro preferencial, temporário e revogado foram recusados, contrato cruzado não foi aplicado, o contexto válido avançou até cliente+contrato e houve exatamente uma mensagem segura de fallback. Passos não expuseram UUID selecionado nem variável; três auditorias conservaram somente referências UUID internas dos vínculos, sem dado pessoal ou identificador ERP externo.
 
 ## 7. Mensageria Meta
 
