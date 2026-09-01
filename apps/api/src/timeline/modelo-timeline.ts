@@ -39,9 +39,11 @@ export interface EventoOperacionalTimeline extends ItemTimelineBase {
 
 export interface FormularioTimeline extends ItemTimelineBase {
   readonly tipo: 'FORMULARIO';
+  readonly acao: 'VER_FORMULARIO';
   readonly submissaoFormularioId: string;
   readonly nomeFormulario: string;
   readonly camposMascarados: Readonly<Record<string, string>>;
+  readonly visibilidade: 'SOMENTE_EQUIPE';
 }
 
 export interface SeparadorAtendimentoTimeline extends ItemTimelineBase {

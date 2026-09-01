@@ -46,10 +46,12 @@ test('timeline mantém mensagem, nota, evento, formulário e separador distintos
   };
   const formulario = {
     ...base(4, 5),
+    acao: 'VER_FORMULARIO',
     camposMascarados: { documento: '***.***.***-**' },
     nomeFormulario: 'Identificação',
     submissaoFormularioId: randomUUID(),
     tipo: 'FORMULARIO',
+    visibilidade: 'SOMENTE_EQUIPE',
   };
   const separador = {
     ...base(0, 1),

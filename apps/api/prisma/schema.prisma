@@ -178,6 +178,20 @@ enum EstadoModeloMensagemCanal {
   @@map("estado_modelo_mensagem_canal")
 }
 
+enum FinalidadeFormularioCanal {
+  IDENTIFICACAO
+  CADASTRO_COMERCIAL
+
+  @@map("finalidade_formulario_canal")
+}
+
+enum EstadoFormularioCanal {
+  ATIVO
+  INATIVO
+
+  @@map("estado_formulario_canal")
+}
+
 enum PapelBase {
   ADMINISTRADOR
   SUPERVISOR
@@ -864,6 +878,7 @@ model ContaWhatsApp {
   eventosEstadoMensagem         EventoEstadoMensagem[]
   modelosMensagem               ModeloMensagemCanal[]
   composicoesSegundaVia         ComposicaoSegundaVia[]
+  formulariosCanal              FormularioCanal[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorCanalExterno], map: "conta_whatsapp_identidade_externa_key")
   @@index([estado, nomeExibicao, id], map: "conta_whatsapp_estado_nome_idx")
@@ -887,6 +902,7 @@ model Contato {
   janelasAtendimentoCanal JanelaAtendimentoCanal[]
   mensagensRecebidas      Mensagem[]
   composicoesSegundaVia   ComposicaoSegundaVia[]
+  submissoesFormulario    SubmissaoFormularioCanal[]
 
   @@index([estado, ultimaInteracaoEm, id], map: "contato_estado_ultima_interacao_idx")
   @@map("contato")
@@ -1208,6 +1224,7 @@ model Mensagem {
   midia                        MidiaMensagem?
   eventoEntradaCanal           EventoEntradaCanal?
   eventosEstado                EventoEstadoMensagem[]
+  submissaoFormulario          SubmissaoFormularioCanal?
 
   @@unique([contaWhatsAppId, identificadorExternoMensagem], map: "mensagem_conta_identificador_externo_key")
   @@unique([usuarioRemetenteId, mensagemClienteId], map: "mensagem_usuario_cliente_key")
@@ -1312,6 +1329,43 @@ model ComposicaoSegundaVia {
 
   @@index([contatoId, criadaEm, id], map: "composicao_segunda_via_contato_criada_idx")
   @@map("composicao_segunda_via")
+}
+
+model FormularioCanal {
+  id                    String                    @id @db.Uuid
+  contaWhatsAppId       String                    @map("conta_whatsapp_id") @db.Uuid
+  referenciaCanal       String                    @map("referencia_canal") @db.VarChar(256)
+  nome                  String                    @db.VarChar(200)
+  finalidade            FinalidadeFormularioCanal
+  estado                EstadoFormularioCanal
+  estruturaProtegida    Json                      @map("estrutura_protegida")
+  estruturaHash         String                    @map("estrutura_hash") @db.Char(64)
+  sincronizadoEm        DateTime                  @map("sincronizado_em") @db.Timestamptz(6)
+  versao                Int                       @default(1)
+  contaWhatsApp         ContaWhatsApp             @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  submissoes            SubmissaoFormularioCanal[]
+
+  @@unique([contaWhatsAppId, referenciaCanal], map: "formulario_canal_conta_referencia_key")
+  @@index([contaWhatsAppId, estado, finalidade, nome], map: "formulario_canal_catalogo_idx")
+  @@map("formulario_canal")
+}
+
+model SubmissaoFormularioCanal {
+  id                    String           @id @db.Uuid
+  formularioId          String           @map("formulario_id") @db.Uuid
+  mensagemId            String           @unique(map: "submissao_formulario_canal_mensagem_key") @map("mensagem_id") @db.Uuid
+  contatoId             String           @map("contato_id") @db.Uuid
+  referenciaCanal       String           @map("referencia_canal") @db.VarChar(64)
+  dadosProtegidos       Json             @map("dados_protegidos")
+  dadosHash             String           @map("dados_hash") @db.Char(64)
+  recebidaEm            DateTime         @map("recebida_em") @db.Timestamptz(6)
+  formulario            FormularioCanal  @relation(fields: [formularioId], references: [id], onDelete: Restrict)
+  mensagem              Mensagem         @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
+  contato               Contato          @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+
+  @@unique([formularioId, referenciaCanal], map: "submissao_formulario_canal_formulario_referencia_key")
+  @@index([contatoId, recebidaEm, id], map: "submissao_formulario_canal_contato_recebida_idx")
+  @@map("submissao_formulario_canal")
 }
 
 model ProtocoloErp {
