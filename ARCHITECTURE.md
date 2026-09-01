@@ -772,3 +772,11 @@ Criação/inativação de fila e override temporário de calendário reutilizam 
 A PR 095 completa a superfície administrativa iniciada no editor visual: o catálogo permite alternar entre fluxos, o histórico imutável permite inspecionar qualquer versão e somente rascunhos aceitam edição. Simulação continua puramente fictícia; validar e publicar são comandos distintos. Publicação exige confirmação visual e afeta apenas novas execuções.
 
 Reversão não copia nem reescreve a versão arquivada. O endpoint autenticado encaminha a versão alvo e a revisão esperada ao `ServicoPublicacaoFluxos`, que autoriza `REVERTER_FLUXO`, bloqueia o fluxo, compara a revisão, arquiva a versão atual, reativa a anterior e acrescenta histórico e auditoria na mesma transação. Execuções existentes permanecem presas à versão com que nasceram.
+
+### 13.20 Saúde, recuperação e releases
+
+A PR 096 separa saúde pública mínima de diagnóstico administrativo. `/saude/vivo` e `/saude/pronto` continuam sem sessão e sem detalhes. `/administracao/saude` autentica e autoriza `ADMINISTRAR_INTEGRACOES` antes de observar componentes, contagens ou operações; a projeção omite entidade, payload protegido, token, segredo e identificador externo. Dependência ausente aparece `NAO_CONFIGURADO`, nunca saudável por inferência.
+
+`Reprocessar agora` não executa integração no processo HTTP e não altera o estado da operação. Sob revisão esperada, apenas antecipa `proxima_acao_em` para operações em `AGUARDANDO_NOVA_TENTATIVA` ou `RESULTADO_INCERTO`, preservando respectivamente os caminhos de execução e reconciliação do worker. Estado terminal não reabre. A antecipação e sua auditoria são atômicas.
+
+O painel desktop consome esse contrato e os contratos de release já existentes exclusivamente pelo SDK gerado. Saúde atualiza silenciosamente; controles de recurso, desligamento emergencial e políticas mobile exigem preview e confirmação. O PostgreSQL continua autoridade para rollout e versão mínima obrigatória.

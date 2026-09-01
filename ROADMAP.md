@@ -117,7 +117,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 093 | CONCLUÍDA | `xhigh` |
 | 094 | CONCLUÍDA | `high` |
 | 095 | CONCLUÍDA | `xhigh` |
-| 096 | PENDENTE | `xhigh` |
+| 096 | CONCLUÍDA | `xhigh` |
 | 097 | PENDENTE | `xhigh` |
 | 098 | PENDENTE | `high` |
 | 099 | PENDENTE | `xhigh` |
@@ -634,6 +634,10 @@ Aceite concluído em 1º de setembro de 2026: `Configuração operacional` receb
 ### PR 095 — administração do Motor de Fluxos
 
 Aceite concluído em 1º de setembro de 2026: o editor desktop permite alternar entre fluxos, consultar o histórico imutável de versões, abrir qualquer versão e restaurar uma versão arquivada com preview e confirmação explícita. Rascunho, validação, simulação fictícia, publicação e reversão permanecem comandos distintos. O endpoint de reversão exige sessão+origem+CSRF e delega ao serviço que autoriza `REVERTER_FLUXO`, bloqueia o fluxo, compara a revisão, troca a versão publicada e acrescenta histórico e auditoria na mesma transação. Execuções em curso não migram de versão. O web usa somente o SDK OpenAPI gerado, impede troca com alterações locais não salvas e respeita redução de movimento. Não houve migration. Lint, tipos, 423 testes da API e 236 testes de arquitetura foram aprovados. Effort `xhigh` foi mantido pela segurança da reversão e pelo ciclo administrativo completo.
+
+### PR 096 — saúde, reprocessamento e releases
+
+Aceite concluído em 1º de setembro de 2026: `Saúde e releases` observa automaticamente API, PostgreSQL, Redis e Object Storage, separa ausência de configuração de indisponibilidade e resume operações recuperáveis e caixa de saída sem payload, entidade de negócio ou identificador externo. Diagnóstico exige `ADMINISTRAR_INTEGRACOES` dentro da mesma leitura consistente dos dados. `Reprocessar agora` exige sessão+origem+CSRF e revisão esperada; apenas antecipa `proxima_acao_em`, sem chamar integração ou trocar estado, portanto resultado incerto continua no caminho obrigatório de reconciliação. Estado terminal não reabre e a antecipação é auditada na mesma transação. A página também administra controles de recurso, desligamento emergencial e políticas iOS/Android pelos serviços `ADMINISTRAR_RELEASES` existentes, sempre com preview e confirmação; controle novo nasce desativado. O web usa somente o SDK OpenAPI gerado e atualiza saúde silenciosamente. Não houve migration. Lint, tipos, 426 testes da API e 239 testes de arquitetura foram aprovados. Effort `xhigh` foi mantido pela recuperação sem efeito duplicado e pelo impacto da atualização obrigatória.
 
 ## 12. Mobile
 

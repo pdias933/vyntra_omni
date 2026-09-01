@@ -423,6 +423,12 @@ O provedor de sessão de acesso pode informar `NAO_CONFIGURADO` ou `DESATIVADO` 
 
 Um monitor externo consulta a saúde pública mínima. Se a VM morrer, o alerta não depende do próprio sistema.
 
+Na PR 096, o painel autenticado observa API, PostgreSQL, Redis e Object Storage sem expor endereço, credencial ou detalhe de conexão. A ausência de configuração é distinta de indisponibilidade. Contagens de caixa de saída e operações recuperáveis vêm do PostgreSQL; payload e identificadores de negócio não entram na projeção.
+
+`Reprocessar agora` somente antecipa a agenda persistida. Para `AGUARDANDO_NOVA_TENTATIVA`, o worker pode adquirir nova execução; para `RESULTADO_INCERTO`, ele deve adquirir reconciliação. A rota HTTP não chama Meta, MK ou outro destino, não muda operação incerta para pendente e não reabre falha definitiva. Revisão concorrente retorna conflito e toda antecipação é auditada. Se o worker estiver parado, o botão não mascara a falha: a operação continuará visível e o runbook do worker deve ser seguido.
+
+Controles de recurso e política mobile permanecem sob `ADMINISTRAR_RELEASES`. Todo aumento de rollout, desligamento emergencial ou mudança de versão mínima exige revisão visual, confirmação, versão esperada e auditoria. A criação de controle nasce desativada, com zero por cento e sem alvo.
+
 ## 15. Logs, métricas e tracing
 
 ### Logs técnicos

@@ -705,3 +705,16 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - auto-rebaixamento e remoção do último administrador falham fechados;
 - mudança produz invalidação imediata e auditoria sanitizada no mesmo commit;
 - revogações remotas exigem confirmação visual e continuam sob os serviços de sessão e dispositivo.
+
+## 28. Saúde administrativa e reprocessamento da PR 096
+
+- saúde pública continua genérica; componente, falha e backlog exigem sessão atual e `ADMINISTRAR_INTEGRACOES`;
+- autorização acontece antes das sondagens e consultas; abrir a rota web não concede diagnóstico;
+- painel não recebe payload protegido, resultado, entidade de negócio, destino, credencial, token ou identificador externo;
+- dependência sem configuração aparece como tal e nunca é promovida a operacional por ausência de erro;
+- reprocessamento exige origem permitida, dupla apresentação CSRF, UUID interno e revisão esperada;
+- somente `AGUARDANDO_NOVA_TENTATIVA` e `RESULTADO_INCERTO` aceitam antecipação; terminal, em execução e em reconciliação não reabrem;
+- a ação altera apenas `proxima_acao_em`, preservando o estado para o worker escolher execução ou reconciliação;
+- nenhum adapter ou efeito externo é chamado pela rota administrativa;
+- alteração e auditoria sanitizada compartilham a transação;
+- controles de recurso e política mobile continuam isolados sob `ADMINISTRAR_RELEASES`, com confirmação visual e concorrência otimista.

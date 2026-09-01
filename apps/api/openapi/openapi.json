@@ -87,6 +87,97 @@
         ]
       }
     },
+    "/api/v1/administracao/saude": {
+      "get": {
+        "operationId": "listarSaudeAdministrativa",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PainelSaudeAdministrativaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Lista componentes e falhas sem conteúdo protegido",
+        "tags": [
+          "saude-administrativa"
+        ]
+      }
+    },
+    "/api/v1/administracao/saude/operacoes/{operacaoId}/reprocessar": {
+      "post": {
+        "operationId": "reprocessarOperacaoAgora",
+        "parameters": [
+          {
+            "name": "operacaoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaReprocessamentoOperacaoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperacaoSaudeAdministrativaDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroCanonicoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Antecipa execução ou reconciliação sem repetir efeito em linha",
+        "tags": [
+          "saude-administrativa"
+        ]
+      }
+    },
     "/api/v1/administracao/operacao": {
       "get": {
         "operationId": "listarAdministracaoOperacional",
@@ -2933,6 +3024,151 @@
         },
         "required": [
           "estado"
+        ]
+      },
+      "ComponenteSaudeAdministrativaDto": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "enum": [
+              "API",
+              "POSTGRESQL",
+              "REDIS",
+              "STORAGE"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "INDISPONIVEL",
+              "NAO_CONFIGURADO",
+              "OPERACIONAL"
+            ]
+          }
+        },
+        "required": [
+          "codigo",
+          "estado"
+        ]
+      },
+      "ResumoFalhasSaudeAdministrativaDto": {
+        "type": "object",
+        "properties": {
+          "aguardando_nova_tentativa": {
+            "type": "number",
+            "minimum": 0
+          },
+          "resultados_incertos": {
+            "type": "number",
+            "minimum": 0
+          },
+          "falhas_definitivas": {
+            "type": "number",
+            "minimum": 0
+          },
+          "itens_caixa_saida_pendentes": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "aguardando_nova_tentativa",
+          "resultados_incertos",
+          "falhas_definitivas",
+          "itens_caixa_saida_pendentes"
+        ]
+      },
+      "OperacaoSaudeAdministrativaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "PENDENTE",
+              "EM_EXECUCAO",
+              "AGUARDANDO_NOVA_TENTATIVA",
+              "RESULTADO_INCERTO",
+              "EM_RECONCILIACAO",
+              "CONCLUIDA",
+              "FALHA_DEFINITIVA"
+            ]
+          },
+          "tentativas": {
+            "type": "number",
+            "minimum": 0
+          },
+          "versao": {
+            "type": "number",
+            "minimum": 0
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "proxima_acao_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "codigo_ultimo_erro": {
+            "type": "string"
+          },
+          "pode_reprocessar": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "estado",
+          "tentativas",
+          "versao",
+          "atualizado_em",
+          "pode_reprocessar"
+        ]
+      },
+      "PainelSaudeAdministrativaDto": {
+        "type": "object",
+        "properties": {
+          "componentes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComponenteSaudeAdministrativaDto"
+            }
+          },
+          "resumo": {
+            "$ref": "#/components/schemas/ResumoFalhasSaudeAdministrativaDto"
+          },
+          "operacoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperacaoSaudeAdministrativaDto"
+            }
+          }
+        },
+        "required": [
+          "componentes",
+          "resumo",
+          "operacoes"
+        ]
+      },
+      "EntradaReprocessamentoOperacaoDto": {
+        "type": "object",
+        "properties": {
+          "versao_esperada": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "versao_esperada"
         ]
       },
       "ContaOperacionalDto": {

@@ -11,6 +11,7 @@ import { AplicacaoEditorFluxos } from '../Aplicacao';
 import { AdministracaoUsuariosWeb } from './administracao/AdministracaoUsuariosWeb';
 import { AdministracaoOperacionalWeb } from './administracao/AdministracaoOperacionalWeb';
 import { ListaAtendimentosWeb } from './atendimentos/ListaAtendimentosWeb';
+import { SaudeReleasesWeb } from './saude/SaudeReleasesWeb';
 import { obterCsrf } from './seguranca-web';
 
 type RotaWeb =
@@ -210,20 +211,7 @@ function ConteudoRota({ rota }: { readonly rota: RotaWeb }) {
   if (rota === '/administracao/operacao') return <AdministracaoOperacionalWeb />;
   if (rota === '/administracao/usuarios') return <AdministracaoUsuariosWeb />;
   if (rota === '/atendimentos') return <ListaAtendimentosWeb />;
-  const titulos: Record<Exclude<RotaWeb, '/administracao/fluxos' | '/administracao/operacao' | '/administracao/usuarios' | '/atendimentos'>, readonly [string, string]> = {
-    '/saude': ['Saúde e releases', 'Componentes, recuperação e liberação controlada.'],
-  };
-  const [titulo, descricao] = titulos[rota];
-  return (
-    <main className="pagina-shell pagina-shell--vazia">
-      <CabecalhoPagina descricao={descricao} titulo={titulo} />
-      <section className="estado-vazio-shell">
-        <span aria-hidden="true">◇</span>
-        <strong>Área preparada</strong>
-        <p>O conteúdo desta área entra na próxima etapa do roadmap.</p>
-      </section>
-    </main>
-  );
+  return <SaudeReleasesWeb />;
 }
 
 export function CabecalhoPagina({ descricao, titulo }: { readonly descricao: string; readonly titulo: string }) {

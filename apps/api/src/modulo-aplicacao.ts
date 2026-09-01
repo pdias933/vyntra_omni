@@ -32,6 +32,8 @@ import { ControladorInformacoesApi } from './sistema/controlador-informacoes-api
 import { ControladorRotasDesconhecidas } from './sistema/controlador-rotas-desconhecidas.js';
 import { ServicoInformacoesApi } from './sistema/servico-informacoes-api.js';
 import { ControladorSaude } from './saude/controlador-saude.js';
+import { ControladorSaudeAdministrativa } from './saude/controlador-saude-administrativa.js';
+import { ServicoSaudeAdministrativa } from './saude/servico-saude-administrativa.js';
 import { ServicoProntidao } from './saude/servico-prontidao.js';
 import { ModuloReleases } from './releases/modulo-releases.js';
 import { ModuloSnapshotsCliente } from './snapshots-cliente/modulo-snapshots-cliente.js';
@@ -42,6 +44,7 @@ import { ModuloSincronizacao } from './sincronizacao/modulo-sincronizacao.js';
   controllers: [
     ControladorInformacoesApi,
     ControladorSaude,
+    ControladorSaudeAdministrativa,
     ControladorRotasDesconhecidas,
   ],
   imports: [
@@ -78,6 +81,10 @@ import { ModuloSincronizacao } from './sincronizacao/modulo-sincronizacao.js';
     ModuloSincronizacao,
     ModuloSla,
   ],
-  providers: [ServicoInformacoesApi, ServicoProntidao],
+  providers: [
+    ServicoInformacoesApi,
+    ServicoProntidao,
+    ServicoSaudeAdministrativa,
+  ],
 })
 export class ModuloAplicacao {}

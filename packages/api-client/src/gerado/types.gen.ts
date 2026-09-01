@@ -19,6 +19,40 @@ export type EstadoSaudeDto = {
     estado: 'VIVO' | 'PRONTO';
 };
 
+export type ComponenteSaudeAdministrativaDto = {
+    codigo: 'API' | 'POSTGRESQL' | 'REDIS' | 'STORAGE';
+    estado: 'INDISPONIVEL' | 'NAO_CONFIGURADO' | 'OPERACIONAL';
+};
+
+export type ResumoFalhasSaudeAdministrativaDto = {
+    aguardando_nova_tentativa: number;
+    resultados_incertos: number;
+    falhas_definitivas: number;
+    itens_caixa_saida_pendentes: number;
+};
+
+export type OperacaoSaudeAdministrativaDto = {
+    id: string;
+    tipo: string;
+    estado: 'PENDENTE' | 'EM_EXECUCAO' | 'AGUARDANDO_NOVA_TENTATIVA' | 'RESULTADO_INCERTO' | 'EM_RECONCILIACAO' | 'CONCLUIDA' | 'FALHA_DEFINITIVA';
+    tentativas: number;
+    versao: number;
+    atualizado_em: string;
+    proxima_acao_em?: string;
+    codigo_ultimo_erro?: string;
+    pode_reprocessar: boolean;
+};
+
+export type PainelSaudeAdministrativaDto = {
+    componentes: Array<ComponenteSaudeAdministrativaDto>;
+    resumo: ResumoFalhasSaudeAdministrativaDto;
+    operacoes: Array<OperacaoSaudeAdministrativaDto>;
+};
+
+export type EntradaReprocessamentoOperacaoDto = {
+    versao_esperada: number;
+};
+
 export type ContaOperacionalDto = {
     id: string;
     nome: string;
@@ -764,6 +798,43 @@ export type VerificarAplicacaoProntaResponses = {
 };
 
 export type VerificarAplicacaoProntaResponse = VerificarAplicacaoProntaResponses[keyof VerificarAplicacaoProntaResponses];
+
+export type ListarSaudeAdministrativaData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/administracao/saude';
+};
+
+export type ListarSaudeAdministrativaResponses = {
+    200: PainelSaudeAdministrativaDto;
+};
+
+export type ListarSaudeAdministrativaResponse = ListarSaudeAdministrativaResponses[keyof ListarSaudeAdministrativaResponses];
+
+export type ReprocessarOperacaoAgoraData = {
+    body: EntradaReprocessamentoOperacaoDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        operacaoId: string;
+    };
+    query?: never;
+    url: '/api/v1/administracao/saude/operacoes/{operacaoId}/reprocessar';
+};
+
+export type ReprocessarOperacaoAgoraErrors = {
+    409: ErroCanonicoDto;
+};
+
+export type ReprocessarOperacaoAgoraError = ReprocessarOperacaoAgoraErrors[keyof ReprocessarOperacaoAgoraErrors];
+
+export type ReprocessarOperacaoAgoraResponses = {
+    200: OperacaoSaudeAdministrativaDto;
+};
+
+export type ReprocessarOperacaoAgoraResponse = ReprocessarOperacaoAgoraResponses[keyof ReprocessarOperacaoAgoraResponses];
 
 export type ListarAdministracaoOperacionalData = {
     body?: never;
