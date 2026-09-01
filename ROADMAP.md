@@ -63,7 +63,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 039 | CONCLUÍDA | `xhigh` |
 | 040 | CONCLUÍDA | `xhigh` |
 | 041 | CONCLUÍDA | `xhigh` |
-| 042 | EM ANDAMENTO | `xhigh` |
+| 042 | CONCLUÍDA | `xhigh` |
 | 043 | PENDENTE | `xhigh` |
 | 044 | PENDENTE | `xhigh` |
 | 045 | PENDENTE | `xhigh` |
@@ -353,6 +353,10 @@ Aceite concluído em 1º de setembro de 2026: a timeline passou a ter união dis
 ### PR 041 — mensagem e máquina de saída
 
 Aceite concluído em 1º de setembro de 2026: `Mensagem` passou a pertencer simultaneamente à conversa contínua, ao atendimento e à conta WhatsApp de origem, preservando conteúdo protegido, hash, remetente e chave idempotente do cliente. A criação de texto exige `ENVIAR_MENSAGEM`, responsabilidade humana atual e janela do canal aberta; grava `NA_FILA`, evento e item da caixa de saída na mesma transação sem expor texto nos eventos. A máquina permite somente `NA_FILA→ENVIANDO→ENVIADA→ENTREGUE→LIDA`, retorno temporário `ENVIANDO→NA_FILA`, falha definitiva e cancelamento antes do envio. O PostgreSQL replica as transições e torna a identidade/conteúdo imutáveis. Lint, tipos, 186 testes da API, 144 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002500_criar_mensagem_maquina_saida` terminou com código zero e `vyntra/api-staging:pr-041` ficou saudável com prontidão `PRONTO`. Em staging, a cadeia chegou a `LIDA` na versão 5, o cancelamento chegou a `CANCELADA`, regressão e alteração de conteúdo foram recusadas, houve rollback e nenhum erro de nível 50.
+
+### PR 042 — mídia e storage
+
+Aceite concluído em 1º de setembro de 2026: imagem JPEG/PNG/WebP, áudio MPEG/Ogg, vídeo MP4 e PDF passaram a ser reconhecidos por assinatura binária, com MIME declarado obrigatoriamente igual ao detectado e limites por categoria. A mídia pertence a uma `Mensagem` de tipo compatível e persiste somente bucket privado, chave opaca, MIME, tamanho e hash; URL pública ou assinada não integra o domínio. O PostgreSQL replica os limites estruturais, valida a correspondência categoria–mensagem e torna a referência imutável. Lint, tipos, 190 testes da API, 146 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002600_criar_midia_mensagem` terminou com código zero e `vyntra/api-staging:pr-042` ficou saudável com prontidão `PRONTO`. Em staging, uma imagem PNG válida foi vinculada ao bucket `vyntra-staging-midias`; MIME/tipo divergentes e mutação foram recusados, não houve URL pública, a transação foi revertida e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
