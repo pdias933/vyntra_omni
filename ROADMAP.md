@@ -50,7 +50,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 026 | CONCLUÍDA | `xhigh` |
 | 027 | CONCLUÍDA | `xhigh` |
 | 028 | CONCLUÍDA | `xhigh` |
-| 029 | EM ANDAMENTO | `high` |
+| 029 | CONCLUÍDA | `high` |
 | 030 | PENDENTE | `high` |
 | 031 | PENDENTE | `medium` |
 | 032 | PENDENTE | `high` |
@@ -301,6 +301,10 @@ Aceite concluído em 31 de agosto de 2026: `Conversa` passou a ser única por `C
 ### PR 028 — atendimento e máquina de estado
 
 Aceite concluído em 31 de agosto de 2026: `Atendimento` passou a materializar estado, modo e motivo de espera ortogonais, com combinações protegidas tanto na máquina quanto no PostgreSQL. A origem empresarial deve participar da mesma `Conversa`; o contexto agora referencia um atendimento real. Resgate, retorno à fila, encerramento explícito, reaberturas humana/por entrada e finalização da tolerância têm transições determinísticas e versões separadas para estado e atribuição. Não existe transição de encerramento por inatividade: os 30 minutos apenas finalizam um fechamento já explícito. Lint, tipos, 130 testes da API, 117 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001700_criar_atendimento_maquina_estado` terminou com código zero e `vyntra/api-staging:pr-028` ficou saudável com prontidão `PRONTO`. Em staging, origem alheia e atendimento humano sem atribuição foram recusados, a tolerância permaneceu exatamente em 30 minutos, o contexto apontou para o atendimento real, a transação sintética foi revertida e não houve erro de nível 50.
+
+### PR 029 — protocolo ERP pendente
+
+Aceite concluído em 31 de agosto de 2026: cada `Atendimento` pode ter exatamente um `ProtocoloErp`, que nasce `PENDENTE` sem número e só muda para `OFICIAL` diante de confirmação explícita da criação ou reconciliação do ERP. Resultado indisponível, ausente ou incerto não altera a pendência. O UUID interno e o marcador `PENDENTE` são recusados como número externo; protocolo oficial é globalmente único e imutável no serviço e no PostgreSQL. O simulador da porta ERP atribuiu um único protocolo oficial, sem ser registrado como integração real ou expor uma rota pública. Lint, tipos, 136 testes da API, 119 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001800_criar_protocolo_erp_pendente` terminou com código zero e `vyntra/api-staging:pr-029` ficou saudável com prontidão `PRONTO`. Em staging, dois protocolos nasceram sem número; somente um foi confirmado, alteração, duplicidade e uso do UUID interno foram recusados, a transação sintética foi revertida e não houve erro de nível 50.
 
 ## 7. Mensageria Meta
 
