@@ -65,7 +65,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 041 | CONCLUÍDA | `xhigh` |
 | 042 | CONCLUÍDA | `xhigh` |
 | 043 | CONCLUÍDA | `xhigh` |
-| 044 | EM ANDAMENTO | `xhigh` |
+| 044 | CONCLUÍDA | `xhigh` |
 | 045 | PENDENTE | `xhigh` |
 | 046 | PENDENTE | `high` |
 | 047 | PENDENTE | `high` |
@@ -361,6 +361,10 @@ Aceite concluído em 1º de setembro de 2026: imagem JPEG/PNG/WebP, áudio MPEG/
 ### PR 043 — caracterização real da Meta
 
 Aceite concluído em 1º de setembro de 2026: a coleção oficial da Meta e o material oficial de usernames/BSUID foram registrados como evidência revisada. O adapter exige versão explícita `vN.0`, considera BSUID identificador estável, mantém username e telefone opcionais e trata capacidades/throughput por conta como observações, nunca constantes globais. Fixtures sanitizadas cobrem webhook com BSUID sem telefone. Como não foi fornecida conta Meta real nem token, a própria caracterização impede ativação com evidência sintética ou capacidade `NAO_OBSERVADA`; a versão `v25.0` da fixture não é promovida a recomendação de produção. Lint, tipos, 193 testes da API, 148 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-043` ficou saudável com prontidão `PRONTO`. Em staging, fixture/versão e identidade BSUID sem telefone foram aceitas, ativação real permaneceu `false`, migration encerrou com código zero e nenhum erro de nível 50 foi emitido.
+
+### PR 044 — entrada do AdaptadorMetaCloud
+
+Aceite concluído em 1º de setembro de 2026: o adapter passou a verificar `X-Hub-Signature-256` por HMAC SHA-256 sobre o corpo bruto com comparação constante, limite de corpo e parsing estrito. A conta externa é resolvida para `ContaWhatsApp` ativa; BSUID resolve o contato, a conversa única registra a conta participante e um atendimento BOT/protocolo pendente nasce quando necessário. `EventoEntradaCanal` deduplica por conta + identificador externo. Mensagem `ENTRADA` e a recepção `PERSISTIDO` são gravadas antes do evento que libera automação/retorno. Lint, tipos, 197 testes da API, 150 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002700_criar_entrada_canal` terminou com código zero e `vyntra/api-staging:pr-044` ficou saudável com prontidão `PRONTO`. Em staging, duplicidade foi recusada, recepção chegou a `PERSISTIDO` somente vinculada à mensagem `ENTRADA`, mutação posterior foi bloqueada, houve rollback e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
