@@ -430,7 +430,7 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - Publicação aceita somente `EM_TESTE`; reversão aceita somente `ARQUIVADA`. Não contorne esses estados para acelerar testes ou UI.
 - `ExecucaoFluxo` fixa atendimento, fluxo e versão no início; nenhuma publicação ou retomada relê o ponteiro para migrar execução existente.
 - Estados terminais de execução são imutáveis e nunca retomam. Toda transição usa estado e revisão esperados; Redis não guarda autoridade.
-- `retomar_em` só existe em `AGUARDANDO_SISTEMA`, aponta para instante futuro e é a autoridade reconstruível do agendamento.
+- `retomar_em` só existe em `AGUARDANDO_SISTEMA` ou `AGUARDANDO_RESPOSTA`, aponta para instante futuro e é a autoridade reconstruível do agendamento.
 - Worker consulta vencidos no PostgreSQL em lote com bloqueio concorrente; não cria timer longo por atendimento e não depende de job Redis para recuperar estado.
 - Queda antes do commit conserva o agendamento; queda depois do commit conserva `EXECUTANDO`. Não reponha estado por SQL.
 - Não escreva contexto arbitrário nem execute nó antes do PR correspondente.
@@ -444,3 +444,6 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - Lista/botões sem capacidade estruturada comprovada segue `FALLBACK` textual; não declare `SUCESSO` nem habilite formato externo por fixture.
 - Toda saída nominal (`SUCESSO`, `FALLBACK`, `FALHA_TEMPORARIA`, `FALHA_DEFINITIVA`) precisa ter exatamente uma conexão publicada.
 - Worker seleciona `EXECUTANDO` com bloqueio concorrente no PostgreSQL. Não use Redis, timer por atendimento ou reparo manual de revisão.
+- `AGUARDAR` usa somente contratos fechados `RESPOSTA` ou `ATE_INSTANTE`; não adicione duração implícita, expressão, referência, variável ou relógio do cliente.
+- Resposta antecipa somente `AGUARDANDO_RESPOSTA` com marca persistida, nó e revisão esperados. Timeout e resposta concorrem por um único commit; nunca force retomada por SQL.
+- `HORARIO_ATENDIMENTO` chama `ServicoCalendarios` e exige uma referência `CALENDARIO` ativa. Não copie período/fuso para a definição e não importe adapter externo no executor.

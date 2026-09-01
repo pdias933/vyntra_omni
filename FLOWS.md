@@ -590,3 +590,33 @@ CONDICAO
 O contexto persistido usa `variaveisFluxo` para valores e `iteracoesFluxo` para contadores. Atribuição, contador, passo e avanço pertencem à mesma transação e revisão. Passos guardam somente `tipoNo`, resultado e código canônico. Variável ausente segue `VARIAVEL_INDISPONIVEL`; definição defensivamente inválida segue `CONFIGURACAO_VARIAVEL_INVALIDA`.
 
 Um ciclo publicável não pode conter subciclo formado apenas por nós ilimitados. Cada nó limitado aceita 1–100 iterações e sua conexão `FALHA` precisa sair do componente cíclico. A tentativa seguinte ao limite registra `LIMITE_ITERACOES_EXCEDIDO`, percorre `FALHA` e conserva o contador no PostgreSQL para diagnóstico protegido e recuperação determinística.
+
+## 24. Nós de espera e calendário da PR 076
+
+`AGUARDAR` aceita um de dois contratos fechados:
+
+```text
+RESPOSTA
+  parametros: { tipo: RESPOSTA, tempoLimiteSegundos: 1..86400 }
+  estado: AGUARDANDO_RESPOSTA
+  saídas: CONCLUIDO | TIMEOUT | FALHA
+
+ATE_INSTANTE
+  parametros: { tipo: ATE_INSTANTE, retomarEm: ISO UTC canônico }
+  estado: AGUARDANDO_SISTEMA
+  saídas: CONCLUIDO | TIMEOUT | FALHA
+```
+
+Nenhuma variante aceita referência ou variável. Se o instante absoluto já passou quando o nó é alcançado, segue `CONCLUIDO` sem agendar. Caso contrário, o passo da revisão corrente termina como `AGENDADO`, e estado, `retomar_em`, contexto e revisão confirmam juntos. A recuperação retorna ao mesmo nó em nova revisão. Resposta marcada segue `CONCLUIDO`; timeout sem resposta segue `TIMEOUT`. `ATE_INSTANTE` vencido segue `CONCLUIDO`. `FALHA` cobre contexto/configuração defensivamente inválidos ou limite de tentativas.
+
+`limiteIteracoes` pode controlar tentativas e conserva o contrato de 1 a 100, com `FALHA` saindo do ciclo. O contador é incrementado ao agendar uma nova espera, não ao reconstruir a mesma espera depois de reinício.
+
+`HORARIO_ATENDIMENTO` possui parâmetros vazios, nenhuma variável e exatamente uma referência `CALENDARIO`. Publicar exige capacidade habilitada e referência ativa. Em execução, `ServicoCalendarios` avalia o instante com fuso, período, feriado, exceção e override persistidos:
+
+```text
+ABERTO   → DENTRO_HORARIO
+FECHADO  → FORA_HORARIO
+ausente ou inválido → FALHA
+```
+
+O nó não consulta adapter, rede ou relógio do cliente. Uma versão publicada conserva apenas o ID do calendário; a política temporal continua administrável no agregado próprio.

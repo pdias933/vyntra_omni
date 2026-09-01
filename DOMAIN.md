@@ -843,3 +843,11 @@ Desde a PR 073, uma execução `EXECUTANDO` pode ser agendada para um instante e
 O job é a própria condição persistida `estado = AGUARDANDO_SISTEMA AND retomar_em <= agora`. Workers selecionam lotes ordenados com `FOR UPDATE SKIP LOCKED`, de modo que execuções distintas podem progredir em paralelo e uma execução possui somente um vencedor. A retomada muda para `EXECUTANDO`, limpa `retomar_em`, incrementa a revisão e audita na mesma transação.
 
 Não existe identidade de job mantida apenas no Redis nem temporizador longo em memória. Queda antes do commit conserva a execução agendada; queda depois do commit conserva a execução já retomada. A PR 073 não executa o nó retomado, não altera contexto e não produz efeito Meta/ERP.
+
+## 19. Esperas e horário de atendimento
+
+Desde a PR 076, `retomar_em` pode existir em `AGUARDANDO_SISTEMA` ou `AGUARDANDO_RESPOSTA`, sempre estritamente depois de `atualizada_em`. A espera guarda sob `esperasFluxo[no_id]` apenas o tipo, o instante canônico e a marca booleana de resposta. Essa marca não é conteúdo da mensagem e nunca entra em passo ou auditoria.
+
+`AGUARDAR/RESPOSTA` persiste o timeout e fica `AGUARDANDO_RESPOSTA`. A entrada válida marca a resposta e retoma antecipadamente na mesma transação; a máquina e o trigger recusam `RETOMAR` prematuro sem essa evidência. Ao vencer sem resposta, o worker retoma pelo mesmo mecanismo PostgreSQL e o nó segue `TIMEOUT`. `AGUARDAR/ATE_INSTANTE` usa `AGUARDANDO_SISTEMA` e segue `CONCLUIDO` ao vencer. O primeiro processamento termina seu passo como `AGENDADO`; a retomada cria novo passo na nova revisão e só então avança o grafo.
+
+`HORARIO_ATENDIMENTO` não possui parâmetros nem variáveis e referencia exatamente um `Calendario` ativo. `ABERTO` segue `DENTRO_HORARIO`; `FECHADO` segue `FORA_HORARIO`; calendário ausente ou inválido segue `FALHA` com código canônico. Fuso, períodos, feriados, exceções e overrides continuam pertencendo ao agregado `Calendario`, não à versão do fluxo.

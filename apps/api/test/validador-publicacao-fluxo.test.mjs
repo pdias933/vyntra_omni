@@ -346,6 +346,107 @@ test('mensagem e lista possuem parâmetros tipados e fallback limitado', () => {
   );
 });
 
+test('espera por resposta e instante usam configuração exata e caminhos explícitos', () => {
+  const casosValidos = [
+    { tempoLimiteSegundos: 60, tipo: 'RESPOSTA' },
+    { retomarEm: '2026-09-02T12:30:00.000Z', tipo: 'ATE_INSTANTE' },
+  ];
+  for (const parametros of casosValidos) {
+    const definicao = definicaoBasica({
+      conexoes: [
+        conexao('inicio', 'SUCESSO', 'espera'),
+        conexao('espera', 'CONCLUIDO', 'fim'),
+        conexao('espera', 'TIMEOUT', 'fim'),
+        conexao('espera', 'FALHA', 'fim'),
+      ],
+      nos: [
+        no('inicio', 'INICIO'),
+        no('espera', 'AGUARDAR', { parametros }),
+        no('fim', 'FIM'),
+      ],
+    });
+    assert.equal(
+      new ValidadorPublicacaoFluxo().validar(definicao, contexto()).valido,
+      true,
+    );
+  }
+
+  const casosInvalidos = [
+    { tempoLimiteSegundos: 0, tipo: 'RESPOSTA' },
+    { tempoLimiteSegundos: 86_401, tipo: 'RESPOSTA' },
+    { retomarEm: '2026-09-02T12:30:00Z', tipo: 'ATE_INSTANTE' },
+    { retomarEm: 'amanhã', tipo: 'ATE_INSTANTE' },
+    { segundos: 10, tipo: 'SISTEMA' },
+  ];
+  for (const parametros of casosInvalidos) {
+    const definicao = definicaoBasica({
+      nos: [
+        no('inicio', 'INICIO'),
+        no('espera', 'AGUARDAR', { parametros }),
+        no('fim', 'FIM'),
+      ],
+    });
+    assert.ok(
+      codigos(
+        new ValidadorPublicacaoFluxo().validar(definicao, contexto()),
+      ).includes('DEFINICAO_ESTRUTURAL_INVALIDA'),
+    );
+  }
+});
+
+test('calendário exige uma referência ativa e capacidade habilitada', () => {
+  const definicao = definicaoBasica({
+    conexoes: [
+      conexao('inicio', 'SUCESSO', 'horario'),
+      conexao('horario', 'DENTRO_HORARIO', 'fim'),
+      conexao('horario', 'FORA_HORARIO', 'fim'),
+      conexao('horario', 'FALHA', 'fim'),
+    ],
+    nos: [
+      no('inicio', 'INICIO'),
+      no('horario', 'HORARIO_ATENDIMENTO', {
+        referencias: [{ recursoId: ids.recurso, tipo: 'CALENDARIO' }],
+      }),
+      no('fim', 'FIM'),
+    ],
+  });
+  assert.equal(
+    new ValidadorPublicacaoFluxo().validar(
+      definicao,
+      contexto({
+        capacidadesHabilitadas: ['HORARIO_ATENDIMENTO'],
+        referenciasAtivas: [
+          { recursoId: ids.recurso, tipo: 'CALENDARIO' },
+        ],
+      }),
+    ).valido,
+    true,
+  );
+
+  const duplicada = {
+    ...definicao,
+    nos: definicao.nos.map((item) =>
+      item.id === 'horario'
+        ? {
+            ...item,
+            referencias: [
+              ...item.referencias,
+              { recursoId: randomUUID(), tipo: 'CALENDARIO' },
+            ],
+          }
+        : item,
+    ),
+  };
+  assert.ok(
+    codigos(
+      new ValidadorPublicacaoFluxo().validar(
+        duplicada,
+        contexto({ capacidadesHabilitadas: ['HORARIO_ATENDIMENTO'] }),
+      ),
+    ).includes('CONFIGURACAO_CALENDARIO_INVALIDA'),
+  );
+});
+
 test('condição e definição aceitam somente operadores e literais tipados', () => {
   const casos = [
     ['BOOLEANO', 'IGUAL', true],

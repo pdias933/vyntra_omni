@@ -2,6 +2,11 @@ import { randomUUID } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
 
+import {
+  ErroCalendarioAusente,
+  ErroCalendarioInvalido,
+} from '../calendarios/erros-calendario.js';
+import { ServicoCalendarios } from '../calendarios/servico-calendarios.js';
 import type {
   ConexaoDefinicaoFluxo,
   DefinicaoFluxoV1,
@@ -18,6 +23,11 @@ import { ServicoMensagensSaida } from '../mensagens/servico-mensagens-saida.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type { ObjetoJsonProtegido } from '../seguranca/modelo-dados-protegidos.js';
+import {
+  agendarEsperaFluxo,
+  lerEsperaFluxo,
+  removerEsperaFluxo,
+} from './contexto-espera-execucao-fluxo.js';
 import {
   definirValorVariavelExecucao,
   lerValorVariavelExecucao,
@@ -43,16 +53,24 @@ import {
 import { ServicoExecucoesFluxo } from './servico-execucoes-fluxo.js';
 
 const TIPOS_SUPORTADOS = new Set([
+  'AGUARDAR',
   'CONDICAO',
   'DEFINIR_VARIAVEL',
   'ENVIAR_BOTOES_OU_LISTA',
   'ENVIAR_MENSAGEM',
   'FIM',
+  'HORARIO_ATENDIMENTO',
   'INICIO',
 ]);
 
 interface ResultadoExecucaoNo {
   readonly resultado: string;
+  readonly agendamento?: {
+    readonly estadoEspera:
+      | 'AGUARDANDO_RESPOSTA'
+      | 'AGUARDANDO_SISTEMA';
+    readonly retomarEm: Date;
+  };
   readonly codigo?: string | undefined;
   readonly contextoProtegido?: ObjetoJsonProtegido | undefined;
   readonly mensagem?: { readonly id: string } | undefined;
@@ -67,6 +85,8 @@ export class ServicoExecutorNosFluxo {
     private readonly repositorioPassos: RepositorioPassosExecucaoFluxo,
     @Inject(ServicoCatalogoFluxos)
     private readonly catalogo: ServicoCatalogoFluxos,
+    @Inject(ServicoCalendarios)
+    private readonly calendarios: ServicoCalendarios,
     @Inject(ServicoMensagensSaida)
     private readonly mensagens: ServicoMensagensSaida,
     @Inject(ServicoExecucoesFluxo)
@@ -202,6 +222,28 @@ export class ServicoExecutorNosFluxo {
       transacao,
       relogio,
     );
+    if (resultado.agendamento !== undefined) {
+      await this.finalizarPasso(
+        passo,
+        { resultado: 'AGENDADO' },
+        undefined,
+        agora,
+        transacao,
+      );
+      await this.execucoes.agendarRetomada(
+        {
+          contextoProtegido:
+            resultado.contextoProtegido ?? execucao.contextoProtegido,
+          estadoEspera: resultado.agendamento.estadoEspera,
+          execucaoFluxoId: execucao.id,
+          retomarEm: resultado.agendamento.retomarEm,
+          revisaoEsperada: execucao.revisao,
+        },
+        transacao,
+        () => agora,
+      );
+      return;
+    }
     const saida = this.validarSaida(no, resultado.resultado);
     const destino = this.obterDestino(definicao.conexoes, no.id, saida);
     const codigo = resultado.codigo;
@@ -237,6 +279,9 @@ export class ServicoExecutorNosFluxo {
     transacao: TransacaoPrisma,
     relogio: () => Date,
   ): Promise<ResultadoExecucaoNo> {
+    if (no.tipo === 'AGUARDAR') {
+      return this.executarEspera(no, execucao, relogio);
+    }
     const iteracao = registrarIteracaoNoFluxo(
       execucao.contextoProtegido,
       no.id,
@@ -268,7 +313,217 @@ export class ServicoExecutorNosFluxo {
     if (no.tipo === 'CONDICAO') {
       return this.avaliarCondicao(no, definicao, iteracao.contexto);
     }
+    if (no.tipo === 'HORARIO_ATENDIMENTO') {
+      return this.avaliarHorarioAtendimento(
+        no,
+        iteracao.contexto,
+        transacao,
+        relogio,
+      );
+    }
     throw new ErroExecucaoFluxoInvalida();
+  }
+
+  private executarEspera(
+    no: NoDefinicaoFluxo,
+    execucao: ExecucaoFluxoPersistida,
+    relogio: () => Date,
+  ): ResultadoExecucaoNo {
+    const configuracao = this.lerConfiguracaoEspera(no);
+    if (configuracao === undefined) {
+      return { codigo: 'CONFIGURACAO_ESPERA_INVALIDA', resultado: 'FALHA' };
+    }
+    const existente = lerEsperaFluxo(execucao.contextoProtegido, no.id);
+    if (existente.estado === 'INVALIDA') {
+      return { codigo: 'CONTEXTO_ESPERA_INVALIDO', resultado: 'FALHA' };
+    }
+    const agora = relogio();
+    if (!Number.isFinite(agora.getTime()) || agora < execucao.atualizadaEm) {
+      throw new ErroExecucaoFluxoInvalida();
+    }
+    if (existente.estado === 'PRESENTE') {
+      const retomarEm = new Date(existente.espera.retomarEm);
+      const coerenteComDefinicao =
+        existente.espera.tipo === configuracao.tipo &&
+        (configuracao.tipo !== 'ATE_INSTANTE' ||
+          configuracao.retomarEm.toISOString() ===
+            existente.espera.retomarEm);
+      if (!coerenteComDefinicao) {
+        return { codigo: 'CONTEXTO_ESPERA_INVALIDO', resultado: 'FALHA' };
+      }
+      if (!existente.espera.respostaRecebida && agora < retomarEm) {
+        return { codigo: 'RETOMADA_ESPERA_PREMATURA', resultado: 'FALHA' };
+      }
+      const contexto = removerEsperaFluxo(execucao.contextoProtegido, no.id);
+      if (contexto === undefined) {
+        return { codigo: 'CONTEXTO_ESPERA_INVALIDO', resultado: 'FALHA' };
+      }
+      return {
+        contextoProtegido: contexto,
+        resultado:
+          configuracao.tipo === 'RESPOSTA' &&
+          !existente.espera.respostaRecebida
+            ? 'TIMEOUT'
+            : 'CONCLUIDO',
+      };
+    }
+
+    const iteracao = registrarIteracaoNoFluxo(
+      execucao.contextoProtegido,
+      no.id,
+      no.limiteIteracoes,
+    );
+    if (!iteracao.valido) {
+      return { codigo: 'CONTEXTO_ITERACOES_INVALIDO', resultado: 'FALHA' };
+    }
+    if (iteracao.excedeu) {
+      return {
+        codigo: 'LIMITE_ITERACOES_EXCEDIDO',
+        contextoProtegido: iteracao.contexto,
+        resultado: 'FALHA',
+      };
+    }
+    const retomarEm =
+      configuracao.tipo === 'ATE_INSTANTE'
+        ? configuracao.retomarEm
+        : new Date(agora.getTime() + configuracao.tempoLimiteSegundos * 1_000);
+    if (retomarEm <= agora) {
+      return { contextoProtegido: iteracao.contexto, resultado: 'CONCLUIDO' };
+    }
+    const contexto = agendarEsperaFluxo(
+      iteracao.contexto,
+      no.id,
+      configuracao.tipo,
+      retomarEm,
+    );
+    if (contexto === undefined) {
+      return { codigo: 'CONTEXTO_ESPERA_INVALIDO', resultado: 'FALHA' };
+    }
+    return {
+      agendamento: {
+        estadoEspera:
+          configuracao.tipo === 'RESPOSTA'
+            ? 'AGUARDANDO_RESPOSTA'
+            : 'AGUARDANDO_SISTEMA',
+        retomarEm,
+      },
+      contextoProtegido: contexto,
+      resultado: 'AGENDADO',
+    };
+  }
+
+  private async avaliarHorarioAtendimento(
+    no: NoDefinicaoFluxo,
+    contexto: ObjetoJsonProtegido,
+    transacao: TransacaoPrisma,
+    relogio: () => Date,
+  ): Promise<ResultadoExecucaoNo> {
+    const referencia =
+      no.referencias.length === 1 && no.referencias[0]?.tipo === 'CALENDARIO'
+        ? no.referencias[0]
+        : undefined;
+    if (
+      referencia === undefined ||
+      Object.keys(no.parametros).length !== 0 ||
+      no.variaveisEntrada.length !== 0 ||
+      no.variaveisSaida.length !== 0
+    ) {
+      return {
+        codigo: 'CONFIGURACAO_CALENDARIO_INVALIDA',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    const agora = relogio();
+    if (!Number.isFinite(agora.getTime())) throw new ErroExecucaoFluxoInvalida();
+    try {
+      const resultado = await this.calendarios.avaliar(
+        referencia.recursoId,
+        agora,
+        transacao,
+      );
+      return {
+        contextoProtegido: contexto,
+        resultado:
+          resultado.estado === 'ABERTO'
+            ? 'DENTRO_HORARIO'
+            : 'FORA_HORARIO',
+      };
+    } catch (erro) {
+      if (erro instanceof ErroCalendarioAusente) {
+        return {
+          codigo: 'CALENDARIO_INDISPONIVEL',
+          contextoProtegido: contexto,
+          resultado: 'FALHA',
+        };
+      }
+      if (erro instanceof ErroCalendarioInvalido) {
+        return {
+          codigo: 'CALENDARIO_INVALIDO',
+          contextoProtegido: contexto,
+          resultado: 'FALHA',
+        };
+      }
+      throw erro;
+    }
+  }
+
+  private lerConfiguracaoEspera(no: NoDefinicaoFluxo):
+    | { readonly tipo: 'ATE_INSTANTE'; readonly retomarEm: Date }
+    | {
+        readonly tipo: 'RESPOSTA';
+        readonly tempoLimiteSegundos: number;
+      }
+    | undefined {
+    const tipo = Reflect.get(no.parametros, 'tipo');
+    if (
+      no.referencias.length !== 0 ||
+      no.variaveisEntrada.length !== 0 ||
+      no.variaveisSaida.length !== 0
+    ) {
+      return undefined;
+    }
+    if (
+      tipo === 'RESPOSTA' &&
+      this.temExatamenteChaves(no.parametros, [
+        'tempoLimiteSegundos',
+        'tipo',
+      ])
+    ) {
+      const tempo = Reflect.get(no.parametros, 'tempoLimiteSegundos');
+      return typeof tempo === 'number' &&
+        Number.isInteger(tempo) &&
+        tempo >= 1 &&
+        tempo <= 86_400
+        ? { tempoLimiteSegundos: tempo, tipo }
+        : undefined;
+    }
+    if (
+      tipo === 'ATE_INSTANTE' &&
+      this.temExatamenteChaves(no.parametros, ['retomarEm', 'tipo'])
+    ) {
+      const valor = Reflect.get(no.parametros, 'retomarEm');
+      if (
+        typeof valor !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u.test(valor) ||
+        !Number.isFinite(Date.parse(valor)) ||
+        new Date(valor).toISOString() !== valor
+      ) {
+        return undefined;
+      }
+      return { retomarEm: new Date(valor), tipo };
+    }
+    return undefined;
+  }
+
+  private temExatamenteChaves(
+    valor: Readonly<Record<string, unknown>>,
+    chaves: readonly string[],
+  ): boolean {
+    return (
+      Object.keys(valor).length === chaves.length &&
+      Object.keys(valor).every((chave) => chaves.includes(chave))
+    );
   }
 
   private definirVariavel(
@@ -429,7 +684,16 @@ export class ServicoExecutorNosFluxo {
   private validarSaida(
     no: NoDefinicaoFluxo,
     resultado: string,
-  ): ResultadoNoMensagemFluxo | 'SUCESSO' | 'VERDADEIRO' | 'FALSO' | 'FALHA' {
+  ):
+    | ResultadoNoMensagemFluxo
+    | 'SUCESSO'
+    | 'VERDADEIRO'
+    | 'FALSO'
+    | 'FALHA'
+    | 'CONCLUIDO'
+    | 'TIMEOUT'
+    | 'DENTRO_HORARIO'
+    | 'FORA_HORARIO' {
     const permitidas = (() => {
       if (no.tipo === 'ENVIAR_BOTOES_OU_LISTA') {
         return new Set([
@@ -448,6 +712,12 @@ export class ServicoExecutorNosFluxo {
       if (no.tipo === 'DEFINIR_VARIAVEL') {
         return new Set(['SUCESSO', 'FALHA']);
       }
+      if (no.tipo === 'AGUARDAR') {
+        return new Set(['CONCLUIDO', 'TIMEOUT', 'FALHA']);
+      }
+      if (no.tipo === 'HORARIO_ATENDIMENTO') {
+        return new Set(['DENTRO_HORARIO', 'FORA_HORARIO', 'FALHA']);
+      }
       return new Set(['SUCESSO']);
     })();
     if (!permitidas.has(resultado)) throw new ErroExecucaoFluxoInvalida();
@@ -456,7 +726,11 @@ export class ServicoExecutorNosFluxo {
       | 'SUCESSO'
       | 'VERDADEIRO'
       | 'FALSO'
-      | 'FALHA';
+      | 'FALHA'
+      | 'CONCLUIDO'
+      | 'TIMEOUT'
+      | 'DENTRO_HORARIO'
+      | 'FORA_HORARIO';
   }
 
   private obterDestino(

@@ -75,6 +75,39 @@ test('agendamento é reconstruído do PostgreSQL sem depender do Redis', async (
   assert.doesNotMatch(`${repositorio}\n${recuperacao}\n${worker}`, /Redis|BullMQ/);
 });
 
+test('espera por resposta e calendário preservam autoridade no domínio', async () => {
+  const [migration, contexto, executor, execucoes, repositorio, modulo] =
+    await Promise.all([
+      ler(
+        'apps/api/prisma/migrations/20260901012500_espera_resposta_fluxo/migration.sql',
+      ),
+      ler(
+        'apps/api/src/execucoes-fluxo/contexto-espera-execucao-fluxo.ts',
+      ),
+      ler('apps/api/src/execucoes-fluxo/servico-executor-nos-fluxo.ts'),
+      ler('apps/api/src/execucoes-fluxo/servico-execucoes-fluxo.ts'),
+      ler(
+        'apps/api/src/execucoes-fluxo/repositorio-execucoes-fluxo-prisma.ts',
+      ),
+      ler('apps/api/src/execucoes-fluxo/modulo-execucoes-fluxo.ts'),
+    ]);
+  assert.match(migration, /AGUARDANDO_RESPOSTA/);
+  assert.match(migration, /respostaRecebida/);
+  assert.match(migration, /RETOMADA_EXECUCAO_FLUXO_PREMATURA/);
+  assert.match(contexto, /esperasFluxo/);
+  assert.match(contexto, /marcarRespostaRecebidaFluxo/);
+  assert.match(executor, /'AGUARDAR'/);
+  assert.match(executor, /'HORARIO_ATENDIMENTO'/);
+  assert.match(executor, /ServicoCalendarios/);
+  assert.match(execucoes, /retomarPorResposta/);
+  assert.match(repositorio, /AGUARDANDO_RESPOSTA/);
+  assert.match(modulo, /ModuloCalendarios/);
+  assert.doesNotMatch(
+    `${contexto}\n${executor}\n${execucoes}\n${repositorio}`,
+    /setTimeout|Redis|BullMQ|AdaptadorMeta|AdaptadorMk/,
+  );
+});
+
 test('nós de mensagem usam domínio, passos sanitizados e saídas nominais', async () => {
   const [schema, migration, executor, mensagens, repositorioMensagens, processo] = await Promise.all([
     ler('apps/api/prisma/schema.prisma'),

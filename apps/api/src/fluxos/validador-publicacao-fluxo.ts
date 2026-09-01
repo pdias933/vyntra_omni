@@ -41,6 +41,7 @@ const CHAVES_PARAMETRO_PROIBIDAS = new Set([
   'url',
 ]);
 const TIPOS_NATIVOS = new Set<TipoNoFluxo>([
+  'AGUARDAR',
   'CONDICAO',
   'DEFINIR_VARIAVEL',
   'FIM',
@@ -251,7 +252,12 @@ export class ValidadorPublicacaoFluxo {
           typeof valor.limiteIteracoes !== 'number' ||
           valor.limiteIteracoes < 1 ||
           valor.limiteIteracoes > 100 ||
-          !['CONDICAO', 'DEFINIR_VARIAVEL'].includes(valor.tipo)))
+          ![
+            'AGUARDAR',
+            'CONDICAO',
+            'DEFINIR_VARIAVEL',
+            'HORARIO_ATENDIMENTO',
+          ].includes(valor.tipo)))
     ) {
       return undefined;
     }
@@ -344,6 +350,36 @@ export class ValidadorPublicacaoFluxo {
         IDENTIFICADOR.test(parametros.variavel) &&
         ['boolean', 'number', 'string'].includes(typeof parametros.valor)
       );
+    }
+    if (tipo === 'AGUARDAR') {
+      if (parametros.tipo === 'RESPOSTA') {
+        return (
+          this.temExatamenteChaves(parametros, [
+            'tempoLimiteSegundos',
+            'tipo',
+          ]) &&
+          typeof parametros.tempoLimiteSegundos === 'number' &&
+          Number.isInteger(parametros.tempoLimiteSegundos) &&
+          parametros.tempoLimiteSegundos >= 1 &&
+          parametros.tempoLimiteSegundos <= 86_400
+        );
+      }
+      if (parametros.tipo === 'ATE_INSTANTE') {
+        const retomarEm = parametros.retomarEm;
+        return (
+          this.temExatamenteChaves(parametros, ['retomarEm', 'tipo']) &&
+          typeof retomarEm === 'string' &&
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u.test(
+            retomarEm,
+          ) &&
+          Number.isFinite(Date.parse(retomarEm)) &&
+          new Date(retomarEm).toISOString() === retomarEm
+        );
+      }
+      return false;
+    }
+    if (tipo === 'HORARIO_ATENDIMENTO') {
+      return this.temExatamenteChaves(parametros, []);
     }
     if (tipo === 'INICIO' || tipo === 'FIM') {
       return this.temExatamenteChaves(parametros, []);
@@ -609,6 +645,7 @@ export class ValidadorPublicacaoFluxo {
     );
     for (const no of definicao.nos) {
       this.validarNoDeVariavel(no, variaveis, problemas);
+      this.validarNoEsperaOuCalendario(no, problemas);
       for (const nome of [...no.variaveisEntrada, ...no.variaveisSaida]) {
         if (!variaveis.has(nome)) {
           this.adicionar(problemas, {
@@ -692,6 +729,37 @@ export class ValidadorPublicacaoFluxo {
           });
         }
       }
+    }
+  }
+
+  private validarNoEsperaOuCalendario(
+    no: NoDefinicaoFluxo,
+    problemas: ProblemaValidacaoFluxo[],
+  ): void {
+    if (no.tipo === 'AGUARDAR') {
+      if (
+        no.referencias.length !== 0 ||
+        no.variaveisEntrada.length !== 0 ||
+        no.variaveisSaida.length !== 0
+      ) {
+        this.adicionar(problemas, {
+          codigo: 'CONFIGURACAO_ESPERA_INVALIDA',
+          noId: no.id,
+        });
+      }
+      return;
+    }
+    if (no.tipo !== 'HORARIO_ATENDIMENTO') return;
+    if (
+      no.variaveisEntrada.length !== 0 ||
+      no.variaveisSaida.length !== 0 ||
+      no.referencias.length !== 1 ||
+      no.referencias[0]?.tipo !== 'CALENDARIO'
+    ) {
+      this.adicionar(problemas, {
+        codigo: 'CONFIGURACAO_CALENDARIO_INVALIDA',
+        noId: no.id,
+      });
     }
   }
 

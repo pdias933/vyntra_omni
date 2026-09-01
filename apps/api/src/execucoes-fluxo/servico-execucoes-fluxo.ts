@@ -7,6 +7,10 @@ import { ServicoCatalogoFluxos } from '../fluxos/servico-catalogo-fluxos.js';
 import type { DefinicaoFluxo } from '../fluxos/modelo-fluxo.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import {
+  lerEsperaFluxo,
+  marcarRespostaRecebidaFluxo,
+} from './contexto-espera-execucao-fluxo.js';
+import {
   ErroConflitoExecucaoFluxo,
   ErroExecucaoFluxoInvalida,
   ErroInicioExecucaoFluxoNegado,
@@ -16,6 +20,7 @@ import type {
   EntradaAgendamentoExecucaoFluxo,
   EntradaAvancoNoExecucaoFluxo,
   EntradaInicioExecucaoFluxo,
+  EntradaRespostaExecucaoFluxo,
   EntradaTransicaoExecucaoFluxo,
   ExecucaoFluxoPersistida,
 } from './modelo-execucao-fluxo.js';
@@ -145,15 +150,31 @@ export class ServicoExecucoesFluxo {
     const execucaoFluxoId = this.validarId(entrada.execucaoFluxoId);
     const revisaoEsperada = this.validarRevisao(entrada.revisaoEsperada);
     const retomarEm = this.validarInstante(entrada.retomarEm);
+    const estadoEspera = this.validarEstadoEspera(entrada.estadoEspera);
     const atual = await this.repositorio.obterPorId(execucaoFluxoId, transacao);
     if (atual === undefined) throw new ErroExecucaoFluxoInvalida();
     if (atual.revisao !== revisaoEsperada) {
       throw new ErroConflitoExecucaoFluxo();
     }
+    const contextoProtegido =
+      entrada.contextoProtegido ?? atual.contextoProtegido;
+    if (estadoEspera === 'AGUARDANDO_RESPOSTA') {
+      const espera = lerEsperaFluxo(contextoProtegido, atual.noAtualId);
+      if (
+        espera.estado !== 'PRESENTE' ||
+        espera.espera.tipo !== 'RESPOSTA' ||
+        espera.espera.respostaRecebida ||
+        espera.espera.retomarEm !== retomarEm.toISOString()
+      ) {
+        throw new ErroExecucaoFluxoInvalida();
+      }
+    }
     const proxima = this.maquina.agendarRetomada(
       atual,
       retomarEm,
       this.obterAgora(relogio),
+      estadoEspera,
+      contextoProtegido,
     );
     if (
       !(await this.repositorio.alterarCondicional(
@@ -168,6 +189,49 @@ export class ServicoExecucoesFluxo {
     await this.auditar(
       'EXECUCAO_FLUXO_AGENDADA',
       'AGENDAR_RETOMADA_EXECUCAO_FLUXO',
+      proxima,
+      transacao,
+    );
+    return proxima;
+  }
+
+  public async retomarPorResposta(
+    entrada: EntradaRespostaExecucaoFluxo,
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<ExecucaoFluxoPersistida> {
+    const execucaoFluxoId = this.validarId(entrada.execucaoFluxoId);
+    const revisaoEsperada = this.validarRevisao(entrada.revisaoEsperada);
+    const atual = await this.repositorio.obterPorId(execucaoFluxoId, transacao);
+    if (atual === undefined) throw new ErroExecucaoFluxoInvalida();
+    if (atual.revisao !== revisaoEsperada) {
+      throw new ErroConflitoExecucaoFluxo();
+    }
+    const contextoProtegido = marcarRespostaRecebidaFluxo(
+      atual.contextoProtegido,
+      atual.noAtualId,
+    );
+    if (contextoProtegido === undefined) {
+      throw new ErroExecucaoFluxoInvalida();
+    }
+    const proxima = this.maquina.retomarPorResposta(
+      atual,
+      this.obterAgora(relogio),
+      contextoProtegido,
+    );
+    if (
+      !(await this.repositorio.alterarCondicional(
+        proxima,
+        atual.estado,
+        revisaoEsperada,
+        transacao,
+      ))
+    ) {
+      throw new ErroConflitoExecucaoFluxo();
+    }
+    await this.auditar(
+      'EXECUCAO_FLUXO_RESPOSTA_RECEBIDA',
+      'RETOMAR_EXECUCAO_FLUXO_POR_RESPOSTA',
       proxima,
       transacao,
     );
@@ -278,6 +342,16 @@ export class ServicoExecucoesFluxo {
       throw new ErroExecucaoFluxoInvalida();
     }
     return valor;
+  }
+
+  private validarEstadoEspera(
+    valor: unknown,
+  ): 'AGUARDANDO_RESPOSTA' | 'AGUARDANDO_SISTEMA' {
+    if (valor === undefined || valor === 'AGUARDANDO_SISTEMA') {
+      return 'AGUARDANDO_SISTEMA';
+    }
+    if (valor === 'AGUARDANDO_RESPOSTA') return valor;
+    throw new ErroExecucaoFluxoInvalida();
   }
 
   private obterAgora(relogio: () => Date): Date {

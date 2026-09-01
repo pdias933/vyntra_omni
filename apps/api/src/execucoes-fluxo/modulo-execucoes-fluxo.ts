@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { ModuloAuditoria } from '../auditoria/modulo-auditoria.js';
+import { ModuloCalendarios } from '../calendarios/modulo-calendarios.js';
 import { ModuloFluxos } from '../fluxos/modulo-fluxos.js';
 import { ModuloMensagens } from '../mensagens/modulo-mensagens.js';
 import { ModuloPersistencia } from '../persistencia/modulo-persistencia.js';
@@ -18,7 +19,13 @@ import { ServicoRecuperacaoExecucoesFluxo } from './servico-recuperacao-execucoe
     ServicoExecutorNosFluxo,
     ServicoRecuperacaoExecucoesFluxo,
   ],
-  imports: [ModuloAuditoria, ModuloFluxos, ModuloMensagens, ModuloPersistencia],
+  imports: [
+    ModuloAuditoria,
+    ModuloCalendarios,
+    ModuloFluxos,
+    ModuloMensagens,
+    ModuloPersistencia,
+  ],
   providers: [
     RepositorioExecucoesFluxoPrisma,
     RepositorioPassosExecucaoFluxoPrisma,

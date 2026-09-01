@@ -60,6 +60,10 @@ export class MaquinaEstadoExecucaoFluxo {
     atual: ExecucaoFluxoPersistida,
     retomarEm: Date,
     agora: Date,
+    estadoEspera:
+      | 'AGUARDANDO_RESPOSTA'
+      | 'AGUARDANDO_SISTEMA' = 'AGUARDANDO_SISTEMA',
+    contextoProtegido: unknown = atual.contextoProtegido,
   ): ExecucaoFluxoPersistida {
     this.validar(atual);
     if (
@@ -71,12 +75,48 @@ export class MaquinaEstadoExecucaoFluxo {
     }
     const aguardando = this.transitar(
       atual,
-      { tipo: 'AGUARDAR_SISTEMA' },
+      {
+        tipo:
+          estadoEspera === 'AGUARDANDO_RESPOSTA'
+            ? 'AGUARDAR_RESPOSTA'
+            : 'AGUARDAR_SISTEMA',
+      },
       agora,
     );
-    const agendada = { ...aguardando, retomarEm };
+    const agendada = {
+      ...aguardando,
+      contextoProtegido,
+      retomarEm,
+    } as ExecucaoFluxoPersistida;
     this.validar(agendada);
     return agendada;
+  }
+
+  public retomarPorResposta(
+    atual: ExecucaoFluxoPersistida,
+    agora: Date,
+    contextoProtegido: unknown,
+  ): ExecucaoFluxoPersistida {
+    this.validar(atual);
+    if (
+      atual.estado !== 'AGUARDANDO_RESPOSTA' ||
+      atual.retomarEm === undefined ||
+      !Number.isFinite(agora.getTime()) ||
+      agora < atual.atualizadaEm ||
+      agora > atual.retomarEm
+    ) {
+      throw new ErroTransicaoExecucaoFluxoInvalida();
+    }
+    const retomada = {
+      ...atual,
+      atualizadaEm: agora,
+      contextoProtegido,
+      estado: 'EXECUTANDO',
+      retomarEm: undefined,
+      revisao: atual.revisao + 1,
+    } as ExecucaoFluxoPersistida;
+    this.validar(retomada);
+    return retomada;
   }
 
   public transitar(
@@ -92,6 +132,13 @@ export class MaquinaEstadoExecucaoFluxo {
       throw new ErroTransicaoExecucaoFluxoInvalida();
     }
     const comando = this.lerComando(comandoRecebido);
+    if (
+      comando.tipo === 'RETOMAR' &&
+      atual.retomarEm !== undefined &&
+      agora < atual.retomarEm
+    ) {
+      throw new ErroTransicaoExecucaoFluxoInvalida();
+    }
     const proximoEstado = this.obterProximoEstado(atual.estado, comando);
     const codigoFinalizacao = this.obterCodigoFinalizacao(comando);
     const terminal = ESTADOS_TERMINAIS.has(proximoEstado);
@@ -128,7 +175,9 @@ export class MaquinaEstadoExecucaoFluxo {
       !this.ehObjetoJsonProtegido(execucao.contextoProtegido) ||
       (execucao.retomarEm !== undefined &&
         (!Number.isFinite(execucao.retomarEm.getTime()) ||
-          execucao.estado !== 'AGUARDANDO_SISTEMA' ||
+          !['AGUARDANDO_RESPOSTA', 'AGUARDANDO_SISTEMA'].includes(
+            execucao.estado,
+          ) ||
           execucao.retomarEm <= execucao.atualizadaEm)) ||
       terminal !== (execucao.finalizadaEm !== undefined) ||
       terminal !== (execucao.codigoFinalizacao !== undefined) ||

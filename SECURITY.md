@@ -586,3 +586,14 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - Contador persistido malformado falha fechado como `CONTEXTO_ITERACOES_INVALIDO`; nunca é zerado para contornar o limite.
 - Cada ciclo precisa atravessar ao menos um nó limitado, sem subciclo ilimitado, e a `FALHA` do limite precisa sair do ciclo. Excesso segue `FALHA/LIMITE_ITERACOES_EXCEDIDO`.
 - O contador fica no PostgreSQL junto ao contexto e à revisão. Redis, memória do worker e repetição de job não são autoridade para o limite.
+
+## 19. Controles de espera e calendário
+
+- `AGUARDAR` aceita somente `RESPOSTA` com timeout inteiro de 1 a 86.400 segundos ou `ATE_INSTANTE` com ISO UTC canônico; campos, referências e variáveis extras invalidam a publicação.
+- O timeout e a evidência mínima da espera ficam no contexto protegido. Texto recebido, identificador externo e dado do contato não são copiados para passo, auditoria ou log.
+- Resposta só retoma execução em `AGUARDANDO_RESPOSTA`, no mesmo nó e revisão; sinal ausente, repetido, tardio ou malformado falha fechado.
+- Máquina e trigger recusam retomada prematura. A exceção de resposta exige marca explícita na nova versão do contexto e alteração condicional do registro.
+- Vencimento é reconstruído por consulta ao PostgreSQL; Redis, timer em memória e relógio do cliente não têm autoridade.
+- `HORARIO_ATENDIMENTO` exige exatamente uma referência ativa a `CALENDARIO` e capacidade habilitada pelo backend. A definição não contém fuso, feriado, período ou override duplicado.
+- Calendário ausente/inválido percorre `FALHA`; não assume aberto, não usa horário do dispositivo e não cai para configuração inventada.
+- Passo de agendamento e passo de retomada usam revisões distintas. Concorrência entre resposta e timeout tem um único vencedor pelo lock e pela revisão esperada.

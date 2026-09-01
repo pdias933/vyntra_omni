@@ -124,7 +124,10 @@ export class RepositorioExecucoesFluxoPrisma
         "revisao",
         "versao_fluxo_id" AS "versaoFluxoId"
       FROM "execucao_fluxo"
-      WHERE "estado" = 'AGUARDANDO_SISTEMA'::"estado_execucao_fluxo"
+      WHERE "estado" IN (
+          'AGUARDANDO_SISTEMA'::"estado_execucao_fluxo",
+          'AGUARDANDO_RESPOSTA'::"estado_execucao_fluxo"
+        )
         AND "retomar_em" <= ${agora}
       ORDER BY "retomar_em" ASC, "id" ASC
       LIMIT ${limite}

@@ -63,6 +63,13 @@ export interface EntradaAgendamentoExecucaoFluxo {
   readonly execucaoFluxoId: unknown;
   readonly revisaoEsperada: unknown;
   readonly retomarEm: unknown;
+  readonly estadoEspera?: unknown;
+  readonly contextoProtegido?: ObjetoJsonProtegido | undefined;
+}
+
+export interface EntradaRespostaExecucaoFluxo {
+  readonly execucaoFluxoId: unknown;
+  readonly revisaoEsperada: unknown;
 }
 
 export interface EntradaAvancoNoExecucaoFluxo {

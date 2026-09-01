@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 
+import { ErroCalendarioAusente } from '../dist/calendarios/erros-calendario.js';
 import {
   ErroConflitoExecucaoFluxo,
   ErroExecucaoFluxoTerminal,
@@ -285,6 +286,66 @@ test('agenda instante futuro no PostgreSQL e limpa agendamento ao retomar', asyn
   assert.equal(retomada.retomarEm, undefined);
 });
 
+test('espera de resposta agenda timeout e aceita retomada antecipada marcada', async () => {
+  const contextoProtegido = {
+    esperasFluxo: {
+      aguardar: {
+        respostaRecebida: false,
+        retomarEm: depois(60).toISOString(),
+        tipo: 'RESPOSTA',
+      },
+    },
+  };
+  const atual = execucao({
+    atualizadaEm: depois(1),
+    contextoProtegido,
+    estado: 'AGUARDANDO_RESPOSTA',
+    noAtualId: 'aguardar',
+    retomarEm: depois(60),
+    revisao: 2,
+  });
+  const cenario = criarCenario({ atual });
+  const retomada = await cenario.servico.retomarPorResposta(
+    { execucaoFluxoId: ids.execucao, revisaoEsperada: 2 },
+    cenario.transacao,
+    () => depois(10),
+  );
+  assert.equal(retomada.estado, 'EXECUTANDO');
+  assert.equal(retomada.retomarEm, undefined);
+  assert.equal(
+    retomada.contextoProtegido.esperasFluxo.aguardar.respostaRecebida,
+    true,
+  );
+  assert.equal(
+    cenario.chamadas.auditoria[0][0].tipoEvento,
+    'EXECUCAO_FLUXO_RESPOSTA_RECEBIDA',
+  );
+  assert.throws(
+    () =>
+      new MaquinaEstadoExecucaoFluxo().transitar(
+        atual,
+        { tipo: 'RETOMAR' },
+        depois(10),
+      ),
+    ErroTransicaoExecucaoFluxoInvalida,
+  );
+
+  const semMarca = criarCenario({ atual: execucao() });
+  await assert.rejects(
+    semMarca.servico.agendarRetomada(
+      {
+        estadoEspera: 'AGUARDANDO_RESPOSTA',
+        execucaoFluxoId: ids.execucao,
+        retomarEm: depois(60),
+        revisaoEsperada: 1,
+      },
+      semMarca.transacao,
+      () => depois(1),
+    ),
+    /EXECUCAO_FLUXO_INVALIDA/u,
+  );
+});
+
 test('recusa agendamento vencido, inválido ou fora de EXECUTANDO', async () => {
   const maquina = new MaquinaEstadoExecucaoFluxo();
   assert.throws(
@@ -345,12 +406,16 @@ test('recuperação retoma somente lote vencido na mesma transação', async () 
 
 function criarExecutor({
   contextoProtegido = {},
+  erroCalendario,
   no,
+  resultadoCalendario = { estado: 'ABERTO' },
   resultadoMensagem,
   variaveis = [],
 }) {
   const chamadas = {
     avancos: [],
+    agendamentos: [],
+    calendarios: [],
     catalogo: [],
     mensagens: [],
     passosFinalizados: [],
@@ -361,10 +426,12 @@ function criarExecutor({
   const fim = { id: 'fim', parametros: {}, referencias: [], tipo: 'FIM', variaveisEntrada: [], variaveisSaida: [] };
   const saidas = {
     CONDICAO: ['VERDADEIRO', 'FALSO', 'FALHA'],
+    AGUARDAR: ['CONCLUIDO', 'TIMEOUT', 'FALHA'],
     DEFINIR_VARIAVEL: ['SUCESSO', 'FALHA'],
     ENVIAR_BOTOES_OU_LISTA: ['SUCESSO', 'FALLBACK', 'FALHA_TEMPORARIA', 'FALHA_DEFINITIVA'],
     ENVIAR_MENSAGEM: ['SUCESSO', 'FALHA_TEMPORARIA', 'FALHA_DEFINITIVA'],
     INICIO: ['SUCESSO'],
+    HORARIO_ATENDIMENTO: ['DENTRO_HORARIO', 'FORA_HORARIO', 'FALHA'],
   }[no.tipo] ?? [];
   const definicao = {
     conexoes: saidas.map((saida) => ({ destinoNoId: 'fim', origemNoId: no.id, saida })),
@@ -404,8 +471,17 @@ function criarExecutor({
       return resultadoMensagem;
     },
   };
+  const calendarios = {
+    avaliar: async (...argumentos) => {
+      chamadas.calendarios.push(argumentos);
+      if (erroCalendario !== undefined) throw erroCalendario;
+      return resultadoCalendario;
+    },
+  };
   const execucoes = {
     avancarNo: async (...argumentos) => chamadas.avancos.push(argumentos),
+    agendarRetomada: async (...argumentos) =>
+      chamadas.agendamentos.push(argumentos),
     transitar: async (...argumentos) => chamadas.transicoes.push(argumentos),
   };
   const transacao = { id: 'transacao-executor' };
@@ -416,6 +492,7 @@ function criarExecutor({
       repositorioExecucoes,
       repositorioPassos,
       catalogo,
+      calendarios,
       mensagens,
       execucoes,
       prisma,
@@ -456,6 +533,127 @@ test('executor usa versão fixa, serviço de domínio e avança pela saída de s
     JSON.stringify(cenario.chamadas.passosFinalizados).includes('Olá pelo fluxo'),
     false,
   );
+});
+
+test('espera persiste agenda e depois percorre timeout sem dormir no worker', async () => {
+  const no = {
+    id: 'aguardar',
+    parametros: { tempoLimiteSegundos: 30, tipo: 'RESPOSTA' },
+    referencias: [],
+    tipo: 'AGUARDAR',
+    variaveisEntrada: [],
+    variaveisSaida: [],
+  };
+  const agendamento = criarExecutor({ no });
+  await agendamento.executor.executarCiclo(1, () => depois(10));
+  assert.deepEqual(
+    agendamento.chamadas.passosFinalizados[0].saidaSanitizada,
+    { resultado: 'AGENDADO' },
+  );
+  assert.equal(agendamento.chamadas.avancos.length, 0);
+  assert.equal(agendamento.chamadas.agendamentos.length, 1);
+  const entrada = agendamento.chamadas.agendamentos[0][0];
+  assert.equal(entrada.estadoEspera, 'AGUARDANDO_RESPOSTA');
+  assert.deepEqual(entrada.retomarEm, depois(40));
+  assert.equal(
+    entrada.contextoProtegido.esperasFluxo.aguardar.respostaRecebida,
+    false,
+  );
+
+  const retomada = criarExecutor({
+    contextoProtegido: entrada.contextoProtegido,
+    no,
+  });
+  await retomada.executor.executarCiclo(1, () => depois(40));
+  assert.deepEqual(retomada.chamadas.passosFinalizados[0].saidaSanitizada, {
+    resultado: 'TIMEOUT',
+  });
+  assert.equal(
+    retomada.chamadas.avancos[0][0].contextoProtegido.esperasFluxo,
+    undefined,
+  );
+});
+
+test('resposta retomada conclui espera e instante vencido avança sem agenda', async () => {
+  const noResposta = {
+    id: 'aguardar',
+    parametros: { tempoLimiteSegundos: 30, tipo: 'RESPOSTA' },
+    referencias: [],
+    tipo: 'AGUARDAR',
+    variaveisEntrada: [],
+    variaveisSaida: [],
+  };
+  const resposta = criarExecutor({
+    contextoProtegido: {
+      esperasFluxo: {
+        aguardar: {
+          respostaRecebida: true,
+          retomarEm: depois(40).toISOString(),
+          tipo: 'RESPOSTA',
+        },
+      },
+    },
+    no: noResposta,
+  });
+  await resposta.executor.executarCiclo(1, () => depois(20));
+  assert.equal(
+    resposta.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
+    'CONCLUIDO',
+  );
+
+  const instante = criarExecutor({
+    no: {
+      id: 'aguardar',
+      parametros: {
+        retomarEm: depois(5).toISOString(),
+        tipo: 'ATE_INSTANTE',
+      },
+      referencias: [],
+      tipo: 'AGUARDAR',
+      variaveisEntrada: [],
+      variaveisSaida: [],
+    },
+  });
+  await instante.executor.executarCiclo(1, () => depois(10));
+  assert.equal(instante.chamadas.agendamentos.length, 0);
+  assert.equal(
+    instante.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
+    'CONCLUIDO',
+  );
+});
+
+test('calendário real escolhe dentro, fora e falha nominal sanitizada', async () => {
+  const calendarioId = randomUUID();
+  const no = {
+    id: 'horario',
+    parametros: {},
+    referencias: [{ recursoId: calendarioId, tipo: 'CALENDARIO' }],
+    tipo: 'HORARIO_ATENDIMENTO',
+    variaveisEntrada: [],
+    variaveisSaida: [],
+  };
+  const aberto = criarExecutor({ no });
+  await aberto.executor.executarCiclo(1, () => depois(10));
+  assert.equal(
+    aberto.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
+    'DENTRO_HORARIO',
+  );
+  assert.equal(aberto.chamadas.calendarios[0][0], calendarioId);
+
+  const fechado = criarExecutor({
+    no,
+    resultadoCalendario: { estado: 'FECHADO' },
+  });
+  await fechado.executor.executarCiclo(1, () => depois(10));
+  assert.equal(
+    fechado.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
+    'FORA_HORARIO',
+  );
+
+  const ausente = criarExecutor({ erroCalendario: new ErroCalendarioAusente(), no });
+  await ausente.executor.executarCiclo(1, () => depois(10));
+  assert.equal(ausente.chamadas.passosFinalizados[0].codigoErro, 'CALENDARIO_INDISPONIVEL');
+  assert.equal(ausente.chamadas.passosFinalizados[0].saidaSanitizada.resultado, 'FALHA');
 });
 
 test('lista e falhas seguem saídas nominais sem chamar adapter', async () => {
@@ -719,6 +917,7 @@ test('definição inválida falha isolada e não envenena a próxima execução'
     repositorioExecucoes,
     repositorioPassos,
     catalogo,
+    { avaliar: async () => assert.fail('calendário inesperado') },
     { criarAutomatica: async () => assert.fail('mensagem inesperada') },
     execucoes,
     prisma,

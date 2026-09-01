@@ -573,3 +573,13 @@ Monitorar `VARIAVEL_INDISPONIVEL`, `CONFIGURACAO_VARIAVEL_INVALIDA`, `LIMITE_ITE
 No aceite, usar dois workers e um fluxo sintético que percorra atribuição decimal/booleana, condição verdadeira, condição falsa, auto-ciclo limitado e variável ausente. Confirmar uma revisão por passo, saída do ciclo após o limite, conclusão única e ausência de nomes/literais em passo e auditoria. Reiniciar worker não pode zerar contador, trocar versão ou repetir revisão.
 
 Rollback de imagem preserva contexto e passos. Antes de voltar a um worker PR 074, confirmar que nenhuma execução não terminal aponta para nós da PR 075; a versão antiga trata definição não suportada como inválida e pode finalizar a execução afetada.
+
+## 23. Operação de espera e calendário da PR 076
+
+A migration obrigatória passa a `20260901012500_espera_resposta_fluxo`. Ela amplia a constraint de `retomar_em` para `AGUARDANDO_RESPOSTA` e substitui o trigger para permitir retomada antecipada somente com a marca explícita de resposta. É aditiva sobre dados existentes e não cria calendário, fluxo ou capacidade por padrão.
+
+Monitorar quantidade e idade de `AGUARDANDO_RESPOSTA`/`AGUARDANDO_SISTEMA` vencidos, `RETOMADA_ESPERA_PREMATURA`, `CONTEXTO_ESPERA_INVALIDO`, `CALENDARIO_INDISPONIVEL`, `CALENDARIO_INVALIDO`, passos `AGENDADO` sem revisão posterior e divergência de imagem entre workers. Timeout normal é saída de negócio; backlog vencido é incidente operacional.
+
+No aceite, usar dois workers, calendários reais aberto/fechado e fluxos sintéticos para resposta, timeout e instante. Reiniciar ambos antes do prazo e confirmar reconstrução pelo PostgreSQL, um único vencedor, um passo por revisão e ausência de payload em passo/auditoria. Também testar que o banco recusa retomada antecipada sem marca e que a prontidão exige a migration nova.
+
+Não alterar marca, prazo, estado, nó ou revisão por SQL para liberar atendimento. Corrigir calendário por seu serviço administrativo ou publicar nova versão do fluxo. Rollback preserva a migration e todas as esperas; antes de usar worker PR 075, comprovar que nenhuma execução não terminal está em nó da PR 076, pois a imagem anterior não interpreta esses contratos.
