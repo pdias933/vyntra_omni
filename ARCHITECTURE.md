@@ -70,6 +70,8 @@ Mobile e web compartilham contratos, identidade, semântica de estados e linguag
 - “Reduzir Movimento” muda a apresentação, não o resultado, a ordem nem a disponibilidade da ação.
 - O bottom sheet de ações envia comandos aos serviços de aplicação; não chama adapter nem contém autorização de negócio.
 
+O shell web é uma fronteira autenticada única. Ele usa o SDK OpenAPI para login, confirmação de sessão e logout, mantém identidade somente em memória e usa o transporte SSE nativo do navegador para observar `PERMISSOES_ALTERADAS`. O evento não concede acesso: ele invalida a composição corrente e força nova confirmação no backend.
+
 ## 3. Estrutura proposta do repositório
 
 ```text

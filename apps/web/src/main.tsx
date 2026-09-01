@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 
 import '@xyflow/react/dist/style.css';
 
-import { Aplicacao } from './Aplicacao';
+import { ShellWeb } from './web/ShellWeb';
 import './estilos.css';
 
 const raiz = document.getElementById('root');
@@ -14,6 +14,6 @@ if (raiz === null) {
 
 createRoot(raiz).render(
   <StrictMode>
-    <Aplicacao />
+    <ShellWeb />
   </StrictMode>,
 );

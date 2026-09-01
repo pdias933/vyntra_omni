@@ -98,7 +98,7 @@ function mapearSimulacao(
   };
 }
 
-export function Aplicacao() {
+export function AplicacaoEditorFluxos() {
   const [fluxos, definirFluxos] = useState<readonly FluxoEditorDto[]>([]);
   const [fluxoId, definirFluxoId] = useState<string>();
   const [versaoId, definirVersaoId] = useState<string>();

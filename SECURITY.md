@@ -98,6 +98,9 @@ Geração exige sessão web+CSRF+origem. Confirmação exige a mesma sessão web
 - logout global e revogação administrativa;
 - reautenticação pode ser exigida para mudanças críticas de integração, permissão ou segurança;
 - SSE reutiliza o cookie e valida origem/escopo.
+- o shell confirma a sessão antes de renderizar conteúdo protegido e volta ao login em expiração ou revogação;
+- senha, token de sessão e CSRF não entram em `localStorage` ou `sessionStorage`; o JavaScript lê somente a cópia não `HttpOnly` do CSRF para mutações;
+- `PERMISSOES_ALTERADAS` invalida a composição atual e provoca nova autorização no backend; itens de navegação nunca são fonte de autoridade.
 
 A PR 058 faz o SSE revalidar a sessão em cada ciclo de consulta. Sessão revogada encerra o stream. Mudança de permissão entrega primeiro `PERMISSOES_ALTERADAS` ao usuário exato e então conclui a resposta, obrigando nova consulta autorizada; o cookie não congela o escopo existente na abertura.
 

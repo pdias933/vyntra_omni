@@ -164,6 +164,8 @@ No composer, `/` abre respostas rápidas pesquisáveis. O botão dedicado de aç
 - Administração de usuários, filas, permissões, contas, integrações, fluxos, flags, releases e saúde.
 - Editor visual do Motor de Fluxos.
 
+O shell web autenticado possui composição própria de desktop, rotas estáveis e navegação por histórico. Antes de renderizar qualquer área protegida, ele confirma a sessão no backend. Expiração ou revogação remove a área autenticada; alteração de escopo recebida pelo SSE provoca revalidação imediata. Senha e token de sessão nunca são persistidos pelo JavaScript.
+
 ### 4.7 Aplicativo iOS/Android
 
 - Aplicativo real em React Native + Expo Prebuild, com um código-base para as duas plataformas.

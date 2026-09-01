@@ -649,3 +649,7 @@ No aceite, criar um rascunho por uma sessão autorizada, salvar posição e par�
 O simulador não possui fila, worker, tabela, migration, credencial de canal ou provider próprio. Implante API e web do mesmo commit e mantenha as instâncias da API homogêneas. A disponibilidade do endpoint depende somente do processo da API e da autorização já existente; Meta, MK, Redis e workers podem estar indisponíveis sem que o teste fictício faça chamada a eles.
 
 O smoke de staging deve executar os sete cenários, comprovar `efeitosReaisExecutados: false`, término limitado e nenhuma alteração em fluxo, versão, mensagem, operação recuperável ou auditoria de domínio. Inspecione também a interface para aviso de dados fictícios, passos visíveis e comportamento com “Reduzir Movimento”. Se a simulação elevar latência ou memória, retire a versão da API; não aumente o limite de 200 passos e não habilite adapter como mitigação. Reversão não exige ação no banco.
+
+## 33. Operação do shell web da PR 086
+
+O shell depende de API e SSE sob a mesma origem autorizada. Monitore falhas de autenticação agregadas sem identificador em claro, expiração de sessão e reconexões anormais do stream. Estado saudável não mostra conexão, cursor ou horário de sincronização. Reversão da web não requer migration e não reativa sessão revogada.
