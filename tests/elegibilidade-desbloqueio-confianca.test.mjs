@@ -84,6 +84,7 @@ test('execução reserva o contrato e confirma histórico, operação e auditori
   assert.match(migration, /PRIMARY KEY \("contrato_externo_id"\)/);
   assert.match(migration, /reserva_desbloqueio_operacao_key/);
   assert.match(repositorio, /pg_advisory_xact_lock/);
+  assert.match(repositorio, /\$executeRaw/);
   assert.match(servico, /confirmacaoExplicita !== true/);
   assert.match(servico, /EXECUTAR_DESBLOQUEIO_CONFIANCA/);
   assert.match(servico, /registrarResultadoIncerto/);

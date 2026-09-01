@@ -15,7 +15,7 @@ export class RepositorioDesbloqueiosConfiancaPrisma
     contratoExternoId: string,
     transacao: TransacaoPrisma,
   ): Promise<void> {
-    await transacao.$queryRaw(
+    await transacao.$executeRaw(
       Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`desbloqueio:${contratoExternoId}`}, 0))`,
     );
   }
