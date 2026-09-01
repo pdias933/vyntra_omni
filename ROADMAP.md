@@ -66,7 +66,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 042 | CONCLUÍDA | `xhigh` |
 | 043 | CONCLUÍDA | `xhigh` |
 | 044 | CONCLUÍDA | `xhigh` |
-| 045 | EM ANDAMENTO | `xhigh` |
+| 045 | CONCLUÍDA | `xhigh` |
 | 046 | PENDENTE | `high` |
 | 047 | PENDENTE | `high` |
 | 048 | PENDENTE | `high` |
@@ -365,6 +365,10 @@ Aceite concluído em 1º de setembro de 2026: a coleção oficial da Meta e o ma
 ### PR 044 — entrada do AdaptadorMetaCloud
 
 Aceite concluído em 1º de setembro de 2026: o adapter passou a verificar `X-Hub-Signature-256` por HMAC SHA-256 sobre o corpo bruto com comparação constante, limite de corpo e parsing estrito. A conta externa é resolvida para `ContaWhatsApp` ativa; BSUID resolve o contato, a conversa única registra a conta participante e um atendimento BOT/protocolo pendente nasce quando necessário. `EventoEntradaCanal` deduplica por conta + identificador externo. Mensagem `ENTRADA` e a recepção `PERSISTIDO` são gravadas antes do evento que libera automação/retorno. Lint, tipos, 197 testes da API, 150 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002700_criar_entrada_canal` terminou com código zero e `vyntra/api-staging:pr-044` ficou saudável com prontidão `PRONTO`. Em staging, duplicidade foi recusada, recepção chegou a `PERSISTIDO` somente vinculada à mensagem `ENTRADA`, mutação posterior foi bloqueada, houve rollback e nenhum erro de nível 50 foi emitido.
+
+### PR 045 — saída do AdaptadorMetaCloud
+
+Aceite concluído em 1º de setembro de 2026: o adapter de saída passou a exigir versão e credencial externas explícitas, converter somente o comando interno de texto e considerar a mensagem `ACEITA` apenas quando a Meta responde em HTTP 2xx com identificador externo válido. Timeout, indisponibilidade, limitação e códigos transitórios produzem falha temporária com repetição controlada; autenticação, configuração, destinatário e payload inválidos produzem falha definitiva. Resposta 2xx sem identificador não confirma envio nem autoriza repetição cega. O despachante grava `ENVIADA` somente após aceite, devolve falha temporária a `NA_FILA` e termina falha definitiva em `FALHOU`. Lint, tipos, 201 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-045` ficou saudável com prontidão `PRONTO`. Em staging, aceite, 2xx sem ID, indisponibilidade e destinatário inválido foram classificados corretamente, migration encerrou com código zero e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
