@@ -863,6 +863,7 @@ model ContaWhatsApp {
   eventosEntradaCanal           EventoEntradaCanal[]
   eventosEstadoMensagem         EventoEstadoMensagem[]
   modelosMensagem               ModeloMensagemCanal[]
+  composicoesSegundaVia         ComposicaoSegundaVia[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorCanalExterno], map: "conta_whatsapp_identidade_externa_key")
   @@index([estado, nomeExibicao, id], map: "conta_whatsapp_estado_nome_idx")
@@ -885,6 +886,7 @@ model Contato {
   conversa                Conversa?
   janelasAtendimentoCanal JanelaAtendimentoCanal[]
   mensagensRecebidas      Mensagem[]
+  composicoesSegundaVia   ComposicaoSegundaVia[]
 
   @@index([estado, ultimaInteracaoEm, id], map: "contato_estado_ultima_interacao_idx")
   @@map("contato")
@@ -1282,10 +1284,34 @@ model MidiaMensagem {
   conteudoHash  String                 @map("conteudo_hash") @db.Char(64)
   armazenadaEm  DateTime               @map("armazenada_em") @db.Timestamptz(6)
   mensagem      Mensagem               @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
+  composicoesSegundaVia ComposicaoSegundaVia[]
 
   @@unique([bucketPrivado, chaveObjeto], map: "midia_mensagem_bucket_chave_key")
   @@index([conteudoHash, tamanhoBytes], map: "midia_mensagem_hash_tamanho_idx")
   @@map("midia_mensagem")
+}
+
+model ComposicaoSegundaVia {
+  id                       String         @id @db.Uuid
+  contaWhatsAppId          String         @map("conta_whatsapp_id") @db.Uuid
+  contatoId                String         @map("contato_id") @db.Uuid
+  referenciaFatura         String         @map("referencia_fatura") @db.VarChar(256)
+  valorCentavos            BigInt         @map("valor_centavos")
+  vencimento               DateTime       @db.Date
+  documentoMidiaMensagemId String?        @map("documento_midia_mensagem_id") @db.Uuid
+  incluiPdf                Boolean        @default(false) @map("inclui_pdf")
+  incluiPix                Boolean        @default(false) @map("inclui_pix")
+  incluiLinhaDigitavel     Boolean        @default(false) @map("inclui_linha_digitavel")
+  incluiLinkSeguro         Boolean        @default(false) @map("inclui_link_seguro")
+  opcoesProtegidas         Json           @map("opcoes_protegidas")
+  opcoesHash               String         @map("opcoes_hash") @db.Char(64)
+  criadaEm                 DateTime       @map("criada_em") @db.Timestamptz(6)
+  contaWhatsApp            ContaWhatsApp  @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  contato                  Contato        @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  documentoMidia           MidiaMensagem? @relation(fields: [documentoMidiaMensagemId], references: [mensagemId], onDelete: Restrict)
+
+  @@index([contatoId, criadaEm, id], map: "composicao_segunda_via_contato_criada_idx")
+  @@map("composicao_segunda_via")
 }
 
 model ProtocoloErp {
