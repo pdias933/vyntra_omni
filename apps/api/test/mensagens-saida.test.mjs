@@ -15,6 +15,7 @@ const ids = {
   conversa: randomUUID(),
   fila: randomUUID(),
   mensagemCliente: randomUUID(),
+  modelo: randomUUID(),
   sessao: randomUUID(),
   usuario: randomUUID(),
 };
@@ -81,7 +82,7 @@ test('falha temporária retorna à fila e falha definitiva ou cancelamento são 
 });
 
 function criarServico(sobrescritas = {}) {
-  const estado = { caixa: [], eventos: [], mensagens: [] };
+  const estado = { caixa: [], eventos: [], mensagens: [], tiposJanela: [] };
   const repositorio = {
     acrescentar: async (mensagem) => estado.mensagens.push(mensagem),
     bloquearAutoridadeSaida: async () => {},
@@ -101,6 +102,7 @@ function criarServico(sobrescritas = {}) {
             conversaId: ids.conversa,
             versaoAtribuicao: 7,
           },
+    modeloAprovado: async () => sobrescritas.modeloAprovado !== false,
     obterPorIdempotencia: async (_usuarioId, mensagemClienteId) =>
       estado.mensagens.find((mensagem) => mensagem.mensagemClienteId === mensagemClienteId),
   };
@@ -115,7 +117,7 @@ function criarServico(sobrescritas = {}) {
       if (sobrescritas.foraJanela === true) {
         throw new ErroTextoLivreForaJanela();
       }
-      assert.equal(tipo, 'TEXTO_LIVRE');
+      estado.tiposJanela.push(tipo);
       return { estado: 'ABERTA', permitida: true, tipo };
     },
   };
@@ -239,4 +241,33 @@ test('reuso divergente da chave do cliente é rejeitado', async () => {
     servico.criarTexto(sessao, { ...entrada, texto: 'divergente' }, {}, () => agora),
     ErroIdempotenciaMensagemDivergente,
   );
+});
+
+test('mensagem aprovada valida catálogo e pode sair com a janela encerrada', async () => {
+  const { estado, servico } = criarServico();
+  const sessao = { estado: 'ATIVA', expiraEm: new Date('2099-01-01'), sessaoId: ids.sessao, usuarioId: ids.usuario };
+  const mensagem = await servico.criarModeloAprovado(sessao, {
+    atendimentoId: ids.atendimento,
+    contaWhatsAppId: ids.conta,
+    conversaId: ids.conversa,
+    filaId: ids.fila,
+    mensagemClienteId: randomUUID(),
+    modeloId: ids.modelo,
+    parametros: ['João'],
+  }, {}, () => agora);
+  assert.equal(mensagem.tipo, 'MODELO_APROVADO');
+  assert.deepEqual(mensagem.conteudoProtegido, { modeloId: ids.modelo, parametros: ['João'] });
+  assert.equal(estado.tiposJanela.at(-1), 'MODELO_APROVADO');
+
+  const negado = criarServico({ modeloAprovado: false });
+  await assert.rejects(() => negado.servico.criarModeloAprovado(sessao, {
+    atendimentoId: ids.atendimento,
+    contaWhatsAppId: ids.conta,
+    conversaId: ids.conversa,
+    filaId: ids.fila,
+    mensagemClienteId: randomUUID(),
+    modeloId: ids.modelo,
+    parametros: ['João'],
+  }, {}), /MENSAGEM_INVALIDA/);
+  assert.equal(negado.estado.mensagens.length, 0);
 });

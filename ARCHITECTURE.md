@@ -534,6 +534,8 @@ A lista web resolve primeiro as filas autorizadas e executa no PostgreSQL a cons
 
 A PR 088 aplica a mesma fronteira à timeline web. O endpoint recebe um atendimento apenas como ponto de entrada, confirma sessão e `VISUALIZAR_FILA` antes de consultar conteúdo, resolve no backend as filas visíveis e pagina no PostgreSQL a conversa única do contato. Mensagens e eventos históricos exigem interseção de fila ou `VISUALIZAR_HISTORICO_TRANSVERSAL`; notas resolvem separadamente `VISUALIZAR_NOTA_INTERNA` e `VISUALIZAR_NOTAS_TRANSVERSAIS`. A resposta nunca delega filtro ao navegador. O cursor opaco usa instante+identificador em ordem estável, e o marcador pessoal usa versão esperada para impedir que abas concorrentes apaguem uma decisão mais nova.
 
+Na PR 089, o composer web não grava `Mensagem` diretamente. Texto e mensagem aprovada passam por `ServicoMensagensSaida`, que revalida responsável, fila, modo humano, janela, catálogo aprovado e idempotência dentro da transação. O UUID gerado no cliente serve apenas como chave de repetição; não concede autoridade. Pesquisa de respostas rápidas e mensagens aprovadas confirma `ENVIAR_MENSAGEM` antes de buscar o catálogo e limita resultado no PostgreSQL. Resposta rápida preenche o composer, mas envio continua sendo um novo comando autorizado. Texto fora da janela é bloqueado no backend com indicação canônica para escolher mensagem aprovada.
+
 - A lista deriva do estado autorizado já aplicado e se reorganiza automaticamente.
 - Uma conversa que recebe mensagem sobe suavemente, preservando identidade estável, foco, seleção e rascunhos não relacionados.
 - A timeline é projetada por `Contato`, não por número empresarial.

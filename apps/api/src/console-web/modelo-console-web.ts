@@ -60,3 +60,23 @@ export interface PaginaTimelineWeb {
   readonly marcador: MarcadorLeituraWeb;
   readonly proximoCursor?: string;
 }
+
+export interface RespostaRapidaWeb {
+  readonly atalho: string;
+  readonly id: string;
+  readonly texto: string;
+  readonly titulo: string;
+}
+
+export interface ModeloAprovadoWeb {
+  readonly id: string;
+  readonly idioma: string;
+  readonly nome: string;
+  readonly quantidadeParametros: number;
+}
+
+export interface MensagemCriadaWeb {
+  readonly estado: string;
+  readonly id: string;
+  readonly recebidaServidorEm: Date;
+}

@@ -37,6 +37,12 @@ export interface RepositorioMensagens {
     revisaoExecucao: number,
     transacao: TransacaoPrisma,
   ): Promise<ContextoSaidaMensagemAutomatica | undefined>;
+  modeloAprovado(
+    modeloId: string,
+    contaWhatsAppId: string,
+    quantidadeParametros: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
   obterAutomaticaParaDespacho(
     mensagemId: string,
     transacao: TransacaoPrisma,

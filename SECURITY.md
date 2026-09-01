@@ -221,6 +221,8 @@ Nota exige `VISUALIZAR_NOTA_INTERNA` e permanece vinculada à fila em que foi cr
 
 A projeção web materializada na PR 088 resolve esses dois escopos de forma independente antes de buscar texto, dados de formulário ou conteúdo de nota. Nota nova grava a fila vigente; o preenchimento histórico é aditivo e registros legados sem fila permanecem negados, salvo permissão transversal explícita. Cursor e identificadores de rota não concedem acesso. Marca de leitura usa chave usuário+conversa e concorrência otimista; toda escrita exige cookie válido, origem permitida e dupla apresentação do CSRF.
 
+Envio web materializado na PR 089 exige sessão atual, origem, CSRF, `ENVIAR_MENSAGEM`, vínculo do responsável ao atendimento e chave idempotente por usuário. A janela Meta é reavaliada pelo backend na mesma unidade do comando; esconder ou desabilitar o composer não é controle de segurança. Mensagem aprovada exige cadastro interno ainda `APROVADO`, conta de origem exata e quantidade de parâmetros exata. Catálogo e resposta rápida retornam somente projeções mínimas depois da autorização; componentes protegidos e referência externa do canal não atravessam a API.
+
 ## 6. Identidade do contato e risco da ação
 
 BSUID/identificador externo resolve correlação técnica; não prova autorização para agir em nome de qualquer cliente ERP. Username e telefone também não são prova isolada.

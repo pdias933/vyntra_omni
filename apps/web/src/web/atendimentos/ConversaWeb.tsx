@@ -1,8 +1,14 @@
 import {
   confirmarLeituraTimelineWeb,
+  enviarModeloAprovadoWeb,
+  enviarTextoWeb,
+  listarModelosAprovadosWeb,
+  listarRespostasRapidasWeb,
   marcarTimelineWebNaoLida,
   obterTimelineWeb,
   type ItemTimelineWebDto,
+  type ModeloAprovadoWebDto,
+  type RespostaRapidaWebDto,
   type ResumoAtendimentoWebDto,
 } from '@vyntra/api-client';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -121,13 +127,111 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
         ))}
         <div ref={finalTimeline} />
       </div>
-      <footer className="composer-web composer-web--preparado">
-        <button aria-label="Anexar" type="button">＋</button>
-        <div><span>Digite uma mensagem…</span><kbd>/</kbd></div>
-        <button aria-label="Ações do sistema" type="button">⌘</button>
-      </footer>
+      <ComposerWeb atendimento={atendimento} aoEnviar={() => carregar(true)} />
     </section>
   );
+}
+
+function ComposerWeb({ atendimento, aoEnviar }: { readonly atendimento: ResumoAtendimentoWebDto; readonly aoEnviar: () => Promise<void> }) {
+  const [texto, definirTexto] = useState('');
+  const [respostas, definirRespostas] = useState<readonly RespostaRapidaWebDto[]>([]);
+  const [modelos, definirModelos] = useState<readonly ModeloAprovadoWebDto[]>([]);
+  const [modelo, definirModelo] = useState<ModeloAprovadoWebDto>();
+  const [parametros, definirParametros] = useState<readonly string[]>([]);
+  const [painelModelo, definirPainelModelo] = useState(false);
+  const [ocupado, definirOcupado] = useState(false);
+  const [erro, definirErro] = useState<string>();
+  const janelaFechada = atendimento.janela_expira_em === undefined || new Date(atendimento.janela_expira_em) <= new Date();
+
+  useEffect(() => {
+    if (!texto.startsWith('/')) return undefined;
+    const busca = texto.slice(1).trim();
+    const temporizador = window.setTimeout(() => {
+      void listarRespostasRapidasWeb({
+        path: { atendimentoId: atendimento.atendimento_id },
+        query: { busca },
+        throwOnError: true,
+      }).then((resposta) => definirRespostas(resposta.data)).catch(() => definirRespostas([]));
+    }, 120);
+    return () => window.clearTimeout(temporizador);
+  }, [atendimento.atendimento_id, texto]);
+
+  async function abrirModelos() {
+    definirPainelModelo(true);
+    try {
+      const resposta = await listarModelosAprovadosWeb({ path: { atendimentoId: atendimento.atendimento_id }, throwOnError: true });
+      definirModelos(resposta.data);
+    } catch { definirErro('Não foi possível consultar as mensagens aprovadas.'); }
+  }
+
+  async function enviarTexto() {
+    const normalizado = texto.trim();
+    if (normalizado.length === 0 || ocupado || janelaFechada) return;
+    definirOcupado(true); definirErro(undefined);
+    try {
+      await enviarTextoWeb({
+        body: { mensagem_cliente_id: crypto.randomUUID(), texto: normalizado },
+        headers: { 'x-csrf-token': obterCsrf() },
+        path: { atendimentoId: atendimento.atendimento_id },
+        throwOnError: true,
+      });
+      definirTexto(''); definirRespostas([]); await aoEnviar();
+    } catch (falha) {
+      definirErro(codigoFalha(falha) === 'JANELA_META_EXPIRADA' ? 'A janela encerrou. Escolha uma mensagem aprovada.' : 'Não foi possível enviar. O texto foi preservado.');
+    } finally { definirOcupado(false); }
+  }
+
+  async function enviarModelo() {
+    if (modelo === undefined || ocupado || parametros.some((item) => item.trim().length === 0)) return;
+    definirOcupado(true); definirErro(undefined);
+    try {
+      await enviarModeloAprovadoWeb({
+        body: { mensagem_cliente_id: crypto.randomUUID(), modelo_id: modelo.id, parametros: [...parametros] },
+        headers: { 'x-csrf-token': obterCsrf() },
+        path: { atendimentoId: atendimento.atendimento_id },
+        throwOnError: true,
+      });
+      definirPainelModelo(false); definirModelo(undefined); definirParametros([]); await aoEnviar();
+    } catch { definirErro('A mensagem aprovada não pôde ser enviada.'); }
+    finally { definirOcupado(false); }
+  }
+
+  return <footer className="composer-web">
+    {texto.startsWith('/') && respostas.length > 0 && <div className="sugestoes-respostas" role="listbox">
+      {respostas.map((resposta) => <button key={resposta.id} onClick={() => { definirTexto(resposta.texto); definirRespostas([]); }} role="option" type="button"><strong>/{resposta.atalho}</strong><span>{resposta.titulo}</span><small>{resposta.texto}</small></button>)}
+    </div>}
+    {painelModelo && <div className="painel-modelos">
+      <header><strong>Mensagens aprovadas</strong><button onClick={() => definirPainelModelo(false)} type="button">×</button></header>
+      {modelo === undefined ? <div className="lista-modelos">{modelos.length === 0 ? <small>Nenhuma mensagem disponível.</small> : modelos.map((item) => <button key={item.id} onClick={() => { definirModelo(item); definirParametros(Array.from({ length: item.quantidade_parametros }, () => '')); }} type="button"><strong>{item.nome.replaceAll('_', ' ')}</strong><small>{item.idioma} · {item.quantidade_parametros} campos</small></button>)}</div> : <div className="parametros-modelo"><button onClick={() => definirModelo(undefined)} type="button">← Voltar</button><strong>{modelo.nome.replaceAll('_', ' ')}</strong>{parametros.map((valor, indice) => <label key={indice}>Campo {indice + 1}<input maxLength={1000} onChange={(evento) => definirParametros((atuais) => atuais.map((atual, posicao) => posicao === indice ? evento.target.value : atual))} value={valor} /></label>)}<button className="botao--enviar-modelo" disabled={ocupado} onClick={() => void enviarModelo()} type="button">Enviar mensagem aprovada</button></div>}
+    </div>}
+    {erro !== undefined && <div className="erro-composer" role="alert">{erro}</div>}
+    <button aria-label="Anexar" type="button">＋</button>
+    <div className="campo-composer">
+      <textarea
+        aria-label="Mensagem"
+        disabled={janelaFechada}
+        maxLength={4096}
+        onChange={(evento) => definirTexto(evento.target.value)}
+        onKeyDown={(evento) => { if (evento.key === 'Enter' && !evento.shiftKey) { evento.preventDefault(); void enviarTexto(); } }}
+        placeholder={janelaFechada ? 'Janela encerrada — use mensagem aprovada' : 'Digite uma mensagem…'}
+        rows={1}
+        value={texto}
+      />
+      {!janelaFechada && texto.length === 0 && <kbd>/</kbd>}
+    </div>
+    {texto.trim().length > 0 && !janelaFechada
+      ? <button aria-label="Enviar" className="botao-enviar" disabled={ocupado} onClick={() => void enviarTexto()} type="button">➤</button>
+      : <button aria-label="Ações do sistema" type="button">⌘</button>}
+    <button className="abrir-modelos" onClick={() => void abrirModelos()} type="button">Mensagem aprovada</button>
+  </footer>;
+}
+
+function codigoFalha(erro: unknown): string | undefined {
+  if (typeof erro !== 'object' || erro === null) return undefined;
+  const resposta = Reflect.get(erro, 'response');
+  const dados = typeof resposta === 'object' && resposta !== null ? Reflect.get(resposta, 'data') : undefined;
+  const codigo = typeof dados === 'object' && dados !== null ? Reflect.get(dados, 'codigo') : undefined;
+  return typeof codigo === 'string' ? codigo : undefined;
 }
 
 function ItemTimeline({ item, mostrarData }: { readonly item: ItemTimelineWebDto; readonly mostrarData: boolean }) {

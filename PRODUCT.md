@@ -168,6 +168,8 @@ O shell web autenticado possui composição própria de desktop, rotas estáveis
 
 A timeline web mantém a lista e a conversa lado a lado, sem transformar o desktop em uma ampliação do celular. A seleção permanece estável quando uma conversa sobe por evento novo. Itens antigos são paginados sem controle de sincronização; notas usam superfície âmbar e rótulo `Somente equipe`, eventos operacionais usam bloco neutro e submissões de formulário oferecem `Ver formulário`. A leitura é pessoal: abrir a conversa avança o último item lido e `Marcar não lida` não altera o estado dos demais operadores.
 
+O composer web da PR 089 preserva a regra do produto: `/` abre respostas rápidas pesquisáveis, escolher uma resposta apenas preenche o texto e o botão de ação vira envio quando existe conteúdo. Com a janela Meta encerrada, texto livre fica indisponível antes do comando e a interface oferece mensagens aprovadas, com preenchimento explícito de parâmetros. Falha não apaga o rascunho. Catálogos vazios ou indisponíveis são estados claros, nunca suporte inventado.
+
 ### 4.7 Aplicativo iOS/Android
 
 - Aplicativo real em React Native + Expo Prebuild, com um código-base para as duas plataformas.

@@ -693,6 +693,7 @@ model Usuario {
   notasInternasCriadas           NotaInterna[]
   mensagensEnviadas              Mensagem[]
   marcadoresLeituraConversa      MarcadorLeituraConversaUsuario[]
+  respostasRapidasCriadas        RespostaRapida[]                    @relation("UsuarioCriacaoRespostaRapida")
   fluxosCriados                  Fluxo[]                           @relation("UsuarioCriacaoFluxo")
   versoesFluxoCriadas            VersaoFluxo[]                     @relation("UsuarioCriacaoVersaoFluxo")
   versoesFluxoPublicadas         VersaoFluxo[]                     @relation("UsuarioPublicacaoVersaoFluxo")
@@ -1489,6 +1490,22 @@ model Mensagem {
   @@index([estadoSaida, proximaTentativaEm, recebidaServidorEm], map: "mensagem_saida_pendente_idx")
   @@index([execucaoFluxoOrigemId, estadoSaida, recebidaServidorEm], map: "mensagem_execucao_fluxo_estado_idx")
   @@map("mensagem")
+}
+
+model RespostaRapida {
+  id                    String   @id @db.Uuid
+  titulo                String   @db.VarChar(120)
+  atalho                 String   @unique @db.VarChar(80)
+  textoProtegido         Json     @map("texto_protegido")
+  ativa                  Boolean  @default(true)
+  criadoPorUsuarioId     String   @map("criado_por_usuario_id") @db.Uuid
+  versao                 Int      @default(1)
+  criadaEm               DateTime @default(now()) @map("criada_em") @db.Timestamptz(6)
+  atualizadaEm           DateTime @default(now()) @updatedAt @map("atualizada_em") @db.Timestamptz(6)
+  criadoPorUsuario       Usuario  @relation("UsuarioCriacaoRespostaRapida", fields: [criadoPorUsuarioId], references: [id], onDelete: Restrict)
+
+  @@index([ativa, atalho, id], map: "resposta_rapida_ativa_atalho_idx")
+  @@map("resposta_rapida")
 }
 
 model EventoEstadoMensagem {

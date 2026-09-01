@@ -156,6 +156,37 @@ export type ListaAtendimentosWebDto = {
     filtro: 'MEUS' | 'PENDENTES' | 'NAO_LIDOS' | 'SLA' | 'EXPIRANDO' | 'EM_AUTOMACAO';
 };
 
+export type RespostaRapidaWebDto = {
+    id: string;
+    titulo: string;
+    atalho: string;
+    texto: string;
+};
+
+export type ModeloAprovadoWebDto = {
+    id: string;
+    nome: string;
+    idioma: string;
+    quantidade_parametros: number;
+};
+
+export type EntradaEnvioTextoWebDto = {
+    mensagem_cliente_id: string;
+    texto: string;
+};
+
+export type MensagemCriadaWebDto = {
+    id: string;
+    estado: string;
+    recebida_servidor_em: string;
+};
+
+export type EntradaEnvioModeloWebDto = {
+    mensagem_cliente_id: string;
+    modelo_id: string;
+    parametros: Array<string>;
+};
+
 export type ItemTimelineWebDto = {
     id: string;
     tipo: 'EVENTO_OPERACIONAL' | 'FORMULARIO' | 'MENSAGEM' | 'NOTA_INTERNA' | 'SEPARADOR_ATENDIMENTO';
@@ -840,6 +871,76 @@ export type ListarAtendimentosWebResponses = {
 };
 
 export type ListarAtendimentosWebResponse = ListarAtendimentosWebResponses[keyof ListarAtendimentosWebResponses];
+
+export type ListarRespostasRapidasWebData = {
+    body?: never;
+    path: {
+        atendimentoId: string;
+    };
+    query?: {
+        busca?: string;
+    };
+    url: '/api/v1/web/atendimentos/{atendimentoId}/respostas-rapidas';
+};
+
+export type ListarRespostasRapidasWebResponses = {
+    200: Array<RespostaRapidaWebDto>;
+};
+
+export type ListarRespostasRapidasWebResponse = ListarRespostasRapidasWebResponses[keyof ListarRespostasRapidasWebResponses];
+
+export type ListarModelosAprovadosWebData = {
+    body?: never;
+    path: {
+        atendimentoId: string;
+    };
+    query?: {
+        busca?: string;
+    };
+    url: '/api/v1/web/atendimentos/{atendimentoId}/modelos-aprovados';
+};
+
+export type ListarModelosAprovadosWebResponses = {
+    200: Array<ModeloAprovadoWebDto>;
+};
+
+export type ListarModelosAprovadosWebResponse = ListarModelosAprovadosWebResponses[keyof ListarModelosAprovadosWebResponses];
+
+export type EnviarTextoWebData = {
+    body: EntradaEnvioTextoWebDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/mensagens/texto';
+};
+
+export type EnviarTextoWebResponses = {
+    200: MensagemCriadaWebDto;
+};
+
+export type EnviarTextoWebResponse = EnviarTextoWebResponses[keyof EnviarTextoWebResponses];
+
+export type EnviarModeloAprovadoWebData = {
+    body: EntradaEnvioModeloWebDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/mensagens/modelo';
+};
+
+export type EnviarModeloAprovadoWebResponses = {
+    200: MensagemCriadaWebDto;
+};
+
+export type EnviarModeloAprovadoWebResponse = EnviarModeloAprovadoWebResponses[keyof EnviarModeloAprovadoWebResponses];
 
 export type ObterTimelineWebData = {
     body?: never;

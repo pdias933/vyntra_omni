@@ -114,6 +114,22 @@ export class RepositorioMensagensPrisma implements RepositorioMensagens {
     };
   }
 
+  public async modeloAprovado(
+    modeloId: string,
+    contaWhatsAppId: string,
+    quantidadeParametros: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    return await transacao.modeloMensagemCanal.count({
+      where: {
+        contaWhatsAppId,
+        estado: 'APROVADO',
+        id: modeloId,
+        quantidadeParametros,
+      },
+    }) === 1;
+  }
+
   public async obterAutomaticaParaDespacho(
     mensagemId: string,
     transacao: TransacaoPrisma,

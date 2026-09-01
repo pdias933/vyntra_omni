@@ -921,6 +921,208 @@
         ]
       }
     },
+    "/api/v1/web/atendimentos/{atendimentoId}/respostas-rapidas": {
+      "get": {
+        "operationId": "listarRespostasRapidasWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "busca",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RespostaRapidaWebDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Pesquisa respostas rápidas autorizadas para o atendimento",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
+    "/api/v1/web/atendimentos/{atendimentoId}/modelos-aprovados": {
+      "get": {
+        "operationId": "listarModelosAprovadosWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "busca",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModeloAprovadoWebDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Pesquisa mensagens aprovadas para iniciar contato",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
+    "/api/v1/web/atendimentos/{atendimentoId}/mensagens/texto": {
+      "post": {
+        "operationId": "enviarTextoWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaEnvioTextoWebDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MensagemCriadaWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Enfileira texto livre autorizado",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
+    "/api/v1/web/atendimentos/{atendimentoId}/mensagens/modelo": {
+      "post": {
+        "operationId": "enviarModeloAprovadoWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaEnvioModeloWebDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MensagemCriadaWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Enfileira mensagem aprovada autorizada",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
     "/api/v1/web/atendimentos/{atendimentoId}/timeline": {
       "get": {
         "operationId": "obterTimelineWeb",
@@ -2499,6 +2701,117 @@
         "required": [
           "itens",
           "filtro"
+        ]
+      },
+      "RespostaRapidaWebDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "atalho": {
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "atalho",
+          "texto"
+        ]
+      },
+      "ModeloAprovadoWebDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "idioma": {
+            "type": "string"
+          },
+          "quantidade_parametros": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "idioma",
+          "quantidade_parametros"
+        ]
+      },
+      "EntradaEnvioTextoWebDto": {
+        "type": "object",
+        "properties": {
+          "mensagem_cliente_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "texto": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [
+          "mensagem_cliente_id",
+          "texto"
+        ]
+      },
+      "MensagemCriadaWebDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "recebida_servidor_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "estado",
+          "recebida_servidor_em"
+        ]
+      },
+      "EntradaEnvioModeloWebDto": {
+        "type": "object",
+        "properties": {
+          "mensagem_cliente_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "modelo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "parametros": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mensagem_cliente_id",
+          "modelo_id",
+          "parametros"
         ]
       },
       "ItemTimelineWebDto": {

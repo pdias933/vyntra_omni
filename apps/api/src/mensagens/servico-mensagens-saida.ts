@@ -322,6 +322,129 @@ export class ServicoMensagensSaida {
     };
   }
 
+  public async criarModeloAprovado(
+    sessao: ContextoSessaoAutorizacao,
+    entrada: {
+      readonly atendimentoId: string;
+      readonly contaWhatsAppId: string;
+      readonly conversaId: string;
+      readonly filaId: string;
+      readonly mensagemClienteId: string;
+      readonly modeloId: string;
+      readonly parametros: readonly string[];
+    },
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<MensagemSaidaPersistida> {
+    if (
+      ![
+        entrada.atendimentoId,
+        entrada.contaWhatsAppId,
+        entrada.conversaId,
+        entrada.filaId,
+        entrada.mensagemClienteId,
+        entrada.modeloId,
+      ].every((id) => UUID.test(id)) ||
+      !Array.isArray(entrada.parametros) ||
+      entrada.parametros.length > 100 ||
+      entrada.parametros.some((valor) => typeof valor !== 'string' || valor.trim().length < 1 || valor.length > 1_000)
+    ) {
+      throw new ErroMensagemInvalida();
+    }
+    const agora = relogio();
+    if (!Number.isFinite(agora.getTime())) throw new ErroMensagemInvalida();
+    const conteudoProtegido = { modeloId: entrada.modeloId, parametros: [...entrada.parametros] };
+    const conteudoHash = createHash('sha256').update(JSON.stringify(conteudoProtegido), 'utf8').digest('hex');
+    await this.repositorio.bloquearIdempotencia(sessao.usuarioId, entrada.mensagemClienteId, transacao);
+    const existente = await this.repositorio.obterPorIdempotencia(sessao.usuarioId, entrada.mensagemClienteId, transacao);
+    if (existente !== undefined) {
+      if (
+        existente.conversaId !== entrada.conversaId ||
+        existente.atendimentoId !== entrada.atendimentoId ||
+        existente.contaWhatsAppId !== entrada.contaWhatsAppId ||
+        existente.conteudoHash !== conteudoHash
+      ) throw new ErroIdempotenciaMensagemDivergente();
+      return existente;
+    }
+    let contexto: Awaited<ReturnType<RepositorioMensagens['obterContextoSaida']>> | undefined;
+    await this.autorizacao.autorizar(
+      {
+        filaId: entrada.filaId,
+        permissao: 'ENVIAR_MENSAGEM',
+        recurso: { id: entrada.atendimentoId, tipo: 'ATENDIMENTO' },
+        sessao,
+      },
+      async () => {
+        contexto = await this.repositorio.obterContextoSaida(
+          entrada.conversaId,
+          entrada.atendimentoId,
+          entrada.contaWhatsAppId,
+          entrada.filaId,
+          sessao.usuarioId,
+          transacao,
+        );
+        return { acessivel: contexto !== undefined, estadoPermiteAcao: contexto?.permiteEnvio === true };
+      },
+      transacao,
+    );
+    if (
+      contexto === undefined ||
+      !(await this.repositorio.modeloAprovado(
+        entrada.modeloId,
+        entrada.contaWhatsAppId,
+        entrada.parametros.length,
+        transacao,
+      ))
+    ) throw new ErroMensagemInvalida();
+    await this.janela.autorizarSaida(contexto.contatoId, contexto.contaWhatsAppId, 'MODELO_APROVADO', transacao, relogio);
+    const mensagem: MensagemSaidaPersistida = {
+      atendimentoId: entrada.atendimentoId,
+      canceladaEm: undefined,
+      codigoFalha: undefined,
+      contatoRemetenteId: undefined,
+      contaWhatsAppId: entrada.contaWhatsAppId,
+      conteudoHash,
+      conteudoProtegido,
+      conversaId: entrada.conversaId,
+      criadaDispositivoEm: undefined,
+      direcao: 'SAIDA',
+      entregueEm: undefined,
+      enviadaEm: undefined,
+      estadoSaida: 'NA_FILA',
+      falhouEm: undefined,
+      id: randomUUID(),
+      identificadorExternoMensagem: undefined,
+      lidaEm: undefined,
+      mensagemClienteId: entrada.mensagemClienteId,
+      proximaTentativaEm: agora,
+      recebidaServidorEm: agora,
+      tentativasEnvio: 0,
+      tipo: 'MODELO_APROVADO',
+      usuarioRemetenteId: sessao.usuarioId,
+      versao: 1,
+    };
+    await this.repositorio.acrescentar(mensagem, transacao);
+    const evento = await this.eventos.acrescentar(
+      {
+        atendimentoId: mensagem.atendimentoId,
+        classificacaoDados: 'OPERACIONAL',
+        conversaId: mensagem.conversaId,
+        dados: { estado: 'NA_FILA', tipo: 'MODELO_APROVADO' },
+        entidadeId: mensagem.id,
+        entidadeTipo: 'MENSAGEM',
+        tipo: 'MENSAGEM_SAIDA_CRIADA',
+        usuarioAtorId: sessao.usuarioId,
+      },
+      transacao,
+    );
+    await this.caixaSaida.acrescentar(
+      { dados: { mensagemId: mensagem.id }, destino: 'MENSAGERIA', tipo: 'ENVIAR_MENSAGEM' },
+      evento,
+      transacao,
+    );
+    return mensagem;
+  }
+
   private validarEntrada(entrada: {
     readonly atendimentoId: string;
     readonly contaWhatsAppId: string;

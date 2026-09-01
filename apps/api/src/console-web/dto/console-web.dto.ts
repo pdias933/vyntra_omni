@@ -1,11 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsUUID, Min } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsInt, IsString, IsUUID, Length, MaxLength, Min } from 'class-validator';
 import {
   FILTROS_ATENDIMENTOS_WEB,
   type FiltroAtendimentosWeb,
   type ResumoAtendimentoWeb,
   type ItemTimelineWeb,
   type PaginaTimelineWeb,
+  type MensagemCriadaWeb,
+  type ModeloAprovadoWeb,
+  type RespostaRapidaWeb,
 } from '../modelo-console-web.js';
 
 export class ResumoAtendimentoWebDto {
@@ -129,4 +132,40 @@ export class EntradaMarcarNaoLidaWebDto {
 export class MarcadorLeituraWebDto {
   @ApiProperty() public readonly versao: number;
   public constructor(versao: number) { this.versao = versao; }
+}
+
+export class RespostaRapidaWebDto {
+  @ApiProperty({ format: 'uuid' }) public readonly id: string;
+  @ApiProperty() public readonly titulo: string;
+  @ApiProperty() public readonly atalho: string;
+  @ApiProperty() public readonly texto: string;
+  public constructor(item: RespostaRapidaWeb) { Object.assign(this, item); this.id = item.id; this.titulo = item.titulo; this.atalho = item.atalho; this.texto = item.texto; }
+}
+
+export class ModeloAprovadoWebDto {
+  @ApiProperty({ format: 'uuid' }) public readonly id: string;
+  @ApiProperty() public readonly nome: string;
+  @ApiProperty() public readonly idioma: string;
+  @ApiProperty() public readonly quantidade_parametros: number;
+  public constructor(item: ModeloAprovadoWeb) { this.id = item.id; this.nome = item.nome; this.idioma = item.idioma; this.quantidade_parametros = item.quantidadeParametros; }
+}
+
+export class EntradaEnvioTextoWebDto {
+  @ApiProperty({ format: 'uuid' }) @IsUUID() public readonly mensagem_cliente_id!: string;
+  @ApiProperty({ maxLength: 4096 }) @IsString() @Length(1, 4096) public readonly texto!: string;
+}
+
+export class EntradaEnvioModeloWebDto {
+  @ApiProperty({ format: 'uuid' }) @IsUUID() public readonly mensagem_cliente_id!: string;
+  @ApiProperty({ format: 'uuid' }) @IsUUID() public readonly modelo_id!: string;
+  @ApiProperty({ maxItems: 100, type: [String] })
+  @IsArray() @ArrayMaxSize(100) @IsString({ each: true }) @MaxLength(1000, { each: true })
+  public readonly parametros!: string[];
+}
+
+export class MensagemCriadaWebDto {
+  @ApiProperty({ format: 'uuid' }) public readonly id: string;
+  @ApiProperty() public readonly estado: string;
+  @ApiProperty({ format: 'date-time' }) public readonly recebida_servidor_em: string;
+  public constructor(item: MensagemCriadaWeb) { this.id = item.id; this.estado = item.estado; this.recebida_servidor_em = item.recebidaServidorEm.toISOString(); }
 }
