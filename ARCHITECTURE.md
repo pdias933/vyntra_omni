@@ -410,6 +410,8 @@ Não há três modelos de evento. Há três transportes para o mesmo fato persis
 
 A PR 052 materializa o primeiro limite dessa distribuição: `ProjetorEventoCliente` recebe o fato confirmado e a autorização atual, nega sessão/recurso fora de escopo e produz contratos discriminados `WEB`, `MOBILE` ou `PUSH`. Web/mobile recebem somente chaves primitivas em allowlist e compatíveis com a classificação; tipo interno não publicado vira `RECURSO_ATUALIZADO`. Push aceita somente os cinco avisos da V1, sequência e identificadores mínimos de navegação, nunca `dados`, conteúdo ou o objeto interno. Transporte algum pode ignorar esse projetor.
 
+A PR 053 materializa a recuperação incremental em `GET /api/v1/sincronizacao`. O cursor representa a última `sequencia_evento` aplicada e a consulta varre, em ordem, no máximo 100 fatos mais um indicador de continuação. A autorização vigente é resolvida dentro do PostgreSQL: conteúdo de fila inacessível é substituído por objeto vazio antes de alcançar o serviço, enquanto a sequência varrida ainda avança o cursor. Isso evita inferência de conteúdo, repetição infinita em lacunas de autorização e identidade declarada pelo cliente. Cursor fora da retenção de 30 dias recebe `RESSINCRONIZACAO_COMPLETA_NECESSARIA`; cursor futuro ou malformado é inválido. No cliente, replay é idempotente e o cursor só muda depois de todo o lote passar pela validação e aplicação local.
+
 ### 8.2 SSE web
 
 - conexão autenticada por cookie web;

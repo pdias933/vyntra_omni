@@ -74,7 +74,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 050 | CONCLUÍDA | `xhigh` |
 | 051 | CONCLUÍDA | `xhigh` |
 | 052 | CONCLUÍDA | `xhigh` |
-| 053 | EM ANDAMENTO | `xhigh` |
+| 053 | CONCLUÍDA | `xhigh` |
 | 054 | PENDENTE | `xhigh` |
 | 055 | PENDENTE | `xhigh` |
 | 056 | PENDENTE | `xhigh` |
@@ -397,6 +397,10 @@ Aceite concluído em 1º de setembro de 2026: aplicações de integração passa
 ### PR 052 — projeções autorizadas de evento
 
 Aceite concluído em 1º de setembro de 2026: `EventoDominio` passou a ser convertido por negação padrão em contratos discriminados para `WEB`, `MOBILE` e `PUSH`. Sessão e acesso ao recurso são avaliados no contexto atual; `PERMISSOES_ALTERADAS` alcança somente o próprio usuário. Tipos não publicados viram atualização genérica e dados seguem allowlist de primitivas compatível com sua classificação. Web não recebe política local; mobile recebe somente a política de cache; push admite apenas os cinco avisos aprovados, com sequência e IDs mínimos, sem dados ou conteúdo. Lint, tipos, 222 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-052` ficou saudável com prontidão `PRONTO`. Em staging, web, mobile e push receberam suas projeções, recurso negado não recebeu evento, conteúdo protegido não vazou, migration encerrou com código zero e nenhum erro de nível 50 foi emitido.
+
+### PR 053 — sincronização incremental
+
+Aceite concluído em 1º de setembro de 2026: web e mobile passaram a recuperar fatos confirmados por `sequencia_evento`, com cursor decimal validado, limite máximo de 100, ordem estrita e indicação de continuação. A identidade vem exclusivamente da sessão web ou mobile autenticada. A autorização atual é calculada no PostgreSQL antes da projeção; linha fora do escopo chega ao serviço somente com objeto vazio, mas sua sequência ainda faz o cursor avançar, impedindo tanto vazamento quanto travamento em lacunas de permissão. Cursor anterior à retenção de 30 dias exige ressincronização completa e cursor futuro é recusado. O planejador local aplica lotes de modo idempotente e só confirma o cursor depois do lote válido. Lint, tipos, 225 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-053` ficou saudável com prontidão `PRONTO`. Em staging, uma primeira página não autorizada retornou zero eventos e avançou o cursor; a página seguinte entregou somente a conversa permitida, nenhum campo protegido vazou, migration encerrou com código zero e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
