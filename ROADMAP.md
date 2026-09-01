@@ -68,7 +68,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 044 | CONCLUÍDA | `xhigh` |
 | 045 | CONCLUÍDA | `xhigh` |
 | 046 | CONCLUÍDA | `high` |
-| 047 | EM ANDAMENTO | `high` |
+| 047 | CONCLUÍDA | `high` |
 | 048 | PENDENTE | `high` |
 | 049 | PENDENTE | `xhigh` |
 | 050 | PENDENTE | `xhigh` |
@@ -373,6 +373,10 @@ Aceite concluído em 1º de setembro de 2026: o adapter de saída passou a exigi
 ### PR 046 — estados de entrega e leitura
 
 Aceite concluído em 1º de setembro de 2026: recibos externos de envio, entrega, leitura e falha passaram a ser normalizados no adapter e deduplicados por conta + identificador determinístico. A aplicação é monotônica: leitura pode avançar diretamente de `ENVIADA` para `LIDA`, materializando a entrega ausente; entrega, envio ou falha atrasados não vencem `ENTREGUE/LIDA`. Todo recibo único é preservado, mas somente avanço real marca a recepção como aplicada e emite `ESTADO_MENSAGEM_ATUALIZADO`. Lint, tipos, 203 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002800_criar_estados_mensagem` terminou com código zero e `vyntra/api-staging:pr-046` ficou saudável com prontidão `PRONTO`. Em staging, leitura fora de ordem chegou a `LIDA` na versão 4, entrega atrasada permaneceu não aplicada, replay inseriu zero linhas, dois recibos foram preservados com somente um aplicado, houve rollback e nenhum erro de nível 50 foi emitido.
+
+### PR 047 — resposta citada, reação e prévia
+
+Aceite concluído em 1º de setembro de 2026: resposta citada e reação passaram a manter o identificador interno real da mensagem-alvo e a exigir mesma conversa e conta WhatsApp no domínio e no PostgreSQL. Capacidades observadas no adapter são projetadas como booleanos internos. Resposta usa contexto externo somente quando a capacidade está habilitada e o alvo possui ID externo; caso contrário, mantém a relação interna com fallback textual protegido. Reação sem capacidade fica somente interna e não produz efeito surpresa no cliente. Prévia de URL permanece desligada até observação positiva. Lint, tipos, 206 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002900_proteger_relacoes_mensagem` terminou com código zero e `vyntra/api-staging:pr-047` ficou saudável com prontidão `PRONTO`. Em staging, resposta e reação válidas foram persistidas, vínculo com outra conta e reação sem alvo foram recusados, houve rollback e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
