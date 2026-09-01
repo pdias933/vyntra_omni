@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 
 import { criarAplicacao } from './configurar-aplicacao.js';
+import { GatewayEventosMobile } from './sincronizacao/gateway-eventos-mobile.js';
 
 async function iniciarAplicacao(): Promise<void> {
   const aplicacao = await criarAplicacao();
@@ -11,6 +12,9 @@ async function iniciarAplicacao(): Promise<void> {
     throw new Error('PORTA_HTTP_INVALIDA');
   }
 
+  aplicacao
+    .get(GatewayEventosMobile)
+    .anexar(aplicacao.getHttpServer());
   await aplicacao.listen(portaHttp, enderecoHttp);
 }
 

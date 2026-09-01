@@ -3,7 +3,9 @@ import { Module } from '@nestjs/common';
 import { ModuloAutenticacao } from '../autenticacao/modulo-autenticacao.js';
 import { ModuloPersistencia } from '../persistencia/modulo-persistencia.js';
 import { CoordenadorSseSemLacuna } from './coordenador-sse-sem-lacuna.js';
+import { CoordenadorWebSocketMobileSemLacuna } from './coordenador-websocket-mobile-sem-lacuna.js';
 import { ControladorSincronizacao } from './controlador-sincronizacao.js';
+import { GatewayEventosMobile } from './gateway-eventos-mobile.js';
 import { REPOSITORIO_SINCRONIZACAO } from './repositorio-sincronizacao.js';
 import { RepositorioSincronizacaoPrisma } from './repositorio-sincronizacao-prisma.js';
 import { REPOSITORIO_RESSINCRONIZACAO } from './repositorio-ressincronizacao.js';
@@ -17,6 +19,8 @@ import { ServicoSincronizacaoIncremental } from './servico-sincronizacao-increme
   imports: [ModuloAutenticacao, ModuloPersistencia],
   providers: [
     CoordenadorSseSemLacuna,
+    CoordenadorWebSocketMobileSemLacuna,
+    GatewayEventosMobile,
     RepositorioSincronizacaoPrisma,
     RepositorioRessincronizacaoPrisma,
     ServicoRessincronizacaoCompleta,

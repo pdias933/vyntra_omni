@@ -29,12 +29,14 @@
     "pg": "8.23.0",
     "pino": "10.3.1",
     "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.2"
+    "rxjs": "7.8.2",
+    "ws": "8.21.3"
   },
   "devDependencies": {
     "@nestjs/cli": "12.0.0",
     "@types/node": "24.13.3",
     "@types/pg": "8.23.1",
+    "@types/ws": "8.18.1",
     "@vyntra/eslint-config": "workspace:*",
     "@vyntra/typescript-config": "workspace:*",
     "eslint": "10.9.1",
