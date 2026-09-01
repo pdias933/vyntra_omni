@@ -52,7 +52,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 028 | CONCLUÍDA | `xhigh` |
 | 029 | CONCLUÍDA | `high` |
 | 030 | CONCLUÍDA | `high` |
-| 031 | EM ANDAMENTO | `medium` |
+| 031 | CONCLUÍDA | `medium` |
 | 032 | PENDENTE | `high` |
 | 033 | PENDENTE | `xhigh` |
 | 034 | PENDENTE | `high` |
@@ -309,6 +309,10 @@ Aceite concluído em 31 de agosto de 2026: cada `Atendimento` pode ter exatament
 ### PR 030 — filas e vínculos de usuário
 
 Aceite concluído em 31 de agosto de 2026: `ServicoFilas` passou a cadastrar/inativar filas e conceder/revogar `AcessoUsuarioFila` com `ADMINISTRAR_FILAS`, locks transacionais, alvos ativos, idempotência e auditoria na mesma transação. O vínculo representa somente escopo: ele não cria nem altera permissões, e uma ação ausente ou negada no RBAC continua recusada. Inativar a fila torna o escopo ineficaz sem apagar o vínculo histórico; revogação é explícita. O módulo não publica controller administrativo prematuro. Lint, tipos, 142 testes da API, 122 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-030` ficou saudável com prontidão `PRONTO`. Em staging, fila e vínculo ativos coexistiram com negação explícita de resgate, nome duplicado foi recusado, inativação preservou o vínculo e revogação registrou instante próprio; a transação sintética foi revertida e não houve erro de nível 50.
+
+### PR 031 — disponibilidade manual
+
+Aceite concluído em 1º de setembro de 2026: `DisponibilidadeUsuario` passou a guardar `DISPONIVEL`/`INDISPONIVEL`, autor da alteração, instante e versão otimista. A própria pessoa pode alterar seu estado com permissão específica; supervisão/administração exige capacidade separada. Sessão, conexão, aplicativo aberto, dispositivo, push e heartbeat não inferem nem modificam disponibilidade. O módulo é interno, autoriza e audita na mesma transação e não publica controller prematuro. Lint, tipos, 146 testes da API, 124 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001900_criar_disponibilidade_manual` terminou com código zero e `vyntra/api-staging:pr-031` ficou saudável com prontidão `PRONTO`. Em staging, a mudança explícita incrementou a versão, o banco recusou versão inválida, não havia gatilho técnico de inferência, a transação sintética foi revertida e não houve erro de nível 50.
 
 ## 7. Mensageria Meta
 
