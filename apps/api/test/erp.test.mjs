@@ -123,6 +123,58 @@ test('elegibilidade de desbloqueio é consulta normalizada em tempo real', async
   );
 });
 
+test('desbloqueio confirmado é idempotente no limite do adapter', async () => {
+  const adaptador = adaptadorComDados();
+  const comandoDesbloqueio = {
+    atendimentoId: randomUUID(),
+    chaveIdempotencia: 'chave_desbloqueio_confirmado_01',
+    contratoExternoId: 'contrato-sintetico-001',
+  };
+  const primeira = await adaptador.executarDesbloqueioConfianca(
+    comandoDesbloqueio,
+  );
+  const repetida = await adaptador.executarDesbloqueioConfianca(
+    comandoDesbloqueio,
+  );
+
+  assert.deepEqual(primeira, { resultado: 'CONFIRMADO' });
+  assert.deepEqual(repetida, primeira);
+  assert.equal(adaptador.obterQuantidadeTentativasDesbloqueio(), 1);
+  assert.equal(adaptador.obterQuantidadeEfeitosDesbloqueio(), 1);
+});
+
+test('resposta perdida no desbloqueio exige reconciliação sem repetir efeito', async () => {
+  const adaptador = adaptadorComDados();
+  const comandoDesbloqueio = {
+    atendimentoId: randomUUID(),
+    chaveIdempotencia: 'chave_desbloqueio_resposta_perdida_01',
+    contratoExternoId: 'contrato-sintetico-001',
+  };
+  adaptador.programarDesbloqueioConfianca(
+    comandoDesbloqueio.chaveIdempotencia,
+    'PERDER_RESPOSTA',
+  );
+
+  const primeira = await adaptador.executarDesbloqueioConfianca(
+    comandoDesbloqueio,
+  );
+  const repetida = await adaptador.executarDesbloqueioConfianca(
+    comandoDesbloqueio,
+  );
+  assert.deepEqual(primeira, {
+    codigo: 'RESPOSTA_PERDIDA',
+    requerReconciliacao: true,
+    resultado: 'RESULTADO_INCERTO',
+  });
+  assert.deepEqual(repetida, primeira);
+  assert.equal(adaptador.obterQuantidadeTentativasDesbloqueio(), 1);
+  assert.equal(adaptador.obterQuantidadeEfeitosDesbloqueio(), 1);
+  assert.deepEqual(
+    await adaptador.reconciliarDesbloqueioConfianca(comandoDesbloqueio),
+    { resultado: 'CONFIRMADO' },
+  );
+});
+
 test('criação confirmada é idempotente e produz um protocolo oficial', async () => {
   const adaptador = adaptadorComDados();
   const entrada = comando();

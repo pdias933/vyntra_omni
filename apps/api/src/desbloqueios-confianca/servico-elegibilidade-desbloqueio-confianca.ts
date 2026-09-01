@@ -1,13 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { ServicoAutorizacao } from '../autorizacao/servico-autorizacao.js';
-import type { ContextoSessaoAutorizacao } from '../autorizacao/modelo-autorizacao.js';
+import type {
+  CodigoPermissaoAutorizacao,
+  ContextoSessaoAutorizacao,
+} from '../autorizacao/modelo-autorizacao.js';
 import type { ConsultasErp } from '../erp/adaptador-erp.js';
 import type {
   ElegibilidadeDesbloqueioErpNormalizada,
   ResultadoElegibilidadeDesbloqueioErp,
 } from '../erp/modelo-erp.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
+import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import {
   ErroEntradaDesbloqueioConfiancaInvalida,
   ErroRespostaElegibilidadeDesbloqueioInvalida,
@@ -42,37 +46,68 @@ export class ServicoElegibilidadeDesbloqueioConfianca {
     consultasErp: ConsultasErp,
     relogio: () => Date = () => new Date(),
   ): Promise<ResultadoVerificacaoDesbloqueioConfianca> {
+    return this.verificarComPermissao(
+      sessao,
+      entrada,
+      consultasErp,
+      'VERIFICAR_DESBLOQUEIO_CONFIANCA',
+      relogio,
+    );
+  }
+
+  public async verificarParaExecucao(
+    sessao: ContextoSessaoAutorizacao,
+    entrada: EntradaVerificacaoDesbloqueioConfianca,
+    consultasErp: ConsultasErp,
+    relogio: () => Date = () => new Date(),
+  ): Promise<ResultadoVerificacaoDesbloqueioConfianca> {
+    return this.verificarComPermissao(
+      sessao,
+      entrada,
+      consultasErp,
+      'EXECUTAR_DESBLOQUEIO_CONFIANCA',
+      relogio,
+    );
+  }
+
+  public async autorizarExecucaoEObterUltimo(
+    sessao: ContextoSessaoAutorizacao,
+    entrada: EntradaVerificacaoDesbloqueioConfianca,
+    transacao: TransacaoPrisma,
+  ): Promise<UltimoDesbloqueioConfianca | undefined> {
     this.validarEntrada(entrada);
-    const ultimo = await this.prisma.executarLeituraConsistente(
-      async (transacao) => {
-        await this.autorizacao.autorizar(
-          {
-            filaId: entrada.filaId,
-            permissao: 'VERIFICAR_DESBLOQUEIO_CONFIANCA',
-            recurso: {
-              id: entrada.atendimentoId,
-              tipo: 'ATENDIMENTO',
-            },
-            sessao,
-          },
-          async (_autorizacao, transacaoAutorizada) => ({
-            acessivel:
-              transacaoAutorizada !== undefined &&
-              (await this.repositorio.contextoAtivoCorresponde(
-                entrada.atendimentoId,
-                entrada.filaId,
-                entrada.contratoExternoId,
-                transacaoAutorizada,
-              )),
-            estadoPermiteAcao: true,
-          }),
-          transacao,
-        );
-        return this.repositorio.obterUltimoConfirmado(
-          entrada.contratoExternoId,
-          transacao,
-        );
-      },
+    return this.autorizarEObterUltimo(
+      sessao,
+      entrada,
+      'EXECUTAR_DESBLOQUEIO_CONFIANCA',
+      transacao,
+    );
+  }
+
+  public intervaloLocalPermite(
+    ultimo: UltimoDesbloqueioConfianca | undefined,
+    agora: Date,
+  ): boolean {
+    if (Number.isNaN(agora.getTime())) {
+      throw new ErroRespostaElegibilidadeDesbloqueioInvalida();
+    }
+    return (
+      ultimo === undefined ||
+      ultimo.confirmadoEm.getTime() + INTERVALO_TRINTA_DIAS_MS <=
+        agora.getTime()
+    );
+  }
+
+  private async verificarComPermissao(
+    sessao: ContextoSessaoAutorizacao,
+    entrada: EntradaVerificacaoDesbloqueioConfianca,
+    consultasErp: ConsultasErp,
+    permissao: CodigoPermissaoAutorizacao,
+    relogio: () => Date,
+  ): Promise<ResultadoVerificacaoDesbloqueioConfianca> {
+    this.validarEntrada(entrada);
+    const ultimo = await this.prisma.executarLeituraConsistente((transacao) =>
+      this.autorizarEObterUltimo(sessao, entrada, permissao, transacao),
     );
 
     const resultadoErp = this.validarResultadoErp(
@@ -89,6 +124,41 @@ export class ServicoElegibilidadeDesbloqueioConfianca {
     return this.combinar(resultadoErp.item, ultimo, consultadoEm);
   }
 
+  private async autorizarEObterUltimo(
+    sessao: ContextoSessaoAutorizacao,
+    entrada: EntradaVerificacaoDesbloqueioConfianca,
+    permissao: CodigoPermissaoAutorizacao,
+    transacao: TransacaoPrisma,
+  ): Promise<UltimoDesbloqueioConfianca | undefined> {
+    await this.autorizacao.autorizar(
+      {
+        filaId: entrada.filaId,
+        permissao,
+        recurso: {
+          id: entrada.atendimentoId,
+          tipo: 'ATENDIMENTO',
+        },
+        sessao,
+      },
+      async (_autorizacao, transacaoAutorizada) => ({
+        acessivel:
+          transacaoAutorizada !== undefined &&
+          (await this.repositorio.contextoAtivoCorresponde(
+            entrada.atendimentoId,
+            entrada.filaId,
+            entrada.contratoExternoId,
+            transacaoAutorizada,
+          )),
+        estadoPermiteAcao: true,
+      }),
+      transacao,
+    );
+    return this.repositorio.obterUltimoConfirmado(
+      entrada.contratoExternoId,
+      transacao,
+    );
+  }
+
   private combinar(
     erp: ElegibilidadeDesbloqueioErpNormalizada,
     ultimo: UltimoDesbloqueioConfianca | undefined,
@@ -98,9 +168,10 @@ export class ServicoElegibilidadeDesbloqueioConfianca {
       ultimo === undefined
         ? undefined
         : new Date(ultimo.confirmadoEm.getTime() + INTERVALO_TRINTA_DIAS_MS);
-    const intervaloVigente =
-      proximoDesbloqueioEm !== undefined &&
-      proximoDesbloqueioEm > consultadoEm;
+    const intervaloVigente = !this.intervaloLocalPermite(
+      ultimo,
+      consultadoEm,
+    );
     const motivos = [
       ...(erp.elegivel ? [] : (['ERP_NAO_AUTORIZOU'] as const)),
       ...(intervaloVigente ? (['INTERVALO_30_DIAS'] as const) : []),

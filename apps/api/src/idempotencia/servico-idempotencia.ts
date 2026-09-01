@@ -121,15 +121,17 @@ export class ServicoIdempotencia {
   public concederExecucao(
     operacaoId: string,
     duracaoMs: number,
+    transacao?: TransacaoPrisma,
   ): Promise<ConcessaoOperacao> {
-    return this.conceder(operacaoId, duracaoMs, 'EXECUCAO');
+    return this.conceder(operacaoId, duracaoMs, 'EXECUCAO', transacao);
   }
 
   public concederReconciliacao(
     operacaoId: string,
     duracaoMs: number,
+    transacao?: TransacaoPrisma,
   ): Promise<ConcessaoOperacao> {
-    return this.conceder(operacaoId, duracaoMs, 'RECONCILIACAO');
+    return this.conceder(operacaoId, duracaoMs, 'RECONCILIACAO', transacao);
   }
 
   public concluir(
@@ -288,6 +290,7 @@ export class ServicoIdempotencia {
     operacaoId: string,
     duracaoMs: number,
     tipo: TipoConcessao,
+    transacao?: TransacaoPrisma,
   ): Promise<ConcessaoOperacao> {
     this.validarUuid(operacaoId);
     if (
@@ -298,9 +301,11 @@ export class ServicoIdempotencia {
       throw new Error('DURACAO_CONCESSAO_INVALIDA');
     }
 
-    return this.prisma.executarTransacao(async (transacao) => {
+    const executar = async (
+      contexto: TransacaoPrisma,
+    ): Promise<ConcessaoOperacao> => {
       const agora = new Date();
-      const operacao = await transacao.operacaoRecuperavel.findUnique({
+      const operacao = await contexto.operacaoRecuperavel.findUnique({
         where: { id: operacaoId },
       });
       const estadosPermitidos: readonly EstadoOperacaoRecuperavel[] =
@@ -321,7 +326,7 @@ export class ServicoIdempotencia {
       const tokenHash = this.hash(tokenConcessao);
       const concedidaAte = new Date(agora.getTime() + duracaoMs);
       const numeroTentativa = operacao.tentativas + 1;
-      const alteracao = await transacao.operacaoRecuperavel.updateMany({
+      const alteracao = await contexto.operacaoRecuperavel.updateMany({
         data: {
           concessaoAte: concedidaAte,
           concessaoTokenHash: tokenHash,
@@ -341,7 +346,7 @@ export class ServicoIdempotencia {
         throw new Error('OPERACAO_NAO_DISPONIVEL');
       }
 
-      await transacao.tentativaOperacao.create({
+      await contexto.tentativaOperacao.create({
         data: {
           concessaoTokenHash: tokenHash,
           id: randomUUID(),
@@ -359,7 +364,11 @@ export class ServicoIdempotencia {
         tipo,
         tokenConcessao,
       };
-    });
+    };
+
+    return transacao === undefined
+      ? this.prisma.executarTransacao(executar)
+      : executar(transacao);
   }
 
   private async encerrar(

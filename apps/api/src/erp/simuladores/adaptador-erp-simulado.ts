@@ -8,7 +8,9 @@ import {
 } from '../erros-erp.js';
 import type {
   ClienteErpNormalizado,
+  ComandoExecutarDesbloqueioConfiancaErp,
   ComandoCriarAtendimentoErp,
+  ComandoReconciliarDesbloqueioConfiancaErp,
   ComandoReconciliarAtendimentoErp,
   ContratoErpNormalizado,
   CriteriosLocalizacaoClienteErp,
@@ -20,8 +22,10 @@ import type {
   ResultadoConsultaErp,
   ResultadoConsultaUnicaErp,
   ResultadoCriacaoAtendimentoErp,
+  ResultadoExecucaoDesbloqueioConfiancaErp,
   ResultadoElegibilidadeDesbloqueioErp,
   ResultadoReconciliacaoAtendimentoErp,
+  ResultadoReconciliacaoDesbloqueioConfiancaErp,
 } from '../modelo-erp.js';
 
 const IDENTIFICADOR_UUID =
@@ -47,6 +51,11 @@ type CenarioCriacaoAtendimento =
   | 'ERP_INDISPONIVEL'
   | 'PERDER_RESPOSTA';
 
+type CenarioDesbloqueioConfianca =
+  | 'CONFIRMAR'
+  | 'ERP_INDISPONIVEL'
+  | 'PERDER_RESPOSTA';
+
 interface EfeitoCriacaoAtendimento {
   readonly atendimentoId: string;
   readonly confirmadoEm: Date;
@@ -56,6 +65,16 @@ interface EfeitoCriacaoAtendimento {
 interface ExecucaoCriacaoAtendimento {
   readonly assinatura: string;
   readonly resultado: ResultadoCriacaoAtendimentoErp;
+}
+
+interface ExecucaoDesbloqueioConfianca {
+  readonly assinatura: string;
+  readonly resultado: ResultadoExecucaoDesbloqueioConfiancaErp;
+}
+
+interface EfeitoDesbloqueioConfianca {
+  readonly atendimentoId: string;
+  readonly contratoExternoId: string;
 }
 
 function textoValido(valor: string, limite: number): boolean {
@@ -121,6 +140,19 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     EfeitoCriacaoAtendimento
   >();
   private tentativasCriacao = 0;
+  private readonly cenariosDesbloqueio = new Map<
+    string,
+    CenarioDesbloqueioConfianca
+  >();
+  private readonly execucoesDesbloqueio = new Map<
+    string,
+    ExecucaoDesbloqueioConfianca
+  >();
+  private readonly efeitosDesbloqueio = new Map<
+    string,
+    EfeitoDesbloqueioConfianca
+  >();
+  private tentativasDesbloqueio = 0;
 
   public constructor(
     private readonly dados: DadosErpSimulados = {},
@@ -146,6 +178,19 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
       throw new ErroComandoErpInvalido();
     }
     this.cenariosCriacao.set(chaveIdempotencia, cenario);
+  }
+
+  public programarDesbloqueioConfianca(
+    chaveIdempotencia: string,
+    cenario: CenarioDesbloqueioConfianca,
+  ): void {
+    if (
+      !CHAVE_IDEMPOTENCIA.test(chaveIdempotencia) ||
+      this.execucoesDesbloqueio.has(chaveIdempotencia)
+    ) {
+      throw new ErroComandoErpInvalido();
+    }
+    this.cenariosDesbloqueio.set(chaveIdempotencia, cenario);
   }
 
   public async localizarClientes(
@@ -307,6 +352,49 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     return this.clonarResultadoCriacao(resultado);
   }
 
+  public async executarDesbloqueioConfianca(
+    comando: ComandoExecutarDesbloqueioConfiancaErp,
+  ): Promise<ResultadoExecucaoDesbloqueioConfiancaErp> {
+    this.validarComandoDesbloqueio(comando);
+    const assinatura = hashHex(
+      JSON.stringify(normalizarParaAssinatura(comando)),
+    );
+    const anterior = this.execucoesDesbloqueio.get(comando.chaveIdempotencia);
+    if (anterior !== undefined) {
+      if (anterior.assinatura !== assinatura) {
+        throw new ErroChaveErpReutilizada();
+      }
+      return this.clonarResultadoDesbloqueio(anterior.resultado);
+    }
+    this.tentativasDesbloqueio += 1;
+    const cenario =
+      this.cenariosDesbloqueio.get(comando.chaveIdempotencia) ?? 'CONFIRMAR';
+    const resultado = this.executarCenarioDesbloqueio(comando, cenario);
+    this.execucoesDesbloqueio.set(comando.chaveIdempotencia, {
+      assinatura,
+      resultado,
+    });
+    return this.clonarResultadoDesbloqueio(resultado);
+  }
+
+  public async reconciliarDesbloqueioConfianca(
+    comando: ComandoReconciliarDesbloqueioConfiancaErp,
+  ): Promise<ResultadoReconciliacaoDesbloqueioConfiancaErp> {
+    this.validarComandoDesbloqueio(comando);
+    if (!this.reconciliacaoDisponivel) return this.indisponivel();
+    const efeito = this.efeitosDesbloqueio.get(comando.chaveIdempotencia);
+    if (efeito === undefined) return { resultado: 'EFEITO_AUSENTE' };
+    if (
+      efeito.atendimentoId !== comando.atendimentoId ||
+      efeito.contratoExternoId !== comando.contratoExternoId
+    ) {
+      throw new ErroChaveErpReutilizada();
+    }
+    return {
+      resultado: 'CONFIRMADO',
+    };
+  }
+
   public async reconciliarCriacaoAtendimento(
     comando: ComandoReconciliarAtendimentoErp,
   ): Promise<ResultadoReconciliacaoAtendimentoErp> {
@@ -337,6 +425,14 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     return this.efeitosCriacao.size;
   }
 
+  public obterQuantidadeTentativasDesbloqueio(): number {
+    return this.tentativasDesbloqueio;
+  }
+
+  public obterQuantidadeEfeitosDesbloqueio(): number {
+    return this.efeitosDesbloqueio.size;
+  }
+
   private indisponivel(): {
     readonly resultado: 'INDISPONIVEL';
     readonly codigo: 'ERP_INDISPONIVEL';
@@ -349,6 +445,12 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
   ): ResultadoCriacaoAtendimentoErp {
     if (resultado.resultado !== 'CONFIRMADO') return { ...resultado };
     return { ...resultado, confirmadoEm: new Date(resultado.confirmadoEm) };
+  }
+
+  private clonarResultadoDesbloqueio(
+    resultado: ResultadoExecucaoDesbloqueioConfiancaErp,
+  ): ResultadoExecucaoDesbloqueioConfiancaErp {
+    return { ...resultado };
   }
 
   private executarCenarioCriacao(
@@ -375,6 +477,34 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     return {
       confirmadoEm: new Date(efeito.confirmadoEm),
       protocoloOficial: efeito.protocoloOficial,
+      resultado: 'CONFIRMADO',
+    };
+  }
+
+  private executarCenarioDesbloqueio(
+    comando: ComandoExecutarDesbloqueioConfiancaErp,
+    cenario: CenarioDesbloqueioConfianca,
+  ): ResultadoExecucaoDesbloqueioConfiancaErp {
+    if (cenario === 'ERP_INDISPONIVEL') {
+      return {
+        codigo: 'ERP_INDISPONIVEL',
+        efeitoExternoPossivel: false,
+        resultado: 'INDISPONIVEL',
+      };
+    }
+    const efeito: EfeitoDesbloqueioConfianca = {
+      atendimentoId: comando.atendimentoId,
+      contratoExternoId: comando.contratoExternoId,
+    };
+    this.efeitosDesbloqueio.set(comando.chaveIdempotencia, efeito);
+    if (cenario === 'PERDER_RESPOSTA') {
+      return {
+        codigo: 'RESPOSTA_PERDIDA',
+        requerReconciliacao: true,
+        resultado: 'RESULTADO_INCERTO',
+      };
+    }
+    return {
       resultado: 'CONFIRMADO',
     };
   }
@@ -426,6 +556,20 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
         !textoValido(comando.clienteExternoId, 256)) ||
       (comando.contratoExternoId !== undefined &&
         !textoValido(comando.contratoExternoId, 256))
+    ) {
+      throw new ErroComandoErpInvalido();
+    }
+  }
+
+  private validarComandoDesbloqueio(
+    comando:
+      | ComandoExecutarDesbloqueioConfiancaErp
+      | ComandoReconciliarDesbloqueioConfiancaErp,
+  ): void {
+    if (
+      !IDENTIFICADOR_UUID.test(comando.atendimentoId) ||
+      !CHAVE_IDEMPOTENCIA.test(comando.chaveIdempotencia) ||
+      !textoValido(comando.contratoExternoId, 256)
     ) {
       throw new ErroComandoErpInvalido();
     }

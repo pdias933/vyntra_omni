@@ -47,3 +47,49 @@ test('verificação exige tempo real, contexto exato e não executa desbloqueio'
   assert.doesNotMatch(servico, /SNAPSHOT|executarDesbloqueio/);
   assert.doesNotMatch(modulo, /ADAPTADOR_ERP|AdaptadorErpSimulado/);
 });
+
+test('execução reserva o contrato e confirma histórico, operação e auditoria atomicamente', async () => {
+  const [schema, migration, servico, repositorio, modulo] = await Promise.all([
+    readFile(new URL('apps/api/prisma/schema.prisma', raiz), 'utf8'),
+    readFile(
+      new URL(
+        'apps/api/prisma/migrations/20260901004500_reserva_desbloqueio_confianca/migration.sql',
+        raiz,
+      ),
+      'utf8',
+    ),
+    readFile(
+      new URL(
+        'apps/api/src/desbloqueios-confianca/servico-execucao-desbloqueio-confianca.ts',
+        raiz,
+      ),
+      'utf8',
+    ),
+    readFile(
+      new URL(
+        'apps/api/src/desbloqueios-confianca/repositorio-desbloqueios-confianca-prisma.ts',
+        raiz,
+      ),
+      'utf8',
+    ),
+    readFile(
+      new URL(
+        'apps/api/src/desbloqueios-confianca/modulo-desbloqueios-confianca.ts',
+        raiz,
+      ),
+      'utf8',
+    ),
+  ]);
+  assert.match(schema, /model ReservaDesbloqueioConfianca/);
+  assert.match(migration, /PRIMARY KEY \("contrato_externo_id"\)/);
+  assert.match(migration, /reserva_desbloqueio_operacao_key/);
+  assert.match(repositorio, /pg_advisory_xact_lock/);
+  assert.match(servico, /confirmacaoExplicita !== true/);
+  assert.match(servico, /EXECUTAR_DESBLOQUEIO_CONFIANCA/);
+  assert.match(servico, /registrarResultadoIncerto/);
+  assert.match(servico, /reconciliarDesbloqueioConfianca/);
+  assert.match(servico, /this\.idempotencia\.concluir/);
+  assert.match(servico, /this\.auditoria\.registrar/);
+  assert.doesNotMatch(servico, /SNAPSHOT/);
+  assert.doesNotMatch(modulo, /ADAPTADOR_ERP|AdaptadorErpSimulado|Controller/);
+});

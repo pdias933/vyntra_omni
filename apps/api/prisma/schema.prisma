@@ -579,6 +579,7 @@ model OperacaoRecuperavel {
   registroIdempotencia   RegistroIdempotencia          @relation(fields: [registroIdempotenciaId], references: [id], onDelete: Restrict)
   historicoTentativas    TentativaOperacao[]
   desbloqueioConfianca   RegistroDesbloqueioConfianca?
+  reservaDesbloqueio     ReservaDesbloqueioConfianca?
 
   @@index([estado, proximaAcaoEm, criadoEm], map: "operacao_recuperavel_pendente_idx")
   @@index([entidadeTipo, entidadeId, criadoEm], map: "operacao_recuperavel_entidade_idx")
@@ -1012,6 +1013,7 @@ model Atendimento {
   notasInternas               NotaInterna[]
   mensagens                   Mensagem[]
   desbloqueiosConfianca       RegistroDesbloqueioConfianca[]
+  reservasDesbloqueio         ReservaDesbloqueioConfianca[]
 
   @@unique([id, conversaId], map: "atendimento_id_conversa_key")
   @@index([conversaId, iniciadoEm, id], map: "atendimento_conversa_inicio_idx")
@@ -1486,6 +1488,18 @@ model RegistroDesbloqueioConfianca {
   @@index([contratoExternoId, confirmadoEm, id], map: "registro_desbloqueio_contrato_confirmado_idx")
   @@index([atendimentoId, confirmadoEm, id], map: "registro_desbloqueio_atendimento_confirmado_idx")
   @@map("registro_desbloqueio_confianca")
+}
+
+model ReservaDesbloqueioConfianca {
+  contratoExternoId     String              @id @map("contrato_externo_id") @db.VarChar(256)
+  atendimentoId         String              @map("atendimento_id") @db.Uuid
+  operacaoRecuperavelId String              @unique(map: "reserva_desbloqueio_operacao_key") @map("operacao_recuperavel_id") @db.Uuid
+  criadaEm              DateTime            @map("criada_em") @db.Timestamptz(6)
+  atendimento           Atendimento         @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  operacaoRecuperavel   OperacaoRecuperavel @relation(fields: [operacaoRecuperavelId], references: [id], onDelete: Restrict)
+
+  @@index([atendimentoId, criadaEm], map: "reserva_desbloqueio_atendimento_criada_idx")
+  @@map("reserva_desbloqueio_confianca")
 }
 
 model IdentidadeWhatsApp {

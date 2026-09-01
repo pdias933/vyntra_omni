@@ -307,6 +307,8 @@ Não assumir que um parâmetro externo isolado implementa toda a política de 30
 
 A PR 064 acrescenta à porta de consulta `verificarElegibilidadeDesbloqueio`. O adapter devolve apenas contrato e decisão booleana normalizados; campo externo desconhecido, contrato divergente ou origem diferente de `TEMPO_REAL` falha fechado. O serviço combina essa decisão com `RegistroDesbloqueioConfianca`, que preserva somente ações confirmadas, e informa separadamente `ERP_NAO_AUTORIZOU` e `INTERVALO_30_DIAS`. A janela local é de 30 × 24 horas. A verificação exige contexto ativo e RBAC, mas não adquire concessão, não chama escrita e não registra desbloqueio. Indisponibilidade e capacidade não habilitada continuam explícitas; snapshot é recusado.
 
+A PR 065 acrescenta `executarDesbloqueioConfianca` e `reconciliarDesbloqueioConfianca` à porta de escrita. A execução normalizada pode ser `CONFIRMADO`, `INDISPONIVEL` sem possibilidade de efeito ou `RESULTADO_INCERTO`; somente a reconciliação distingue efeito confirmado de comprovadamente ausente. O serviço exige confirmação explícita, permissão de execução, contexto exato, elegibilidade ERP em tempo real e uma reserva única por contrato antes de chamar o adapter. Repetição compatível devolve o mesmo resultado; outra chave não atravessa uma reserva pendente. Código, resposta ou campo não normalizado falha de modo conservador e nunca libera repetição cega. O adapter MK real continua desligado até sua capacidade e seus contratos serem observados e aprovados.
+
 ## 5. `SnapshotCliente` (Customer Snapshot)
 
 ### 5.1 Natureza

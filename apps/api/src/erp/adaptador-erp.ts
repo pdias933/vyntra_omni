@@ -1,6 +1,8 @@
 import type {
   ClienteErpNormalizado,
+  ComandoExecutarDesbloqueioConfiancaErp,
   ComandoCriarAtendimentoErp,
+  ComandoReconciliarDesbloqueioConfiancaErp,
   ComandoReconciliarAtendimentoErp,
   ContratoErpNormalizado,
   CriteriosLocalizacaoClienteErp,
@@ -12,6 +14,8 @@ import type {
   ResultadoConsultaErp,
   ResultadoConsultaUnicaErp,
   ResultadoCriacaoAtendimentoErp,
+  ResultadoExecucaoDesbloqueioConfiancaErp,
+  ResultadoReconciliacaoDesbloqueioConfiancaErp,
   ResultadoReconciliacaoAtendimentoErp,
 } from './modelo-erp.js';
 
@@ -65,6 +69,14 @@ export interface EscritasErp {
   reconciliarCriacaoAtendimento(
     comando: ComandoReconciliarAtendimentoErp,
   ): Promise<ResultadoReconciliacaoAtendimentoErp>;
+
+  executarDesbloqueioConfianca(
+    comando: ComandoExecutarDesbloqueioConfiancaErp,
+  ): Promise<ResultadoExecucaoDesbloqueioConfiancaErp>;
+
+  reconciliarDesbloqueioConfianca(
+    comando: ComandoReconciliarDesbloqueioConfiancaErp,
+  ): Promise<ResultadoReconciliacaoDesbloqueioConfiancaErp>;
 }
 
 export interface AdaptadorErp extends ConsultasErp, EscritasErp {}

@@ -148,3 +148,42 @@ export type ResultadoReconciliacaoAtendimentoErp =
       readonly resultado: 'INDISPONIVEL';
       readonly codigo: 'ERP_INDISPONIVEL';
     };
+
+export interface ComandoExecutarDesbloqueioConfiancaErp {
+  readonly atendimentoId: string;
+  readonly contratoExternoId: string;
+  readonly chaveIdempotencia: string;
+}
+
+export type ResultadoExecucaoDesbloqueioConfiancaErp =
+  | {
+      readonly resultado: 'CONFIRMADO';
+    }
+  | {
+      readonly resultado: 'INDISPONIVEL';
+      readonly codigo: 'ERP_INDISPONIVEL';
+      readonly efeitoExternoPossivel: false;
+    }
+  | {
+      readonly resultado: 'RESULTADO_INCERTO';
+      readonly codigo: 'RESPOSTA_PERDIDA';
+      readonly requerReconciliacao: true;
+    };
+
+export interface ComandoReconciliarDesbloqueioConfiancaErp {
+  readonly atendimentoId: string;
+  readonly contratoExternoId: string;
+  readonly chaveIdempotencia: string;
+}
+
+export type ResultadoReconciliacaoDesbloqueioConfiancaErp =
+  | {
+      readonly resultado: 'CONFIRMADO';
+    }
+  | {
+      readonly resultado: 'EFEITO_AUSENTE';
+    }
+  | {
+      readonly resultado: 'INDISPONIVEL';
+      readonly codigo: 'ERP_INDISPONIVEL';
+    };

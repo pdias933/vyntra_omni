@@ -408,7 +408,9 @@ ServicoDesbloqueio
 AdaptadorErp
 ```
 
-A PR 064 materializa apenas a fase de verificação. Autorização e correspondência exata entre fila, atendimento e contrato ativo são resolvidas no PostgreSQL antes da consulta ERP. A resposta precisa ser `TEMPO_REAL`; snapshot, contrato divergente e campo não normalizado são recusados. A política local considera somente registros confirmados e imutáveis dos 30 dias anteriores. Nenhum resultado dessa consulta constitui confirmação para executar: a PR 065 deve revalidar todos os controles imediatamente antes da escrita.
+A PR 064 materializa a fase de verificação. Autorização e correspondência exata entre fila, atendimento e contrato ativo são resolvidas no PostgreSQL antes da consulta ERP. A resposta precisa ser `TEMPO_REAL`; snapshot, contrato divergente e campo não normalizado são recusados. A política local considera somente registros confirmados e imutáveis dos 30 dias anteriores.
+
+A PR 065 materializa a execução com confirmação explícita, permissão distinta e revalidação imediatamente antes da escrita. Um lock transacional e uma reserva única por contrato fecham a corrida entre chaves idempotentes diferentes. O efeito externo não ocorre dentro de transação longa; a confirmação posterior atualiza histórico, operação e auditoria atomicamente. Resposta perdida, inválida ou exceção mantém a operação incerta e a reserva ativa até reconciliação. O adapter não escolhe `confirmado_em`, não recebe snapshot e não pode reduzir o intervalo local. Auditoria guarda somente resultado normalizado e identificadores internos, sem contrato externo ou payload ERP.
 
 ## 13. Auditoria
 

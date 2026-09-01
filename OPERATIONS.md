@@ -387,6 +387,8 @@ A PR 063 não acrescenta migration e mantém a marca da PR 062. O deploy também
 
 A PR 064 aplica `20260901004000_historico_desbloqueio_confianca` e eleva essa migration à marca de prontidão. A tabela é aditiva, começa vazia, relaciona cada confirmação futura a atendimento e operação e bloqueia atualização ou exclusão. O módulo implantado apenas verifica elegibilidade; não registra adapter MK, rota ou capacidade de execução. Rollback da imagem preserva o histórico. Monitorar consultas indisponíveis separadamente de negações ERP e da janela local de 30 dias.
 
+A PR 065 aplica `20260901004500_reserva_desbloqueio_confianca` e eleva essa migration à marca de prontidão. A tabela aditiva possui uma reserva por contrato e uma por operação; atualização é proibida, enquanto exclusão é a liberação controlada pelo caso de uso. O deploy não registra adapter MK, credencial, rota ou worker externo. Monitorar reservas antigas, operações em `RESULTADO_INCERTO`, tentativas repetidas e divergência entre reserva e operação. Nunca apagar a reserva nem criar histórico manualmente: a recuperação válida usa reconciliação e a mesma chave. Rollback da imagem preserva reservas; voltar de versão exige antes comprovar que nenhuma reserva da PR 065 permanece ativa.
+
 ### Recuperação de operações
 
 Um processo periódico recupera concessões vencidas em lotes pequenos. Ele encerra a tentativa como `RESULTADO_INCERTO`, limpa a concessão e agenda reconciliação imediata. O operador pode observar tipo, estado, idade, quantidade de tentativas e código normalizado; token, payload bruto e dado sensível não aparecem em log ou painel.

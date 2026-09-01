@@ -6,6 +6,11 @@ export const REPOSITORIO_DESBLOQUEIOS_CONFIANCA = Symbol(
 );
 
 export interface RepositorioDesbloqueiosConfianca {
+  bloquearContrato(
+    contratoExternoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<void>;
+
   contextoAtivoCorresponde(
     atendimentoId: string,
     filaId: string,
@@ -17,4 +22,38 @@ export interface RepositorioDesbloqueiosConfianca {
     contratoExternoId: string,
     transacao: TransacaoPrisma,
   ): Promise<UltimoDesbloqueioConfianca | undefined>;
+
+  obterConfirmadoPorOperacao(
+    operacaoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<UltimoDesbloqueioConfianca | undefined>;
+
+  reservar(
+    contratoExternoId: string,
+    atendimentoId: string,
+    operacaoId: string,
+    criadaEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+
+  reservaPertence(
+    contratoExternoId: string,
+    operacaoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+
+  liberarReserva(
+    contratoExternoId: string,
+    operacaoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+
+  registrarConfirmado(
+    atendimentoId: string,
+    contratoExternoId: string,
+    operacaoId: string,
+    confirmadoEm: Date,
+    criadoEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
 }

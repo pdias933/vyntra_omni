@@ -115,6 +115,7 @@ Não propague DTOs/nomenclatura Meta ou MK para domínio, UI ou Motor de Fluxos.
 - Snapshot serve para identificação/contexto, nunca para escrita.
 - `SnapshotCliente` é autoridade de contingência somente no PostgreSQL; exponha `origem=SNAPSHOT` e idade. Aceite apenas modelo interno protegido e mascarado, não invente limiar de obsolescência e nunca use Redis, atualidade aparente ou presença do snapshot para autorizar ação externa.
 - Verificar desbloqueio e executar desbloqueio são casos de uso separados. A verificação exige contexto/contrato exatos, RBAC, consulta ERP `TEMPO_REAL` e histórico confirmado dos últimos 30 × 24 horas; ela nunca executa nem cria registro de sucesso.
+- Executar desbloqueio exige confirmação explícita, permissão distinta, nova verificação em tempo real, lock e reserva única por contrato. Confirme histórico, operação e auditoria atomicamente; resposta ambígua mantém a reserva até reconciliação. Nunca aceite instante do ERP para reduzir a janela local nem use snapshot.
 - Toda escrita externa sensível é idempotente e auditada.
 - Chave idempotente sempre possui escopo e assinatura do comando; chave e token de concessão persistem somente como hash.
 - Timeout, resposta perdida ou concessão expirada viram `RESULTADO_INCERTO`; nunca repetir efeito externo ambíguo sem reconciliar.
