@@ -69,7 +69,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 045 | CONCLUÍDA | `xhigh` |
 | 046 | CONCLUÍDA | `high` |
 | 047 | CONCLUÍDA | `high` |
-| 048 | EM ANDAMENTO | `high` |
+| 048 | CONCLUÍDA | `high` |
 | 049 | PENDENTE | `xhigh` |
 | 050 | PENDENTE | `xhigh` |
 | 051 | PENDENTE | `xhigh` |
@@ -377,6 +377,10 @@ Aceite concluído em 1º de setembro de 2026: recibos externos de envio, entrega
 ### PR 047 — resposta citada, reação e prévia
 
 Aceite concluído em 1º de setembro de 2026: resposta citada e reação passaram a manter o identificador interno real da mensagem-alvo e a exigir mesma conversa e conta WhatsApp no domínio e no PostgreSQL. Capacidades observadas no adapter são projetadas como booleanos internos. Resposta usa contexto externo somente quando a capacidade está habilitada e o alvo possui ID externo; caso contrário, mantém a relação interna com fallback textual protegido. Reação sem capacidade fica somente interna e não produz efeito surpresa no cliente. Prévia de URL permanece desligada até observação positiva. Lint, tipos, 206 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002900_proteger_relacoes_mensagem` terminou com código zero e `vyntra/api-staging:pr-047` ficou saudável com prontidão `PRONTO`. Em staging, resposta e reação válidas foram persistidas, vínculo com outra conta e reação sem alvo foram recusados, houve rollback e nenhum erro de nível 50 foi emitido.
+
+### PR 048 — catálogo de modelos de mensagem
+
+Aceite concluído em 1º de setembro de 2026: modelos passaram a ser normalizados no adapter e catalogados por conta, referência do canal, nome e idioma, com estado, quantidade de parâmetros, componentes protegidos, hash, instante de sincronização e versão. Composição exige correspondência exata, estado `APROVADO` e parâmetros completos; estado externo desconhecido falha fechado. Repetição idêntica preserva ID/versão. O primeiro ensaio revelou o limite de repetição da regex do PostgreSQL e a migration complementar corrigiu a validação antes do aceite. Lint, tipos, 209 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. As migrations `20260901003000_criar_catalogo_modelos_mensagem` e `20260901003010_corrigir_validacao_modelo_mensagem` terminaram com código zero e `vyntra/api-staging:pr-048` ficou saudável com prontidão `PRONTO`. Em staging, dois idiomas e um único aprovado coexistiram, duplicidade nome + idioma foi recusada, nenhuma janela foi criada, houve rollback e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
