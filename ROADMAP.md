@@ -92,7 +92,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 068 | CONDICIONAL | `xhigh` |
 | 069 | CONCLUÍDA | `high` |
 | 070 | CONCLUÍDA | `xhigh` |
-| 071 | EM ANDAMENTO | `xhigh` |
+| 071 | CONCLUÍDA | `xhigh` |
 | 072 | PENDENTE | `xhigh` |
 | 073 | PENDENTE | `xhigh` |
 | 074 | PENDENTE | `high` |
@@ -457,6 +457,10 @@ Aceite concluído em 1º de setembro de 2026: `Fluxo` passou a ser a identidade 
 ### PR 070 — publicação, arquivamento e reversão
 
 Aceite concluído em 1º de setembro de 2026: publicação, arquivamento e reversão passaram a ser serializados por fluxo, comparar `revisao` e exigir `PUBLICAR_FLUXO` ou `REVERTER_FLUXO`. Publicação aceita somente `EM_TESTE`; reversão aceita somente `ARQUIVADA` e conserva definição, autoria e data originais. Versão atual, alvo, ponteiro e revisão mudam na mesma transação, que também acrescenta `HistoricoPublicacaoFluxo` e auditoria sanitizada. O histórico vincula versões do mesmo fluxo, tem revisão resultante única e é imutável contra update, delete e truncate. Nenhuma rota foi exposta antes do validador integral. Lint, tipos, 313 testes da API, 190 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901010500_historico_publicacao_fluxo` terminou com código zero e `vyntra/api-staging:pr-070` ficou saudável com prontidão `PRONTO`. Em staging, serviços, repositórios, auditoria e PostgreSQL reais percorreram publicação v1, publicação v2, reversão para v1 e arquivamento nas revisões 2–5; estados, ponteiro e quatro históricos permaneceram coerentes, e o trigger recusou reescrita. A transação de aceite foi revertida, os dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
+
+### PR 071 — validador de publicação
+
+Aceite concluído em 1º de setembro de 2026: a promoção de `RASCUNHO` para `EM_TESTE` passou a exigir `PUBLICAR_FLUXO`, revisão esperada e validação semântica integral. O schema fechado verifica início/fim, alcance, conexões e saídas, variáveis disponíveis em todos os caminhos, sensibilidade, ciclos limitados com saída, capacidades habilitadas, referências ativas e parâmetros proibidos. O contexto é obtido no backend; a implementação conservadora nega capacidades externas não registradas. Falha conserva o rascunho e não audita sucesso, enquanto a promoção válida e a auditoria compartilham a transação. Lint, tipos, 321 testes da API, 192 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-071` ficou saudável com prontidão `PRONTO` e sem migrations pendentes. Em staging, os serviços e repositórios reais validaram e publicaram o grafo nativo válido, mantiveram a segunda versão inválida em `RASCUNHO`, produziram uma auditoria de validação e um histórico de publicação, confirmaram ponteiro coerente e fizeram rollback integral dos dados sintéticos; nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
