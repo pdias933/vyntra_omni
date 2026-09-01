@@ -42,7 +42,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 018 | CONCLUÍDA | `high` |
 | 019 | CONCLUÍDA | `high` |
 | 020 | CONCLUÍDA | `high` |
-| 021 | EM ANDAMENTO | `medium` |
+| 021 | CONCLUÍDA | `medium` |
 | 022 | PENDENTE | `medium` |
 | 023 | PENDENTE | `high` |
 | 024 | PENDENTE | `xhigh` |
@@ -245,6 +245,10 @@ Aceite concluído em 31 de agosto de 2026: `CanalMensageria` e `ConsumidorEvento
 ### PR 020 — AdaptadorErp e simulador contratual
 
 Aceite concluído em 31 de agosto de 2026: `AdaptadorErp` passou a separar consultas e escritas com clientes, contratos, faturas e resultados internos normalizados; o simulador contratual diferencia indisponibilidade sem efeito de resposta perdida após possível efeito, exige reconciliação e recusa reutilização divergente da chave, sem DTO MK, credencial ou registro na aplicação. Lint, tipos, 169 testes, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; a imagem `vyntra/api-staging:pr-020` ficou saudável com prontidão `PRONTO`. Em staging, três tentativas produziram dois efeitos: confirmação idempotente, indisponibilidade com efeito comprovadamente ausente e resposta perdida que permaneceu incerta até a reconciliação confirmar o protocolo oficial; critérios sintéticos de busca não retornaram na resposta e não houve erro de nível 50.
+
+### PR 021 — AdaptadorSessaoAcesso
+
+Aceite concluído em 31 de agosto de 2026: `AdaptadorSessaoAcesso` foi separado do ERP com consultas, desconexão e reconciliação normalizadas; o simulador nasce desligado, exige estado explícito, recusa desconexão de sessão `DESCONHECIDA` e preserva incerteza até reconciliar, sem provider, endpoint ou fonte PPPoE/AAA fictícia. Lint, tipos, 181 testes, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001000_criar_controle_sessao_acesso_desativado` terminou com código zero e a imagem `vyntra/api-staging:pr-021` ficou saudável com prontidão `PRONTO`. Em staging, `SESSAO_ACESSO` permaneceu `DESATIVADO`, sem emergência, administradores, percentual, usuários ou filas; resposta perdida produziu um efeito e somente a reconciliação confirmou a desconexão, sem erro de nível 50.
 
 ## 6. Domínio principal
 
