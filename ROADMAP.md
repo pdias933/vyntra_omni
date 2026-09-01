@@ -61,7 +61,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 037 | CONCLUÍDA | `high` |
 | 038 | CONCLUÍDA | `xhigh` |
 | 039 | CONCLUÍDA | `xhigh` |
-| 040 | EM ANDAMENTO | `xhigh` |
+| 040 | CONCLUÍDA | `xhigh` |
 | 041 | PENDENTE | `xhigh` |
 | 042 | PENDENTE | `xhigh` |
 | 043 | PENDENTE | `xhigh` |
@@ -345,6 +345,10 @@ Aceite concluído em 1º de setembro de 2026: `PoliticaSla` passou a definir os 
 ### PR 039 — janela de atendimento do canal
 
 Aceite concluído em 1º de setembro de 2026: `JanelaAtendimentoCanal` passou a manter estado independente para cada par contato + conta WhatsApp, abrindo ou ampliando exatamente 24 horas a partir da entrada mais nova do contato. Replay, duplicidade ou evento atrasado não fazem o prazo regredir. O limite é semiaberto: no instante exato de expiração, texto livre já é recusado. Saída por modelo aprovado permanece permitida sem criar, reabrir ou ampliar janela. Alertas de uma hora, 30 minutos e 10 minutos são idempotentes por versão, preservando o histórico quando uma nova entrada amplia a vigência. O domínio usa termos internos; detalhes de Meta/template ficam para o adapter futuro. Lint, tipos, 179 testes da API, 140 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002300_criar_janela_atendimento_canal` terminou com código zero e `vyntra/api-staging:pr-039` ficou saudável com prontidão `PRONTO`. Em staging, duas contas mantiveram janelas distintas para o mesmo contato, todas as vigências tiveram 86.400 segundos, a conta A avançou para a versão 2, o limite exato ficou fechado e quatro alertas históricos foram preservados; duração inválida e alerta repetido foram recusados, houve rollback e nenhum erro de nível 50.
+
+### PR 040 — timeline composta e nota interna
+
+Aceite concluído em 1º de setembro de 2026: a timeline passou a ter união discriminada para `MENSAGEM`, `NOTA_INTERNA`, `EVENTO_OPERACIONAL`, `FORMULARIO` e `SEPARADOR_ATENDIMENTO`, ordenada por ocorrência e `sequencia_evento` sem converter um tipo em outro. `NotaInterna` exige `ADICIONAR_NOTA_INTERNA` na fila e vínculo exato entre conversa e atendimento aberto. Ela persiste conteúdo protegido, autor, instante e visibilidade única `SOMENTE_EQUIPE`; evento e auditoria não recebem o texto. O PostgreSQL torna a nota imutável. O módulo não importa mensageria, adapter nem caixa de saída e a tabela não possui coluna de destino/estado de envio, impedindo que a nota saia para o cliente por esse caminho. Lint, tipos, 182 testes da API, 142 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002400_criar_timeline_nota_interna` terminou com código zero e `vyntra/api-staging:pr-040` ficou saudável com prontidão `PRONTO`. Em staging, uma nota permaneceu `SOMENTE_EQUIPE` e inalterada; conteúdo vazio, contexto conversa–atendimento cruzado e alteração posterior foram recusados, não havia coluna de saída, houve rollback e nenhum erro de nível 50.
 
 ## 7. Mensageria Meta
 
