@@ -70,7 +70,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 046 | CONCLUÍDA | `high` |
 | 047 | CONCLUÍDA | `high` |
 | 048 | CONCLUÍDA | `high` |
-| 049 | EM ANDAMENTO | `xhigh` |
+| 049 | CONCLUÍDA | `xhigh` |
 | 050 | PENDENTE | `xhigh` |
 | 051 | PENDENTE | `xhigh` |
 | 052 | PENDENTE | `xhigh` |
@@ -381,6 +381,10 @@ Aceite concluído em 1º de setembro de 2026: resposta citada e reação passara
 ### PR 048 — catálogo de modelos de mensagem
 
 Aceite concluído em 1º de setembro de 2026: modelos passaram a ser normalizados no adapter e catalogados por conta, referência do canal, nome e idioma, com estado, quantidade de parâmetros, componentes protegidos, hash, instante de sincronização e versão. Composição exige correspondência exata, estado `APROVADO` e parâmetros completos; estado externo desconhecido falha fechado. Repetição idêntica preserva ID/versão. O primeiro ensaio revelou o limite de repetição da regex do PostgreSQL e a migration complementar corrigiu a validação antes do aceite. Lint, tipos, 209 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. As migrations `20260901003000_criar_catalogo_modelos_mensagem` e `20260901003010_corrigir_validacao_modelo_mensagem` terminaram com código zero e `vyntra/api-staging:pr-048` ficou saudável com prontidão `PRONTO`. Em staging, dois idiomas e um único aprovado coexistiram, duplicidade nome + idioma foi recusada, nenhuma janela foi criada, houve rollback e nenhum erro de nível 50 foi emitido.
+
+### PR 049 — composição de segunda via
+
+Aceite concluído em 1º de setembro de 2026: a composição de segunda via passou a sempre apresentar valor e vencimento e selecionar PDF, Pix copia e cola, linha digitável e link HTTPS conforme disponibilidade. Ausência de todos os meios produz fallback explícito para a equipe, sem inventar conteúdo. Opções permanecem em objeto protegido com hash e indicadores coerentes; PDF referencia mídia privada existente. O componente somente compõe a comunicação: não possui comando, estado ou coluna para pagar, cobrar ou liquidar. Lint, tipos, 212 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901003100_criar_composicao_segunda_via` terminou com código zero e `vyntra/api-staging:pr-049` ficou saudável com prontidão `PRONTO`. Em staging, composição completa e fallback coexistiram, indicador incoerente foi recusado, zero coluna de pagamento foi encontrada, houve rollback e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
