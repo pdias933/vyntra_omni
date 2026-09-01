@@ -254,6 +254,7 @@ test('publica SPA e API na mesma origem com HTTPS e cabeçalhos defensivos', () 
   assert.match(configuracaoBorda, /Strict-Transport-Security/);
   assert.match(configuracaoBorda, /Content-Security-Policy/);
   assert.match(configuracaoBorda, /X-Content-Type-Options "nosniff"/);
+  assert.match(configuracaoBorda, /-X-Powered-By/);
   assert.match(codigoStaging, /https:\/\/omni\.up100\.com\.br/);
   assert.match(codigoStaging, /worker_fluxos=2/);
 });

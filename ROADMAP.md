@@ -143,7 +143,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 
 | PR | Estado | Effort |
 |---:|---|---|
-| 096A | EM ANDAMENTO | `high` |
+| 096A | CONCLUÍDA | `high` |
 
 `096A` foi inserida sem renumerar o lote mobile aprovado. Seu único objetivo é publicar com segurança o console web já concluído; PR097–PR107 permanecem pausadas até novo direcionamento.
 
@@ -649,7 +649,7 @@ Aceite concluído em 1º de setembro de 2026: `Saúde e releases` observa automa
 
 ### PR 096A — publicação segura do console web em staging
 
-Em andamento: empacotar o frontend já concluído em imagem imutável, servir a SPA em rede privada e publicar `https://omni.up100.com.br` por uma borda TLS separada. API, SSE e WebSocket compartilham a mesma origem; banco, Redis, storage e web não ganham portas próprias. O aceite exige certificado público, HTTP→HTTPS, cabeçalhos defensivos, login carregável, API pública saudável, duas instâncias de worker e smoke completo. Não há migration. Effort recomendado `high`, devido à borda pública, PKI e preservação do isolamento de staging.
+Aceite concluído em 1º de setembro de 2026: o frontend foi empacotado em imagem imutável, servido em rede privada e publicado em `https://omni.up100.com.br` por uma borda TLS separada. O certificado público da Let’s Encrypt cobre o domínio, HTTP redireciona permanentemente para HTTPS e HSTS, CSP, `nosniff`, bloqueio de frame e políticas de origem estão ativos. A tela de login foi carregada no navegador integrado sem exceção de certificado nem erro de console; a prontidão pública respondeu `PRONTO`. API, SSE e WebSocket compartilham a mesma origem. Somente 80/443 estão publicados: API direta, PostgreSQL, Redis e Garage S3 permaneceram inacessíveis externamente. Web e proxy executam como `1000:1000`, com imagem somente leitura, `no-new-privileges` e todas as capabilities removidas. API, web, proxy, PostgreSQL, Redis, storage e duas instâncias do worker ficaram saudáveis; a migração cumulativa terminou com código zero e o smoke público/privado foi aprovado. Lint, tipos, 426 testes da API, 240 testes de arquitetura, builds web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de todo o histórico sem segredo foram aprovados. Não houve migration nova. Effort `high` foi confirmado pela exposição pública, PKI e preservação do isolamento de staging. PR097–PR107 permanecem pausadas até novo direcionamento.
 
 ## 12. Mobile
 
