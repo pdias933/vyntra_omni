@@ -49,7 +49,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 025 | CONCLUÍDA | `xhigh` |
 | 026 | CONCLUÍDA | `xhigh` |
 | 027 | CONCLUÍDA | `xhigh` |
-| 028 | EM ANDAMENTO | `xhigh` |
+| 028 | CONCLUÍDA | `xhigh` |
 | 029 | PENDENTE | `high` |
 | 030 | PENDENTE | `high` |
 | 031 | PENDENTE | `medium` |
@@ -297,6 +297,10 @@ Aceite concluído em 31 de agosto de 2026: `SnapshotCliente` passou a persistir 
 ### PR 027 — conversa única por contato
 
 Aceite concluído em 31 de agosto de 2026: `Conversa` passou a ser única por `Contato`, sem estado/data de fechamento, e `ParticipacaoContaConversa` preserva cada conta WhatsApp e seu intervalo na mesma timeline. Resolução serializa por contato, exige conta ativa, reutiliza o UUID entre origens, não regride atividade sob evento atrasado e usa versão condicional. A participação não concede acesso nem substitui a origem futura de mensagem/atendimento. Lint, tipos, 123 testes da API, 115 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001600_criar_conversa_unica` terminou com código zero e `vyntra/api-staging:pr-027` ficou saudável com prontidão `PRONTO`. Em staging, um contato preservou uma conversa e duas origens, atraso ampliou somente o início, segunda conversa e intervalo inválido foram recusados, a transação sintética foi revertida e não houve erro de nível 50.
+
+### PR 028 — atendimento e máquina de estado
+
+Aceite concluído em 31 de agosto de 2026: `Atendimento` passou a materializar estado, modo e motivo de espera ortogonais, com combinações protegidas tanto na máquina quanto no PostgreSQL. A origem empresarial deve participar da mesma `Conversa`; o contexto agora referencia um atendimento real. Resgate, retorno à fila, encerramento explícito, reaberturas humana/por entrada e finalização da tolerância têm transições determinísticas e versões separadas para estado e atribuição. Não existe transição de encerramento por inatividade: os 30 minutos apenas finalizam um fechamento já explícito. Lint, tipos, 130 testes da API, 117 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001700_criar_atendimento_maquina_estado` terminou com código zero e `vyntra/api-staging:pr-028` ficou saudável com prontidão `PRONTO`. Em staging, origem alheia e atendimento humano sem atribuição foram recusados, a tolerância permaneceu exatamente em 30 minutos, o contexto apontou para o atendimento real, a transação sintética foi revertida e não houve erro de nível 50.
 
 ## 7. Mensageria Meta
 
