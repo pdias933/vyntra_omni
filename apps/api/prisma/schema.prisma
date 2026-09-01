@@ -137,6 +137,40 @@ enum EstadoFila {
   @@map("estado_fila")
 }
 
+enum EstadoAtendimento {
+  AGUARDANDO
+  EM_ATENDIMENTO
+  ENCERRADO_REABRIVEL
+  ENCERRADO
+
+  @@map("estado_atendimento")
+}
+
+enum ModoAtendimento {
+  BOT
+  FILA_HUMANA
+  HUMANO
+
+  @@map("modo_atendimento")
+}
+
+enum MotivoEsperaAtendimento {
+  PROCESSANDO_BOT
+  AGUARDANDO_HUMANO
+  FORA_DO_HORARIO
+  AGUARDANDO_CLIENTE
+  NENHUM
+
+  @@map("motivo_espera_atendimento")
+}
+
+enum OrigemEncerramentoAtendimento {
+  USUARIO
+  FLUXO
+
+  @@map("origem_encerramento_atendimento")
+}
+
 enum EstadoAcessoFila {
   ATIVO
   REVOGADO
@@ -406,6 +440,7 @@ model Usuario {
   liberacoesControlesRecurso LiberacaoControleRecursoUsuario[]
   vinculosClienteVerificados VinculoCliente[] @relation("UsuarioVerificacaoVinculoCliente")
   contextosAtendimentoAlterados ContextoAtendimento[] @relation("UsuarioAlteracaoContextoAtendimento")
+  atendimentosResponsaveis Atendimento[] @relation("UsuarioResponsavelAtendimento")
 
   @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
   @@index([perfilId], map: "usuario_perfil_idx")
@@ -615,6 +650,8 @@ model Fila {
   atualizadoEm    DateTime     @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   acessosUsuarios AcessoUsuarioFila[]
   liberacoesControlesRecurso LiberacaoControleRecursoFila[]
+  atendimentosAtuais Atendimento[] @relation("FilaAtualAtendimento")
+  atendimentosFallbackReabertura Atendimento[] @relation("FilaFallbackReaberturaAtendimento")
 
   @@index([estado, nome], map: "fila_estado_nome_idx")
   @@map("fila")
@@ -664,6 +701,7 @@ model ContaWhatsApp {
   identidadesUltimaObservacao     IdentidadeWhatsApp[]
   eventosAlteracaoIdentidade      EventoAlteracaoIdentidadeWhatsApp[]
   participacoesConversa           ParticipacaoContaConversa[]
+  atendimentosOrigem              Atendimento[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorCanalExterno], map: "conta_whatsapp_identidade_externa_key")
   @@index([estado, nomeExibicao, id], map: "conta_whatsapp_estado_nome_idx")
@@ -698,6 +736,7 @@ model Conversa {
   versao                Int                          @default(1)
   contato               Contato                      @relation(fields: [contatoId], references: [id], onDelete: Restrict)
   contasParticipantes   ParticipacaoContaConversa[]
+  atendimentos          Atendimento[]
 
   @@index([ultimaAtividadeEm, id], map: "conversa_ultima_atividade_idx")
   @@map("conversa")
@@ -711,10 +750,46 @@ model ParticipacaoContaConversa {
   versao                Int             @default(1)
   conversa              Conversa        @relation(fields: [conversaId], references: [id], onDelete: Restrict)
   contaWhatsApp         ContaWhatsApp   @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  atendimentosOrigem    Atendimento[]
 
   @@id([conversaId, contaWhatsAppId])
   @@index([contaWhatsAppId, ultimaInteracaoEm, conversaId], map: "participacao_conta_conversa_conta_atividade_idx")
   @@map("participacao_conta_conversa")
+}
+
+model Atendimento {
+  id                              String                         @id @db.Uuid
+  conversaId                      String                         @map("conversa_id") @db.Uuid
+  contaWhatsAppOrigemId           String                         @map("conta_whatsapp_origem_id") @db.Uuid
+  estado                          EstadoAtendimento              @default(AGUARDANDO)
+  modo                            ModoAtendimento
+  motivoEspera                    MotivoEsperaAtendimento        @map("motivo_espera")
+  filaAtualId                     String?                        @map("fila_atual_id") @db.Uuid
+  usuarioResponsavelId            String?                        @map("usuario_responsavel_id") @db.Uuid
+  versaoEstado                    Int                            @default(1) @map("versao_estado")
+  versaoAtribuicao                Int                            @default(1) @map("versao_atribuicao")
+  iniciadoEm                      DateTime                       @map("iniciado_em") @db.Timestamptz(6)
+  atualizadoEm                    DateTime                       @map("atualizado_em") @db.Timestamptz(6)
+  encerradoEm                     DateTime?                      @map("encerrado_em") @db.Timestamptz(6)
+  encerradoPorTipo                OrigemEncerramentoAtendimento? @map("encerrado_por_tipo")
+  encerradoPorId                  String?                        @map("encerrado_por_id") @db.Uuid
+  motivoEncerramento              String?                        @map("motivo_encerramento") @db.VarChar(500)
+  podeReabrirAte                  DateTime?                      @map("pode_reabrir_ate") @db.Timestamptz(6)
+  filaFallbackReaberturaId        String?                        @map("fila_fallback_reabertura_id") @db.Uuid
+  finalizadoDefinitivamenteEm     DateTime?                      @map("finalizado_definitivamente_em") @db.Timestamptz(6)
+  conversa                        Conversa                       @relation(fields: [conversaId], references: [id], onDelete: Restrict)
+  contaWhatsAppOrigem             ContaWhatsApp                  @relation(fields: [contaWhatsAppOrigemId], references: [id], onDelete: Restrict)
+  participacaoOrigem              ParticipacaoContaConversa      @relation(fields: [conversaId, contaWhatsAppOrigemId], references: [conversaId, contaWhatsAppId], onDelete: Restrict)
+  filaAtual                       Fila?                           @relation("FilaAtualAtendimento", fields: [filaAtualId], references: [id], onDelete: Restrict)
+  usuarioResponsavel              Usuario?                        @relation("UsuarioResponsavelAtendimento", fields: [usuarioResponsavelId], references: [id], onDelete: Restrict)
+  filaFallbackReabertura          Fila?                           @relation("FilaFallbackReaberturaAtendimento", fields: [filaFallbackReaberturaId], references: [id], onDelete: Restrict)
+  contexto                        ContextoAtendimento?
+
+  @@index([conversaId, iniciadoEm, id], map: "atendimento_conversa_inicio_idx")
+  @@index([contaWhatsAppOrigemId, estado, iniciadoEm], map: "atendimento_origem_estado_idx")
+  @@index([filaAtualId, estado, atualizadoEm], map: "atendimento_fila_estado_idx")
+  @@index([usuarioResponsavelId, estado, atualizadoEm], map: "atendimento_responsavel_estado_idx")
+  @@map("atendimento")
 }
 
 model IdentidadeWhatsApp {
@@ -838,6 +913,7 @@ model ContextoAtendimento {
   vinculoCliente            VinculoCliente              @relation(fields: [vinculoClienteId, contatoId], references: [id, contatoId], onDelete: Restrict)
   vinculoContrato           VinculoContrato?            @relation(fields: [vinculoContratoId, vinculoClienteId], references: [id, vinculoClienteId], onDelete: Restrict)
   alteradoPorUsuario        Usuario?                    @relation("UsuarioAlteracaoContextoAtendimento", fields: [alteradoPorUsuarioId], references: [id], onDelete: Restrict)
+  atendimento               Atendimento                 @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
 
   @@index([contatoId, alteradoEm, atendimentoId], map: "contexto_atendimento_contato_idx")
   @@index([vinculoClienteId, vinculoContratoId], map: "contexto_atendimento_vinculos_idx")
