@@ -1,12 +1,16 @@
 import type {
   ClienteErpNormalizado,
   ComandoAtualizarOrdemServicoErp,
+  ComandoAdicionarComentarioAtendimentoErp,
   ComandoCriarOrdemServicoErp,
+  ComandoEncerrarAtendimentoErp,
   ComandoExecutarDesbloqueioConfiancaErp,
   ComandoCriarAtendimentoErp,
   ComandoReconciliarDesbloqueioConfiancaErp,
   ComandoReconciliarAtualizacaoOrdemServicoErp,
+  ComandoReconciliarComentarioAtendimentoErp,
   ComandoReconciliarCriacaoOrdemServicoErp,
+  ComandoReconciliarEncerramentoAtendimentoErp,
   ComandoReconciliarAtendimentoErp,
   ContratoErpNormalizado,
   CriteriosLocalizacaoClienteErp,
@@ -20,9 +24,11 @@ import type {
   ResultadoCriacaoAtendimentoErp,
   ResultadoCriacaoOrdemServicoErp,
   ResultadoAtualizacaoOrdemServicoErp,
+  ResultadoAcaoAtendimentoErp,
   ResultadoExecucaoDesbloqueioConfiancaErp,
   ResultadoReconciliacaoDesbloqueioConfiancaErp,
   ResultadoReconciliacaoAtualizacaoOrdemServicoErp,
+  ResultadoReconciliacaoAcaoAtendimentoErp,
   ResultadoReconciliacaoCriacaoOrdemServicoErp,
   ResultadoReconciliacaoAtendimentoErp,
 } from './modelo-erp.js';
@@ -101,6 +107,22 @@ export interface EscritasErp {
   reconciliarAtualizacaoOrdemServico(
     comando: ComandoReconciliarAtualizacaoOrdemServicoErp,
   ): Promise<ResultadoReconciliacaoAtualizacaoOrdemServicoErp>;
+
+  adicionarComentarioAtendimento(
+    comando: ComandoAdicionarComentarioAtendimentoErp,
+  ): Promise<ResultadoAcaoAtendimentoErp>;
+
+  reconciliarComentarioAtendimento(
+    comando: ComandoReconciliarComentarioAtendimentoErp,
+  ): Promise<ResultadoReconciliacaoAcaoAtendimentoErp>;
+
+  encerrarAtendimento(
+    comando: ComandoEncerrarAtendimentoErp,
+  ): Promise<ResultadoAcaoAtendimentoErp>;
+
+  reconciliarEncerramentoAtendimento(
+    comando: ComandoReconciliarEncerramentoAtendimentoErp,
+  ): Promise<ResultadoReconciliacaoAcaoAtendimentoErp>;
 }
 
 export interface AdaptadorErp extends ConsultasErp, EscritasErp {}

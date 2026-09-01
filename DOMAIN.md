@@ -644,6 +644,14 @@ Cada alteração confirmada incrementa a versão exatamente uma vez e acrescenta
 
 Criação e atualização exigem `confirmacao_explicita`, chave idempotente, atendimento aberto, escopo de fila, contexto corrente e `ProtocoloErp(OFICIAL)` exatamente correspondentes. A permissão aprovada `CRIAR_ORDEM_SERVICO` governa as duas mutações na V1; uma atualização não amplia esse poder para outras capacidades ERP. Snapshot nunca autoriza nenhuma delas, e a mesma chave não pode representar comandos com assunto, descrição ou contexto diferentes.
 
+### 12.3 Comentário e encerramento no ERP
+
+`RegistroAcaoAtendimentoErp` prova uma ação externa confirmada, ligada a uma única operação recuperável e classificada como `COMENTARIO` ou `ENCERRAMENTO`. Protocolo oficial e hash do conteúdo são persistidos; comentário e motivo não entram em claro nesse histórico nem na auditoria. Comentário confirmado não altera estado, modo, atribuição ou timeline pública do atendimento.
+
+O encerramento usa `ReservaEncerramentoAtendimentoErp`, única por atendimento, e fixa as versões de estado e atribuição observadas antes do efeito. A chamada externa ocorre fora da transação. Apenas `CONFIRMADO` aplica a transição `ENCERRAR` da máquina local, fecha o intervalo de atribuição, acrescenta evento, registra a ação, conclui a operação, audita e libera a reserva atomicamente. Indisponibilidade comprovadamente anterior ao efeito preserva o atendimento e libera a reserva; resposta perdida mantém atendimento aberto, operação incerta e reserva até reconciliação. Outra chave não atravessa a reserva.
+
+Os dois comandos usam `ENCERRAR_ATENDIMENTO`, pois o comentário coberto pela V1 pertence ao fluxo de finalização, e exigem `confirmacao_explicita`, atendimento aberto, fila autorizada e `ProtocoloErp(OFICIAL)` exato. Não existe ação de comentário ERP genérico fora desse fluxo. Link público de transcrição não é uma ação disponível: a política retorna `DESATIVADO`, sem gerar token ou URL, até aprovação jurídica/DPO e evidência real do MK.
+
 Sessão de acesso usa porta própria e estados `ATIVA`, `INATIVA` ou `DESCONHECIDA`. Conexão cadastrada, contrato ativo ou presença em snapshot nunca promove o estado para `ATIVA`. `NAO_CONFIGURADO` e `DESATIVADO` são disponibilidade do recurso/fonte, não estados da sessão. Desconexão só pode atingir sessão explicitamente `ATIVA`; resposta perdida vira `RESULTADO_INCERTO` e exige reconciliação.
 
 ## 13. Eventos e sincronização

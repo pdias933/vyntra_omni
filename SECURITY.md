@@ -414,6 +414,8 @@ A PR 065 materializa a execução com confirmação explícita, permissão disti
 
 A PR 066 protege criação e atualização de ordem de serviço com prévia e confirmação explícita, `CRIAR_ORDEM_SERVICO`, escopo de fila, atendimento aberto e correspondência exata entre cliente, contrato e protocolo oficial. O comando assinado inclui todo o conteúdo mutável; reutilizar a chave com conteúdo diferente é negado. A criação é única pela operação e pelo identificador externo. Atualizações usam versão otimista, lock e reserva exclusiva para impedir duas chaves sobre a mesma versão. Resposta perdida ou formato externo inválido nunca autoriza repetição cega; reconciliação conserva ou libera a reserva conforme a prova do efeito. Descrição protegida não aparece em auditoria, log ou histórico em claro, e snapshot não participa da decisão.
 
+A PR 067 exige confirmação explícita, `ENCERRAR_ATENDIMENTO`, atendimento aberto, fila e protocolo oficial exatos para comentário de finalização e encerramento ERP. Conteúdo e motivo participam da assinatura idempotente, mas somente seu hash entra no registro imutável; auditoria e evento não carregam o texto. Uma reserva exclusiva impede dois encerramentos concorrentes. Falha anterior ao efeito não fecha o atendimento; resposta perdida conserva estado e reserva até reconciliação. A transição local, o fechamento da atribuição, o evento, o registro externo, a conclusão e a auditoria são atômicos após confirmação. Link público continua sem token, URL, rota ou envio enquanto o portão jurídico/DPO e a capacidade real do MK não forem aprovados.
+
 ## 13. Auditoria
 
 `RegistroAuditoria` é imutável para usuários da plataforma:

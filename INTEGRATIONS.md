@@ -311,6 +311,8 @@ A PR 065 acrescenta `executarDesbloqueioConfianca` e `reconciliarDesbloqueioConf
 
 A PR 066 acrescenta quatro operações à porta de escrita: criar e reconciliar criação de ordem de serviço, atualizar e reconciliar atualização. Os comandos usam exclusivamente o modelo interno e carregam atendimento, chave idempotente, cliente, contrato e protocolo oficial; criação/atualização acrescentam assunto e descrição, enquanto atualização referencia a ordem externa já confirmada. Os resultados distinguem confirmação, indisponibilidade anterior ao efeito e resultado incerto. O serviço local mantém versão, reserva e histórico; o adapter não decide autorização, contexto nem concorrência. Nenhum DTO, endpoint ou comportamento não observado do MK foi inventado, e o provider real permanece desligado.
 
+A PR 067 acrescenta comentário, encerramento e suas reconciliações à porta de escrita. Os comandos internos carregam atendimento, protocolo oficial, chave e conteúdo específico; resultados distinguem `CONFIRMADO`, `INDISPONIVEL` sem efeito possível e `RESULTADO_INCERTO`. Capacidade não habilitada é explícita. O serviço, não o adapter, decide autorização, versões, reserva e transição local. A evidência pública da PR 059 ainda marca comentário e alteração/encerramento como `NAO_OBSERVADA`; portanto nenhum DTO, endpoint ou provider MK real foi criado. O link público não entra na porta nem é enviado como comentário: permanece desligado pela decisão jurídica aprovada.
+
 ## 5. `SnapshotCliente` (Customer Snapshot)
 
 ### 5.1 Natureza

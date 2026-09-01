@@ -302,6 +302,131 @@ test('resposta perdida na atualização da ordem reconcilia sem repetir efeito',
   );
 });
 
+function contextoAcaoAtendimento(sobrescritas = {}) {
+  return {
+    atendimentoId: randomUUID(),
+    chaveIdempotencia: 'chave_acao_atendimento_0001',
+    protocoloOficial: 'PROTOCOLO-OFICIAL-ACAO-001',
+    ...sobrescritas,
+  };
+}
+
+test('comentário ERP confirmado é idempotente no limite do adapter', async () => {
+  const adaptador = adaptadorComDados();
+  const comandoComentario = {
+    ...contextoAcaoAtendimento(),
+    comentario: 'Comentário sintético do atendimento.',
+  };
+  const primeira = await adaptador.adicionarComentarioAtendimento(
+    comandoComentario,
+  );
+  const repetida = await adaptador.adicionarComentarioAtendimento(
+    comandoComentario,
+  );
+
+  assert.deepEqual(primeira, { resultado: 'CONFIRMADO' });
+  assert.deepEqual(repetida, primeira);
+  assert.equal(adaptador.obterQuantidadeTentativasComentarioAtendimento(), 1);
+  assert.equal(adaptador.obterQuantidadeEfeitosComentarioAtendimento(), 1);
+});
+
+test('resposta perdida no comentário reconcilia sem repetir efeito', async () => {
+  const adaptador = adaptadorComDados();
+  const comandoComentario = {
+    ...contextoAcaoAtendimento({
+      chaveIdempotencia: 'chave_comentario_resposta_perdida_01',
+    }),
+    comentario: 'Comentário sintético com resposta perdida.',
+  };
+  adaptador.programarComentarioAtendimento(
+    comandoComentario.chaveIdempotencia,
+    'PERDER_RESPOSTA',
+  );
+
+  const primeira = await adaptador.adicionarComentarioAtendimento(
+    comandoComentario,
+  );
+  const repetida = await adaptador.adicionarComentarioAtendimento(
+    comandoComentario,
+  );
+  assert.deepEqual(primeira, {
+    codigo: 'RESPOSTA_PERDIDA',
+    requerReconciliacao: true,
+    resultado: 'RESULTADO_INCERTO',
+  });
+  assert.deepEqual(repetida, primeira);
+  assert.equal(adaptador.obterQuantidadeTentativasComentarioAtendimento(), 1);
+  assert.equal(adaptador.obterQuantidadeEfeitosComentarioAtendimento(), 1);
+  assert.deepEqual(
+    await adaptador.reconciliarComentarioAtendimento({
+      atendimentoId: comandoComentario.atendimentoId,
+      chaveIdempotencia: comandoComentario.chaveIdempotencia,
+      protocoloOficial: comandoComentario.protocoloOficial,
+    }),
+    { resultado: 'CONFIRMADO' },
+  );
+});
+
+test('capacidade de encerramento não habilitada não produz efeito', async () => {
+  const adaptador = adaptadorComDados();
+  const comandoEncerramento = {
+    ...contextoAcaoAtendimento({
+      chaveIdempotencia: 'chave_encerramento_nao_habilitado_01',
+    }),
+    motivo: 'Atendimento concluído.',
+  };
+  adaptador.programarEncerramentoAtendimento(
+    comandoEncerramento.chaveIdempotencia,
+    'CAPACIDADE_NAO_HABILITADA',
+  );
+  assert.deepEqual(await adaptador.encerrarAtendimento(comandoEncerramento), {
+    codigo: 'CAPACIDADE_NAO_HABILITADA',
+    efeitoExternoPossivel: false,
+    resultado: 'INDISPONIVEL',
+  });
+  assert.equal(
+    adaptador.obterQuantidadeTentativasEncerramentoAtendimento(),
+    1,
+  );
+  assert.equal(adaptador.obterQuantidadeEfeitosEncerramentoAtendimento(), 0);
+});
+
+test('resposta perdida no encerramento reconcilia sem repetir efeito', async () => {
+  const adaptador = adaptadorComDados();
+  const comandoEncerramento = {
+    ...contextoAcaoAtendimento({
+      chaveIdempotencia: 'chave_encerramento_resposta_perdida_01',
+    }),
+    motivo: 'Atendimento concluído com resposta perdida.',
+  };
+  adaptador.programarEncerramentoAtendimento(
+    comandoEncerramento.chaveIdempotencia,
+    'PERDER_RESPOSTA',
+  );
+
+  const primeira = await adaptador.encerrarAtendimento(comandoEncerramento);
+  const repetida = await adaptador.encerrarAtendimento(comandoEncerramento);
+  assert.deepEqual(primeira, {
+    codigo: 'RESPOSTA_PERDIDA',
+    requerReconciliacao: true,
+    resultado: 'RESULTADO_INCERTO',
+  });
+  assert.deepEqual(repetida, primeira);
+  assert.equal(
+    adaptador.obterQuantidadeTentativasEncerramentoAtendimento(),
+    1,
+  );
+  assert.equal(adaptador.obterQuantidadeEfeitosEncerramentoAtendimento(), 1);
+  assert.deepEqual(
+    await adaptador.reconciliarEncerramentoAtendimento({
+      atendimentoId: comandoEncerramento.atendimentoId,
+      chaveIdempotencia: comandoEncerramento.chaveIdempotencia,
+      protocoloOficial: comandoEncerramento.protocoloOficial,
+    }),
+    { resultado: 'CONFIRMADO' },
+  );
+});
+
 test('criação confirmada é idempotente e produz um protocolo oficial', async () => {
   const adaptador = adaptadorComDados();
   const entrada = comando();

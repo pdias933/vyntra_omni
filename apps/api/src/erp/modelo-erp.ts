@@ -263,3 +263,46 @@ export type ResultadoReconciliacaoAtualizacaoOrdemServicoErp =
       readonly resultado: 'INDISPONIVEL';
       readonly codigo: 'ERP_INDISPONIVEL';
     };
+
+export interface ContextoAcaoAtendimentoErp {
+  readonly atendimentoId: string;
+  readonly chaveIdempotencia: string;
+  readonly protocoloOficial: string;
+}
+
+export interface ComandoAdicionarComentarioAtendimentoErp
+  extends ContextoAcaoAtendimentoErp {
+  readonly comentario: string;
+}
+
+export type ComandoReconciliarComentarioAtendimentoErp =
+  ContextoAcaoAtendimentoErp;
+
+export interface ComandoEncerrarAtendimentoErp
+  extends ContextoAcaoAtendimentoErp {
+  readonly motivo: string;
+}
+
+export type ComandoReconciliarEncerramentoAtendimentoErp =
+  ContextoAcaoAtendimentoErp;
+
+export type ResultadoAcaoAtendimentoErp =
+  | { readonly resultado: 'CONFIRMADO' }
+  | {
+      readonly resultado: 'INDISPONIVEL';
+      readonly codigo: 'CAPACIDADE_NAO_HABILITADA' | 'ERP_INDISPONIVEL';
+      readonly efeitoExternoPossivel: false;
+    }
+  | {
+      readonly resultado: 'RESULTADO_INCERTO';
+      readonly codigo: 'RESPOSTA_PERDIDA';
+      readonly requerReconciliacao: true;
+    };
+
+export type ResultadoReconciliacaoAcaoAtendimentoErp =
+  | { readonly resultado: 'CONFIRMADO' }
+  | { readonly resultado: 'EFEITO_AUSENTE' }
+  | {
+      readonly resultado: 'INDISPONIVEL';
+      readonly codigo: 'CAPACIDADE_NAO_HABILITADA' | 'ERP_INDISPONIVEL';
+    };

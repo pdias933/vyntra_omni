@@ -8,13 +8,17 @@ import {
 } from '../erros-erp.js';
 import type {
   ClienteErpNormalizado,
+  ComandoAdicionarComentarioAtendimentoErp,
   ComandoAtualizarOrdemServicoErp,
   ComandoCriarOrdemServicoErp,
   ComandoExecutarDesbloqueioConfiancaErp,
+  ComandoEncerrarAtendimentoErp,
   ComandoCriarAtendimentoErp,
   ComandoReconciliarDesbloqueioConfiancaErp,
   ComandoReconciliarAtualizacaoOrdemServicoErp,
+  ComandoReconciliarComentarioAtendimentoErp,
   ComandoReconciliarCriacaoOrdemServicoErp,
+  ComandoReconciliarEncerramentoAtendimentoErp,
   ComandoReconciliarAtendimentoErp,
   ContratoErpNormalizado,
   CriteriosLocalizacaoClienteErp,
@@ -28,10 +32,12 @@ import type {
   ResultadoCriacaoAtendimentoErp,
   ResultadoCriacaoOrdemServicoErp,
   ResultadoAtualizacaoOrdemServicoErp,
+  ResultadoAcaoAtendimentoErp,
   ResultadoExecucaoDesbloqueioConfiancaErp,
   ResultadoElegibilidadeDesbloqueioErp,
   ResultadoReconciliacaoAtendimentoErp,
   ResultadoReconciliacaoAtualizacaoOrdemServicoErp,
+  ResultadoReconciliacaoAcaoAtendimentoErp,
   ResultadoReconciliacaoCriacaoOrdemServicoErp,
   ResultadoReconciliacaoDesbloqueioConfiancaErp,
 } from '../modelo-erp.js';
@@ -65,6 +71,12 @@ type CenarioDesbloqueioConfianca =
   | 'PERDER_RESPOSTA';
 
 type CenarioOrdemServico =
+  | 'CONFIRMAR'
+  | 'ERP_INDISPONIVEL'
+  | 'PERDER_RESPOSTA';
+
+type CenarioAcaoAtendimento =
+  | 'CAPACIDADE_NAO_HABILITADA'
   | 'CONFIRMAR'
   | 'ERP_INDISPONIVEL'
   | 'PERDER_RESPOSTA';
@@ -111,6 +123,16 @@ interface ExecucaoCriacaoOrdemServico {
 interface ExecucaoAtualizacaoOrdemServico {
   readonly assinatura: string;
   readonly resultado: ResultadoAtualizacaoOrdemServicoErp;
+}
+
+interface EfeitoAcaoAtendimento {
+  readonly atendimentoId: string;
+  readonly protocoloOficial: string;
+}
+
+interface ExecucaoAcaoAtendimento {
+  readonly assinatura: string;
+  readonly resultado: ResultadoAcaoAtendimentoErp;
 }
 
 function textoValido(valor: string, limite: number): boolean {
@@ -215,6 +237,32 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     EfeitoAtualizacaoOrdemServico
   >();
   private tentativasAtualizacaoOrdem = 0;
+  private readonly cenariosComentarioAtendimento = new Map<
+    string,
+    CenarioAcaoAtendimento
+  >();
+  private readonly execucoesComentarioAtendimento = new Map<
+    string,
+    ExecucaoAcaoAtendimento
+  >();
+  private readonly efeitosComentarioAtendimento = new Map<
+    string,
+    EfeitoAcaoAtendimento
+  >();
+  private tentativasComentarioAtendimento = 0;
+  private readonly cenariosEncerramentoAtendimento = new Map<
+    string,
+    CenarioAcaoAtendimento
+  >();
+  private readonly execucoesEncerramentoAtendimento = new Map<
+    string,
+    ExecucaoAcaoAtendimento
+  >();
+  private readonly efeitosEncerramentoAtendimento = new Map<
+    string,
+    EfeitoAcaoAtendimento
+  >();
+  private tentativasEncerramentoAtendimento = 0;
 
   public constructor(
     private readonly dados: DadosErpSimulados = {},
@@ -279,6 +327,30 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
       throw new ErroComandoErpInvalido();
     }
     this.cenariosAtualizacaoOrdem.set(chaveIdempotencia, cenario);
+  }
+
+  public programarComentarioAtendimento(
+    chaveIdempotencia: string,
+    cenario: CenarioAcaoAtendimento,
+  ): void {
+    this.programarAcao(
+      chaveIdempotencia,
+      cenario,
+      this.execucoesComentarioAtendimento,
+      this.cenariosComentarioAtendimento,
+    );
+  }
+
+  public programarEncerramentoAtendimento(
+    chaveIdempotencia: string,
+    cenario: CenarioAcaoAtendimento,
+  ): void {
+    this.programarAcao(
+      chaveIdempotencia,
+      cenario,
+      this.execucoesEncerramentoAtendimento,
+      this.cenariosEncerramentoAtendimento,
+    );
   }
 
   public async localizarClientes(
@@ -581,6 +653,86 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     return { resultado: 'CONFIRMADO' };
   }
 
+  public async adicionarComentarioAtendimento(
+    comando: ComandoAdicionarComentarioAtendimentoErp,
+  ): Promise<ResultadoAcaoAtendimentoErp> {
+    this.validarContextoAcaoAtendimento(comando);
+    if (!textoValido(comando.comentario, 4_000)) {
+      throw new ErroComandoErpInvalido();
+    }
+    const anterior = this.execucoesComentarioAtendimento.get(
+      comando.chaveIdempotencia,
+    );
+    const assinatura = assinaturaComando(comando);
+    if (anterior !== undefined) {
+      if (anterior.assinatura !== assinatura) {
+        throw new ErroChaveErpReutilizada();
+      }
+      return { ...anterior.resultado };
+    }
+    this.tentativasComentarioAtendimento += 1;
+    const resultado = this.executarCenarioAcaoAtendimento(
+      comando,
+      this.cenariosComentarioAtendimento.get(comando.chaveIdempotencia) ??
+        'CONFIRMAR',
+      this.efeitosComentarioAtendimento,
+    );
+    this.execucoesComentarioAtendimento.set(comando.chaveIdempotencia, {
+      assinatura,
+      resultado,
+    });
+    return { ...resultado };
+  }
+
+  public async reconciliarComentarioAtendimento(
+    comando: ComandoReconciliarComentarioAtendimentoErp,
+  ): Promise<ResultadoReconciliacaoAcaoAtendimentoErp> {
+    return this.reconciliarAcaoAtendimento(
+      comando,
+      this.efeitosComentarioAtendimento,
+    );
+  }
+
+  public async encerrarAtendimento(
+    comando: ComandoEncerrarAtendimentoErp,
+  ): Promise<ResultadoAcaoAtendimentoErp> {
+    this.validarContextoAcaoAtendimento(comando);
+    if (!textoValido(comando.motivo, 500)) {
+      throw new ErroComandoErpInvalido();
+    }
+    const anterior = this.execucoesEncerramentoAtendimento.get(
+      comando.chaveIdempotencia,
+    );
+    const assinatura = assinaturaComando(comando);
+    if (anterior !== undefined) {
+      if (anterior.assinatura !== assinatura) {
+        throw new ErroChaveErpReutilizada();
+      }
+      return { ...anterior.resultado };
+    }
+    this.tentativasEncerramentoAtendimento += 1;
+    const resultado = this.executarCenarioAcaoAtendimento(
+      comando,
+      this.cenariosEncerramentoAtendimento.get(comando.chaveIdempotencia) ??
+        'CONFIRMAR',
+      this.efeitosEncerramentoAtendimento,
+    );
+    this.execucoesEncerramentoAtendimento.set(comando.chaveIdempotencia, {
+      assinatura,
+      resultado,
+    });
+    return { ...resultado };
+  }
+
+  public async reconciliarEncerramentoAtendimento(
+    comando: ComandoReconciliarEncerramentoAtendimentoErp,
+  ): Promise<ResultadoReconciliacaoAcaoAtendimentoErp> {
+    return this.reconciliarAcaoAtendimento(
+      comando,
+      this.efeitosEncerramentoAtendimento,
+    );
+  }
+
   public async reconciliarCriacaoAtendimento(
     comando: ComandoReconciliarAtendimentoErp,
   ): Promise<ResultadoReconciliacaoAtendimentoErp> {
@@ -633,6 +785,56 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
 
   public obterQuantidadeEfeitosAtualizacaoOrdemServico(): number {
     return this.efeitosAtualizacaoOrdem.size;
+  }
+
+  public obterQuantidadeTentativasComentarioAtendimento(): number {
+    return this.tentativasComentarioAtendimento;
+  }
+
+  public obterQuantidadeEfeitosComentarioAtendimento(): number {
+    return this.efeitosComentarioAtendimento.size;
+  }
+
+  public obterQuantidadeTentativasEncerramentoAtendimento(): number {
+    return this.tentativasEncerramentoAtendimento;
+  }
+
+  public obterQuantidadeEfeitosEncerramentoAtendimento(): number {
+    return this.efeitosEncerramentoAtendimento.size;
+  }
+
+  private programarAcao(
+    chaveIdempotencia: string,
+    cenario: CenarioAcaoAtendimento,
+    execucoes: ReadonlyMap<string, ExecucaoAcaoAtendimento>,
+    cenarios: Map<string, CenarioAcaoAtendimento>,
+  ): void {
+    if (
+      !CHAVE_IDEMPOTENCIA.test(chaveIdempotencia) ||
+      execucoes.has(chaveIdempotencia)
+    ) {
+      throw new ErroComandoErpInvalido();
+    }
+    cenarios.set(chaveIdempotencia, cenario);
+  }
+
+  private async reconciliarAcaoAtendimento(
+    comando:
+      | ComandoReconciliarComentarioAtendimentoErp
+      | ComandoReconciliarEncerramentoAtendimentoErp,
+    efeitos: ReadonlyMap<string, EfeitoAcaoAtendimento>,
+  ): Promise<ResultadoReconciliacaoAcaoAtendimentoErp> {
+    this.validarContextoAcaoAtendimento(comando);
+    if (!this.reconciliacaoDisponivel) return this.indisponivel();
+    const efeito = efeitos.get(comando.chaveIdempotencia);
+    if (efeito === undefined) return { resultado: 'EFEITO_AUSENTE' };
+    if (
+      efeito.atendimentoId !== comando.atendimentoId ||
+      efeito.protocoloOficial !== comando.protocoloOficial
+    ) {
+      throw new ErroChaveErpReutilizada();
+    }
+    return { resultado: 'CONFIRMADO' };
   }
 
   private indisponivel(): {
@@ -773,6 +975,37 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     return { resultado: 'CONFIRMADO' };
   }
 
+  private executarCenarioAcaoAtendimento(
+    comando:
+      | ComandoAdicionarComentarioAtendimentoErp
+      | ComandoEncerrarAtendimentoErp,
+    cenario: CenarioAcaoAtendimento,
+    efeitos: Map<string, EfeitoAcaoAtendimento>,
+  ): ResultadoAcaoAtendimentoErp {
+    if (
+      cenario === 'ERP_INDISPONIVEL' ||
+      cenario === 'CAPACIDADE_NAO_HABILITADA'
+    ) {
+      return {
+        codigo: cenario,
+        efeitoExternoPossivel: false,
+        resultado: 'INDISPONIVEL',
+      };
+    }
+    efeitos.set(comando.chaveIdempotencia, {
+      atendimentoId: comando.atendimentoId,
+      protocoloOficial: comando.protocoloOficial,
+    });
+    if (cenario === 'PERDER_RESPOSTA') {
+      return {
+        codigo: 'RESPOSTA_PERDIDA',
+        requerReconciliacao: true,
+        resultado: 'RESULTADO_INCERTO',
+      };
+    }
+    return { resultado: 'CONFIRMADO' };
+  }
+
   private criarEfeito(
     comando: ComandoCriarAtendimentoErp,
   ): EfeitoCriacaoAtendimento {
@@ -870,6 +1103,22 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
   ): void {
     this.validarComandoCriacaoOrdemServico(comando);
     this.validarIdentificadorExterno(comando.ordemServicoExternaId);
+  }
+
+  private validarContextoAcaoAtendimento(
+    comando:
+      | ComandoAdicionarComentarioAtendimentoErp
+      | ComandoEncerrarAtendimentoErp
+      | ComandoReconciliarComentarioAtendimentoErp
+      | ComandoReconciliarEncerramentoAtendimentoErp,
+  ): void {
+    if (
+      !IDENTIFICADOR_UUID.test(comando.atendimentoId) ||
+      !CHAVE_IDEMPOTENCIA.test(comando.chaveIdempotencia) ||
+      !textoValido(comando.protocoloOficial, 256)
+    ) {
+      throw new ErroComandoErpInvalido();
+    }
   }
 
   private clienteCorresponde(

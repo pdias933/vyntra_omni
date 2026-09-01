@@ -44,6 +44,6 @@ test('prontidão avança para a migration obrigatória mais recente', async () =
   const persistencia = await ler('apps/api/src/persistencia/servico-prisma.ts');
   assert.match(
     persistencia,
-    /20260901005000_ordens_servico_erp/,
+    /20260901005500_acoes_atendimento_erp/,
   );
 });

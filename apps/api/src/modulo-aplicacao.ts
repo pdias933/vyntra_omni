@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { ModuloAcoesAtendimentoErp } from './acoes-atendimento-erp/modulo-acoes-atendimento-erp.js';
 import { ModuloAuditoria } from './auditoria/modulo-auditoria.js';
 import { ModuloAtribuicoesAtendimento } from './atribuicoes-atendimento/modulo-atribuicoes-atendimento.js';
 import { ModuloAutenticacao } from './autenticacao/modulo-autenticacao.js';
@@ -38,6 +39,7 @@ import { ModuloSincronizacao } from './sincronizacao/modulo-sincronizacao.js';
     ControladorRotasDesconhecidas,
   ],
   imports: [
+    ModuloAcoesAtendimentoErp,
     ModuloAuditoria,
     ModuloAtribuicoesAtendimento,
     ModuloAutenticacao,

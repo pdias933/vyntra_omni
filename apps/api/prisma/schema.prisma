@@ -44,6 +44,13 @@ enum EstadoOperacaoRecuperavel {
   @@map("estado_operacao_recuperavel")
 }
 
+enum TipoAcaoAtendimentoErp {
+  COMENTARIO
+  ENCERRAMENTO
+
+  @@map("tipo_acao_atendimento_erp")
+}
+
 enum TipoTentativaOperacao {
   EXECUCAO
   RECONCILIACAO
@@ -583,6 +590,8 @@ model OperacaoRecuperavel {
   ordemServicoCriada      OrdemServicoErp?                     @relation("OperacaoCriacaoOrdemServico")
   atualizacaoOrdemServico HistoricoAtualizacaoOrdemServicoErp? @relation("OperacaoAtualizacaoOrdemServico")
   reservaAtualizacaoOrdem ReservaAtualizacaoOrdemServicoErp?
+  acaoAtendimentoErp      RegistroAcaoAtendimentoErp?
+  reservaEncerramentoErp  ReservaEncerramentoAtendimentoErp?
 
   @@index([estado, proximaAcaoEm, criadoEm], map: "operacao_recuperavel_pendente_idx")
   @@index([entidadeTipo, entidadeId, criadoEm], map: "operacao_recuperavel_entidade_idx")
@@ -984,31 +993,31 @@ model ParticipacaoContaConversa {
 }
 
 model Atendimento {
-  id                          String                         @id @db.Uuid
-  conversaId                  String                         @map("conversa_id") @db.Uuid
-  contaWhatsAppOrigemId       String                         @map("conta_whatsapp_origem_id") @db.Uuid
-  estado                      EstadoAtendimento              @default(AGUARDANDO)
+  id                          String                             @id @db.Uuid
+  conversaId                  String                             @map("conversa_id") @db.Uuid
+  contaWhatsAppOrigemId       String                             @map("conta_whatsapp_origem_id") @db.Uuid
+  estado                      EstadoAtendimento                  @default(AGUARDANDO)
   modo                        ModoAtendimento
-  motivoEspera                MotivoEsperaAtendimento        @map("motivo_espera")
-  filaAtualId                 String?                        @map("fila_atual_id") @db.Uuid
-  usuarioResponsavelId        String?                        @map("usuario_responsavel_id") @db.Uuid
-  versaoEstado                Int                            @default(1) @map("versao_estado")
-  versaoAtribuicao            Int                            @default(1) @map("versao_atribuicao")
-  iniciadoEm                  DateTime                       @map("iniciado_em") @db.Timestamptz(6)
-  atualizadoEm                DateTime                       @map("atualizado_em") @db.Timestamptz(6)
-  encerradoEm                 DateTime?                      @map("encerrado_em") @db.Timestamptz(6)
-  encerradoPorTipo            OrigemEncerramentoAtendimento? @map("encerrado_por_tipo")
-  encerradoPorId              String?                        @map("encerrado_por_id") @db.Uuid
-  motivoEncerramento          String?                        @map("motivo_encerramento") @db.VarChar(500)
-  podeReabrirAte              DateTime?                      @map("pode_reabrir_ate") @db.Timestamptz(6)
-  filaFallbackReaberturaId    String?                        @map("fila_fallback_reabertura_id") @db.Uuid
-  finalizadoDefinitivamenteEm DateTime?                      @map("finalizado_definitivamente_em") @db.Timestamptz(6)
-  conversa                    Conversa                       @relation(fields: [conversaId], references: [id], onDelete: Restrict)
-  contaWhatsAppOrigem         ContaWhatsApp                  @relation(fields: [contaWhatsAppOrigemId], references: [id], onDelete: Restrict)
-  participacaoOrigem          ParticipacaoContaConversa      @relation(fields: [conversaId, contaWhatsAppOrigemId], references: [conversaId, contaWhatsAppId], onDelete: Restrict)
-  filaAtual                   Fila?                          @relation("FilaAtualAtendimento", fields: [filaAtualId], references: [id], onDelete: Restrict)
-  usuarioResponsavel          Usuario?                       @relation("UsuarioResponsavelAtendimento", fields: [usuarioResponsavelId], references: [id], onDelete: Restrict)
-  filaFallbackReabertura      Fila?                          @relation("FilaFallbackReaberturaAtendimento", fields: [filaFallbackReaberturaId], references: [id], onDelete: Restrict)
+  motivoEspera                MotivoEsperaAtendimento            @map("motivo_espera")
+  filaAtualId                 String?                            @map("fila_atual_id") @db.Uuid
+  usuarioResponsavelId        String?                            @map("usuario_responsavel_id") @db.Uuid
+  versaoEstado                Int                                @default(1) @map("versao_estado")
+  versaoAtribuicao            Int                                @default(1) @map("versao_atribuicao")
+  iniciadoEm                  DateTime                           @map("iniciado_em") @db.Timestamptz(6)
+  atualizadoEm                DateTime                           @map("atualizado_em") @db.Timestamptz(6)
+  encerradoEm                 DateTime?                          @map("encerrado_em") @db.Timestamptz(6)
+  encerradoPorTipo            OrigemEncerramentoAtendimento?     @map("encerrado_por_tipo")
+  encerradoPorId              String?                            @map("encerrado_por_id") @db.Uuid
+  motivoEncerramento          String?                            @map("motivo_encerramento") @db.VarChar(500)
+  podeReabrirAte              DateTime?                          @map("pode_reabrir_ate") @db.Timestamptz(6)
+  filaFallbackReaberturaId    String?                            @map("fila_fallback_reabertura_id") @db.Uuid
+  finalizadoDefinitivamenteEm DateTime?                          @map("finalizado_definitivamente_em") @db.Timestamptz(6)
+  conversa                    Conversa                           @relation(fields: [conversaId], references: [id], onDelete: Restrict)
+  contaWhatsAppOrigem         ContaWhatsApp                      @relation(fields: [contaWhatsAppOrigemId], references: [id], onDelete: Restrict)
+  participacaoOrigem          ParticipacaoContaConversa          @relation(fields: [conversaId, contaWhatsAppOrigemId], references: [conversaId, contaWhatsAppId], onDelete: Restrict)
+  filaAtual                   Fila?                              @relation("FilaAtualAtendimento", fields: [filaAtualId], references: [id], onDelete: Restrict)
+  usuarioResponsavel          Usuario?                           @relation("UsuarioResponsavelAtendimento", fields: [usuarioResponsavelId], references: [id], onDelete: Restrict)
+  filaFallbackReabertura      Fila?                              @relation("FilaFallbackReaberturaAtendimento", fields: [filaFallbackReaberturaId], references: [id], onDelete: Restrict)
   contexto                    ContextoAtendimento?
   protocoloErp                ProtocoloErp?
   historicosAtribuicao        HistoricoAtribuicao[]
@@ -1018,6 +1027,8 @@ model Atendimento {
   desbloqueiosConfianca       RegistroDesbloqueioConfianca[]
   reservasDesbloqueio         ReservaDesbloqueioConfianca[]
   ordensServicoErp            OrdemServicoErp[]
+  acoesErp                    RegistroAcaoAtendimentoErp[]
+  reservaEncerramentoErp      ReservaEncerramentoAtendimentoErp?
 
   @@unique([id, conversaId], map: "atendimento_id_conversa_key")
   @@index([conversaId, iniciadoEm, id], map: "atendimento_conversa_inicio_idx")
@@ -1557,6 +1568,36 @@ model ReservaAtualizacaoOrdemServicoErp {
   operacaoRecuperavel   OperacaoRecuperavel @relation(fields: [operacaoRecuperavelId], references: [id], onDelete: Restrict)
 
   @@map("reserva_atualizacao_ordem_servico_erp")
+}
+
+model RegistroAcaoAtendimentoErp {
+  id                         String                 @id @db.Uuid
+  atendimentoId              String                 @map("atendimento_id") @db.Uuid
+  operacaoRecuperavelId      String                 @unique(map: "registro_acao_atendimento_erp_operacao_key") @map("operacao_recuperavel_id") @db.Uuid
+  tipo                       TipoAcaoAtendimentoErp
+  protocoloOficial           String                 @map("protocolo_oficial") @db.VarChar(256)
+  conteudoHash               String                 @map("conteudo_hash") @db.Char(64)
+  versaoEstadoResultante     Int?                   @map("versao_estado_resultante")
+  versaoAtribuicaoResultante Int?                   @map("versao_atribuicao_resultante")
+  confirmadoEm               DateTime               @map("confirmado_em") @db.Timestamptz(6)
+  criadoEm                   DateTime               @map("criado_em") @db.Timestamptz(6)
+  atendimento                Atendimento            @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  operacaoRecuperavel        OperacaoRecuperavel    @relation(fields: [operacaoRecuperavelId], references: [id], onDelete: Restrict)
+
+  @@index([atendimentoId, tipo, confirmadoEm, id], map: "registro_acao_atendimento_erp_atendimento_idx")
+  @@map("registro_acao_atendimento_erp")
+}
+
+model ReservaEncerramentoAtendimentoErp {
+  atendimentoId            String              @id @map("atendimento_id") @db.Uuid
+  operacaoRecuperavelId    String              @unique(map: "reserva_encerramento_atendimento_erp_operacao_key") @map("operacao_recuperavel_id") @db.Uuid
+  versaoEstadoEsperada     Int                 @map("versao_estado_esperada")
+  versaoAtribuicaoEsperada Int                 @map("versao_atribuicao_esperada")
+  criadaEm                 DateTime            @map("criada_em") @db.Timestamptz(6)
+  atendimento              Atendimento         @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  operacaoRecuperavel      OperacaoRecuperavel @relation(fields: [operacaoRecuperavelId], references: [id], onDelete: Restrict)
+
+  @@map("reserva_encerramento_atendimento_erp")
 }
 
 model IdentidadeWhatsApp {
