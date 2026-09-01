@@ -102,7 +102,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 078 | CONCLUÍDA | `xhigh` |
 | 079 | CONCLUÍDA | `xhigh` |
 | 080 | CONCLUÍDA | `xhigh` |
-| 081 | EM ANDAMENTO | `xhigh` |
+| 081 | CONCLUÍDA | `xhigh` |
 | 082 | PENDENTE | `xhigh` |
 | 083 | PENDENTE | `xhigh` |
 | 084 | PENDENTE | `xhigh` |
@@ -493,6 +493,10 @@ Aceite concluído em 1º de setembro de 2026: `SOLICITAR_FORMULARIO_WHATSAPP` pa
 ### PR 080 — nós de protocolo e ordem de serviço
 
 Aceite concluído em 1º de setembro de 2026: `CRIAR_ATENDIMENTO` e `CRIAR_ORDEM_SERVICO` passaram a usar os serviços de domínio recuperáveis com chave estável por execução+nó e chamada ERP fora da transação do executor. A definição não aceita identificadores externos, contexto, fila ou chave; a OS exige confirmação explícita e revalida atendimento `AGUARDANDO/BOT` sem fila/responsável, execução e versão correntes, vínculo automatizável, contrato e protocolo. A ação humana continua exigindo fila e RBAC. Sem provider ERP, o motor percorre `INDISPONIVEL` sem registrar operação ou efeito simulado. Lint, tipos, 381 testes da API, 202 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. O primeiro ensaio revelou e corrigiu a incompatibilidade entre BOT e fila antes do fechamento. Não houve migration; `20260901012500_espera_resposta_fluxo` permaneceu como marca mais recente. `vyntra/api-staging:pr-080` e duas instâncias de `vyntra/worker-fluxos-staging:pr-080` ficaram saudáveis com prontidão `PRONTO`. Em staging, duas execuções concluíram sete passos únicos: protocolo oficial existente percorreu `CRIADO`, OS e protocolo sem provider percorreram `INDISPONIVEL`; houve exatamente um protocolo oficial sintético e zero protocolo fabricado, OS, operação externa ou auditoria de efeito inexistente. Passos e logs não expuseram assunto, cliente, contrato ou protocolo, e os workers tiveram zero erro.
+
+### PR 081 — nós de desbloqueio de confiança
+
+Aceite concluído em 1º de setembro de 2026: `VERIFICAR_DESBLOQUEIO_CONFIANCA` e `EXECUTAR_DESBLOQUEIO_CONFIANCA` passaram a ter contratos fechados e efeitos separados. O runtime deriva contrato e chave idempotente no servidor, exige confirmação explícita para executar, chama o ERP fora da transação do executor e revalida atendimento `AGUARDANDO/BOT` sem fila/responsável, execução/versão e vínculo automatizável. A autoridade de fluxo não fabrica usuário, sessão ou fila; a ação humana conserva RBAC e fila obrigatória. Sem provider ERP, verificação e execução terminam conservadoramente sem materializar efeito. Lint, tipos, 388 testes da API, 203 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `20260901012500_espera_resposta_fluxo` permaneceu como marca mais recente. `vyntra/api-staging:pr-081` e duas instâncias de `vyntra/worker-fluxos-staging:pr-081` ficaram saudáveis com prontidão `PRONTO`. Em staging, duas execuções concluíram seis passos únicos: a verificação percorreu `INDISPONIVEL` e a execução percorreu `FALHA/INTEGRACAO_ERP_INDISPONIVEL`; houve zero operação, reserva, histórico ou auditoria de efeito. Passos e logs não expuseram contrato ou identificadores das execuções, e os workers tiveram zero erro.
 
 ## 7. Mensageria Meta
 
