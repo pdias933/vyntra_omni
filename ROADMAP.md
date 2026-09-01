@@ -94,7 +94,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 070 | CONCLUÍDA | `xhigh` |
 | 071 | CONCLUÍDA | `xhigh` |
 | 072 | CONCLUÍDA | `xhigh` |
-| 073 | EM ANDAMENTO | `xhigh` |
+| 073 | CONCLUÍDA | `xhigh` |
 | 074 | PENDENTE | `high` |
 | 075 | PENDENTE | `xhigh` |
 | 076 | PENDENTE | `high` |
@@ -465,6 +465,10 @@ Aceite concluído em 1º de setembro de 2026: a promoção de `RASCUNHO` para `E
 ### PR 072 — máquina persistente de execução
 
 Aceite concluído em 1º de setembro de 2026: `ExecucaoFluxo` passou a fixar atendimento, fluxo, versão publicada inicial, nó atual, contexto protegido, estado, revisão e datas no PostgreSQL. A máquina admite somente transições explícitas; estados terminais são imutáveis e não retomam após reinício. O início exige atendimento `AGUARDANDO/BOT/PROCESSANDO_BOT`, sem responsável, e usa criação condicional com uma única execução ativa por atendimento. Repetição do mesmo fluxo devolve a execução ativa e uma troca posterior do ponteiro publicado não migra a execução em curso. Transição condicional e auditoria sanitizada compartilham a transação; contexto não entra na auditoria. Lint, tipos, 328 testes da API, 195 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901011000_execucoes_fluxo` terminou com código zero e `vyntra/api-staging:pr-072` ficou saudável com prontidão `PRONTO`. Em staging, o ciclo `EXECUTANDO→AGUARDANDO_RESPOSTA→EXECUTANDO→CONCLUIDA` gerou quatro auditorias, preservou a versão 1 após publicação da versão 2, recusou retomada com uma nova instância do serviço e teve a reabertura terminal bloqueada pelo trigger; a transação sintética foi revertida integralmente e nenhum erro de nível 50 foi emitido.
+
+### PR 073 — agendamento e recuperação
+
+Aceite concluído em 1º de setembro de 2026: esperas por instante passaram a persistir `retomar_em` somente em `AGUARDANDO_SISTEMA`, com instante futuro, revisão esperada e auditoria transacional. A migration reforça a constraint e o trigger contra retomada prematura. O worker sem HTTP, Redis ou storage consulta lotes vencidos no PostgreSQL com `FOR UPDATE SKIP LOCKED`; ele nunca mantém temporizador longo por atendimento nem outra autoridade de job. Lint, tipos, 331 testes da API, 196 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901011500_agendamento_execucoes_fluxo` terminou com código zero; `vyntra/api-staging:pr-073` e duas instâncias de `vyntra/worker-fluxos-staging:pr-073` ficaram saudáveis. Em staging, uma retomada prematura foi recusada pelo banco, o worker foi reiniciado antes do vencimento e duas instâncias concorreram durante a perda total do Redis: houve exatamente uma transição auditada para `EXECUTANDO`, revisão 3 e limpeza de `retomar_em`. A prontidão degradou enquanto a dependência geral estava parada e voltou a `PRONTO` após a recuperação; não houve erro de ciclo nos workers nem erro de nível 50 depois da normalização. O registro sintético identificado de aceite foi preservado por ser histórico imutável.
 
 ## 7. Mensageria Meta
 
