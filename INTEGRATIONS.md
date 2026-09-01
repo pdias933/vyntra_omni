@@ -262,6 +262,8 @@ Antes de congelar DTOs, executar chamadas reais controladas e guardar fixtures s
 
 Não inventar campos ausentes nem transformar imagem de documentação em contrato.
 
+A PR 059 registrou a caracterização pública em `docs/integracoes/PR-059-CARACTERIZACAO-MK-SOLUTIONS.md`. As fontes oficiais comprovam perfil de webservice, restrição por IP, token expirável, famílias gerais e um catálogo especial sujeito a contratação/liberação. Como não foi fornecido ambiente real, os exemplos públicos de saída são imagens e não há semântica pública suficiente de paginação ou erros, a fixture permanece `FIXTURE_PUBLICA_SANITIZADA`: respostas `NAO_OBSERVADA`, DTO `NAO_CONGELADO` e paginação `NAO_DOCUMENTADA` quando aplicável. `ValidadorCaracterizacaoMkSolutions` só permite ativação com evidência `AMBIENTE_REAL` completa. Nenhum provider MK foi registrado.
+
 ### 4.4 Segurança MK
 
 - usuário exclusivo da instalação;

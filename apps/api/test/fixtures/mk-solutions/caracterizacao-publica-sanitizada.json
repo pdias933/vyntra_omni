@@ -1,0 +1,126 @@
+{
+  "observadaEm": "2026-09-01T00:00:00.000Z",
+  "origemEvidencia": "FIXTURE_PUBLICA_SANITIZADA",
+  "fontesOficiais": [
+    "https://mkloud.atlassian.net/wiki/spaces/MK30/pages/48699908/APIs+gerais",
+    "https://mkloud.atlassian.net/wiki/spaces/MK30/pages/48699991/APIs+especiais"
+  ],
+  "transporte": {
+    "httpsObrigatorio": true,
+    "perfilWebservice": "DOCUMENTADO",
+    "restricaoIp": "DOCUMENTADA",
+    "tokenExpiravel": "DOCUMENTADO"
+  },
+  "operacoes": [
+    {
+      "capacidadeInterna": "CONSULTAR_CLIENTE_DOCUMENTO",
+      "familiaExterna": "WSMKConsultaDoc",
+      "licenciamento": "GERAL",
+      "requisicaoDocumentadaPublicamente": true,
+      "resposta": "NAO_OBSERVADA",
+      "dtoResposta": "NAO_CONGELADO",
+      "paginacao": "NAO_DOCUMENTADA",
+      "erros": "NAO_OBSERVADA"
+    },
+    {
+      "capacidadeInterna": "LISTAR_CONTRATOS_CLIENTE",
+      "familiaExterna": "WSMKContratosPorCliente",
+      "licenciamento": "GERAL",
+      "requisicaoDocumentadaPublicamente": true,
+      "resposta": "NAO_OBSERVADA",
+      "dtoResposta": "NAO_CONGELADO",
+      "paginacao": "NAO_DOCUMENTADA",
+      "erros": "NAO_OBSERVADA"
+    },
+    {
+      "capacidadeInterna": "LISTAR_CONEXOES_CLIENTE",
+      "familiaExterna": "WSMKConexoesPorCliente",
+      "licenciamento": "GERAL",
+      "requisicaoDocumentadaPublicamente": true,
+      "resposta": "NAO_OBSERVADA",
+      "dtoResposta": "NAO_CONGELADO",
+      "paginacao": "NAO_DOCUMENTADA",
+      "erros": "NAO_OBSERVADA"
+    },
+    {
+      "capacidadeInterna": "LISTAR_FATURAS",
+      "familiaExterna": "WSMKFaturas",
+      "licenciamento": "ESPECIAL_COMERCIAL",
+      "requisicaoDocumentadaPublicamente": true,
+      "resposta": "NAO_OBSERVADA",
+      "dtoResposta": "NAO_CONGELADO",
+      "paginacao": "NAO_DOCUMENTADA",
+      "erros": "NAO_OBSERVADA"
+    },
+    {
+      "capacidadeInterna": "OBTER_SEGUNDA_VIA",
+      "familiaExterna": "WSMKSegundaViaCobranca",
+      "licenciamento": "GERAL",
+      "requisicaoDocumentadaPublicamente": true,
+      "resposta": "NAO_OBSERVADA",
+      "dtoResposta": "NAO_CONGELADO",
+      "paginacao": "NAO_APLICAVEL_OBSERVADA",
+      "erros": "NAO_OBSERVADA"
+    },
+    {
+      "capacidadeInterna": "CRIAR_ATENDIMENTO",
+      "familiaExterna": "WSMKNovoAtendimento",
+      "licenciamento": "ESPECIAL_COMERCIAL",
+      "requisicaoDocumentadaPublicamente": true,
+      "resposta": "NAO_OBSERVADA",
+      "dtoResposta": "NAO_CONGELADO",
+      "paginacao": "NAO_APLICAVEL_OBSERVADA",
+      "erros": "NAO_OBSERVADA"
+    },
+    {
+      "capacidadeInterna": "EXECUTAR_DESBLOQUEIO_CONFIANCA",
+      "familiaExterna": "WSMKAutoDesbloqueio",
+      "licenciamento": "ESPECIAL_COMERCIAL",
+      "requisicaoDocumentadaPublicamente": true,
+      "resposta": "NAO_OBSERVADA",
+      "dtoResposta": "NAO_CONGELADO",
+      "paginacao": "NAO_APLICAVEL_OBSERVADA",
+      "erros": "NAO_OBSERVADA"
+    },
+    {
+      "capacidadeInterna": "CRIAR_ORDEM_SERVICO",
+      "familiaExterna": "WSMKCriarOrdemServico",
+      "licenciamento": "ESPECIAL_COMERCIAL",
+      "requisicaoDocumentadaPublicamente": true,
+      "resposta": "NAO_OBSERVADA",
+      "dtoResposta": "NAO_CONGELADO",
+      "paginacao": "NAO_APLICAVEL_OBSERVADA",
+      "erros": "NAO_OBSERVADA"
+    },
+    {
+      "capacidadeInterna": "ALTERAR_ORDEM_SERVICO",
+      "familiaExterna": "WSMKAlterarOrdemServico",
+      "licenciamento": "ESPECIAL_COMERCIAL",
+      "requisicaoDocumentadaPublicamente": true,
+      "resposta": "NAO_OBSERVADA",
+      "dtoResposta": "NAO_CONGELADO",
+      "paginacao": "NAO_APLICAVEL_OBSERVADA",
+      "erros": "NAO_OBSERVADA"
+    },
+    {
+      "capacidadeInterna": "ADICIONAR_COMENTARIO_ATENDIMENTO",
+      "familiaExterna": "WSMKComentarioAtendimento",
+      "licenciamento": "ESPECIAL_COMERCIAL",
+      "requisicaoDocumentadaPublicamente": true,
+      "resposta": "NAO_OBSERVADA",
+      "dtoResposta": "NAO_CONGELADO",
+      "paginacao": "NAO_APLICAVEL_OBSERVADA",
+      "erros": "NAO_OBSERVADA"
+    },
+    {
+      "capacidadeInterna": "ALTERAR_ENCERRAR_ATENDIMENTO",
+      "familiaExterna": "WSMKAlterarAtendimentoProtocolo",
+      "licenciamento": "ESPECIAL_COMERCIAL",
+      "requisicaoDocumentadaPublicamente": true,
+      "resposta": "NAO_OBSERVADA",
+      "dtoResposta": "NAO_CONGELADO",
+      "paginacao": "NAO_APLICAVEL_OBSERVADA",
+      "erros": "NAO_OBSERVADA"
+    }
+  ]
+}
