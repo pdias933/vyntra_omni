@@ -9,6 +9,8 @@ import {
   type MensagemCriadaWeb,
   type ModeloAprovadoWeb,
   type RespostaRapidaWeb,
+  type PaginaBuscaConversaWeb,
+  type PaginaGaleriaConversaWeb,
 } from '../modelo-console-web.js';
 
 export class ResumoAtendimentoWebDto {
@@ -184,4 +186,54 @@ export class MensagemCriadaWebDto {
   @ApiProperty() public readonly estado: string;
   @ApiProperty({ format: 'date-time' }) public readonly recebida_servidor_em: string;
   public constructor(item: MensagemCriadaWeb) { this.id = item.id; this.estado = item.estado; this.recebida_servidor_em = item.recebidaServidorEm.toISOString(); }
+}
+
+export class ResultadoBuscaConversaWebDto {
+  @ApiProperty({ format: 'uuid' }) public readonly id: string;
+  @ApiProperty({ format: 'uuid' }) public readonly atendimento_id: string;
+  @ApiProperty() public readonly conta_whatsapp_nome: string;
+  @ApiProperty({ enum: ['ENTRADA', 'SAIDA'] }) public readonly direcao: 'ENTRADA' | 'SAIDA';
+  @ApiProperty({ format: 'date-time' }) public readonly ocorrido_em: string;
+  @ApiProperty() public readonly trecho: string;
+  @ApiProperty() public readonly tipo_mensagem: string;
+  public constructor(item: PaginaBuscaConversaWeb['itens'][number]) {
+    this.id = item.id; this.atendimento_id = item.atendimentoId; this.conta_whatsapp_nome = item.contaWhatsAppNome;
+    this.direcao = item.direcao; this.ocorrido_em = item.ocorridoEm.toISOString(); this.trecho = item.trecho; this.tipo_mensagem = item.tipoMensagem;
+  }
+}
+
+export class PaginaBuscaConversaWebDto {
+  @ApiProperty({ type: [ResultadoBuscaConversaWebDto] }) public readonly itens: readonly ResultadoBuscaConversaWebDto[];
+  @ApiProperty({ required: false }) public readonly proximo_cursor?: string;
+  public constructor(pagina: PaginaBuscaConversaWeb) {
+    this.itens = pagina.itens.map((item) => new ResultadoBuscaConversaWebDto(item));
+    if (pagina.proximoCursor !== undefined) this.proximo_cursor = pagina.proximoCursor;
+  }
+}
+
+export class ItemGaleriaConversaWebDto {
+  @ApiProperty({ format: 'uuid' }) public readonly id: string;
+  @ApiProperty({ format: 'uuid' }) public readonly atendimento_id: string;
+  @ApiProperty({ format: 'date-time' }) public readonly ocorrido_em: string;
+  @ApiProperty({ enum: ['DOCUMENTOS', 'LINKS', 'MIDIAS'] }) public readonly tipo: 'DOCUMENTOS' | 'LINKS' | 'MIDIAS';
+  @ApiProperty() public readonly tipo_mensagem: string;
+  @ApiProperty({ required: false }) public readonly trecho?: string;
+  @ApiProperty({ required: false }) public readonly mime?: string;
+  @ApiProperty({ required: false }) public readonly tamanho_bytes?: number;
+  public constructor(item: PaginaGaleriaConversaWeb['itens'][number]) {
+    this.id = item.id; this.atendimento_id = item.atendimentoId; this.ocorrido_em = item.ocorridoEm.toISOString();
+    this.tipo = item.tipo; this.tipo_mensagem = item.tipoMensagem;
+    if (item.trecho !== undefined) this.trecho = item.trecho;
+    if (item.mime !== undefined) this.mime = item.mime;
+    if (item.tamanhoBytes !== undefined) this.tamanho_bytes = item.tamanhoBytes;
+  }
+}
+
+export class PaginaGaleriaConversaWebDto {
+  @ApiProperty({ type: [ItemGaleriaConversaWebDto] }) public readonly itens: readonly ItemGaleriaConversaWebDto[];
+  @ApiProperty({ required: false }) public readonly proximo_cursor?: string;
+  public constructor(pagina: PaginaGaleriaConversaWeb) {
+    this.itens = pagina.itens.map((item) => new ItemGaleriaConversaWebDto(item));
+    if (pagina.proximoCursor !== undefined) this.proximo_cursor = pagina.proximoCursor;
+  }
 }

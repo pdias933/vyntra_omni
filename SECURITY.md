@@ -311,6 +311,8 @@ Prazos de histórico, mídia, auditoria e backup e suas bases legais dependem de
 
 A implementação web da PR 090 lê metadados em transação consistente, autoriza `VISUALIZAR_FILA` e somente então busca o objeto por chave opaca. Tamanho e SHA-256 são revalidados antes da resposta. Nome recebido é normalizado para o cabeçalho, e arquivos ficam restritos à allowlist reconhecida por assinatura. Upload é mutação protegida por sessão, origem, CSRF, `ENVIAR_MENSAGEM`, responsabilidade atual e janela do canal. Relações de citação e reação precisam apontar para mensagem da mesma conversa e conta; capacidade externa ausente não é convertida em envio aparente.
 
+Busca e galeria da PR 091 tratam termo, cursor e tipo apenas como filtros, nunca como autoridade. O serviço resolve atendimento atual, permissão transversal e conjunto de filas antes de consultar texto ou metadados; IDs autorizados entram como parâmetros da própria consulta PostgreSQL. Limites fixos, cursor validado, projeções curtas e índices específicos reduzem enumeração e abuso. A resposta não contém JSON protegido, chave de storage, hash ou identificador externo.
+
 ### 8.2 Link de transcrição
 
 - token criptograficamente aleatório e não sequencial;

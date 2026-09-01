@@ -89,3 +89,36 @@ export interface ConteudoMidiaWeb {
   readonly mime: string;
   readonly nomeArquivo: string;
 }
+
+export type TipoGaleriaWeb = 'DOCUMENTOS' | 'LINKS' | 'MIDIAS';
+
+export interface ResultadoBuscaConversaWeb {
+  readonly atendimentoId: string;
+  readonly contaWhatsAppNome: string;
+  readonly direcao: 'ENTRADA' | 'SAIDA';
+  readonly id: string;
+  readonly ocorridoEm: Date;
+  readonly trecho: string;
+  readonly tipoMensagem: string;
+}
+
+export interface ItemGaleriaConversaWeb {
+  readonly atendimentoId: string;
+  readonly id: string;
+  readonly ocorridoEm: Date;
+  readonly tipo: TipoGaleriaWeb;
+  readonly tipoMensagem: string;
+  readonly trecho?: string;
+  readonly mime?: string;
+  readonly tamanhoBytes?: number;
+}
+
+export interface PaginaBuscaConversaWeb {
+  readonly itens: readonly ResultadoBuscaConversaWeb[];
+  readonly proximoCursor?: string;
+}
+
+export interface PaginaGaleriaConversaWeb {
+  readonly itens: readonly ItemGaleriaConversaWeb[];
+  readonly proximoCursor?: string;
+}

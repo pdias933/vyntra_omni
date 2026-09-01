@@ -112,7 +112,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 088 | CONCLUÍDA | `high` |
 | 089 | CONCLUÍDA | `high` |
 | 090 | CONCLUÍDA | `high` |
-| 091 | PENDENTE | `xhigh` |
+| 091 | CONCLUÍDA | `xhigh` |
 | 092 | PENDENTE | `xhigh` |
 | 093 | PENDENTE | `xhigh` |
 | 094 | PENDENTE | `high` |
@@ -614,6 +614,10 @@ Aceite concluído em 1º de setembro de 2026: o composer web envia texto e mensa
 ### PR 090 — mídia, resposta citada e reação
 
 Aceite concluído em 1º de setembro de 2026: imagem, áudio, vídeo e PDF passam por upload autenticado, validação de assinatura/MIME/tamanho, hash e bucket S3 privado com chave opaca. O download é intermediado pela API, reautoriza `VISUALIZAR_FILA`, revalida tamanho/hash e responde `private, no-store`, sem expor endpoint ou credencial do storage. A timeline projeta resposta citada somente quando o alvo também é autorizado, navega até a original e respeita `Reduzir Movimento`; player de áudio e visualizadores de imagem, vídeo e PDF usam URL `blob:` temporária. Citação preserva a relação interna e usa fallback textual enquanto a capacidade externa não está caracterizada. Reação segue allowlist e, pela mesma razão, permanece `Somente equipe`, terminal e sem caixa de saída. O web usa somente o SDK OpenAPI gerado. Não houve migration; `20260901015000_resposta_rapida_web` permanece como marca mais recente. Lint, tipos, 415 testes da API e 226 testes de arquitetura foram aprovados. Effort `high` foi confirmado pela autorização por objeto, integridade binária e fallback sem efeito externo aparente.
+
+### PR 091 — busca e galeria
+
+Aceite concluído em 1º de setembro de 2026: a busca textual e as galerias `Mídias`, `Links` e `Documentos` ganharam painéis próprios de desktop, paginação por cursor e navegação até a mensagem original. O backend autentica o atendimento atual, resolve a interseção de filas/histórico autorizados e só então executa consultas parametrizadas no PostgreSQL; nenhum conteúdo é carregado para filtragem no processo. A busca usa dicionário português e projeção curta, enquanto a galeria devolve somente metadados mínimos e reutiliza o download privado já autorizado. A migration aditiva `20260901015500_busca_galeria_web` criou índices GIN para texto/links e índice temporal parcial para mídia; a prontidão avançou. Lint, tipos, 417 testes da API e 229 testes de arquitetura foram aprovados. Effort `xhigh` foi confirmado pela paginação estável, índices e autorização transversal antes do conteúdo.
 
 ## 12. Mobile
 

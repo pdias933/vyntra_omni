@@ -877,6 +877,113 @@
         ]
       }
     },
+    "/api/v1/web/atendimentos/{atendimentoId}/busca": {
+      "get": {
+        "operationId": "buscarConversaWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "termo",
+            "required": true,
+            "in": "query",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaBuscaConversaWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Pesquisa conteúdo autorizado da conversa no PostgreSQL",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
+    "/api/v1/web/atendimentos/{atendimentoId}/galeria": {
+      "get": {
+        "operationId": "listarGaleriaConversaWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tipo",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "MIDIAS",
+                "LINKS",
+                "DOCUMENTOS"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaGaleriaConversaWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Lista mídia, links ou documentos autorizados no PostgreSQL",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
     "/api/v1/web/atendimentos": {
       "get": {
         "operationId": "listarAtendimentosWeb",
@@ -2747,6 +2854,126 @@
           "autenticada_em",
           "ultima_atividade_em",
           "expira_em"
+        ]
+      },
+      "ResultadoBuscaConversaWebDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "atendimento_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "conta_whatsapp_nome": {
+            "type": "string"
+          },
+          "direcao": {
+            "type": "string",
+            "enum": [
+              "ENTRADA",
+              "SAIDA"
+            ]
+          },
+          "ocorrido_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "trecho": {
+            "type": "string"
+          },
+          "tipo_mensagem": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "atendimento_id",
+          "conta_whatsapp_nome",
+          "direcao",
+          "ocorrido_em",
+          "trecho",
+          "tipo_mensagem"
+        ]
+      },
+      "PaginaBuscaConversaWebDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResultadoBuscaConversaWebDto"
+            }
+          },
+          "proximo_cursor": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itens"
+        ]
+      },
+      "ItemGaleriaConversaWebDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "atendimento_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ocorrido_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "DOCUMENTOS",
+              "LINKS",
+              "MIDIAS"
+            ]
+          },
+          "tipo_mensagem": {
+            "type": "string"
+          },
+          "trecho": {
+            "type": "string"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "tamanho_bytes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "atendimento_id",
+          "ocorrido_em",
+          "tipo",
+          "tipo_mensagem"
+        ]
+      },
+      "PaginaGaleriaConversaWebDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemGaleriaConversaWebDto"
+            }
+          },
+          "proximo_cursor": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itens"
         ]
       },
       "ResumoAtendimentoWebDto": {

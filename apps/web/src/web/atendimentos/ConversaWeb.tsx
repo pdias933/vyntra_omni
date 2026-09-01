@@ -1,16 +1,20 @@
 import {
   confirmarLeituraTimelineWeb,
   baixarMidiaWeb,
+  buscarConversaWeb,
   enviarMidiaWeb,
   enviarModeloAprovadoWeb,
   enviarTextoWeb,
   listarModelosAprovadosWeb,
+  listarGaleriaConversaWeb,
   listarRespostasRapidasWeb,
   marcarTimelineWebNaoLida,
   obterTimelineWeb,
   reagirMensagemWeb,
   type ItemTimelineWebDto,
   type ModeloAprovadoWebDto,
+  type ItemGaleriaConversaWebDto,
+  type ResultadoBuscaConversaWebDto,
   type RespostaRapidaWebDto,
   type ResumoAtendimentoWebDto,
 } from '@vyntra/api-client';
@@ -50,6 +54,7 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
   const [marcador, definirMarcador] = useState<Marcador>({ marcadaNaoLida: false, versao: 0 });
   const [estado, definirEstado] = useState<'CARREGANDO' | 'ERRO' | 'PRONTO'>('CARREGANDO');
   const [respondendo, definirRespondendo] = useState<ItemTimelineWebDto>();
+  const [painel, definirPainel] = useState<'BUSCA' | 'GALERIA'>();
   const leituraEmVoo = useRef<string | undefined>(undefined);
   const finalTimeline = useRef<HTMLDivElement>(null);
 
@@ -132,6 +137,8 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
           <small>{atendimento.identidade_secundaria ?? atendimento.fila_nome}</small>
         </button>
         {atendimento.janela_expira_em !== undefined && <span className="janela-meta">Janela Meta ativa</span>}
+        <button aria-label="Buscar na conversa" className="acao-cabecalho" onClick={() => definirPainel('BUSCA')} type="button">⌕</button>
+        <button className="acao-cabecalho" onClick={() => definirPainel('GALERIA')} type="button">Mídias</button>
         <button className="acao-cabecalho" onClick={() => void marcarNaoLida()} type="button">{marcador.marcadaNaoLida ? 'Não lida' : 'Marcar não lida'}</button>
       </header>
       <div className="timeline-web" aria-live="polite">
@@ -150,8 +157,74 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
         <div ref={finalTimeline} />
       </div>
       <ComposerWeb atendimento={atendimento} aoCancelarResposta={() => definirRespondendo(undefined)} aoEnviar={() => carregar(true)} respondendo={respondendo} />
+      {painel !== undefined && <PainelBuscaGaleriaWeb atendimentoId={atendimento.atendimento_id} key={painel} modo={painel} aoFechar={() => definirPainel(undefined)} />}
     </section>
   );
+}
+
+function PainelBuscaGaleriaWeb({ atendimentoId, aoFechar, modo }: { readonly atendimentoId: string; readonly aoFechar: () => void; readonly modo: 'BUSCA' | 'GALERIA' }) {
+  const [termo, definirTermo] = useState('');
+  const [tipo, definirTipo] = useState<'DOCUMENTOS' | 'LINKS' | 'MIDIAS'>('MIDIAS');
+  const [resultados, definirResultados] = useState<readonly ResultadoBuscaConversaWebDto[]>([]);
+  const [galeria, definirGaleria] = useState<readonly ItemGaleriaConversaWebDto[]>([]);
+  const [cursor, definirCursor] = useState<string>();
+  const [estado, definirEstado] = useState<'CARREGANDO' | 'ERRO' | 'PRONTO'>(modo === 'BUSCA' ? 'PRONTO' : 'CARREGANDO');
+
+  const carregarGaleria = useCallback(async (acrescentar = false, cursorAtual?: string) => {
+    definirEstado('CARREGANDO');
+    if (!acrescentar) { definirGaleria([]); definirCursor(undefined); }
+    try {
+      const resposta = await listarGaleriaConversaWeb({ path: { atendimentoId }, query: { tipo, ...(cursorAtual === undefined ? {} : { cursor: cursorAtual }) }, throwOnError: true });
+      definirGaleria((atuais) => acrescentar ? [...atuais, ...resposta.data.itens] : resposta.data.itens);
+      definirCursor(resposta.data.proximo_cursor); definirEstado('PRONTO');
+    } catch { definirEstado('ERRO'); }
+  }, [atendimentoId, tipo]);
+
+  useEffect(() => {
+    if (modo !== 'GALERIA') return;
+    const temporizador = window.setTimeout(() => void carregarGaleria(), 0);
+    return () => window.clearTimeout(temporizador);
+  }, [carregarGaleria, modo]);
+
+  useEffect(() => {
+    if (modo !== 'BUSCA') return;
+    const busca = termo.trim();
+    if (busca.length < 2) return;
+    const temporizador = window.setTimeout(() => {
+      definirEstado('CARREGANDO');
+      void buscarConversaWeb({ path: { atendimentoId }, query: { termo: busca }, throwOnError: true })
+        .then((resposta) => { definirResultados(resposta.data.itens); definirCursor(resposta.data.proximo_cursor); definirEstado('PRONTO'); })
+        .catch(() => definirEstado('ERRO'));
+    }, 180);
+    return () => window.clearTimeout(temporizador);
+  }, [atendimentoId, modo, termo]);
+
+  async function carregarMaisBusca() {
+    if (cursor === undefined) return;
+    try {
+      const resposta = await buscarConversaWeb({ path: { atendimentoId }, query: { cursor, termo: termo.trim() }, throwOnError: true });
+      definirResultados((atuais) => [...atuais, ...resposta.data.itens]); definirCursor(resposta.data.proximo_cursor);
+    } catch { definirEstado('ERRO'); }
+  }
+
+  function irParaMensagem(id: string) {
+    aoFechar();
+    window.requestAnimationFrame(() => document.getElementById(`mensagem-${id}`)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }));
+  }
+
+  return <aside aria-label={modo === 'BUSCA' ? 'Busca na conversa' : 'Mídias, links e documentos'} className="painel-conversa">
+    <header><div><strong>{modo === 'BUSCA' ? 'Buscar na conversa' : 'Mídias, links e documentos'}</strong><small>Histórico autorizado</small></div><button aria-label="Fechar painel" onClick={aoFechar} type="button">×</button></header>
+    {modo === 'BUSCA' && <input autoFocus maxLength={120} onChange={(evento) => { definirTermo(evento.target.value); if (evento.target.value.trim().length < 2) { definirResultados([]); definirCursor(undefined); definirEstado('PRONTO'); } }} placeholder="Digite ao menos 2 caracteres" type="search" value={termo} />}
+    {modo === 'GALERIA' && <nav>{(['MIDIAS', 'LINKS', 'DOCUMENTOS'] as const).map((item) => <button aria-pressed={tipo === item} key={item} onClick={() => definirTipo(item)} type="button">{({ MIDIAS: 'Mídias', LINKS: 'Links', DOCUMENTOS: 'Documentos' })[item]}</button>)}</nav>}
+    <div className="painel-conversa__lista" aria-live="polite">
+      {estado === 'CARREGANDO' && <div className="skeleton-timeline" />}
+      {estado === 'ERRO' && <p>Não foi possível consultar este conteúdo.</p>}
+      {estado === 'PRONTO' && modo === 'BUSCA' && termo.trim().length >= 2 && resultados.length === 0 && <p>Nenhuma mensagem encontrada.</p>}
+      {modo === 'BUSCA' && resultados.map((item) => <button className="resultado-conversa" key={item.id} onClick={() => irParaMensagem(item.id)} type="button"><small>{item.conta_whatsapp_nome} · {dataSeparador(item.ocorrido_em)}</small><span>{item.trecho}</span></button>)}
+      {modo === 'GALERIA' && galeria.map((item) => <button className="resultado-conversa" key={item.id} onClick={() => irParaMensagem(item.id)} type="button"><small>{item.tipo_mensagem} · {dataSeparador(item.ocorrido_em)}</small><span>{item.trecho ?? `${item.mime ?? 'Arquivo'}${item.tamanho_bytes === undefined ? '' : ` · ${Math.ceil(item.tamanho_bytes / 1024)} KB`}`}</span></button>)}
+      {cursor !== undefined && <button className="carregar-resultados" onClick={() => void (modo === 'BUSCA' ? carregarMaisBusca() : carregarGaleria(true, cursor))} type="button">Carregar mais</button>}
+    </div>
+  </aside>;
 }
 
 function ComposerWeb({ atendimento, aoCancelarResposta, aoEnviar, respondendo }: { readonly atendimento: ResumoAtendimentoWebDto; readonly aoCancelarResposta: () => void; readonly aoEnviar: () => Promise<void>; readonly respondendo: ItemTimelineWebDto | undefined }) {

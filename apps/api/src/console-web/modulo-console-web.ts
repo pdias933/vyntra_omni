@@ -9,10 +9,11 @@ import { ServicoTimelineWeb } from './servico-timeline-web.js';
 import { ModuloMensagens } from '../mensagens/modulo-mensagens.js';
 import { ModuloMidias } from '../midias/modulo-midias.js';
 import { ServicoComposerWeb } from './servico-composer-web.js';
+import { ServicoBuscaGaleriaWeb } from './servico-busca-galeria-web.js';
 
 @Module({
   controllers: [ControladorConsoleWeb],
   imports: [ModuloAutenticacao, ModuloAutorizacao, ModuloMensagens, ModuloMidias, ModuloPersistencia],
-  providers: [ServicoComposerWeb, ServicoListaAtendimentosWeb, ServicoTimelineWeb],
+  providers: [ServicoBuscaGaleriaWeb, ServicoComposerWeb, ServicoListaAtendimentosWeb, ServicoTimelineWeb],
 })
 export class ModuloConsoleWeb {}

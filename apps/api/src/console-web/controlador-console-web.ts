@@ -8,8 +8,9 @@ import { ServicoOrigemWeb } from '../autenticacao/servico-origem-web.js';
 import { ExcecaoHttpCanonica } from '../http/excecao-http-canonica.js';
 import { ErroTextoLivreForaJanela } from '../janela-canal/erros-janela-canal.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
-import { EntradaEnvioModeloWebDto, EntradaEnvioTextoWebDto, EntradaLeituraTimelineWebDto, EntradaMarcarNaoLidaWebDto, EntradaReacaoWebDto, ListaAtendimentosWebDto, MarcadorLeituraWebDto, MensagemCriadaWebDto, ModeloAprovadoWebDto, PaginaTimelineWebDto, RespostaRapidaWebDto } from './dto/console-web.dto.js';
-import { FILTROS_ATENDIMENTOS_WEB, type FiltroAtendimentosWeb } from './modelo-console-web.js';
+import { EntradaEnvioModeloWebDto, EntradaEnvioTextoWebDto, EntradaLeituraTimelineWebDto, EntradaMarcarNaoLidaWebDto, EntradaReacaoWebDto, ListaAtendimentosWebDto, MarcadorLeituraWebDto, MensagemCriadaWebDto, ModeloAprovadoWebDto, PaginaBuscaConversaWebDto, PaginaGaleriaConversaWebDto, PaginaTimelineWebDto, RespostaRapidaWebDto } from './dto/console-web.dto.js';
+import { FILTROS_ATENDIMENTOS_WEB, type FiltroAtendimentosWeb, type TipoGaleriaWeb } from './modelo-console-web.js';
+import { ServicoBuscaGaleriaWeb } from './servico-busca-galeria-web.js';
 import { ServicoListaAtendimentosWeb } from './servico-lista-atendimentos-web.js';
 import { ServicoTimelineWeb } from './servico-timeline-web.js';
 import { ServicoComposerWeb } from './servico-composer-web.js';
@@ -23,7 +24,32 @@ export class ControladorConsoleWeb {
     @Inject(ServicoTimelineWeb) private readonly timeline: ServicoTimelineWeb,
     @Inject(ServicoOrigemWeb) private readonly origens: ServicoOrigemWeb,
     @Inject(ServicoComposerWeb) private readonly composer: ServicoComposerWeb,
+    @Inject(ServicoBuscaGaleriaWeb) private readonly buscaGaleria: ServicoBuscaGaleriaWeb,
   ) {}
+
+  @Get('atendimentos/:atendimentoId/busca')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiQuery({ name: 'termo', required: true })
+  @ApiQuery({ name: 'cursor', required: false })
+  @ApiOperation({ operationId: 'buscarConversaWeb', summary: 'Pesquisa conteúdo autorizado da conversa no PostgreSQL' })
+  @ApiOkResponse({ type: PaginaBuscaConversaWebDto })
+  public async buscarConversa(@Param('atendimentoId') atendimentoId: string, @Headers('cookie') cookies: string | undefined, @Query('termo') termo = '', @Query('cursor') cursor?: string): Promise<PaginaBuscaConversaWebDto> {
+    const sessao = await this.autenticacao.autenticar(obterTokenSessaoWeb(cookies));
+    return new PaginaBuscaConversaWebDto(await this.buscaGaleria.buscar(sessao.contexto, atendimentoId, termo, cursor));
+  }
+
+  @Get('atendimentos/:atendimentoId/galeria')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiQuery({ enum: ['MIDIAS', 'LINKS', 'DOCUMENTOS'], name: 'tipo', required: true })
+  @ApiQuery({ name: 'cursor', required: false })
+  @ApiOperation({ operationId: 'listarGaleriaConversaWeb', summary: 'Lista mídia, links ou documentos autorizados no PostgreSQL' })
+  @ApiOkResponse({ type: PaginaGaleriaConversaWebDto })
+  public async listarGaleria(@Param('atendimentoId') atendimentoId: string, @Headers('cookie') cookies: string | undefined, @Query('tipo') tipoRecebido = '', @Query('cursor') cursor?: string): Promise<PaginaGaleriaConversaWebDto> {
+    const sessao = await this.autenticacao.autenticar(obterTokenSessaoWeb(cookies));
+    const tipo = ['MIDIAS', 'LINKS', 'DOCUMENTOS'].find((item) => item === tipoRecebido) as TipoGaleriaWeb | undefined;
+    if (tipo === undefined) throw new ExcecaoHttpCanonica(400, 'TIPO_GALERIA_INVALIDO', 'O filtro informado é inválido.');
+    return new PaginaGaleriaConversaWebDto(await this.buscaGaleria.listarGaleria(sessao.contexto, atendimentoId, tipo, cursor));
+  }
 
   @Get('atendimentos')
   @ApiCookieAuth('sessaoWeb')

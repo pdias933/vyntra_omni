@@ -744,3 +744,9 @@ Na PR 090, `ServicoMensagensSaida` continua sendo a única fronteira de criaçã
 O download é deliberadamente intermediado. `ServicoComposerWeb` lê somente contexto e metadados, autoriza a fila atual em leitura consistente e depois recupera o binário; tamanho e hash são conferidos antes da resposta `private, no-store`. O web consome as rotas exclusivamente pelo SDK OpenAPI gerado e cria URL `blob:` apenas em memória para player/visualizador.
 
 Citação e reação conservam relações internas reais. A timeline projeta uma citação somente quando o alvo também está no escopo autorizado. Na ausência de capacidade externa caracterizada, a resposta citada usa fallback textual e a reação é terminal interna, sem item de caixa de saída. Assim, a interface pode oferecer a interação sem declarar entrega inexistente ao cliente.
+
+### 13.15 Busca e galeria autorizadas
+
+`ServicoBuscaGaleriaWeb` resolve a conversa e os atendimentos históricos permitidos antes de tocar conteúdo. A consulta parametrizada recebe os UUIDs já autorizados e executa busca, filtro, ordenação e limite no PostgreSQL. Busca textual usa `to_tsvector`/`websearch_to_tsquery` em português; mídia/documento usa tipo canônico e links usam padrão HTTPS. Cursores combinam instante e UUID para paginação determinística.
+
+A migration da PR 091 instala `pg_trgm` e cria índices aditivos: GIN para texto, GIN trigram para links e B-tree parcial por conversa/tipo/instante para mídia. O cliente recebe somente trecho, origem interna, tipo e metadados estritamente necessários. O painel web usa o SDK gerado e não possui fallback de filtragem em memória.

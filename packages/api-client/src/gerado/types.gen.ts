@@ -132,6 +132,37 @@ export type ResumoSessaoWebDto = {
     expira_em: string;
 };
 
+export type ResultadoBuscaConversaWebDto = {
+    id: string;
+    atendimento_id: string;
+    conta_whatsapp_nome: string;
+    direcao: 'ENTRADA' | 'SAIDA';
+    ocorrido_em: string;
+    trecho: string;
+    tipo_mensagem: string;
+};
+
+export type PaginaBuscaConversaWebDto = {
+    itens: Array<ResultadoBuscaConversaWebDto>;
+    proximo_cursor?: string;
+};
+
+export type ItemGaleriaConversaWebDto = {
+    id: string;
+    atendimento_id: string;
+    ocorrido_em: string;
+    tipo: 'DOCUMENTOS' | 'LINKS' | 'MIDIAS';
+    tipo_mensagem: string;
+    trecho?: string;
+    mime?: string;
+    tamanho_bytes?: number;
+};
+
+export type PaginaGaleriaConversaWebDto = {
+    itens: Array<ItemGaleriaConversaWebDto>;
+    proximo_cursor?: string;
+};
+
 export type ResumoAtendimentoWebDto = {
     atendimento_id: string;
     conversa_id: string;
@@ -869,6 +900,42 @@ export type RevogarDispositivosMobileAdministrativamenteResponses = {
 };
 
 export type RevogarDispositivosMobileAdministrativamenteResponse = RevogarDispositivosMobileAdministrativamenteResponses[keyof RevogarDispositivosMobileAdministrativamenteResponses];
+
+export type BuscarConversaWebData = {
+    body?: never;
+    path: {
+        atendimentoId: string;
+    };
+    query: {
+        cursor?: string;
+        termo: unknown;
+    };
+    url: '/api/v1/web/atendimentos/{atendimentoId}/busca';
+};
+
+export type BuscarConversaWebResponses = {
+    200: PaginaBuscaConversaWebDto;
+};
+
+export type BuscarConversaWebResponse = BuscarConversaWebResponses[keyof BuscarConversaWebResponses];
+
+export type ListarGaleriaConversaWebData = {
+    body?: never;
+    path: {
+        atendimentoId: string;
+    };
+    query: {
+        cursor?: string;
+        tipo: 'MIDIAS' | 'LINKS' | 'DOCUMENTOS';
+    };
+    url: '/api/v1/web/atendimentos/{atendimentoId}/galeria';
+};
+
+export type ListarGaleriaConversaWebResponses = {
+    200: PaginaGaleriaConversaWebDto;
+};
+
+export type ListarGaleriaConversaWebResponse = ListarGaleriaConversaWebResponses[keyof ListarGaleriaConversaWebResponses];
 
 export type ListarAtendimentosWebData = {
     body?: never;

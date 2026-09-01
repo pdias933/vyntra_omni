@@ -172,6 +172,8 @@ O composer web da PR 089 preserva a regra do produto: `/` abre respostas rápida
 
 A PR 090 acrescenta anexos, resposta citada e reação sem poluir a conversa. Imagem, áudio, vídeo e PDF passam pelo backend, por validação binária e por storage privado; abrir a mídia exige autorização atual e não revela credencial ou endereço do storage. A citação preserva o vínculo interno e navega até a original. Quando a capacidade externa não está comprovada, resposta usa fallback textual explícito e reação permanece marcada como `Somente equipe`, sem fingir que chegou ao cliente. Player, visualizador e transições respeitam `Reduzir Movimento`.
 
+A PR 091 acrescenta busca na conversa e galeria de `Mídias`, `Links` e `Documentos` em painel lateral próprio do desktop. Resultados são paginados, exibem somente contexto mínimo e levam à mensagem original sem perder a conversa. Busca, filtros e ordenação acontecem no PostgreSQL depois da autorização; o navegador não recebe uma timeline ampla para filtrá-la localmente.
+
 ### 4.7 Aplicativo iOS/Android
 
 - Aplicativo real em React Native + Expo Prebuild, com um código-base para as duas plataformas.
