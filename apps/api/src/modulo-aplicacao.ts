@@ -8,6 +8,7 @@ import { ModuloContatos } from './contatos/modulo-contatos.js';
 import { ModuloContextosCliente } from './contextos-cliente/modulo-contextos-cliente.js';
 import { ModuloConversas } from './conversas/modulo-conversas.js';
 import { ModuloEventos } from './eventos/modulo-eventos.js';
+import { ModuloFilas } from './filas/modulo-filas.js';
 import { ModuloIdempotencia } from './idempotencia/modulo-idempotencia.js';
 import { ModuloPersistencia } from './persistencia/modulo-persistencia.js';
 import { ModuloProtocolosErp } from './protocolos-erp/modulo-protocolos-erp.js';
@@ -34,6 +35,7 @@ import { ModuloSnapshotsCliente } from './snapshots-cliente/modulo-snapshots-cli
     ModuloContextosCliente,
     ModuloConversas,
     ModuloEventos,
+    ModuloFilas,
     ModuloIdempotencia,
     ModuloPersistencia,
     ModuloProtocolosErp,
