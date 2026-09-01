@@ -35,3 +35,23 @@ export interface ResultadoResolucaoIdentidadeWhatsApp {
   readonly identidade: IdentidadeWhatsAppPersistida;
   readonly criada: boolean;
 }
+
+export type ResultadoAlteracaoIdentidadeWhatsApp =
+  | 'PRESERVADA'
+  | 'SEPARADA_INCERTA';
+
+export interface EntradaAlteracaoIdentidadeWhatsApp {
+  readonly contaWhatsAppId: string;
+  readonly identificadorExternoAnterior: string;
+  readonly identificadorExternoAtual: string;
+  readonly nomeUsuarioAtual?: string;
+  readonly telefoneE164Atual?: string;
+  readonly nomePerfilAtual?: string;
+}
+
+export interface ResultadoProcessamentoAlteracaoIdentidadeWhatsApp {
+  readonly resultado: ResultadoAlteracaoIdentidadeWhatsApp;
+  readonly contato: ContatoPersistido;
+  readonly identidade: IdentidadeWhatsAppPersistida;
+  readonly eventoCriado: boolean;
+}

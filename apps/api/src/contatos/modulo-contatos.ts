@@ -5,13 +5,19 @@ import { ModuloContasWhatsApp } from '../contas-whatsapp/modulo-contas-whatsapp.
 import { ModuloPersistencia } from '../persistencia/modulo-persistencia.js';
 import { REPOSITORIO_CONTATOS } from './repositorio-contatos.js';
 import { RepositorioContatosPrisma } from './repositorio-contatos-prisma.js';
+import { ServicoAlteracaoIdentidadeWhatsApp } from './servico-alteracao-identidade-whatsapp.js';
 import { ServicoIdentidadeWhatsApp } from './servico-identidade-whatsapp.js';
 
 @Module({
-  exports: [REPOSITORIO_CONTATOS, ServicoIdentidadeWhatsApp],
+  exports: [
+    REPOSITORIO_CONTATOS,
+    ServicoAlteracaoIdentidadeWhatsApp,
+    ServicoIdentidadeWhatsApp,
+  ],
   imports: [ModuloAuditoria, ModuloContasWhatsApp, ModuloPersistencia],
   providers: [
     RepositorioContatosPrisma,
+    ServicoAlteracaoIdentidadeWhatsApp,
     ServicoIdentidadeWhatsApp,
     {
       provide: REPOSITORIO_CONTATOS,

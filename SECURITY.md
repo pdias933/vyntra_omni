@@ -218,6 +218,8 @@ BSUID/identificador externo resolve correlação técnica; não prova autorizaç
 
 A resolução inicial exige `ContaWhatsApp` ativa e usa somente portfólio+identificador estável normalizado. Username, telefone e nome de perfil são atributos opcionais e mutáveis, não chaves nem prova de identidade civil. Auditoria da criação registra apenas presença desses atributos, sem seus valores. Concorrência é serializada no PostgreSQL e a constraint única impede contatos duplicados para a mesma identidade técnica.
 
+Alteração de identificador exige o par explícito anterior→atual já normalizado. As duas chaves são bloqueadas em ordem determinística; alias e evento são persistidos na mesma transação. Conflito, origem ausente ou evento fora de ordem não autoriza merge e produz `SEPARADA_INCERTA`. Auditoria registra somente o resultado, nunca os identificadores, username ou telefone.
+
 Regras:
 
 - vínculo persistente registra método, autor, data e revogação;

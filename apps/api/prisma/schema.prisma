@@ -235,6 +235,13 @@ enum EstadoContato {
   @@map("estado_contato")
 }
 
+enum ResultadoAlteracaoIdentidadeWhatsApp {
+  PRESERVADA
+  SEPARADA_INCERTA
+
+  @@map("resultado_alteracao_identidade_whatsapp")
+}
+
 model RegistroAuditoria {
   id                         String          @id @db.Uuid
   tipoEvento                 String          @map("tipo_evento") @db.VarChar(100)
@@ -630,6 +637,7 @@ model ContaWhatsApp {
   criadoEm                        DateTime             @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm                    DateTime             @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   identidadesUltimaObservacao     IdentidadeWhatsApp[]
+  eventosAlteracaoIdentidade      EventoAlteracaoIdentidadeWhatsApp[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorCanalExterno], map: "conta_whatsapp_identidade_externa_key")
   @@index([estado, nomeExibicao, id], map: "conta_whatsapp_estado_nome_idx")
@@ -665,12 +673,44 @@ model IdentidadeWhatsApp {
   atualizadaEm                     DateTime        @default(now()) @updatedAt @map("atualizada_em") @db.Timestamptz(6)
   contato                          Contato         @relation(fields: [contatoId], references: [id], onDelete: Restrict)
   contaWhatsAppUltimaObservacao    ContaWhatsApp   @relation(fields: [contaWhatsAppUltimaObservacaoId], references: [id], onDelete: Restrict)
+  aliases                          AliasIdentidadeWhatsApp[]
+  eventosAlteracao                 EventoAlteracaoIdentidadeWhatsApp[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorExternoEstavel], map: "identidade_whatsapp_estavel_key")
   @@index([contatoId, criadaEm, id], map: "identidade_whatsapp_contato_idx")
   @@index([nomeUsuario, id], map: "identidade_whatsapp_nome_usuario_idx")
   @@index([telefoneE164, id], map: "identidade_whatsapp_telefone_idx")
   @@map("identidade_whatsapp")
+}
+
+model AliasIdentidadeWhatsApp {
+  id                              String               @id @db.Uuid
+  identidadeWhatsAppId            String               @map("identidade_whatsapp_id") @db.Uuid
+  portfolioEmpresarialExternoId   String               @map("portfolio_empresarial_externo_id") @db.VarChar(256)
+  identificadorExternoAnterior    String               @map("identificador_externo_anterior") @db.VarChar(256)
+  substituidoEm                   DateTime             @map("substituido_em") @db.Timestamptz(6)
+  identidadeWhatsApp              IdentidadeWhatsApp   @relation(fields: [identidadeWhatsAppId], references: [id], onDelete: Restrict)
+
+  @@unique([portfolioEmpresarialExternoId, identificadorExternoAnterior], map: "alias_identidade_whatsapp_anterior_key")
+  @@index([identidadeWhatsAppId, substituidoEm, id], map: "alias_identidade_whatsapp_identidade_idx")
+  @@map("alias_identidade_whatsapp")
+}
+
+model EventoAlteracaoIdentidadeWhatsApp {
+  id                              String                              @id @db.Uuid
+  identidadeWhatsAppId            String                              @map("identidade_whatsapp_id") @db.Uuid
+  contaWhatsAppObservacaoId       String                              @map("conta_whatsapp_observacao_id") @db.Uuid
+  portfolioEmpresarialExternoId   String                              @map("portfolio_empresarial_externo_id") @db.VarChar(256)
+  identificadorExternoAnterior    String                              @map("identificador_externo_anterior") @db.VarChar(256)
+  identificadorExternoAtual       String                              @map("identificador_externo_atual") @db.VarChar(256)
+  resultado                       ResultadoAlteracaoIdentidadeWhatsApp
+  observadoEm                     DateTime                            @map("observado_em") @db.Timestamptz(6)
+  identidadeWhatsApp              IdentidadeWhatsApp                  @relation(fields: [identidadeWhatsAppId], references: [id], onDelete: Restrict)
+  contaWhatsAppObservacao         ContaWhatsApp                       @relation(fields: [contaWhatsAppObservacaoId], references: [id], onDelete: Restrict)
+
+  @@unique([portfolioEmpresarialExternoId, identificadorExternoAnterior, identificadorExternoAtual], map: "evento_alteracao_identidade_par_key")
+  @@index([identidadeWhatsAppId, observadoEm, id], map: "evento_alteracao_identidade_identidade_idx")
+  @@map("evento_alteracao_identidade_whatsapp")
 }
 
 model LiberacaoControleRecursoUsuario {

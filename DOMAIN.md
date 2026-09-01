@@ -194,6 +194,8 @@ Regras:
 
 A PR 023 materializa `Contato` e `IdentidadeWhatsApp`. O serviço recebe do adaptador apenas a observação já normalizada, obtém o portfólio pela `ContaWhatsApp` ativa e serializa por `portfolio + identificador_externo_estavel` antes de consultar/criar. Reobservação devolve o mesmo contato. Nome de perfil, username e telefone podem estar ausentes; nenhum deles participa da chave, e a ausência não gera valor inventado. O primeiro nome de exibição usa nome de perfil ou username observado, sem transformar telefone em identidade do contato.
 
+A PR 024 acrescenta `AliasIdentidadeWhatsApp` e `EventoAlteracaoIdentidadeWhatsApp`. Somente um par explícito anterior→atual de conta ativa pode substituir o identificador corrente. A alteração preserva `IdentidadeWhatsApp`, `Contato` e todo vínculo/timeline futuro; o valor anterior passa a resolver pelo alias. Repetição do mesmo par é idempotente. Se o anterior não existe, aponta apenas para alias antigo incompatível ou o atual já pertence a outro contato, o resultado é `SEPARADA_INCERTA`: o identificador atual permanece ou nasce em contato separado, sem merge automático.
+
 ### 4.4 `VinculoCliente`
 
 ```text

@@ -41,12 +41,10 @@ test('resolução serializa por identidade antes de consultar ou criar', async (
 });
 
 test('módulo real não contém DTO ou adapter Meta', async () => {
-  const [modulo, aplicacao, persistencia] = await Promise.all([
+  const [modulo, aplicacao] = await Promise.all([
     ler('apps/api/src/contatos/modulo-contatos.ts'),
     ler('apps/api/src/modulo-aplicacao.ts'),
-    ler('apps/api/src/persistencia/servico-prisma.ts'),
   ]);
   assert.match(aplicacao, /ModuloContatos/);
   assert.ok(!modulo.includes('AdaptadorMetaCloud'));
-  assert.match(persistencia, /20260831001200_criar_contato_identidade_whatsapp/);
 });

@@ -11,3 +11,10 @@ export class ErroContaWhatsAppIndisponivel extends Error {
     this.name = 'ErroContaWhatsAppIndisponivel';
   }
 }
+
+export class ErroAlteracaoIdentidadeInvalida extends Error {
+  public constructor() {
+    super('ALTERACAO_IDENTIDADE_INVALIDA');
+    this.name = 'ErroAlteracaoIdentidadeInvalida';
+  }
+}

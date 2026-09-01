@@ -84,6 +84,8 @@ A porta `AdaptadorErp` separa consultas e escritas normalizadas. O simulador dis
 
 `Contato` e `IdentidadeWhatsApp` preservam um UUID interno mesmo sem username ou telefone. A correlação inicial usa apenas o identificador estável normalizado no escopo do portfólio da conta ativa, com serialização PostgreSQL. Modelo e aceite estão em [docs/operacoes/PR-023.md](docs/operacoes/PR-023.md); não houve nova dependência, conforme [docs/dependencias/PR-023.md](docs/dependencias/PR-023.md).
 
+Alterações explícitas anterior→atual preservam contato por alias e evento auditável. Origem ausente, conflito ou ordem incerta mantém o identificador atual em contato separado, sem merge automático. O contrato e aceite estão em [docs/operacoes/PR-024.md](docs/operacoes/PR-024.md); não houve nova dependência, conforme [docs/dependencias/PR-024.md](docs/dependencias/PR-024.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local
