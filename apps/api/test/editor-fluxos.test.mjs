@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import { ErroPermissaoNegada } from '../dist/autorizacao/erros-autorizacao.js';
 import { ErroFluxoInvalido } from '../dist/fluxos/erros-fluxo.js';
 import { ServicoEditorFluxos } from '../dist/fluxos/servico-editor-fluxos.js';
+import { SimuladorFluxos } from '../dist/fluxos/simulador-fluxos.js';
 import { ValidadorPublicacaoFluxo } from '../dist/fluxos/validador-publicacao-fluxo.js';
 
 const ids = {
@@ -164,6 +165,7 @@ function criarCenario(sobrescritas = {}) {
       validacao,
       publicacao,
       new ValidadorPublicacaoFluxo(),
+      new SimuladorFluxos(),
     ),
     transacao: { id: 'transacao-sintetica' },
   };
@@ -269,4 +271,29 @@ test('listar exige VISUALIZAR e validar/publicar permanecem comandos separados',
     cenario.transacao,
   );
   assert.equal(cenario.chamadas.publicacoes.length, 1);
+});
+
+test('simular exige TESTAR_FLUXO e não chama catálogo, validação ou publicação', async () => {
+  const cenario = criarCenario();
+  const definicao = definicaoValida();
+  definicao.conexoes.push({
+    destinoNoId: 'fim',
+    origemNoId: 'inicio',
+    saida: 'SUCESSO',
+  });
+  const resultado = await cenario.servico.simular(
+    sessao,
+    definicao,
+    'CAMINHO_FELIZ',
+    cenario.transacao,
+  );
+  assert.equal(resultado.estado, 'CONCLUIDA');
+  assert.equal(resultado.efeitosReaisExecutados, false);
+  assert.equal(
+    cenario.chamadas.autorizacao.at(-1)[0].permissao,
+    'TESTAR_FLUXO',
+  );
+  assert.equal(cenario.chamadas.salvamentos.length, 0);
+  assert.equal(cenario.chamadas.preparacoes.length, 0);
+  assert.equal(cenario.chamadas.publicacoes.length, 0);
 });

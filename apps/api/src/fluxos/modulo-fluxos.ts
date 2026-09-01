@@ -13,6 +13,7 @@ import { ServicoCatalogoFluxos } from './servico-catalogo-fluxos.js';
 import { ServicoEditorFluxos } from './servico-editor-fluxos.js';
 import { ServicoPublicacaoFluxos } from './servico-publicacao-fluxos.js';
 import { ServicoValidacaoPublicacaoFluxos } from './servico-validacao-publicacao-fluxos.js';
+import { SimuladorFluxos } from './simulador-fluxos.js';
 import { ValidadorPublicacaoFluxo } from './validador-publicacao-fluxo.js';
 
 @Module({
@@ -35,6 +36,7 @@ import { ValidadorPublicacaoFluxo } from './validador-publicacao-fluxo.js';
     ServicoEditorFluxos,
     ServicoPublicacaoFluxos,
     ServicoValidacaoPublicacaoFluxos,
+    SimuladorFluxos,
     ValidadorPublicacaoFluxo,
     { provide: REPOSITORIO_FLUXOS, useExisting: RepositorioFluxosPrisma },
     {

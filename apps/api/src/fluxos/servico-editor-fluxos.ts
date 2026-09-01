@@ -19,6 +19,10 @@ import type {
   VersaoFluxoPersistida,
 } from './modelo-fluxo.js';
 import type {
+  CenarioSimulacaoFluxo,
+  ResultadoSimulacaoFluxo,
+} from './modelo-simulacao-fluxo.js';
+import type {
   EntradaPreparacaoPublicacaoFluxo,
   ResultadoPreparacaoPublicacaoFluxo,
 } from './modelo-validacao-fluxo.js';
@@ -29,6 +33,7 @@ import {
 import { ServicoCatalogoFluxos } from './servico-catalogo-fluxos.js';
 import { ServicoPublicacaoFluxos } from './servico-publicacao-fluxos.js';
 import { ServicoValidacaoPublicacaoFluxos } from './servico-validacao-publicacao-fluxos.js';
+import { SimuladorFluxos } from './simulador-fluxos.js';
 import { ValidadorPublicacaoFluxo } from './validador-publicacao-fluxo.js';
 
 const RECURSO_CATALOGO_FLUXOS = '11111111-1111-4111-8111-111111111169';
@@ -56,14 +61,28 @@ export class ServicoEditorFluxos {
     private readonly publicacao: ServicoPublicacaoFluxos,
     @Inject(ValidadorPublicacaoFluxo)
     private readonly validador: ValidadorPublicacaoFluxo,
+    @Inject(SimuladorFluxos)
+    private readonly simulador: SimuladorFluxos,
   ) {}
 
   public async listar(
     sessao: ContextoSessaoAutorizacao,
     transacao: TransacaoPrisma,
   ): Promise<readonly FluxoEditorPersistido[]> {
-    await this.autorizarCatalogo(sessao, transacao);
+    await this.autorizarCatalogo(sessao, 'VISUALIZAR_FLUXO', transacao);
     return this.repositorio.listarFluxos(transacao);
+  }
+
+  public async simular(
+    sessao: ContextoSessaoAutorizacao,
+    definicaoRecebida: unknown,
+    cenario: CenarioSimulacaoFluxo,
+    transacao: TransacaoPrisma,
+  ): Promise<ResultadoSimulacaoFluxo> {
+    await this.autorizarCatalogo(sessao, 'TESTAR_FLUXO', transacao);
+    const definicao = this.validador.interpretarRascunho(definicaoRecebida);
+    if (definicao === undefined) throw new ErroFluxoInvalido();
+    return this.simulador.simular(definicao, cenario);
   }
 
   public async obter(
@@ -183,11 +202,15 @@ export class ServicoEditorFluxos {
 
   private async autorizarCatalogo(
     sessao: ContextoSessaoAutorizacao,
+    permissao: Extract<
+      CodigoPermissaoAutorizacao,
+      'TESTAR_FLUXO' | 'VISUALIZAR_FLUXO'
+    >,
     transacao: TransacaoPrisma,
   ): Promise<void> {
     await this.autorizacao.autorizar(
       {
-        permissao: 'VISUALIZAR_FLUXO',
+        permissao,
         recurso: { id: RECURSO_CATALOGO_FLUXOS, tipo: 'CATALOGO_FLUXOS' },
         sessao,
       },

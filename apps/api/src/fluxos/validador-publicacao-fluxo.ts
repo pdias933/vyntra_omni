@@ -131,6 +131,12 @@ const REFERENCIAS_OBRIGATORIAS: Readonly<
 
 @Injectable()
 export class ValidadorPublicacaoFluxo {
+  public interpretarRascunho(
+    definicaoRecebida: unknown,
+  ): DefinicaoFluxoV1 | undefined {
+    return this.lerDefinicao(definicaoRecebida, []);
+  }
+
   public validarRascunho(
     definicaoRecebida: unknown,
   ): RelatorioValidacaoFluxo {

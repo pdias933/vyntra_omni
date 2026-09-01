@@ -67,6 +67,49 @@ export interface DefinicaoEditor {
   readonly conexoes: readonly Edge[];
 }
 
+export const CENARIOS_SIMULACAO_EDITOR = [
+  'CAMINHO_FELIZ',
+  'CAMINHO_ALTERNATIVO',
+  'CONTATO_NAO_IDENTIFICADO',
+  'ERP_INDISPONIVEL',
+  'TIMEOUT',
+  'FORA_DO_HORARIO',
+  'CANAL_LIMITADO',
+] as const;
+
+export type CenarioSimulacaoEditor =
+  (typeof CENARIOS_SIMULACAO_EDITOR)[number];
+
+export interface PassoSimulacaoEditor {
+  readonly ordem: number;
+  readonly noId: string;
+  readonly tipoNo: string;
+  readonly estado: 'CONCLUIDO' | 'INTERROMPIDO';
+  readonly saida?: string | undefined;
+  readonly descricao: string;
+}
+
+export interface ItemPreviaSimulacaoEditor {
+  readonly ordemPasso: number;
+  readonly origem: 'CLIENTE_FICTICIO' | 'EMPRESA' | 'SISTEMA';
+  readonly conteudo: string;
+}
+
+export interface ResultadoSimulacaoEditor {
+  readonly cenario: CenarioSimulacaoEditor;
+  readonly estado: 'CONCLUIDA' | 'INTERROMPIDA' | 'LIMITE_ATINGIDO';
+  readonly codigoFinal: string;
+  readonly contextoFicticio: {
+    readonly contato: string;
+    readonly contrato: string;
+    readonly documento: string;
+    readonly telefone: string;
+  };
+  readonly efeitosReaisExecutados: false;
+  readonly passos: readonly PassoSimulacaoEditor[];
+  readonly previa: readonly ItemPreviaSimulacaoEditor[];
+}
+
 export interface ItemCatalogoNo {
   readonly tipo: TipoNo;
   readonly titulo: string;

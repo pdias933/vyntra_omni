@@ -6,7 +6,9 @@ import {
   prepararPublicacaoFluxoEditor,
   publicarVersaoFluxoEditor,
   salvarRascunhoFluxoEditor,
+  simularFluxoEditor,
   type FluxoEditorDto,
+  type ResultadoSimulacaoFluxoDto,
   type VersaoFluxoEditorDto,
 } from '@vyntra/api-client';
 import { useCallback, useEffect, useState } from 'react';
@@ -16,6 +18,8 @@ import {
   definicaoInicial,
   lerDefinicao,
   serializarDefinicao,
+  type CenarioSimulacaoEditor,
+  type ResultadoSimulacaoEditor,
 } from './editor/modelo-editor';
 
 client.setConfig({ credentials: 'include' });
@@ -62,6 +66,36 @@ function tentarLerDefinicao(versao: VersaoFluxoEditorDto | undefined) {
   } catch {
     return undefined;
   }
+}
+
+function mapearSimulacao(
+  resultado: ResultadoSimulacaoFluxoDto,
+): ResultadoSimulacaoEditor {
+  return {
+    cenario: resultado.cenario,
+    codigoFinal: resultado.codigo_final,
+    contextoFicticio: {
+      contato: resultado.contexto_ficticio.contato,
+      contrato: resultado.contexto_ficticio.contrato,
+      documento: resultado.contexto_ficticio.documento,
+      telefone: resultado.contexto_ficticio.telefone,
+    },
+    efeitosReaisExecutados: false,
+    estado: resultado.estado,
+    passos: resultado.passos.map((passo) => ({
+      descricao: passo.descricao,
+      estado: passo.estado,
+      noId: passo.no_id,
+      ordem: passo.ordem,
+      ...(passo.saida === undefined ? {} : { saida: passo.saida }),
+      tipoNo: passo.tipo_no,
+    })),
+    previa: resultado.previa.map((item) => ({
+      conteudo: item.conteudo,
+      ordemPasso: item.ordem_passo,
+      origem: item.origem,
+    })),
+  };
 }
 
 export function Aplicacao() {
@@ -207,6 +241,26 @@ export function Aplicacao() {
             await carregar({ fluxoId: fluxo.id, versaoId: resposta.data.id });
           })
         }
+        aoSimular={async (
+          definicaoSimulada: Record<string, unknown>,
+          cenario: CenarioSimulacaoEditor,
+        ) => {
+          definirOcupada(true);
+          definirAviso(undefined);
+          try {
+            const resposta = await simularFluxoEditor({
+              body: { cenario, definicao: definicaoSimulada },
+              headers: { 'x-csrf-token': obterCsrf() },
+              throwOnError: true,
+            });
+            return mapearSimulacao(resposta.data);
+          } catch (erro) {
+            definirAviso(mensagemErro(erro));
+            throw erro;
+          } finally {
+            definirOcupada(false);
+          }
+        }}
         aoValidar={() =>
           executar(async () => {
             await prepararPublicacaoFluxoEditor({

@@ -670,3 +670,14 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - posição visual aceita somente coordenadas finitas limitadas e não altera semântica, ordem ou execução;
 - salvar não publica; validar não publica; publicação exige comando próprio e estado `EM_TESTE`;
 - erros e auditoria não carregam definição, parâmetros, valores de variável ou conteúdo sensível.
+
+## 26. Controles do simulador da PR 085
+
+- toda chamada exige sessão web válida, origem autorizada, CSRF e `TESTAR_FLUXO`; editar ou visualizar não concedem teste implicitamente;
+- o simulador não registra provider externo e não importa executor, serviço de mensagens, ERP, Prisma ou Redis;
+- dados de contato são constantes sintéticas e mascaradas, claramente marcadas como simulação;
+- parâmetros, textos autorais, referências, identificadores externos e variáveis sensíveis não são refletidos na resposta;
+- o percurso termina em no máximo 200 passos e também limita visitas por nó, impedindo consumo ilimitado por ciclo;
+- saída ausente, cenário incompatível ou limite atingido são estados visíveis e conservadores;
+- a resposta fixa `efeitosReaisExecutados` como falso e não cria mensagem, atendimento, operação recuperável, evento ou auditoria de conteúdo;
+- logs e erros não recebem a definição nem a prévia; métricas devem contar somente código e duração agregados.

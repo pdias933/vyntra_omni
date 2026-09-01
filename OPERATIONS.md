@@ -643,3 +643,9 @@ Rollback preserva as colunas e mensagens terminais. Antes de usar imagem PR 082,
 Não há migration. Implantar API com as rotas administrativas e web com o SDK gerado no mesmo release; o worker não recebe provider, estado ou regra nova. Manter `20260901013500_corrida_resgate_envio_automatico` como marca de prontidão e confirmar que todas as instâncias de API/worker continuam homogêneas.
 
 No aceite, criar um rascunho por uma sessão autorizada, salvar posição e parâmetros com revisão esperada, comprovar conflito de revisão concorrente e confirmar que o ponteiro publicado não muda. Depois, validar uma definição inválida sem promoção, preparar uma válida e publicar por comando separado; uma execução já iniciada deve conservar a versão anterior. Monitorar `ACESSO_NEGADO`, `ORIGEM_WEB_INVALIDA`, `CSRF_INVALIDO`, conflitos de revisão e falhas de validação sem registrar a definição. Rollback do web/API não exige alteração de dados e preserva versões criadas; não modificar estado ou ponteiro por SQL.
+
+## 32. Operação do simulador da PR 085
+
+O simulador não possui fila, worker, tabela, migration, credencial de canal ou provider próprio. Implante API e web do mesmo commit e mantenha as instâncias da API homogêneas. A disponibilidade do endpoint depende somente do processo da API e da autorização já existente; Meta, MK, Redis e workers podem estar indisponíveis sem que o teste fictício faça chamada a eles.
+
+O smoke de staging deve executar os sete cenários, comprovar `efeitosReaisExecutados: false`, término limitado e nenhuma alteração em fluxo, versão, mensagem, operação recuperável ou auditoria de domínio. Inspecione também a interface para aviso de dados fictícios, passos visíveis e comportamento com “Reduzir Movimento”. Se a simulação elevar latência ou memória, retire a versão da API; não aumente o limite de 200 passos e não habilite adapter como mitigação. Reversão não exige ação no banco.

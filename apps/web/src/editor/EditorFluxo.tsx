@@ -14,11 +14,14 @@ import { useMemo, useState } from 'react';
 import { NoFluxo } from './NoFluxo';
 import {
   CATALOGO_NOS,
+  CENARIOS_SIMULACAO_EDITOR,
   criarNo,
   serializarDefinicao,
+  type CenarioSimulacaoEditor,
   type DefinicaoEditor,
   type NoEditor,
   type ReferenciaEditor,
+  type ResultadoSimulacaoEditor,
   type TipoNo,
   type VariavelEditor,
 } from './modelo-editor';
@@ -38,6 +41,10 @@ interface PropsEditorFluxo {
   readonly aoValidar: () => Promise<void>;
   readonly aoPublicar: () => Promise<void>;
   readonly aoCriarRascunho: (definicao: Record<string, unknown>) => Promise<void>;
+  readonly aoSimular: (
+    definicao: Record<string, unknown>,
+    cenario: CenarioSimulacaoEditor,
+  ) => Promise<ResultadoSimulacaoEditor>;
 }
 
 function lista(valor: string): readonly string[] {
@@ -88,6 +95,7 @@ export function EditorFluxo({
   aoValidar,
   aoPublicar,
   aoCriarRascunho,
+  aoSimular,
 }: PropsEditorFluxo) {
   const [nos, definirNos, aoMudarNos] = useNodesState<NoEditor>([...definicao.nos]);
   const [conexoes, definirConexoes, aoMudarConexoes] = useEdgesState([
@@ -97,6 +105,13 @@ export function EditorFluxo({
   const [selecionadoId, definirSelecionadoId] = useState<string>();
   const [alterado, definirAlterado] = useState(false);
   const [busca, definirBusca] = useState('');
+  const [simuladorAberto, definirSimuladorAberto] = useState(false);
+  const [simulando, definirSimulando] = useState(false);
+  const [cenarioSimulacao, definirCenarioSimulacao] =
+    useState<CenarioSimulacaoEditor>('CAMINHO_FELIZ');
+  const [resultadoSimulacao, definirResultadoSimulacao] =
+    useState<ResultadoSimulacaoEditor>();
+  const [erroSimulacao, definirErroSimulacao] = useState<string>();
   const editavel = estadoVersao === 'RASCUNHO';
   const selecionado = nos.find(({ id }) => id === selecionadoId);
   const itensCatalogo = useMemo(() => {
@@ -210,6 +225,22 @@ export function EditorFluxo({
     definirAlterado(false);
   }
 
+  async function simular(): Promise<void> {
+    definirSimuladorAberto(true);
+    definirSimulando(true);
+    definirErroSimulacao(undefined);
+    try {
+      definirResultadoSimulacao(
+        await aoSimular(definicaoAtual(), cenarioSimulacao),
+      );
+    } catch {
+      definirResultadoSimulacao(undefined);
+      definirErroSimulacao('Não foi possível concluir a simulação fictícia.');
+    } finally {
+      definirSimulando(false);
+    }
+  }
+
   return (
     <main className="editor-fluxo">
       <header className="editor-fluxo__topo">
@@ -234,6 +265,14 @@ export function EditorFluxo({
           </div>
         </div>
         <div className="acoes-editor">
+          <button
+            className="botao botao--teste"
+            disabled={ocupada || simulando}
+            onClick={() => void simular()}
+            type="button"
+          >
+            <span aria-hidden="true">▷</span> Testar
+          </button>
           {editavel ? (
             <>
               <span className={`estado-edicao ${alterado ? 'estado-edicao--alterado' : ''}`}>
@@ -454,7 +493,151 @@ export function EditorFluxo({
           )}
         </aside>
       </section>
+      {simuladorAberto && (
+        <PainelSimulacao
+          cenario={cenarioSimulacao}
+          erro={erroSimulacao}
+          resultado={resultadoSimulacao}
+          simulando={simulando}
+          aoAlterarCenario={definirCenarioSimulacao}
+          aoFechar={() => definirSimuladorAberto(false)}
+          aoSimular={() => void simular()}
+        />
+      )}
     </main>
+  );
+}
+
+const ROTULOS_CENARIO: Readonly<Record<CenarioSimulacaoEditor, string>> = {
+  CAMINHO_ALTERNATIVO: 'Caminho alternativo',
+  CAMINHO_FELIZ: 'Caminho feliz',
+  CANAL_LIMITADO: 'Canal sem capacidade',
+  CONTATO_NAO_IDENTIFICADO: 'Contato não identificado',
+  ERP_INDISPONIVEL: 'ERP indisponível',
+  FORA_DO_HORARIO: 'Fora do horário',
+  TIMEOUT: 'Tempo esgotado',
+};
+
+function PainelSimulacao({
+  aoAlterarCenario,
+  aoFechar,
+  aoSimular,
+  cenario,
+  erro,
+  resultado,
+  simulando,
+}: {
+  readonly aoAlterarCenario: (cenario: CenarioSimulacaoEditor) => void;
+  readonly aoFechar: () => void;
+  readonly aoSimular: () => void;
+  readonly cenario: CenarioSimulacaoEditor;
+  readonly erro?: string | undefined;
+  readonly resultado?: ResultadoSimulacaoEditor | undefined;
+  readonly simulando: boolean;
+}) {
+  return (
+    <aside aria-label="Simulador do fluxo" className="simulador-fluxo">
+      <header className="simulador-fluxo__topo">
+        <div>
+          <span>Ambiente seguro</span>
+          <h2>Simular fluxo</h2>
+        </div>
+        <button aria-label="Fechar simulador" onClick={aoFechar} type="button">×</button>
+      </header>
+      <div className="simulador-fluxo__aviso" role="note">
+        <span aria-hidden="true">◇</span>
+        <p>
+          <strong>Somente dados fictícios</strong>
+          Nenhuma mensagem ou ação ERP será executada.
+        </p>
+      </div>
+      <div className="simulador-fluxo__controles">
+        <label className="campo-editor">
+          <span>Cenário</span>
+          <select
+            disabled={simulando}
+            onChange={(evento) =>
+              aoAlterarCenario(evento.target.value as CenarioSimulacaoEditor)
+            }
+            value={cenario}
+          >
+            {CENARIOS_SIMULACAO_EDITOR.map((item) => (
+              <option key={item} value={item}>{ROTULOS_CENARIO[item]}</option>
+            ))}
+          </select>
+        </label>
+        <button
+          className="botao botao--primario"
+          disabled={simulando}
+          onClick={aoSimular}
+          type="button"
+        >
+          {simulando ? 'Simulando…' : 'Executar cenário'}
+        </button>
+      </div>
+      {simulando ? (
+        <div className="simulador-carregando" role="status">
+          <span />
+          <span />
+          <span />
+          <p>Percorrendo o fluxo em memória…</p>
+        </div>
+      ) : erro !== undefined ? (
+        <div className="simulador-erro" role="alert">{erro}</div>
+      ) : resultado !== undefined ? (
+        <div className="simulador-fluxo__resultado">
+          <section className="contexto-simulacao">
+            <div className="avatar-ficticio" aria-hidden="true">CF</div>
+            <div>
+              <strong>{resultado.contextoFicticio.contato}</strong>
+              <span>{resultado.contextoFicticio.telefone}</span>
+            </div>
+            <small>SIMULAÇÃO</small>
+          </section>
+          <section className="previa-simulacao" aria-label="Prévia fictícia da conversa">
+            {resultado.previa.length === 0 ? (
+              <p>Nenhuma mensagem neste caminho.</p>
+            ) : resultado.previa.map((item, indice) => (
+              <div
+                className={`previa-simulacao__item previa-simulacao__item--${item.origem.toLocaleLowerCase('pt-BR')}`}
+                key={`${item.ordemPasso}:${indice}`}
+              >
+                {item.conteudo}
+              </div>
+            ))}
+          </section>
+          <section className="passos-simulacao">
+            <div className="passos-simulacao__cabecalho">
+              <strong>Passos percorridos</strong>
+              <span className={`resultado-simulacao resultado-simulacao--${resultado.estado.toLocaleLowerCase('pt-BR')}`}>
+                {resultado.estado.replaceAll('_', ' ').toLocaleLowerCase('pt-BR')}
+              </span>
+            </div>
+            <ol>
+              {resultado.passos.map((passo) => (
+                <li
+                  className={passo.estado === 'INTERROMPIDO' ? 'passo--interrompido' : ''}
+                  key={`${passo.ordem}:${passo.noId}`}
+                >
+                  <span>{passo.ordem}</span>
+                  <div>
+                    <strong>
+                      {passo.tipoNo.replaceAll('_', ' ').toLocaleLowerCase('pt-BR')}
+                    </strong>
+                    <small>{passo.descricao}</small>
+                  </div>
+                  {passo.saida !== undefined && <code>{passo.saida}</code>}
+                </li>
+              ))}
+            </ol>
+          </section>
+          <footer className="simulador-fluxo__rodape">
+            <span>✓</span>
+            Zero efeitos reais executados
+          </footer>
+        </div>
+      ) : null}
+    </aside>
   );
 }
 

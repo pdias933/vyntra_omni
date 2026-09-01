@@ -749,3 +749,11 @@ editar no navegador → salvar RASCUNHO com revisão esperada
 ```
 
 Salvar usa concorrência otimista e nunca altera o ponteiro publicado. O backend relê fluxo e versão para impedir acesso cruzado, compõe referências/capacidades a partir das autoridades reais e mantém a promoção/publicação nos serviços de domínio existentes. Versões `EM_TESTE`, `PUBLICADA` e `ARQUIVADA` são somente leitura; continuar a edição cria nova versão `RASCUNHO`. A interface sempre mostra qual versão está em produção antes da confirmação.
+
+## 33. Simulador da PR 085
+
+O simulador recebe uma definição fechada no mesmo schema do editor, inclusive o rascunho local ainda não salvo, e a percorre em memória. Ele não inicia `ExecucaoFluxo`, não registra passo persistente, não cria mensagem, não chama serviços de domínio mutáveis nem resolve adapter. O resultado sempre declara `efeitosReaisExecutados: false`.
+
+Os cenários determinísticos são `CAMINHO_FELIZ`, `CAMINHO_ALTERNATIVO`, `CONTATO_NAO_IDENTIFICADO`, `ERP_INDISPONIVEL`, `TIMEOUT`, `FORA_DO_HORARIO` e `CANAL_LIMITADO`. Cada cenário escolhe somente saídas já declaradas no grafo; se a saída esperada não tiver conexão exata, o caminho termina como `INTERROMPIDA` e explica a ausência. A simulação termina ao chegar a `FIM`, ao interromper ou ao alcançar 200 passos. Um mesmo nó pode ser visitado até o limite declarado ou, sem limite, no máximo três vezes.
+
+Contato, telefone, documento e contrato são valores sintéticos e mascarados. A prévia usa descrições canônicas controladas pelo backend; texto, opções, referências, IDs externos e parâmetros autorais da definição não são refletidos. O painel mostra cenário, conversa fictícia, passos em ordem, saída nominal e resultado final, sempre acompanhado do aviso de que nenhuma mensagem ou ação ERP foi executada.

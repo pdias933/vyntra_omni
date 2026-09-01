@@ -20,6 +20,10 @@ import type {
   ProblemaValidacaoFluxo,
   ResultadoPreparacaoPublicacaoFluxo,
 } from '../modelo-validacao-fluxo.js';
+import {
+  CENARIOS_SIMULACAO_FLUXO,
+  type ResultadoSimulacaoFluxo,
+} from '../modelo-simulacao-fluxo.js';
 
 const TIPOS_FLUXO = [
   'ATENDIMENTO',
@@ -81,6 +85,16 @@ export class EntradaRevisaoFluxoDto {
   @IsInt()
   @Min(1)
   public readonly revisao_fluxo_esperada!: number;
+}
+
+export class EntradaSimulacaoFluxoDto {
+  @ApiProperty({ additionalProperties: true, type: 'object' })
+  @IsObject()
+  public readonly definicao!: Record<string, unknown>;
+
+  @ApiProperty({ enum: CENARIOS_SIMULACAO_FLUXO })
+  @IsIn(CENARIOS_SIMULACAO_FLUXO)
+  public readonly cenario!: (typeof CENARIOS_SIMULACAO_FLUXO)[number];
 }
 
 export class VersaoFluxoEditorDto {
@@ -275,5 +289,111 @@ export class ResultadoPublicacaoFluxoDto {
     if (resultado.versaoPublicadaId !== undefined) {
       this.versao_publicada_id = resultado.versaoPublicadaId;
     }
+  }
+}
+
+export class ContextoFicticioSimulacaoFluxoDto {
+  @ApiProperty()
+  public readonly contato: string;
+
+  @ApiProperty()
+  public readonly contrato: string;
+
+  @ApiProperty()
+  public readonly documento: string;
+
+  @ApiProperty()
+  public readonly telefone: string;
+
+  public constructor(contexto: ResultadoSimulacaoFluxo['contextoFicticio']) {
+    this.contato = contexto.contato;
+    this.contrato = contexto.contrato;
+    this.documento = contexto.documento;
+    this.telefone = contexto.telefone;
+  }
+}
+
+export class PassoSimulacaoFluxoDto {
+  @ApiProperty({ minimum: 1 })
+  public readonly ordem: number;
+
+  @ApiProperty()
+  public readonly no_id: string;
+
+  @ApiProperty()
+  public readonly tipo_no: string;
+
+  @ApiProperty({ enum: ['CONCLUIDO', 'INTERROMPIDO'] })
+  public readonly estado: string;
+
+  @ApiProperty({ required: false })
+  public readonly saida?: string;
+
+  @ApiProperty()
+  public readonly descricao: string;
+
+  public constructor(passo: ResultadoSimulacaoFluxo['passos'][number]) {
+    this.ordem = passo.ordem;
+    this.no_id = passo.noId;
+    this.tipo_no = passo.tipoNo;
+    this.estado = passo.estado;
+    this.descricao = passo.descricao;
+    if (passo.saida !== undefined) this.saida = passo.saida;
+  }
+}
+
+export class ItemPreviaSimulacaoFluxoDto {
+  @ApiProperty({ minimum: 1 })
+  public readonly ordem_passo: number;
+
+  @ApiProperty({ enum: ['CLIENTE_FICTICIO', 'EMPRESA', 'SISTEMA'] })
+  public readonly origem: string;
+
+  @ApiProperty()
+  public readonly conteudo: string;
+
+  public constructor(item: ResultadoSimulacaoFluxo['previa'][number]) {
+    this.ordem_passo = item.ordemPasso;
+    this.origem = item.origem;
+    this.conteudo = item.conteudo;
+  }
+}
+
+export class ResultadoSimulacaoFluxoDto {
+  @ApiProperty({ enum: CENARIOS_SIMULACAO_FLUXO })
+  public readonly cenario: string;
+
+  @ApiProperty({ enum: ['CONCLUIDA', 'INTERROMPIDA', 'LIMITE_ATINGIDO'] })
+  public readonly estado: string;
+
+  @ApiProperty()
+  public readonly codigo_final: string;
+
+  @ApiProperty({ type: ContextoFicticioSimulacaoFluxoDto })
+  public readonly contexto_ficticio: ContextoFicticioSimulacaoFluxoDto;
+
+  @ApiProperty({ enum: [false] })
+  public readonly efeitos_reais_executados: false;
+
+  @ApiProperty({ type: [PassoSimulacaoFluxoDto] })
+  public readonly passos: readonly PassoSimulacaoFluxoDto[];
+
+  @ApiProperty({ type: [ItemPreviaSimulacaoFluxoDto] })
+  public readonly previa: readonly ItemPreviaSimulacaoFluxoDto[];
+
+  public constructor(resultado: ResultadoSimulacaoFluxo) {
+    this.cenario = resultado.cenario;
+    this.estado = resultado.estado;
+    this.codigo_final = resultado.codigoFinal;
+    this.contexto_ficticio = new ContextoFicticioSimulacaoFluxoDto(
+      resultado.contextoFicticio,
+    );
+    this.efeitos_reais_executados = false;
+    this.passos = resultado.passos.map(
+      (passo) => new PassoSimulacaoFluxoDto(passo),
+    );
+    this.previa = resultado.previa.map(
+      (item) => new ItemPreviaSimulacaoFluxoDto(item),
+    );
   }
 }

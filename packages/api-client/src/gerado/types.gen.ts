@@ -158,6 +158,45 @@ export type FluxoEditorDto = {
     versoes: Array<VersaoFluxoEditorDto>;
 };
 
+export type EntradaSimulacaoFluxoDto = {
+    definicao: {
+        [key: string]: unknown;
+    };
+    cenario: 'CAMINHO_FELIZ' | 'CAMINHO_ALTERNATIVO' | 'CONTATO_NAO_IDENTIFICADO' | 'ERP_INDISPONIVEL' | 'TIMEOUT' | 'FORA_DO_HORARIO' | 'CANAL_LIMITADO';
+};
+
+export type ContextoFicticioSimulacaoFluxoDto = {
+    contato: string;
+    contrato: string;
+    documento: string;
+    telefone: string;
+};
+
+export type PassoSimulacaoFluxoDto = {
+    ordem: number;
+    no_id: string;
+    tipo_no: string;
+    estado: 'CONCLUIDO' | 'INTERROMPIDO';
+    saida?: string;
+    descricao: string;
+};
+
+export type ItemPreviaSimulacaoFluxoDto = {
+    ordem_passo: number;
+    origem: 'CLIENTE_FICTICIO' | 'EMPRESA' | 'SISTEMA';
+    conteudo: string;
+};
+
+export type ResultadoSimulacaoFluxoDto = {
+    cenario: 'CAMINHO_FELIZ' | 'CAMINHO_ALTERNATIVO' | 'CONTATO_NAO_IDENTIFICADO' | 'ERP_INDISPONIVEL' | 'TIMEOUT' | 'FORA_DO_HORARIO' | 'CANAL_LIMITADO';
+    estado: 'CONCLUIDA' | 'INTERROMPIDA' | 'LIMITE_ATINGIDO';
+    codigo_final: string;
+    contexto_ficticio: ContextoFicticioSimulacaoFluxoDto;
+    efeitos_reais_executados: false;
+    passos: Array<PassoSimulacaoFluxoDto>;
+    previa: Array<ItemPreviaSimulacaoFluxoDto>;
+};
+
 export type EntradaCriacaoFluxoEditorDto = {
     nome: string;
     descricao?: string;
@@ -756,6 +795,22 @@ export type CriarFluxoEditorResponses = {
 };
 
 export type CriarFluxoEditorResponse = CriarFluxoEditorResponses[keyof CriarFluxoEditorResponses];
+
+export type SimularFluxoEditorData = {
+    body: EntradaSimulacaoFluxoDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/administracao/fluxos/simular';
+};
+
+export type SimularFluxoEditorResponses = {
+    200: ResultadoSimulacaoFluxoDto;
+};
+
+export type SimularFluxoEditorResponse = SimularFluxoEditorResponses[keyof SimularFluxoEditorResponses];
 
 export type ObterFluxoEditorData = {
     body?: never;

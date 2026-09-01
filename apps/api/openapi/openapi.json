@@ -951,6 +951,52 @@
         ]
       }
     },
+    "/api/v1/administracao/fluxos/simular": {
+      "post": {
+        "operationId": "simularFluxoEditor",
+        "parameters": [
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaSimulacaoFluxoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoSimulacaoFluxoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Simula uma definição somente com dados e efeitos fictícios",
+        "tags": [
+          "motor-de-fluxos"
+        ]
+      }
+    },
     "/api/v1/administracao/fluxos/{fluxoId}": {
       "get": {
         "operationId": "obterFluxoEditor",
@@ -2256,6 +2302,172 @@
           "revisao",
           "atualizado_em",
           "versoes"
+        ]
+      },
+      "EntradaSimulacaoFluxoDto": {
+        "type": "object",
+        "properties": {
+          "definicao": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "cenario": {
+            "type": "string",
+            "enum": [
+              "CAMINHO_FELIZ",
+              "CAMINHO_ALTERNATIVO",
+              "CONTATO_NAO_IDENTIFICADO",
+              "ERP_INDISPONIVEL",
+              "TIMEOUT",
+              "FORA_DO_HORARIO",
+              "CANAL_LIMITADO"
+            ]
+          }
+        },
+        "required": [
+          "definicao",
+          "cenario"
+        ]
+      },
+      "ContextoFicticioSimulacaoFluxoDto": {
+        "type": "object",
+        "properties": {
+          "contato": {
+            "type": "string"
+          },
+          "contrato": {
+            "type": "string"
+          },
+          "documento": {
+            "type": "string"
+          },
+          "telefone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "contato",
+          "contrato",
+          "documento",
+          "telefone"
+        ]
+      },
+      "PassoSimulacaoFluxoDto": {
+        "type": "object",
+        "properties": {
+          "ordem": {
+            "type": "number",
+            "minimum": 1
+          },
+          "no_id": {
+            "type": "string"
+          },
+          "tipo_no": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "CONCLUIDO",
+              "INTERROMPIDO"
+            ]
+          },
+          "saida": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ordem",
+          "no_id",
+          "tipo_no",
+          "estado",
+          "descricao"
+        ]
+      },
+      "ItemPreviaSimulacaoFluxoDto": {
+        "type": "object",
+        "properties": {
+          "ordem_passo": {
+            "type": "number",
+            "minimum": 1
+          },
+          "origem": {
+            "type": "string",
+            "enum": [
+              "CLIENTE_FICTICIO",
+              "EMPRESA",
+              "SISTEMA"
+            ]
+          },
+          "conteudo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ordem_passo",
+          "origem",
+          "conteudo"
+        ]
+      },
+      "ResultadoSimulacaoFluxoDto": {
+        "type": "object",
+        "properties": {
+          "cenario": {
+            "type": "string",
+            "enum": [
+              "CAMINHO_FELIZ",
+              "CAMINHO_ALTERNATIVO",
+              "CONTATO_NAO_IDENTIFICADO",
+              "ERP_INDISPONIVEL",
+              "TIMEOUT",
+              "FORA_DO_HORARIO",
+              "CANAL_LIMITADO"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "CONCLUIDA",
+              "INTERROMPIDA",
+              "LIMITE_ATINGIDO"
+            ]
+          },
+          "codigo_final": {
+            "type": "string"
+          },
+          "contexto_ficticio": {
+            "$ref": "#/components/schemas/ContextoFicticioSimulacaoFluxoDto"
+          },
+          "efeitos_reais_executados": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "passos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PassoSimulacaoFluxoDto"
+            }
+          },
+          "previa": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemPreviaSimulacaoFluxoDto"
+            }
+          }
+        },
+        "required": [
+          "cenario",
+          "estado",
+          "codigo_final",
+          "contexto_ficticio",
+          "efeitos_reais_executados",
+          "passos",
+          "previa"
         ]
       },
       "EntradaCriacaoFluxoEditorDto": {

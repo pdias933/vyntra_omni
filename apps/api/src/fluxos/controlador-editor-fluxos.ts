@@ -36,10 +36,12 @@ import {
   EntradaRevisaoFluxoDto,
   EntradaRevisaoVersaoFluxoDto,
   EntradaSalvarRascunhoFluxoDto,
+  EntradaSimulacaoFluxoDto,
   FluxoCriadoEditorDto,
   FluxoEditorDto,
   ResultadoPreparacaoFluxoDto,
   ResultadoPublicacaoFluxoDto,
+  ResultadoSimulacaoFluxoDto,
   VersaoFluxoEditorDto,
 } from './dto/editor-fluxos.dto.js';
 import { ServicoEditorFluxos } from './servico-editor-fluxos.js';
@@ -81,6 +83,35 @@ export class ControladorEditorFluxos {
       this.editor.listar(sessao.contexto, transacao),
     );
     return fluxos.map((fluxo) => new FluxoEditorDto(fluxo));
+  }
+
+  @Post('simular')
+  @ApiHeader({ name: NOME_HEADER_CSRF_WEB, required: true })
+  @ApiOperation({
+    operationId: 'simularFluxoEditor',
+    summary: 'Simula uma definição somente com dados e efeitos fictícios',
+  })
+  @ApiBody({ type: EntradaSimulacaoFluxoDto })
+  @ApiOkResponse({ type: ResultadoSimulacaoFluxoDto })
+  public async simular(
+    @Body() entrada: EntradaSimulacaoFluxoDto,
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_CSRF_WEB) csrfCabecalho: string | undefined,
+    @Headers('origin') origem: string | undefined,
+  ): Promise<ResultadoSimulacaoFluxoDto> {
+    this.origens.validar(origem);
+    const resultado = await this.autenticacao.executarComSessaoAtual(
+      obterTokenSessaoWeb(cookies),
+      obterTokenCsrfWeb(cookies, csrfCabecalho),
+      (sessao, _agora, transacao) =>
+        this.editor.simular(
+          this.contexto(sessao),
+          entrada.definicao,
+          entrada.cenario,
+          transacao,
+        ),
+    );
+    return new ResultadoSimulacaoFluxoDto(resultado);
   }
 
   @Get(':fluxoId')

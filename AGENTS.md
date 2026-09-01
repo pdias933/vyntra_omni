@@ -477,3 +477,8 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - `Salvar rascunho`, `Validar versão` e `Publicar versão` são comandos separados. Salvar só aceita `RASCUNHO` com revisão esperada; validar é a única promoção para `EM_TESTE`; publicar exige confirmação e não migra execução em curso.
 - Versão imutável é somente leitura no editor; para continuar, crie uma nova versão. Nunca habilite edição local de publicada/arquivada nem contorne o vínculo fluxo-versão.
 - Canvas e microinterações não podem bloquear comando e devem respeitar `prefers-reduced-motion`. Web mantém composição desktop própria e não replica literalmente o mobile.
+- Simulação usa somente `SimuladorFluxos` puro e contexto sintético. Nunca registre provider, adapter, executor, serviço de mensagens/ERP, Prisma, Redis ou chamada de rede nesse caminho.
+- Não reutilize o runtime do Motor para “facilitar” o simulador. Ele não cria `ExecucaoFluxo`, mensagem, passo persistente, evento, auditoria de conteúdo ou operação recuperável.
+- A resposta de simulação nunca reflete texto autoral, parâmetro, segredo, variável sensível, referência ou identificador externo da definição. Use descrições canônicas e dados fictícios mascarados.
+- Todo percurso simulado termina em até 200 passos e limita visitas por nó. Saída ausente, cenário incompatível e limite atingido precisam ficar visíveis.
+- O editor pode simular alterações locais ainda não salvas, mas isso não salva, valida, publica nem muda o ponteiro de produção. O painel deve declarar dados fictícios e zero efeitos reais.
