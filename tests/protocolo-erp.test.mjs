@@ -29,11 +29,24 @@ test('protocolo pendente não armazena número falso e oficial é único e imut�
 });
 
 test('módulo de protocolo não publica controller nem registra adapter real', async () => {
-  const modulo = await readFile(
-    new URL('apps/api/src/protocolos-erp/modulo-protocolos-erp.ts', raiz),
-    'utf8',
-  );
+  const [modulo, criacao] = await Promise.all([
+    readFile(
+      new URL('apps/api/src/protocolos-erp/modulo-protocolos-erp.ts', raiz),
+      'utf8',
+    ),
+    readFile(
+      new URL(
+        'apps/api/src/protocolos-erp/servico-criacao-protocolo-erp.ts',
+        raiz,
+      ),
+      'utf8',
+    ),
+  ]);
   assert.doesNotMatch(modulo, /controllers/);
   assert.doesNotMatch(modulo, /ADAPTADOR_ERP|AdaptadorErpSimulado/);
+  assert.match(criacao, /executarCriacao/);
+  assert.match(criacao, /reconciliarCriacao/);
+  assert.match(criacao, /RESULTADO_INCERTO/);
+  assert.match(criacao, /registrarEfeitoAusente/);
+  assert.doesNotMatch(criacao, /AdaptadorMkSolutions|endpoint|wsmk/iu);
 });
-

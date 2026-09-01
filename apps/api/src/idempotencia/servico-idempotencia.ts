@@ -132,68 +132,90 @@ export class ServicoIdempotencia {
     return this.conceder(operacaoId, duracaoMs, 'RECONCILIACAO');
   }
 
-  public concluir(entrada: EntradaEncerramentoOperacao): Promise<void> {
-    return this.encerrar({
-      entrada,
-      estadoFinal: 'CONCLUIDA',
-      estadosPermitidos: ['EM_EXECUCAO', 'EM_RECONCILIACAO'],
-      resultadoTentativa: 'SUCESSO',
-      terminal: true,
-    });
+  public concluir(
+    entrada: EntradaEncerramentoOperacao,
+    transacao?: TransacaoPrisma,
+  ): Promise<void> {
+    return this.encerrar(
+      {
+        entrada,
+        estadoFinal: 'CONCLUIDA',
+        estadosPermitidos: ['EM_EXECUCAO', 'EM_RECONCILIACAO'],
+        resultadoTentativa: 'SUCESSO',
+        terminal: true,
+      },
+      transacao,
+    );
   }
 
   public registrarFalhaTemporaria(
     entrada: EntradaEncerramentoOperacao,
+    transacao?: TransacaoPrisma,
   ): Promise<void> {
     this.validarProximaAcao(entrada.proximaAcaoEm);
     this.validarCodigoObrigatorio(entrada.codigo);
-    return this.encerrar({
-      entrada,
-      estadoFinal: 'AGUARDANDO_NOVA_TENTATIVA',
-      estadosPermitidos: ['EM_EXECUCAO'],
-      resultadoTentativa: 'FALHA_TEMPORARIA',
-      terminal: false,
-    });
+    return this.encerrar(
+      {
+        entrada,
+        estadoFinal: 'AGUARDANDO_NOVA_TENTATIVA',
+        estadosPermitidos: ['EM_EXECUCAO'],
+        resultadoTentativa: 'FALHA_TEMPORARIA',
+        terminal: false,
+      },
+      transacao,
+    );
   }
 
   public registrarResultadoIncerto(
     entrada: EntradaEncerramentoOperacao,
+    transacao?: TransacaoPrisma,
   ): Promise<void> {
     this.validarProximaAcao(entrada.proximaAcaoEm);
     this.validarCodigoObrigatorio(entrada.codigo);
-    return this.encerrar({
-      entrada,
-      estadoFinal: 'RESULTADO_INCERTO',
-      estadosPermitidos: ['EM_EXECUCAO', 'EM_RECONCILIACAO'],
-      resultadoTentativa: 'RESULTADO_INCERTO',
-      terminal: false,
-    });
+    return this.encerrar(
+      {
+        entrada,
+        estadoFinal: 'RESULTADO_INCERTO',
+        estadosPermitidos: ['EM_EXECUCAO', 'EM_RECONCILIACAO'],
+        resultadoTentativa: 'RESULTADO_INCERTO',
+        terminal: false,
+      },
+      transacao,
+    );
   }
 
   public registrarEfeitoAusente(
     entrada: EntradaEncerramentoOperacao,
+    transacao?: TransacaoPrisma,
   ): Promise<void> {
     this.validarProximaAcao(entrada.proximaAcaoEm);
-    return this.encerrar({
-      entrada,
-      estadoFinal: 'AGUARDANDO_NOVA_TENTATIVA',
-      estadosPermitidos: ['EM_RECONCILIACAO'],
-      resultadoTentativa: 'EFEITO_AUSENTE',
-      terminal: false,
-    });
+    return this.encerrar(
+      {
+        entrada,
+        estadoFinal: 'AGUARDANDO_NOVA_TENTATIVA',
+        estadosPermitidos: ['EM_RECONCILIACAO'],
+        resultadoTentativa: 'EFEITO_AUSENTE',
+        terminal: false,
+      },
+      transacao,
+    );
   }
 
   public registrarFalhaDefinitiva(
     entrada: EntradaEncerramentoOperacao,
+    transacao?: TransacaoPrisma,
   ): Promise<void> {
     this.validarCodigoObrigatorio(entrada.codigo);
-    return this.encerrar({
-      entrada,
-      estadoFinal: 'FALHA_DEFINITIVA',
-      estadosPermitidos: ['EM_EXECUCAO', 'EM_RECONCILIACAO'],
-      resultadoTentativa: 'FALHA_DEFINITIVA',
-      terminal: true,
-    });
+    return this.encerrar(
+      {
+        entrada,
+        estadoFinal: 'FALHA_DEFINITIVA',
+        estadosPermitidos: ['EM_EXECUCAO', 'EM_RECONCILIACAO'],
+        resultadoTentativa: 'FALHA_DEFINITIVA',
+        terminal: true,
+      },
+      transacao,
+    );
   }
 
   public async recuperarConcessoesExpiradas(limite = 100): Promise<number> {
@@ -340,7 +362,10 @@ export class ServicoIdempotencia {
     });
   }
 
-  private async encerrar(configuracao: EncerramentoInterno): Promise<void> {
+  private async encerrar(
+    configuracao: EncerramentoInterno,
+    transacao?: TransacaoPrisma,
+  ): Promise<void> {
     const { entrada } = configuracao;
     this.validarUuid(entrada.operacaoId);
     this.validarUuid(entrada.tokenConcessao);
@@ -348,10 +373,10 @@ export class ServicoIdempotencia {
       throw new Error('CODIGO_RESULTADO_OPERACAO_INVALIDO');
     }
 
-    await this.prisma.executarTransacao(async (transacao) => {
+    const executar = async (contexto: TransacaoPrisma): Promise<void> => {
       const agora = new Date();
       const tokenHash = this.hash(entrada.tokenConcessao);
-      const operacao = await transacao.operacaoRecuperavel.findUnique({
+      const operacao = await contexto.operacaoRecuperavel.findUnique({
         where: { id: entrada.operacaoId },
       });
       if (
@@ -367,7 +392,7 @@ export class ServicoIdempotencia {
       const proximaAcaoEm = configuracao.terminal
         ? null
         : (entrada.proximaAcaoEm ?? null);
-      const alteracao = await transacao.operacaoRecuperavel.updateMany({
+      const alteracao = await contexto.operacaoRecuperavel.updateMany({
         data: {
           codigoUltimoErro: entrada.codigo ?? null,
           concessaoAte: null,
@@ -392,7 +417,7 @@ export class ServicoIdempotencia {
         throw new Error('CONCESSAO_OPERACAO_EXPIRADA');
       }
 
-      const tentativa = await transacao.tentativaOperacao.updateMany({
+      const tentativa = await contexto.tentativaOperacao.updateMany({
         data: {
           codigoResultado: entrada.codigo ?? null,
           dadosProtegidos: dadosProtegidos ?? Prisma.DbNull,
@@ -409,7 +434,11 @@ export class ServicoIdempotencia {
       if (tentativa.count !== 1) {
         throw new Error('TENTATIVA_OPERACAO_INCONSISTENTE');
       }
-    });
+    };
+
+    await (transacao === undefined
+      ? this.prisma.executarTransacao(executar)
+      : executar(transacao));
   }
 
   private validarEntrada(entrada: EntradaIdempotencia): void {

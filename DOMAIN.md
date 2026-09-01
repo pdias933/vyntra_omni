@@ -603,9 +603,11 @@ Estado canônico do vínculo com o ERP:
 PENDENTE → OFICIAL
 ```
 
-O atendimento nasce com UUID interno e protocolo `PENDENTE`. Somente um valor confirmado pelo ERP muda o estado para `OFICIAL`; o valor oficial é imutável. Tentativa, timeout, falha e reconciliação pertencem à `OperacaoIntegracao`, não viram estados do protocolo. Resposta perdida ou resultado incerto exige reconciliação conservadora, nunca nova criação cega. A política operacional detalhada será fechada com o contrato real do MK no PR correspondente.
+O atendimento nasce com UUID interno e protocolo `PENDENTE`. Somente um valor confirmado pelo ERP muda o estado para `OFICIAL`; o valor oficial é imutável. Tentativa, timeout, falha e reconciliação pertencem à operação recuperável, não viram estados do protocolo. Resposta perdida ou resultado incerto exige reconciliação conservadora, nunca nova criação cega.
 
 A porta ERP materializada na PR 020 não antecipa a entidade persistente: `INDISPONIVEL` com `efeitoExternoPossivel: false` mantém o protocolo pendente; `RESULTADO_INCERTO` significa que o efeito pode existir e exige `reconciliarCriacaoAtendimento`. Apenas `CONFIRMADO`, vindo da criação ou da reconciliação, contém `protocoloOficial`. O simulador nunca gera número local de contingência.
+
+A PR 063 liga o protocolo pendente a uma operação PostgreSQL com escopo, assinatura do comando, concessão e histórico de tentativas. `PENDENTE` ou falha comprovadamente anterior ao efeito permite execução; `RESULTADO_INCERTO` permite somente reconciliação. Se a reconciliação comprovar `EFEITO_AUSENTE`, uma nova execução pode ser agendada com a mesma chave; indisponibilidade mantém o caminho conservador. A confirmação grava o protocolo oficial e conclui a operação na mesma transação local. Repetição compatível devolve a conclusão existente, e valor oficial divergente continua sendo conflito.
 
 ## 12. Snapshot e integração
 

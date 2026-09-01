@@ -339,6 +339,8 @@ reconciliação antes de qualquer repetição ambígua
 
 Reinício de API/worker não perde a operação. Uma concessão expirada vira `RESULTADO_INCERTO`; o PostgreSQL agenda a reconciliação e mantém o histórico. Redis pode acelerar seleção/coordenação, mas não autoriza repetição nem substitui o estado persistido.
 
+A PR 063 aplica esse protocolo à criação de atendimento no ERP. `ServicoCriacaoProtocoloErp` prepara `ProtocoloErp(PENDENTE)` e registro idempotente na mesma transação, chama a porta externa apenas depois de adquirir uma concessão e impede que `executarCriacao` atravesse um estado incerto. Somente `reconciliarCriacao` pode tratar esse estado. Confirmação da criação ou reconciliação atualiza o protocolo para `OFICIAL` e conclui a operação idempotente dentro da mesma transação PostgreSQL. O adaptador é argumento do executor e não provider do módulo: a fundação fica utilizável pelo worker sem habilitar uma integração MK ainda não caracterizada.
+
 ### 6.4 Fronteiras transacionais críticas
 
 Devem ser uma única transação local:

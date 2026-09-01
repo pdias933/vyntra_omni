@@ -383,11 +383,15 @@ A PR 021 aplica `20260831001000_criar_controle_sessao_acesso_desativado`, que se
 
 A PR 062 eleva a marca de prontidão para `20260901003500_estado_snapshot_cliente`. A migration acrescenta estado, motivo e instante de obsolescência com padrão compatível `ATUAL`; não apaga nem reescreve documentos existentes. Rollback da aplicação preserva as colunas. Antes de habilitar um sincronizador real, validar paginação, cursor e exclusões do MK; ausência em página parcial nunca é procedimento válido para marcar obsolescência.
 
+A PR 063 não acrescenta migration e mantém a marca da PR 062. O deploy também não registra adaptador MK, credencial, endpoint ou worker real. Em staging, validar o ciclo persistente `PENDENTE → RESULTADO_INCERTO → EM_RECONCILIACAO → CONCLUIDA` e confirmar que há um único `ProtocoloErp(OFICIAL)`. A conclusão do protocolo e da operação deve compartilhar a transação; se uma delas falhar, nenhuma pode ficar confirmada isoladamente.
+
 ### Recuperação de operações
 
 Um processo periódico recupera concessões vencidas em lotes pequenos. Ele encerra a tentativa como `RESULTADO_INCERTO`, limpa a concessão e agenda reconciliação imediata. O operador pode observar tipo, estado, idade, quantidade de tentativas e código normalizado; token, payload bruto e dado sensível não aparecem em log ou painel.
 
 Alertar para concessões expiradas, crescimento contínuo de `RESULTADO_INCERTO`, reconciliação repetida e idade da operação mais antiga. Reprocessamento manual nunca muda o estado diretamente no banco: usa o caso de uso, adquire nova concessão e preserva o histórico. Deploy/reinício não exige drenar operações, pois a retomada vem do PostgreSQL.
+
+Para protocolo incerto, a ação operacional válida é solicitar reconciliação pelo caso de uso. Não chamar criação diretamente, não trocar estado por SQL e não preencher `protocolo_oficial` manualmente. Nova criação só fica elegível depois de o adaptador comprovar ausência do efeito anterior; indisponibilidade da consulta mantém a operação incerta.
 
 ### Painel por componente
 

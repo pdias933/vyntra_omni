@@ -201,9 +201,11 @@ Cada método declara sua linha na matriz de risco. Consulta mascarada e criaçã
 
 O `Atendimento` nasce com UUID interno e protocolo `PENDENTE`. A criação externa é uma `OperacaoIntegracao` persistida com chave de idempotência e item de caixa de saída; o UUID nunca é apresentado como protocolo alternativo.
 
-Se o ERP confirmar o protocolo, uma transação local grava o valor oficial imutável, muda o vínculo para `OFICIAL`, associa o histórico já existente, gera evento e agenda a informação ao contato. Se ocorrer timeout ou perda de resposta depois de possível criação externa, a operação muda para `RECONCILIACAO_NECESSARIA`: o adaptador consulta por chave/referência segura e não repete a criação às cegas.
+Se o ERP confirmar o protocolo, uma transação local grava o valor oficial imutável, muda o vínculo para `OFICIAL` e conclui a operação recuperável. Se ocorrer timeout ou perda de resposta depois de possível criação externa, a operação muda para `RESULTADO_INCERTO`: o adaptador consulta por chave/referência segura e não repete a criação às cegas.
 
 Backoff, limite de tentativas, campos de comentário e comportamento do ERP em encerramento/reabertura só podem ser congelados após a caracterização real do MK.
+
+A PR 063 materializa o orquestrador interno desse ciclo. A intenção idempotente e o protocolo pendente nascem juntos; execução e reconciliação usam concessões distintas. Resultado incerto, exceção inesperada durante a chamada e concessão expirada convergem para reconciliação. Somente uma resposta normalizada `EFEITO_AUSENTE` libera outra criação; `CONFIRMADO` aplica uma vez o número oficial e encerra a tentativa na mesma transação. A chave é recebida novamente pelo worker e persiste apenas como hash. Nenhum DTO, endpoint, credencial ou provider MK foi acrescentado.
 
 ### 3.4 Contrato mínimo e simulador
 
