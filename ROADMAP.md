@@ -104,7 +104,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 080 | CONCLUÍDA | `xhigh` |
 | 081 | CONCLUÍDA | `xhigh` |
 | 082 | CONCLUÍDA | `xhigh` |
-| 083 | EM ANDAMENTO | `xhigh` |
+| 083 | CONCLUÍDA | `xhigh` |
 | 084 | PENDENTE | `xhigh` |
 | 085 | PENDENTE | `high` |
 | 086 | PENDENTE | `high` |
@@ -501,6 +501,10 @@ Aceite concluído em 1º de setembro de 2026: `VERIFICAR_DESBLOQUEIO_CONFIANCA` 
 ### PR 082 — nós de fila e encerramento
 
 Aceite concluído em 1º de setembro de 2026: `TRANSFERIR_PARA_FILA`, `AGUARDAR_ATENDENTE` e `ENCERRAR_ATENDIMENTO` passaram a operar pelas máquinas de domínio, com autoridade exata da execução e da versão, topologia integral validada e recuperação de espera no PostgreSQL. A transferência gera uma única atribuição aberta sem responsável; o encerramento conserva a fila de fallback, identifica o autor como `FLUXO` e aplica a janela de reabertura de 30 minutos. Auditoria e eventos não fabricam usuário ou sessão, e a suspensão por resgate humano está coberta pelos testes automatizados. Lint, tipos, 396 testes da API, 204 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901013000_espera_atendente_fluxo` terminou com código zero; `vyntra/api-staging:pr-082` e duas instâncias de `vyntra/worker-fluxos-staging:pr-082` ficaram saudáveis com prontidão `PRONTO`. Em staging, duas execuções concluíram sete passos únicos: a primeira transferiu para a fila exata, persistiu a espera e retomou por timeout; a segunda encerrou o atendimento no próprio nó com a janela exata. Ficaram uma única atribuição aberta no cenário humano, eventos e auditorias `FLUXO` sem usuário/sessão e nenhuma exposição do motivo sintético. O primeiro ensaio revelou byte nulo nas chaves advisory; a serialização de fila e atribuição foi corrigida para chaves textuais válidas, o aceite foi repetido e os workers não emitiram novas falhas de ciclo.
+
+### PR 083 — corrida entre resgate e envio automático
+
+Aceite concluído em 1º de setembro de 2026: mensagens automáticas passaram a fixar a execução de origem e a versão de atribuição, enquanto criação, despacho, transferência e resgate compartilham uma autoridade de saída serializada no PostgreSQL. O resgate cancela somente automáticas ainda `NA_FILA`; mensagens humanas e disparos transacionais ficam fora desse conjunto. O despachante revalida atendimento BOT, execução e versão sob lock, aplica timeout ao canal e nunca mantém provider real ou simulado registrado no runtime. Lint, tipos, 399 testes da API, 205 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901013500_corrida_resgate_envio_automatico` cancelou quatro automáticas legadas ainda não enviadas e terminou sem pendências; `vyntra/api-staging:pr-083` e duas instâncias homogêneas de `vyntra/worker-fluxos-staging:pr-083` ficaram saudáveis com prontidão `PRONTO`. Em staging, aceite anterior ao resgate fez uma chamada e terminou `ENVIADA`; resgate anterior terminou `CANCELADA/IGNORADA` sem chamada; falha temporária voltou a `NA_FILA` e foi cancelada pelo resgate. Nos três casos a transferência aguardou a seção crítica quando necessário, as mensagens humanas permaneceram `NA_FILA`, os atendimentos ficaram sob autoridade humana e as execuções concluíram sem erro de nível 50.
 
 ## 7. Mensageria Meta
 
