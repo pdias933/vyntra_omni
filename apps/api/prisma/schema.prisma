@@ -169,6 +169,15 @@ enum EstadoEventoMensagemCanal {
   @@map("estado_evento_mensagem_canal")
 }
 
+enum EstadoModeloMensagemCanal {
+  APROVADO
+  REJEITADO
+  PAUSADO
+  DESATIVADO
+
+  @@map("estado_modelo_mensagem_canal")
+}
+
 enum PapelBase {
   ADMINISTRADOR
   SUPERVISOR
@@ -853,6 +862,7 @@ model ContaWhatsApp {
   mensagens                     Mensagem[]
   eventosEntradaCanal           EventoEntradaCanal[]
   eventosEstadoMensagem         EventoEstadoMensagem[]
+  modelosMensagem               ModeloMensagemCanal[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorCanalExterno], map: "conta_whatsapp_identidade_externa_key")
   @@index([estado, nomeExibicao, id], map: "conta_whatsapp_estado_nome_idx")
@@ -1222,6 +1232,26 @@ model EventoEstadoMensagem {
   @@unique([contaWhatsAppId, identificadorEventoExterno], map: "evento_estado_mensagem_conta_evento_key")
   @@index([mensagemId, ocorridoEm, id], map: "evento_estado_mensagem_mensagem_ocorrido_idx")
   @@map("evento_estado_mensagem")
+}
+
+model ModeloMensagemCanal {
+  id                    String                       @id @db.Uuid
+  contaWhatsAppId       String                       @map("conta_whatsapp_id") @db.Uuid
+  referenciaCanal       String                       @map("referencia_canal") @db.VarChar(256)
+  nome                  String                       @db.VarChar(512)
+  idioma                String                       @db.VarChar(20)
+  estado                EstadoModeloMensagemCanal
+  quantidadeParametros  Int                          @map("quantidade_parametros")
+  componentesProtegidos Json                         @map("componentes_protegidos")
+  componentesHash       String                       @map("componentes_hash") @db.Char(64)
+  sincronizadoEm        DateTime                     @map("sincronizado_em") @db.Timestamptz(6)
+  versao                Int                          @default(1)
+  contaWhatsApp         ContaWhatsApp                @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+
+  @@unique([contaWhatsAppId, nome, idioma], map: "modelo_mensagem_canal_conta_nome_idioma_key")
+  @@unique([contaWhatsAppId, referenciaCanal], map: "modelo_mensagem_canal_conta_referencia_key")
+  @@index([contaWhatsAppId, estado, nome, idioma], map: "modelo_mensagem_canal_catalogo_idx")
+  @@map("modelo_mensagem_canal")
 }
 
 model EventoEntradaCanal {
