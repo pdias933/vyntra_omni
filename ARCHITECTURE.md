@@ -609,6 +609,8 @@ Na PR 025, o módulo `contextos-cliente` separa vínculos persistentes da seleç
 
 Na PR 026, `snapshots-cliente` é um módulo persistente e interno: serializa por vínculo, exige vínculo ativo e mantém um documento protegido corrente no PostgreSQL. Hash+instante capturado distinguem replay, atraso e conflito; versão esperada protege a substituição. A leitura calcula idade no servidor e declara origem `SNAPSHOT`. Não há controller, escrita ERP, cache obrigatório ou provider MK. Se Redis for acrescentado depois, será apenas uma projeção descartável reconstruída dessa autoridade.
 
+Na PR 062, o módulo recebe lotes incrementais ou reconciliações comprovadamente completas. Tombstone e ausência completa convertem o snapshot em `EXCLUIDO` ou `OBSOLETO` sem apagar o último documento; motivo, instante e versão são persistidos e expostos na leitura. Atualização posterior mais nova volta a `ATUAL`. O serviço não interpreta cursor/paginação MK e não registra job externo enquanto essa semântica não for caracterizada. A migration é aditiva e snapshots existentes nascem `ATUAL`.
+
 Na PR 027, `conversas` resolve exclusivamente por `contato_id` sob lock transacional. A conta WhatsApp ativa entra como uma participação da conversa — não como chave para criar outra timeline — e primeiro/último instante aceitam entrega fora de ordem sem regredir atividade. PostgreSQL impõe uma conversa por contato e uma participação por conversa+conta. O módulo é interno, sem controller; mensagens e atendimentos futuros ainda deverão carregar seus próprios `conta_whatsapp_id`.
 
 ## 14. Observabilidade

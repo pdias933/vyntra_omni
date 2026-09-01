@@ -14,8 +14,10 @@ import {
 } from './erros-snapshot-cliente.js';
 import type {
   EntradaAtualizacaoSnapshotCliente,
+  EntradaObsolescenciaSnapshotCliente,
   LeituraSnapshotCliente,
   ResultadoAtualizacaoSnapshotCliente,
+  ResultadoObsolescenciaSnapshotCliente,
   SnapshotClientePersistido,
 } from './modelo-snapshot-cliente.js';
 import {
@@ -106,6 +108,12 @@ export class ServicoSnapshotsCliente {
     if (agora < existente.atualizadoEm) {
       throw new ErroSnapshotClienteInvalido();
     }
+    if (
+      existente.obsoletoEm !== undefined &&
+      entrada.capturadoEm <= existente.obsoletoEm
+    ) {
+      return { situacao: 'IGNORADO_MAIS_ANTIGO', snapshot: existente };
+    }
     if (entrada.capturadoEm < existente.capturadoEm) {
       return { situacao: 'IGNORADO_MAIS_ANTIGO', snapshot: existente };
     }
@@ -113,26 +121,88 @@ export class ServicoSnapshotsCliente {
       if (conteudoHash !== existente.conteudoHash) {
         throw new ErroConflitoSnapshotCliente();
       }
-      return { situacao: 'REPETIDO', snapshot: existente };
+      if (existente.estado === 'ATUAL') {
+        return { situacao: 'REPETIDO', snapshot: existente };
+      }
     }
 
     const snapshot: SnapshotClientePersistido = {
-      ...existente,
       atualizadoEm: agora,
       capturadoEm: entrada.capturadoEm,
       conteudoHash,
       dadosProtegidos,
+      estado: 'ATUAL',
+      id: existente.id,
+      origem: existente.origem,
+      persistidoEm: existente.persistidoEm,
+      versao: existente.versao + 1,
+      vinculoClienteId: existente.vinculoClienteId,
+    };
+    await this.persistirAtualizacao(snapshot, existente.versao, transacao);
+    return { situacao: 'ATUALIZADO', snapshot };
+  }
+
+  public async marcarObsolescencia(
+    entrada: EntradaObsolescenciaSnapshotCliente,
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<ResultadoObsolescenciaSnapshotCliente> {
+    const agora = relogio();
+    if (
+      !UUID.test(entrada.vinculoClienteId) ||
+      !(entrada.evidenciadaEm instanceof Date) ||
+      Number.isNaN(entrada.evidenciadaEm.getTime()) ||
+      Number.isNaN(agora.getTime()) ||
+      entrada.evidenciadaEm > agora ||
+      !['AUSENTE_RECONCILIACAO_COMPLETA', 'TOMBSTONE_ERP'].includes(
+        entrada.motivo,
+      )
+    ) {
+      throw new ErroSnapshotClienteInvalido();
+    }
+    await this.repositorio.bloquearVinculo(
+      entrada.vinculoClienteId,
+      transacao,
+    );
+    const existente = await this.repositorio.obterPorVinculo(
+      entrada.vinculoClienteId,
+      transacao,
+    );
+    if (existente === undefined) return { situacao: 'IGNORADO_SEM_SNAPSHOT' };
+    if (agora < existente.atualizadoEm) {
+      throw new ErroSnapshotClienteInvalido();
+    }
+    if (
+      entrada.evidenciadaEm < existente.capturadoEm ||
+      (existente.obsoletoEm !== undefined &&
+        entrada.evidenciadaEm < existente.obsoletoEm)
+    ) {
+      return { situacao: 'IGNORADO_MAIS_ANTIGO', snapshot: existente };
+    }
+    const estado =
+      entrada.motivo === 'TOMBSTONE_ERP' ? 'EXCLUIDO' : 'OBSOLETO';
+    if (
+      existente.estado === estado &&
+      existente.motivoObsolescencia === entrada.motivo &&
+      existente.obsoletoEm?.getTime() === entrada.evidenciadaEm.getTime()
+    ) {
+      return { situacao: 'REPETIDO', snapshot: existente };
+    }
+    if (
+      existente.estado === 'EXCLUIDO' &&
+      entrada.motivo === 'AUSENTE_RECONCILIACAO_COMPLETA'
+    ) {
+      return { situacao: 'REPETIDO', snapshot: existente };
+    }
+    const snapshot: SnapshotClientePersistido = {
+      ...existente,
+      atualizadoEm: agora,
+      estado,
+      motivoObsolescencia: entrada.motivo,
+      obsoletoEm: entrada.evidenciadaEm,
       versao: existente.versao + 1,
     };
-    if (
-      !(await this.repositorio.atualizar(
-        snapshot,
-        existente.versao,
-        transacao,
-      ))
-    ) {
-      throw new ErroConflitoSnapshotCliente();
-    }
+    await this.persistirAtualizacao(snapshot, existente.versao, transacao);
     return { situacao: 'ATUALIZADO', snapshot };
   }
 
@@ -162,11 +232,18 @@ export class ServicoSnapshotsCliente {
     return {
       capturadoEm: snapshot.capturadoEm,
       dadosProtegidos: snapshot.dadosProtegidos,
+      estado: snapshot.estado,
       idadeSegundos: Math.floor(
         (agora.getTime() - snapshot.capturadoEm.getTime()) / 1_000,
       ),
       origem: 'SNAPSHOT',
       origemAtualizacao: snapshot.origem,
+      ...(snapshot.motivoObsolescencia === undefined
+        ? {}
+        : { motivoObsolescencia: snapshot.motivoObsolescencia }),
+      ...(snapshot.obsoletoEm === undefined
+        ? {}
+        : { obsoletoEm: snapshot.obsoletoEm }),
       versao: snapshot.versao,
       vinculoClienteId,
     };
@@ -183,12 +260,29 @@ export class ServicoSnapshotsCliente {
       capturadoEm: entrada.capturadoEm,
       conteudoHash,
       dadosProtegidos,
+      estado: 'ATUAL',
       id: randomUUID(),
       origem: 'INTEGRACAO_ERP',
       persistidoEm: agora,
       versao: 1,
       vinculoClienteId: entrada.vinculoClienteId,
     };
+  }
+
+  private async persistirAtualizacao(
+    snapshot: SnapshotClientePersistido,
+    versaoEsperada: number,
+    transacao: TransacaoPrisma,
+  ): Promise<void> {
+    if (
+      !(await this.repositorio.atualizar(
+        snapshot,
+        versaoEsperada,
+        transacao,
+      ))
+    ) {
+      throw new ErroConflitoSnapshotCliente();
+    }
   }
 
   private normalizarDados(dados: unknown): ObjetoJsonProtegido {

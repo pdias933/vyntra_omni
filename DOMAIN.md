@@ -237,6 +237,8 @@ A materialização da PR 025 usa FKs compostas para impedir contrato de outro v�
 
 Um vínculo ativo possui no máximo um snapshot corrente. O snapshot contém somente campos internos normalizados em `dados_protegidos`; documento e telefone entram apenas mascarados, e CPF/CNPJ bruto ou campo externo desconhecido é recusado. O PostgreSQL conserva origem `INTEGRACAO_ERP`, instante capturado, hash do conteúdo, instantes de persistência/atualização e versão.
 
+A PR 062 torna a atualidade explícita por `ATUAL`, `OBSOLETO` ou `EXCLUIDO`. `EXCLUIDO` exige tombstone inequívoco do ERP; `OBSOLETO` exige ausência confirmada por reconciliação completa. Ambos preservam o último documento protegido, registram motivo/instante e incrementam versão. Lote parcial, atraso presumido ou falha não marcam obsolescência. Uma observação posterior e mais nova pode reativar o snapshot; replay ou evidência antiga não regressa estado.
+
 Atualizações são serializadas por vínculo. Captura mais antiga não substitui a atual; repetição do mesmo instante/conteúdo é idempotente; mesmo instante com conteúdo diferente é conflito. A leitura retorna `origem: SNAPSHOT` e `idade_segundos`, sem afirmar que o dado é tempo real. A PR 026 não inventa limiar de obsolescência: tombstones, política de idade e reconciliação serão materializados com a sincronização real da PR 062.
 
 O snapshot sustenta somente leitura de identificação/contexto permitida. Ele nunca comprova situação financeira atual, sessão de acesso, protocolo, elegibilidade ou execução de escrita no ERP. Redis pode futuramente acelerar uma leitura, mas sua perda não remove nem altera o snapshot do PostgreSQL.

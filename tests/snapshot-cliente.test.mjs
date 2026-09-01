@@ -43,3 +43,22 @@ test('PostgreSQL é autoridade e módulo não publica escrita ou usa Redis', asy
   assert.match(codigo, /pg_advisory_xact_lock/);
   assert.ok(!/Redis|Controller/.test(codigo));
 });
+
+test('estado persistido distingue atual, obsoleto e excluído sem apagar dados', async () => {
+  const [schema, migration, sincronizacao] = await Promise.all([
+    ler('apps/api/prisma/schema.prisma'),
+    ler(
+      'apps/api/prisma/migrations/20260901003500_estado_snapshot_cliente/migration.sql',
+    ),
+    ler(
+      'apps/api/src/snapshots-cliente/servico-sincronizacao-snapshots-cliente.ts',
+    ),
+  ]);
+  assert.match(schema, /EstadoSnapshotCliente/);
+  assert.match(migration, /ATUAL.*OBSOLETO.*EXCLUIDO/su);
+  assert.match(migration, /AUSENTE_RECONCILIACAO_COMPLETA/);
+  assert.match(migration, /TOMBSTONE_ERP/);
+  assert.doesNotMatch(migration, /DELETE FROM|DROP TABLE/iu);
+  assert.match(sincronizacao, /confirmadaCompleta: true/);
+  assert.match(sincronizacao, /LIMITE_LOTE = 100/);
+});

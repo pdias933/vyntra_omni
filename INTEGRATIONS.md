@@ -365,6 +365,8 @@ Campos:
 
 Semântica de “alterado desde”, paginação, exclusões e tombstones deve ser caracterizada antes de depender do incremental para completude. Se a API não informar exclusões de modo confiável, executar reconciliação completa periódica ou marcar registros como obsoletos; dado antigo nunca pode ser apresentado como ativo sem origem e idade.
 
+A PR 062 implementa o consumidor interno dessa semântica sem inventar o contrato MK. O incremental aceita no máximo 100 alterações e só exclui diante de `TOMBSTONE_ERP`; a reconciliação aceita ausências apenas quando o chamador declara que a enumeração foi confirmada completa. IDs repetidos no mesmo lote são recusados. O PostgreSQL persiste `ATUAL`, `OBSOLETO` ou `EXCLUIDO`, motivo, instante e versão, preservando o último documento protegido. Observação posterior reativa; sinal mais antigo é ignorado. Como paginação e cursor MK continuam não caracterizados, nenhum job/provider externo é registrado e lote incompleto nunca pode se declarar completo.
+
 ## 6. `AccessSessionAdapter` separado
 
 O contrato solicitado fica separado do ERP. Nome canônico em português no domínio: `AdaptadorSessaoAcesso`; nome técnico/compatibilidade: `AccessSessionAdapter`.

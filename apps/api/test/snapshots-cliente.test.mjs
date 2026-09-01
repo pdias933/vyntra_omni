@@ -65,6 +65,7 @@ function snapshotExistente(sobrescritas = {}) {
     capturadoEm,
     conteudoHash: 'a'.repeat(64),
     dadosProtegidos: { nomeExibicao: 'Cliente anterior' },
+    estado: 'ATUAL',
     id: randomUUID(),
     origem: 'INTEGRACAO_ERP',
     persistidoEm: agora,
@@ -168,6 +169,52 @@ test('leitura declara SNAPSHOT e calcula idade sem consultar Redis', async () =>
   );
   assert.equal(leitura.origem, 'SNAPSHOT');
   assert.equal(leitura.origemAtualizacao, 'INTEGRACAO_ERP');
+  assert.equal(leitura.estado, 'ATUAL');
   assert.equal(leitura.idadeSegundos, 3_600);
   assert.equal(cenario.chamadas.atualizacoes.length, 0);
+});
+
+test('tombstone preserva dados e torna exclusão visível', async () => {
+  const existente = snapshotExistente();
+  const cenario = criarCenario({ existente });
+  const resultado = await cenario.servico.marcarObsolescencia(
+    {
+      evidenciadaEm: new Date('2026-09-01T00:30:00.000Z'),
+      motivo: 'TOMBSTONE_ERP',
+      vinculoClienteId,
+    },
+    cenario.transacao,
+    () => agora,
+  );
+  assert.equal(resultado.situacao, 'ATUALIZADO');
+  assert.equal(resultado.snapshot.estado, 'EXCLUIDO');
+  assert.equal(resultado.snapshot.motivoObsolescencia, 'TOMBSTONE_ERP');
+  assert.deepEqual(resultado.snapshot.dadosProtegidos, existente.dadosProtegidos);
+  assert.equal(resultado.snapshot.versao, 2);
+});
+
+test('ausência completa fica obsoleta e observação posterior reativa', async () => {
+  const existente = snapshotExistente();
+  const obsoleto = criarCenario({ existente });
+  const resultadoObsoleto = await obsoleto.servico.marcarObsolescencia(
+    {
+      evidenciadaEm: new Date('2026-09-01T00:30:00.000Z'),
+      motivo: 'AUSENTE_RECONCILIACAO_COMPLETA',
+      vinculoClienteId,
+    },
+    obsoleto.transacao,
+    () => agora,
+  );
+  assert.equal(resultadoObsoleto.snapshot.estado, 'OBSOLETO');
+
+  const reativacao = criarCenario({ existente: resultadoObsoleto.snapshot });
+  const resultadoAtual = await reativacao.servico.atualizar(
+    entrada({ capturadoEm: new Date('2026-09-01T00:45:00.000Z') }),
+    reativacao.transacao,
+    () => agora,
+  );
+  assert.equal(resultadoAtual.snapshot.estado, 'ATUAL');
+  assert.equal(resultadoAtual.snapshot.motivoObsolescencia, undefined);
+  assert.equal(resultadoAtual.snapshot.obsoletoEm, undefined);
+  assert.equal(resultadoAtual.snapshot.versao, 3);
 });

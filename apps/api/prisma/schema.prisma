@@ -464,6 +464,21 @@ enum OrigemSnapshotCliente {
   @@map("origem_snapshot_cliente")
 }
 
+enum EstadoSnapshotCliente {
+  ATUAL
+  OBSOLETO
+  EXCLUIDO
+
+  @@map("estado_snapshot_cliente")
+}
+
+enum MotivoObsolescenciaSnapshotCliente {
+  TOMBSTONE_ERP
+  AUSENTE_RECONCILIACAO_COMPLETA
+
+  @@map("motivo_obsolescencia_snapshot_cliente")
+}
+
 model RegistroAuditoria {
   id                         String          @id @db.Uuid
   tipoEvento                 String          @map("tipo_evento") @db.VarChar(100)
@@ -908,15 +923,15 @@ model ContaWhatsApp {
 }
 
 model Contato {
-  id                      String                   @id @db.Uuid
-  nomeExibicao            String?                  @map("nome_exibicao") @db.VarChar(200)
-  estado                  EstadoContato            @default(NORMAL)
-  bloqueadoEm             DateTime?                @map("bloqueado_em") @db.Timestamptz(6)
-  bloqueadoAte            DateTime?                @map("bloqueado_ate") @db.Timestamptz(6)
-  motivoBloqueio          String?                  @map("motivo_bloqueio") @db.VarChar(500)
-  ultimaInteracaoEm       DateTime?                @map("ultima_interacao_em") @db.Timestamptz(6)
-  criadoEm                DateTime                 @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm            DateTime                 @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  id                      String                      @id @db.Uuid
+  nomeExibicao            String?                     @map("nome_exibicao") @db.VarChar(200)
+  estado                  EstadoContato               @default(NORMAL)
+  bloqueadoEm             DateTime?                   @map("bloqueado_em") @db.Timestamptz(6)
+  bloqueadoAte            DateTime?                   @map("bloqueado_ate") @db.Timestamptz(6)
+  motivoBloqueio          String?                     @map("motivo_bloqueio") @db.VarChar(500)
+  ultimaInteracaoEm       DateTime?                   @map("ultima_interacao_em") @db.Timestamptz(6)
+  criadoEm                DateTime                    @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm            DateTime                    @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   identidadesWhatsApp     IdentidadeWhatsApp[]
   vinculosCliente         VinculoCliente[]
   contextosAtendimento    ContextoAtendimento[]
@@ -1209,41 +1224,41 @@ model NotaInterna {
 }
 
 model Mensagem {
-  id                           String                 @id @db.Uuid
-  conversaId                   String                 @map("conversa_id") @db.Uuid
-  atendimentoId                String                 @map("atendimento_id") @db.Uuid
-  contaWhatsAppId              String                 @map("conta_whatsapp_id") @db.Uuid
+  id                           String                    @id @db.Uuid
+  conversaId                   String                    @map("conversa_id") @db.Uuid
+  atendimentoId                String                    @map("atendimento_id") @db.Uuid
+  contaWhatsAppId              String                    @map("conta_whatsapp_id") @db.Uuid
   direcao                      DirecaoMensagem
   tipo                         TipoMensagem
-  estadoSaida                  EstadoSaidaMensagem?   @map("estado_saida")
-  conteudoProtegido            Json                   @map("conteudo_protegido")
-  conteudoHash                 String                 @map("conteudo_hash") @db.Char(64)
-  identificadorExternoMensagem String?                @map("identificador_externo_mensagem") @db.VarChar(256)
-  mensagemClienteId            String?                @map("mensagem_cliente_id") @db.Uuid
-  respondeAMensagemId          String?                @map("responde_a_mensagem_id") @db.Uuid
-  mensagemAlvoReacaoId         String?                @map("mensagem_alvo_reacao_id") @db.Uuid
-  usuarioRemetenteId           String?                @map("usuario_remetente_id") @db.Uuid
-  contatoRemetenteId           String?                @map("contato_remetente_id") @db.Uuid
-  criadaDispositivoEm          DateTime?              @map("criada_dispositivo_em") @db.Timestamptz(6)
-  recebidaServidorEm           DateTime               @map("recebida_servidor_em") @db.Timestamptz(6)
-  proximaTentativaEm           DateTime?              @map("proxima_tentativa_em") @db.Timestamptz(6)
-  tentativasEnvio              Int                    @default(0) @map("tentativas_envio")
-  enviadaEm                    DateTime?              @map("enviada_em") @db.Timestamptz(6)
-  entregueEm                   DateTime?              @map("entregue_em") @db.Timestamptz(6)
-  lidaEm                       DateTime?              @map("lida_em") @db.Timestamptz(6)
-  falhouEm                     DateTime?              @map("falhou_em") @db.Timestamptz(6)
-  canceladaEm                  DateTime?              @map("cancelada_em") @db.Timestamptz(6)
-  codigoFalha                  String?                @map("codigo_falha") @db.VarChar(100)
-  versao                       Int                    @default(1)
-  conversa                     Conversa               @relation(fields: [conversaId], references: [id], onDelete: Restrict)
-  atendimento                  Atendimento            @relation(fields: [atendimentoId, conversaId], references: [id, conversaId], onDelete: Restrict)
-  contaWhatsApp                ContaWhatsApp          @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
-  usuarioRemetente             Usuario?               @relation(fields: [usuarioRemetenteId], references: [id], onDelete: Restrict)
-  contatoRemetente             Contato?               @relation(fields: [contatoRemetenteId], references: [id], onDelete: Restrict)
-  respondeAMensagem            Mensagem?              @relation("RespostaMensagem", fields: [respondeAMensagemId], references: [id], onDelete: Restrict)
-  respostas                    Mensagem[]             @relation("RespostaMensagem")
-  mensagemAlvoReacao           Mensagem?              @relation("ReacaoMensagem", fields: [mensagemAlvoReacaoId], references: [id], onDelete: Restrict)
-  reacoes                      Mensagem[]             @relation("ReacaoMensagem")
+  estadoSaida                  EstadoSaidaMensagem?      @map("estado_saida")
+  conteudoProtegido            Json                      @map("conteudo_protegido")
+  conteudoHash                 String                    @map("conteudo_hash") @db.Char(64)
+  identificadorExternoMensagem String?                   @map("identificador_externo_mensagem") @db.VarChar(256)
+  mensagemClienteId            String?                   @map("mensagem_cliente_id") @db.Uuid
+  respondeAMensagemId          String?                   @map("responde_a_mensagem_id") @db.Uuid
+  mensagemAlvoReacaoId         String?                   @map("mensagem_alvo_reacao_id") @db.Uuid
+  usuarioRemetenteId           String?                   @map("usuario_remetente_id") @db.Uuid
+  contatoRemetenteId           String?                   @map("contato_remetente_id") @db.Uuid
+  criadaDispositivoEm          DateTime?                 @map("criada_dispositivo_em") @db.Timestamptz(6)
+  recebidaServidorEm           DateTime                  @map("recebida_servidor_em") @db.Timestamptz(6)
+  proximaTentativaEm           DateTime?                 @map("proxima_tentativa_em") @db.Timestamptz(6)
+  tentativasEnvio              Int                       @default(0) @map("tentativas_envio")
+  enviadaEm                    DateTime?                 @map("enviada_em") @db.Timestamptz(6)
+  entregueEm                   DateTime?                 @map("entregue_em") @db.Timestamptz(6)
+  lidaEm                       DateTime?                 @map("lida_em") @db.Timestamptz(6)
+  falhouEm                     DateTime?                 @map("falhou_em") @db.Timestamptz(6)
+  canceladaEm                  DateTime?                 @map("cancelada_em") @db.Timestamptz(6)
+  codigoFalha                  String?                   @map("codigo_falha") @db.VarChar(100)
+  versao                       Int                       @default(1)
+  conversa                     Conversa                  @relation(fields: [conversaId], references: [id], onDelete: Restrict)
+  atendimento                  Atendimento               @relation(fields: [atendimentoId, conversaId], references: [id, conversaId], onDelete: Restrict)
+  contaWhatsApp                ContaWhatsApp             @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  usuarioRemetente             Usuario?                  @relation(fields: [usuarioRemetenteId], references: [id], onDelete: Restrict)
+  contatoRemetente             Contato?                  @relation(fields: [contatoRemetenteId], references: [id], onDelete: Restrict)
+  respondeAMensagem            Mensagem?                 @relation("RespostaMensagem", fields: [respondeAMensagemId], references: [id], onDelete: Restrict)
+  respostas                    Mensagem[]                @relation("RespostaMensagem")
+  mensagemAlvoReacao           Mensagem?                 @relation("ReacaoMensagem", fields: [mensagemAlvoReacaoId], references: [id], onDelete: Restrict)
+  reacoes                      Mensagem[]                @relation("ReacaoMensagem")
   midia                        MidiaMensagem?
   eventoEntradaCanal           EventoEntradaCanal?
   eventosEstado                EventoEstadoMensagem[]
@@ -1278,18 +1293,18 @@ model EventoEstadoMensagem {
 }
 
 model ModeloMensagemCanal {
-  id                    String                       @id @db.Uuid
-  contaWhatsAppId       String                       @map("conta_whatsapp_id") @db.Uuid
-  referenciaCanal       String                       @map("referencia_canal") @db.VarChar(256)
-  nome                  String                       @db.VarChar(512)
-  idioma                String                       @db.VarChar(20)
+  id                    String                    @id @db.Uuid
+  contaWhatsAppId       String                    @map("conta_whatsapp_id") @db.Uuid
+  referenciaCanal       String                    @map("referencia_canal") @db.VarChar(256)
+  nome                  String                    @db.VarChar(512)
+  idioma                String                    @db.VarChar(20)
   estado                EstadoModeloMensagemCanal
-  quantidadeParametros  Int                          @map("quantidade_parametros")
-  componentesProtegidos Json                         @map("componentes_protegidos")
-  componentesHash       String                       @map("componentes_hash") @db.Char(64)
-  sincronizadoEm        DateTime                     @map("sincronizado_em") @db.Timestamptz(6)
-  versao                Int                          @default(1)
-  contaWhatsApp         ContaWhatsApp                @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  quantidadeParametros  Int                       @map("quantidade_parametros")
+  componentesProtegidos Json                      @map("componentes_protegidos")
+  componentesHash       String                    @map("componentes_hash") @db.Char(64)
+  sincronizadoEm        DateTime                  @map("sincronizado_em") @db.Timestamptz(6)
+  versao                Int                       @default(1)
+  contaWhatsApp         ContaWhatsApp             @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
 
   @@unique([contaWhatsAppId, nome, idioma], map: "modelo_mensagem_canal_conta_nome_idioma_key")
   @@unique([contaWhatsAppId, referenciaCanal], map: "modelo_mensagem_canal_conta_referencia_key")
@@ -1315,16 +1330,16 @@ model EventoEntradaCanal {
 }
 
 model MidiaMensagem {
-  mensagemId    String                 @id @map("mensagem_id") @db.Uuid
-  categoria     CategoriaMidiaMensagem
-  bucketPrivado String                 @map("bucket_privado") @db.VarChar(100)
-  chaveObjeto   String                 @map("chave_objeto") @db.VarChar(500)
-  mimeDeclarado String                 @map("mime_declarado") @db.VarChar(100)
-  mimeDetectado String                 @map("mime_detectado") @db.VarChar(100)
-  tamanhoBytes  BigInt                 @map("tamanho_bytes")
-  conteudoHash  String                 @map("conteudo_hash") @db.Char(64)
-  armazenadaEm  DateTime               @map("armazenada_em") @db.Timestamptz(6)
-  mensagem      Mensagem               @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
+  mensagemId            String                 @id @map("mensagem_id") @db.Uuid
+  categoria             CategoriaMidiaMensagem
+  bucketPrivado         String                 @map("bucket_privado") @db.VarChar(100)
+  chaveObjeto           String                 @map("chave_objeto") @db.VarChar(500)
+  mimeDeclarado         String                 @map("mime_declarado") @db.VarChar(100)
+  mimeDetectado         String                 @map("mime_detectado") @db.VarChar(100)
+  tamanhoBytes          BigInt                 @map("tamanho_bytes")
+  conteudoHash          String                 @map("conteudo_hash") @db.Char(64)
+  armazenadaEm          DateTime               @map("armazenada_em") @db.Timestamptz(6)
+  mensagem              Mensagem               @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
   composicoesSegundaVia ComposicaoSegundaVia[]
 
   @@unique([bucketPrivado, chaveObjeto], map: "midia_mensagem_bucket_chave_key")
@@ -1356,18 +1371,18 @@ model ComposicaoSegundaVia {
 }
 
 model FormularioCanal {
-  id                    String                    @id @db.Uuid
-  contaWhatsAppId       String                    @map("conta_whatsapp_id") @db.Uuid
-  referenciaCanal       String                    @map("referencia_canal") @db.VarChar(256)
-  nome                  String                    @db.VarChar(200)
-  finalidade            FinalidadeFormularioCanal
-  estado                EstadoFormularioCanal
-  estruturaProtegida    Json                      @map("estrutura_protegida")
-  estruturaHash         String                    @map("estrutura_hash") @db.Char(64)
-  sincronizadoEm        DateTime                  @map("sincronizado_em") @db.Timestamptz(6)
-  versao                Int                       @default(1)
-  contaWhatsApp         ContaWhatsApp             @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
-  submissoes            SubmissaoFormularioCanal[]
+  id                 String                     @id @db.Uuid
+  contaWhatsAppId    String                     @map("conta_whatsapp_id") @db.Uuid
+  referenciaCanal    String                     @map("referencia_canal") @db.VarChar(256)
+  nome               String                     @db.VarChar(200)
+  finalidade         FinalidadeFormularioCanal
+  estado             EstadoFormularioCanal
+  estruturaProtegida Json                       @map("estrutura_protegida")
+  estruturaHash      String                     @map("estrutura_hash") @db.Char(64)
+  sincronizadoEm     DateTime                   @map("sincronizado_em") @db.Timestamptz(6)
+  versao             Int                        @default(1)
+  contaWhatsApp      ContaWhatsApp              @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  submissoes         SubmissaoFormularioCanal[]
 
   @@unique([contaWhatsAppId, referenciaCanal], map: "formulario_canal_conta_referencia_key")
   @@index([contaWhatsAppId, estado, finalidade, nome], map: "formulario_canal_catalogo_idx")
@@ -1375,17 +1390,17 @@ model FormularioCanal {
 }
 
 model SubmissaoFormularioCanal {
-  id                    String           @id @db.Uuid
-  formularioId          String           @map("formulario_id") @db.Uuid
-  mensagemId            String           @unique(map: "submissao_formulario_canal_mensagem_key") @map("mensagem_id") @db.Uuid
-  contatoId             String           @map("contato_id") @db.Uuid
-  referenciaCanal       String           @map("referencia_canal") @db.VarChar(64)
-  dadosProtegidos       Json             @map("dados_protegidos")
-  dadosHash             String           @map("dados_hash") @db.Char(64)
-  recebidaEm            DateTime         @map("recebida_em") @db.Timestamptz(6)
-  formulario            FormularioCanal  @relation(fields: [formularioId], references: [id], onDelete: Restrict)
-  mensagem              Mensagem         @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
-  contato               Contato          @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  id              String          @id @db.Uuid
+  formularioId    String          @map("formulario_id") @db.Uuid
+  mensagemId      String          @unique(map: "submissao_formulario_canal_mensagem_key") @map("mensagem_id") @db.Uuid
+  contatoId       String          @map("contato_id") @db.Uuid
+  referenciaCanal String          @map("referencia_canal") @db.VarChar(64)
+  dadosProtegidos Json            @map("dados_protegidos")
+  dadosHash       String          @map("dados_hash") @db.Char(64)
+  recebidaEm      DateTime        @map("recebida_em") @db.Timestamptz(6)
+  formulario      FormularioCanal @relation(fields: [formularioId], references: [id], onDelete: Restrict)
+  mensagem        Mensagem        @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
+  contato         Contato         @relation(fields: [contatoId], references: [id], onDelete: Restrict)
 
   @@unique([formularioId, referenciaCanal], map: "submissao_formulario_canal_formulario_referencia_key")
   @@index([contatoId, recebidaEm, id], map: "submissao_formulario_canal_contato_recebida_idx")
@@ -1393,32 +1408,32 @@ model SubmissaoFormularioCanal {
 }
 
 model AplicacaoIntegracao {
-  id            String                     @id @db.Uuid
-  nome          String                     @unique @db.VarChar(100)
-  segredoHash   String                     @map("segredo_hash") @db.Char(64)
-  estado        EstadoAplicacaoIntegracao  @default(ATIVA)
-  criadoEm      DateTime                   @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm  DateTime                   @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  disparos      DisparoTransacional[]
+  id           String                    @id @db.Uuid
+  nome         String                    @unique @db.VarChar(100)
+  segredoHash  String                    @map("segredo_hash") @db.Char(64)
+  estado       EstadoAplicacaoIntegracao @default(ATIVA)
+  criadoEm     DateTime                  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime                  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  disparos     DisparoTransacional[]
 
   @@index([estado, nome, id], map: "aplicacao_integracao_estado_nome_idx")
   @@map("aplicacao_integracao")
 }
 
 model ConsentimentoContatoCanal {
-  id                String                        @id @db.Uuid
-  contatoId         String                        @map("contato_id") @db.Uuid
-  contaWhatsAppId   String                        @map("conta_whatsapp_id") @db.Uuid
-  finalidade        FinalidadeConsentimentoCanal
-  estado            EstadoConsentimentoCanal
-  origem            String                        @db.VarChar(100)
-  concedidoEm       DateTime                      @map("concedido_em") @db.Timestamptz(6)
-  revogadoEm        DateTime?                     @map("revogado_em") @db.Timestamptz(6)
-  versao            Int                           @default(1)
-  atualizadoEm      DateTime                      @map("atualizado_em") @db.Timestamptz(6)
-  contato           Contato                       @relation(fields: [contatoId], references: [id], onDelete: Restrict)
-  contaWhatsApp     ContaWhatsApp                 @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
-  disparos          DisparoTransacional[]
+  id              String                       @id @db.Uuid
+  contatoId       String                       @map("contato_id") @db.Uuid
+  contaWhatsAppId String                       @map("conta_whatsapp_id") @db.Uuid
+  finalidade      FinalidadeConsentimentoCanal
+  estado          EstadoConsentimentoCanal
+  origem          String                       @db.VarChar(100)
+  concedidoEm     DateTime                     @map("concedido_em") @db.Timestamptz(6)
+  revogadoEm      DateTime?                    @map("revogado_em") @db.Timestamptz(6)
+  versao          Int                          @default(1)
+  atualizadoEm    DateTime                     @map("atualizado_em") @db.Timestamptz(6)
+  contato         Contato                      @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  contaWhatsApp   ContaWhatsApp                @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  disparos        DisparoTransacional[]
 
   @@unique([contatoId, contaWhatsAppId, finalidade], map: "consentimento_contato_canal_escopo_key")
   @@index([contaWhatsAppId, estado, finalidade, atualizadoEm], map: "consentimento_contato_canal_estado_idx")
@@ -1426,16 +1441,16 @@ model ConsentimentoContatoCanal {
 }
 
 model DisparoTransacional {
-  id                       String                      @id @db.Uuid
-  aplicacaoIntegracaoId    String                      @map("aplicacao_integracao_id") @db.Uuid
-  consentimentoId          String                      @map("consentimento_id") @db.Uuid
-  mensagemId               String                      @unique(map: "disparo_transacional_mensagem_key") @map("mensagem_id") @db.Uuid
-  idempotenciaHash         String                      @map("chave_idempotencia_hash") @db.Char(64)
-  assinaturaComandoHash    String                      @map("assinatura_comando_hash") @db.Char(64)
-  criadoEm                 DateTime                    @map("criado_em") @db.Timestamptz(6)
-  aplicacaoIntegracao      AplicacaoIntegracao         @relation(fields: [aplicacaoIntegracaoId], references: [id], onDelete: Restrict)
-  consentimento            ConsentimentoContatoCanal   @relation(fields: [consentimentoId], references: [id], onDelete: Restrict)
-  mensagem                 Mensagem                    @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
+  id                    String                    @id @db.Uuid
+  aplicacaoIntegracaoId String                    @map("aplicacao_integracao_id") @db.Uuid
+  consentimentoId       String                    @map("consentimento_id") @db.Uuid
+  mensagemId            String                    @unique(map: "disparo_transacional_mensagem_key") @map("mensagem_id") @db.Uuid
+  idempotenciaHash      String                    @map("chave_idempotencia_hash") @db.Char(64)
+  assinaturaComandoHash String                    @map("assinatura_comando_hash") @db.Char(64)
+  criadoEm              DateTime                  @map("criado_em") @db.Timestamptz(6)
+  aplicacaoIntegracao   AplicacaoIntegracao       @relation(fields: [aplicacaoIntegracaoId], references: [id], onDelete: Restrict)
+  consentimento         ConsentimentoContatoCanal @relation(fields: [consentimentoId], references: [id], onDelete: Restrict)
+  mensagem              Mensagem                  @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
 
   @@unique([aplicacaoIntegracaoId, idempotenciaHash], map: "disparo_transacional_aplicacao_idempotencia_key")
   @@index([consentimentoId, criadoEm, id], map: "disparo_transacional_consentimento_criado_idx")
@@ -1533,18 +1548,22 @@ model VinculoCliente {
 }
 
 model SnapshotCliente {
-  id               String                @id @db.Uuid
-  vinculoClienteId String                @unique(map: "snapshot_cliente_vinculo_key") @map("vinculo_cliente_id") @db.Uuid
-  origem           OrigemSnapshotCliente @default(INTEGRACAO_ERP)
-  dadosProtegidos  Json                  @map("dados_protegidos")
-  conteudoHash     String                @map("conteudo_hash") @db.Char(64)
-  capturadoEm      DateTime              @map("capturado_em") @db.Timestamptz(6)
-  persistidoEm     DateTime              @default(now()) @map("persistido_em") @db.Timestamptz(6)
-  atualizadoEm     DateTime              @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  versao           Int                   @default(1)
-  vinculoCliente   VinculoCliente        @relation(fields: [vinculoClienteId], references: [id], onDelete: Restrict)
+  id                  String                              @id @db.Uuid
+  vinculoClienteId    String                              @unique(map: "snapshot_cliente_vinculo_key") @map("vinculo_cliente_id") @db.Uuid
+  origem              OrigemSnapshotCliente               @default(INTEGRACAO_ERP)
+  estado              EstadoSnapshotCliente               @default(ATUAL)
+  motivoObsolescencia MotivoObsolescenciaSnapshotCliente? @map("motivo_obsolescencia")
+  obsoletoEm          DateTime?                           @map("obsoleto_em") @db.Timestamptz(6)
+  dadosProtegidos     Json                                @map("dados_protegidos")
+  conteudoHash        String                              @map("conteudo_hash") @db.Char(64)
+  capturadoEm         DateTime                            @map("capturado_em") @db.Timestamptz(6)
+  persistidoEm        DateTime                            @default(now()) @map("persistido_em") @db.Timestamptz(6)
+  atualizadoEm        DateTime                            @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  versao              Int                                 @default(1)
+  vinculoCliente      VinculoCliente                      @relation(fields: [vinculoClienteId], references: [id], onDelete: Restrict)
 
   @@index([capturadoEm, vinculoClienteId], map: "snapshot_cliente_capturado_idx")
+  @@index([estado, obsoletoEm, vinculoClienteId], map: "snapshot_cliente_estado_idx")
   @@map("snapshot_cliente")
 }
 

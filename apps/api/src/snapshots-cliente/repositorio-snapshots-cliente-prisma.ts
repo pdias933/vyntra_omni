@@ -49,7 +49,14 @@ export class RepositorioSnapshotsClientePrisma
       capturadoEm: snapshot.capturadoEm,
       conteudoHash: snapshot.conteudoHash,
       dadosProtegidos: snapshot.dadosProtegidos,
+      estado: snapshot.estado,
       id: snapshot.id,
+      ...(snapshot.motivoObsolescencia === null
+        ? {}
+        : { motivoObsolescencia: snapshot.motivoObsolescencia }),
+      ...(snapshot.obsoletoEm === null
+        ? {}
+        : { obsoletoEm: snapshot.obsoletoEm }),
       origem: snapshot.origem,
       persistidoEm: snapshot.persistidoEm,
       versao: snapshot.versao,
@@ -86,7 +93,10 @@ export class RepositorioSnapshotsClientePrisma
       capturadoEm: snapshot.capturadoEm,
       conteudoHash: snapshot.conteudoHash,
       dadosProtegidos: snapshot.dadosProtegidos,
+      estado: snapshot.estado,
       id: snapshot.id,
+      motivoObsolescencia: snapshot.motivoObsolescencia ?? null,
+      obsoletoEm: snapshot.obsoletoEm ?? null,
       origem: snapshot.origem,
       persistidoEm: snapshot.persistidoEm,
       versao: snapshot.versao,

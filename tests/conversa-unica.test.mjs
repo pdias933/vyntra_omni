@@ -40,7 +40,7 @@ test('resolução serializa pelo contato e não cria conversa por conta', async 
   assert.ok(!modulo.includes('Controller'));
 });
 
-test('prontidão exige a migration de conversa mais recente', async () => {
+test('prontidão avança para a migration obrigatória mais recente', async () => {
   const persistencia = await ler('apps/api/src/persistencia/servico-prisma.ts');
-  assert.match(persistencia, /20260831001600_criar_conversa_unica/);
+  assert.match(persistencia, /20260901003500_estado_snapshot_cliente/);
 });

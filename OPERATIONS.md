@@ -381,6 +381,8 @@ A PR 020 também não possui migration e mantém a mesma marca obrigatória. O s
 
 A PR 021 aplica `20260831001000_criar_controle_sessao_acesso_desativado`, que semeia `SESSAO_ACESSO` em `DESATIVADO`, sem alvo ou percentual. O simulador não possui endpoint, credencial nem registro na aplicação. `NAO_CONFIGURADO` ou `DESATIVADO` não degrada a saúde geral; `INDISPONIVEL` só deve alertar quando uma fonte real previamente habilitada existir. Promover a imagem não habilita consulta nem desconexão.
 
+A PR 062 eleva a marca de prontidão para `20260901003500_estado_snapshot_cliente`. A migration acrescenta estado, motivo e instante de obsolescência com padrão compatível `ATUAL`; não apaga nem reescreve documentos existentes. Rollback da aplicação preserva as colunas. Antes de habilitar um sincronizador real, validar paginação, cursor e exclusões do MK; ausência em página parcial nunca é procedimento válido para marcar obsolescência.
+
 ### Recuperação de operações
 
 Um processo periódico recupera concessões vencidas em lotes pequenos. Ele encerra a tentativa como `RESULTADO_INCERTO`, limpa a concessão e agenda reconciliação imediata. O operador pode observar tipo, estado, idade, quantidade de tentativas e código normalizado; token, payload bruto e dado sensível não aparecem em log ou painel.
