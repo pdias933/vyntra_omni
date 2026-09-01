@@ -268,6 +268,8 @@ Ao receber `RESSINCRONIZACAO_COMPLETA_NECESSARIA`:
 
 A PR 054 fixa o contrato do passo 3: o snapshot retorna filas e permissões vigentes, atendimentos abertos/reabríveis, controles e políticas, além de uma janela de trabalho de até 200 conversas e 200 mensagens/notas por conversa. O histórico restante continua disponível no servidor. O plano local obrigatório executa `SUBSTITUIR_REPLICA_AUTORIZADA` e `PERSISTIR_SEQUENCIA_BASE` na mesma transação SQLite; rascunhos e comandos pendentes não pertencem à réplica substituída e são preservados para reconciliação.
 
+A PR 058 acrescenta `versao_permissoes` ao snapshot. Na recuperação de uma invalidação, versão e `sequencia_base` precisam ser iguais ou posteriores às do evento recebido; snapshot antigo é recusado e bloqueia a área autenticada.
+
 ## 8. Tempo real e ciclo de vida
 
 ### Primeiro plano
@@ -365,7 +367,9 @@ Ao receber `PERMISSOES_ALTERADAS` ou `403 ESCOPO_ATUALIZADO`:
 - refazer snapshot se necessário;
 - não manter timeline antiga acessível por tela offline.
 
-Ao tomar conhecimento da revogação, o app apaga a réplica autenticada e retorna ao login. Se estiver totalmente offline, a autorização offline expira e bloqueia o cache; a próxima conexão confirma a revogação e conclui a limpeza.
+`CoordenadorInvalidacaoEscopoMobile` coalesce invalidações simultâneas, pausa comandos dependentes, fecha o WebSocket, obtém snapshot autorizado, substitui a réplica removendo itens ausentes, reconcilia pendências e reconecta por `sequencia_base`. Só então retoma os comandos ainda autorizados. Falha em qualquer etapa bloqueia a área autenticada e nunca restaura o cache anterior.
+
+Perda de uma fila ou permissão não encerra necessariamente a sessão nem apaga dados de outros escopos: o snapshot decide o conjunto remanescente. Revogação da sessão/dispositivo, por outro lado, limpa toda a réplica autenticada e retorna ao login. Se estiver totalmente offline, a autorização offline expira e bloqueia o cache; a próxima conexão confirma a mudança e conclui a limpeza.
 
 ## 11. Leitura e não lida
 

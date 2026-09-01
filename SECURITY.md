@@ -69,7 +69,7 @@ A PR 015 materializa a sessão mobile separada da web. Access e refresh tokens t
 
 A PR 016 torna o PostgreSQL autoridade do limite de dois aparelhos. Login de uma instalação nova serializa todos os dispositivos do usuário, revoga o ativo com `ultimo_acesso_em` mais antigo e encerra suas sessões antes de criar o terceiro; a resposta informa que houve substituição. O usuário lista somente os próprios aparelhos ativos e pode revogar qualquer um, inclusive o atual. Revogação administrativa exige sessão web, CSRF, origem permitida e `ADMINISTRAR_USUARIOS`. Alvo de outro usuário converge para negação sem vazamento. Toda revogação informa motivo, encerra todas as sessões do aparelho e gera auditoria.
 
-Após o commit, access e refresh daquele aparelho perdem autoridade imediatamente. Sincronização e WebSocket devem chamar `ServicoAutenticacaoMobile.autenticar` no handshake e novamente em heartbeat/comandos; uma conexão não pode conservar um contexto autenticado indefinidamente. O gateway ainda será materializado na PR 056, quando o fechamento físico da conexão ativa também será testado; até lá não existe transporte WebSocket a ser mantido ou cortado.
+Após o commit, access e refresh daquele aparelho perdem autoridade imediatamente. Sincronização e WebSocket chamam `ServicoAutenticacaoMobile.autenticar` no handshake e novamente em heartbeat/comandos; uma conexão não conserva um contexto autenticado indefinidamente. A PR 056 materializou o gateway e a PR 058 acrescentou essa revalidação contínua: falha encerra a conexão com código privado `4003`, sem revelar o motivo interno ao cliente.
 
 ### 4.2 Pareamento QR
 
@@ -98,6 +98,8 @@ Geração exige sessão web+CSRF+origem. Confirmação exige a mesma sessão web
 - logout global e revogação administrativa;
 - reautenticação pode ser exigida para mudanças críticas de integração, permissão ou segurança;
 - SSE reutiliza o cookie e valida origem/escopo.
+
+A PR 058 faz o SSE revalidar a sessão em cada ciclo de consulta. Sessão revogada encerra o stream. Mudança de permissão entrega primeiro `PERMISSOES_ALTERADAS` ao usuário exato e então conclui a resposta, obrigando nova consulta autorizada; o cookie não congela o escopo existente na abertura.
 
 O token de sessão e o token CSRF possuem 256 bits aleatórios e são persistidos somente por hash. O cookie de sessão usa o prefixo `__Host-`, `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/` e não declara `Domain`; o CSRF é vinculado à sessão e deve coincidir em cookie e header. Toda mutação de autenticação também exige `Origin` HTTPS presente na allowlist. Rotação troca ambos os segredos por atualização atômica condicionada ao token atual e renova o limite de inatividade.
 

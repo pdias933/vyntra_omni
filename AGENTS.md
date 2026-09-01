@@ -119,7 +119,8 @@ Não propague DTOs/nomenclatura Meta ou MK para domínio, UI ou Motor de Fluxos.
 - Timeout, resposta perdida ou concessão expirada viram `RESULTADO_INCERTO`; nunca repetir efeito externo ambíguo sem reconciliar.
 - Evento só é distribuído após commit.
 - Alteração com efeito assíncrono usa `ServicoTransacaoDominio`; evento e caixa de saída não podem ser persistidos por transações independentes.
-- Remover permissão invalida stream e cache local.
+- Mudança de escopo incrementa `versao_permissoes` e confirma `PERMISSOES_ALTERADAS` na mesma transação; o evento alcança somente o usuário afetado.
+- Remover permissão entrega a invalidação antes de fechar SSE/WebSocket; o mobile aceita apenas snapshot com versão e sequência suficientes e substitui a réplica removendo ausentes.
 - Usuário, perfil, permissão e acesso de fila são dimensões distintas; criar usuário não concede nenhuma delas implicitamente.
 - Financeiro, Suporte e Comercial são filas configuráveis, nunca papéis ou permissões codificadas.
 - Encerramento, expiração, deploy ou nova tentativa não apagam histórico/auditoria.
@@ -210,6 +211,7 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - Mudança relevante produz `REVISAO_NECESSARIA`.
 - “Enviar mesmo assim” não ignora autorização, janela ou atribuição.
 - Perda de permissão remove/inutiliza dado local correspondente.
+- Invalidação pausa comandos dependentes, fecha realtime, aplica snapshot autorizado e só então reconecta/retoma; falha bloqueia a área autenticada e nunca restaura cache antigo.
 - Fechar app/stream não muda disponibilidade do usuário.
 
 ## 11. Testes obrigatórios por tipo de mudança

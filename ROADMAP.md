@@ -79,7 +79,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 055 | CONCLUÍDA | `xhigh` |
 | 056 | CONCLUÍDA | `xhigh` |
 | 057 | CONCLUÍDA | `high` |
-| 058 | EM ANDAMENTO | `xhigh` |
+| 058 | CONCLUÍDA | `xhigh` |
 | 059 | PENDENTE | `xhigh` |
 | 060 | PENDENTE | `high` |
 | 061 | PENDENTE | `xhigh` |
@@ -417,6 +417,10 @@ Aceite concluído em 1º de setembro de 2026: o mobile passou a acompanhar `/api
 ### PR 057 — avisos mobile por push
 
 Aceite concluído em 1º de setembro de 2026: a projeção `PUSH` passou por um compositor de domínio que aceita somente os cinco avisos aprovados, sequência observada e UUIDs mínimos de navegação. Título e corpo pertencem a um catálogo genérico sem nome, conteúdo, CPF, fatura ou dado financeiro. A chave de agrupamento é derivada da conversa e, quando ela não existe, do atendimento; uma rajada substitui o aviso agrupado anterior. A porta de entrega usa resultados internos `ACEITO`, `DESTINO_INVALIDO` e `INDISPONIVEL`; termos do provedor e o simulador ficam nos adapters, e o simulador não é registrado na aplicação. No app, `expo-notifications` recebe somente uma allowlist estrita; aviso em primeiro plano solicita sincronização, enquanto toque ou abertura a frio sincroniza antes de navegar. Falha de sincronização impede a navegação, e push nunca grava SQLite, avança cursor, marca leitura ou habilita ação. Lint, tipos, 239 testes da API, 165 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-057` ficou saudável com prontidão `PRONTO`. Em staging, as sequências `57` e `58` da mesma conversa produziram um único aviso na sequência mais recente, campo adicional foi recusado, indisponibilidade permaneceu explícita, migration encerrou com código zero e nenhum erro de nível 50 foi emitido. Envio externo real permanece sem adapter registrado até existirem credenciais, destinos e configuração operacional aprovados; isso não é substituído pelo simulador.
+
+### PR 058 — invalidação por permissão
+
+Aceite concluído em 1º de setembro de 2026: cada usuário ativo passou a possuir `versao_permissoes`. Concessão, revogação ou inativação de fila incrementa a versão e confirma `PERMISSOES_ALTERADAS` na mesma transação da mudança de escopo; repetição idempotente não cria nova invalidação. A projeção alcança somente o usuário afetado. SSE revalida a sessão durante o stream e, após entregar o evento, encerra a resposta. WebSocket autentica no upgrade, heartbeat e confirmação e fecha com código privado `4003` depois de entregar a invalidação. O snapshot completo publica `versao_permissoes`; o coordenador mobile pausa comandos, fecha o tempo real, exige snapshot ao menos tão novo quanto evento e versão, substitui a réplica removendo ausentes, reconcilia pendências e só então reconecta. Falha bloqueia a área autenticada. Lint, tipos, 244 testes da API, 168 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901003400_versionar_permissoes_usuario` terminou com código zero e `vyntra/api-staging:pr-058` ficou saudável com prontidão `PRONTO`. Em staging, uma fila autorizada apareceu no snapshot de versão 1; a revogação transacional gerou o evento `14`, encerrou o WebSocket com `4003`, elevou a versão para 2, removeu a fila do novo snapshot e permitiu reconexão em `PRONTO`. Dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 

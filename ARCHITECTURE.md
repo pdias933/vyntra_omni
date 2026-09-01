@@ -447,6 +447,8 @@ Assim, evento criado entre os passos 2 e 4 é recuperado no passo 5. “Abrir We
 
 A PR 056 materializa esse contrato em `/api/v1/sincronizacao/eventos-mobile?apos=<sequencia>`. O upgrade só ocorre depois de validar access token, UUID do dispositivo e segredo de vínculo pelo serviço de autenticação mobile; cookie web não é aceito. A assinatura PostgreSQL começa bufferizada antes da marca d’água, entrega projeções `MOBILE` autorizadas e envia `PRONTO` somente depois do handoff. O envelope `EVENTO` carrega `sequencia_evento`, e o app responde `CONFIRMAR` apenas depois da aplicação idempotente local. Confirmações são cumulativas e monotônicas. Ping/pong detecta conexão morta; pressão de saída, buffer ou confirmações pendentes excessivas fecham o canal para retomada pelo último cursor aplicado. Redis não participa de autenticação, autorização, ordem ou recuperação.
 
+A PR 058 acrescenta revalidação de sessão no heartbeat e antes de aceitar cada confirmação. Falha fecha o canal com `4003 AUTORIZACAO_INVALIDADA`. Uma projeção `PERMISSOES_ALTERADAS` é enviada primeiro e encerra o canal com `4003 ESCOPO_ALTERADO`, permitindo que o app use a sequência e a versão recebidas como limite mínimo do snapshot de recuperação.
+
 ### 8.4 Push
 
 Push contém apenas identificadores mínimos e texto não sensível. Ele avisa; não altera SQLite como fonte definitiva, não marca leitura e não carrega CPF, fatura ou conteúdo privado. Ao abrir o app, a sincronização decide o estado.
@@ -517,6 +519,10 @@ A referência inicial é retenção de 30 dias para eventos de sincronização, 
 3. apagar/inutilizar do SQLite os dados que perderam escopo;
 4. refazer snapshot se necessário;
 5. reconectar com novo escopo.
+
+A PR 058 materializa `usuario.versao_permissoes`, iniciada em 1. Conceder/revogar acesso de fila e inativar uma fila incrementam a versão dos usuários efetivamente afetados e acrescentam `PERMISSOES_ALTERADAS` na mesma transação PostgreSQL; operação idempotente sem mudança não incrementa. O evento tem entidade `USUARIO`, alcança somente seu alvo e carrega motivo, fila quando aplicável e a nova versão. SSE e WebSocket entregam o evento antes de encerrar; SSE também revalida a sessão a cada ciclo de consulta.
+
+O snapshot completo publica `versao_permissoes`. O coordenador mobile aceita a recuperação somente se `snapshot.versaoPermissoes >= evento.dados.versaoPermissoes` e `snapshot.sequenciaBase >= evento.sequenciaEvento`. A substituição deve remover explicitamente todo registro ausente do novo conjunto autorizado. Rascunhos e comandos pendentes permanecem separados, são reconciliados sob o novo escopo e só comandos ainda autorizados retomam. Se snapshot, substituição ou reconexão falhar, a área autenticada fica bloqueada; cache antigo nunca volta a ser exibido como fallback.
 
 ### 9.4 Projeções de lista e timeline
 
