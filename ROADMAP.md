@@ -108,7 +108,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 084 | CONCLUÍDA | `xhigh` |
 | 085 | CONCLUÍDA | `high` |
 | 086 | CONCLUÍDA | `high` |
-| 087 | EM ANDAMENTO | `high` |
+| 087 | CONCLUÍDA | `high` |
 | 088 | PENDENTE | `high` |
 | 089 | PENDENTE | `high` |
 | 090 | PENDENTE | `high` |
@@ -598,6 +598,10 @@ Aceite concluído em 1º de setembro de 2026: o editor recebeu um painel lateral
 ### PR 086 — shell e autenticação
 
 Aceite concluído em 1º de setembro de 2026: a web recebeu shell desktop autenticado, login, logout, expiração, confirmação explícita para substituir a terceira sessão e rotas estáveis por histórico. Senha e token não são persistidos no navegador; o CSRF continua vindo somente do cookie emitido pelo backend. O SSE observa `PERMISSOES_ALTERADAS`, revalida a sessão e nunca transforma navegação em autoridade. A inspeção no navegador encontrou e fechou o caso em que uma resposta HTML de desenvolvimento poderia atravessar o tipo gerado: sessão agora exige validação estrutural em runtime antes de qualquer conteúdo protegido. O login foi conferido visualmente com zero erro após a correção. Lint, tipos, 408 testes da API, 214 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, dependências e segredos foram aprovados. Não houve migration; a reversão da web preserva as sessões sob autoridade do PostgreSQL.
+
+### PR 087 — lista de atendimentos
+
+Aceite concluído em 1º de setembro de 2026: a web recebeu lista desktop com os filtros únicos `Meus`, `Pendentes`, `Não lidos`, `SLA`, `Expirando` e `Em automação`, sem cards de resumo, atualização manual, horário de sincronização ou infraestrutura no estado saudável. O backend autentica a sessão, resolve cada fila pelo `ServicoAutorizacao` e somente então executa uma consulta parametrizada e limitada no PostgreSQL; filtro e escopo nunca são aplicados depois de carregar conteúdo. `conversa_id` permanece a chave visual e evento SSE provoca recarga silenciosa pela última atividade confirmada. A migration aditiva `20260901014000_marcador_leitura_web` criou o marcador pessoal por usuário+conversa com FKs e coerência, sem alterar mensagens históricas; a marca de prontidão avançou junto. Identidade secundária é mascarada. Lint, tipos, 411 testes da API, 217 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, dependências e segredos foram aprovados.
 
 ## 12. Mobile
 
