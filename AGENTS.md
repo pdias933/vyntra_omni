@@ -458,6 +458,6 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - Token, referência externa, esquema e resposta de formulário pertencem ao adapter/armazenamento protegido; nunca entram na definição, contexto da execução, passo, log ou auditoria.
 - Submissão normalizada deriva autoridade da mensagem de entrada, usa locks e unicidades por mensagem/referência e emite um único evento mínimo. Repetição divergente falha fechada; não atualize nem apague submissão imutável.
 - `CRIAR_ATENDIMENTO` e `CRIAR_ORDEM_SERVICO` não aceitam ID externo, fila, cliente, contrato, protocolo ou chave na definição; derive tudo do estado confirmado.
-- OS automática exige `confirmacaoExplicita: true`, capacidade publicada e revalidação no domínio de atendimento BOT, execução/versão, vínculo verificado, contrato, fila e protocolo. Não fabrique sessão ou usuário para autorizar fluxo.
+- OS automática exige `confirmacaoExplicita: true`, capacidade publicada e revalidação no domínio de atendimento BOT sem fila/responsável, execução/versão, vínculo verificado, contrato e protocolo. Fila segue obrigatória para humano; não fabrique fila, sessão ou usuário para autorizar fluxo.
 - Escrita ERP do fluxo ocorre fora da transação e usa chave estável por execução+nó. Resultado incerto só reconcilia; nunca repita criação cega.
 - Sem provider ERP real, percorra `INDISPONIVEL` sem operação externa. Simulador/fixture não pode ser registrado como provider de runtime.

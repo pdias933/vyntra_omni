@@ -1,6 +1,6 @@
 export interface ContextoOrdemServicoErp {
   readonly atendimentoId: string;
-  readonly filaId: string;
+  readonly filaId?: string;
   readonly clienteExternoId: string;
   readonly contratoExternoId: string;
   readonly protocoloOficial: string;

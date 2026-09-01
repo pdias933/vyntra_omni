@@ -618,8 +618,8 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 
 - `CRIAR_ATENDIMENTO` não aceita protocolo, identificador externo ou chave do editor; protocolo oficial existente impede nova escrita;
 - `CRIAR_ORDEM_SERVICO` exige schema fechado, `confirmacaoExplicita: true` e capacidade habilitada, sem transformar publicação em permissão humana;
-- cliente, contrato, fila e protocolo são derivados no servidor e revalidados pelo serviço de domínio imediatamente antes da confirmação;
-- autoridade de fluxo exige atendimento `AGUARDANDO/BOT`, sem responsável, vínculo verificado e execução `EXECUTANDO` da mesma versão;
+- cliente, contrato e protocolo são derivados no servidor e revalidados pelo serviço de domínio imediatamente antes da confirmação;
+- autoridade de fluxo exige atendimento `AGUARDANDO/BOT` sem fila/responsável, vínculo verificado e execução `EXECUTANDO` da mesma versão; fila permanece obrigatória no caminho humano e nunca é fabricada para o fluxo;
 - chamadas ERP ocorrem fora da transação; resposta perdida permanece incerta e só reconciliação pode confirmar ou provar ausência;
 - chave estável por execução+nó impede duplicação em retry ou reinício;
 - auditoria de OS usa `FLUXO`, nunca usuário/sessão fictícios, e omite assunto, descrição, IDs externos e protocolo;

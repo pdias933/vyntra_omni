@@ -23,6 +23,7 @@ export class RepositorioOrdensServicoPrisma
     contexto: ContextoOrdemServicoErp,
     transacao: TransacaoPrisma,
   ): Promise<boolean> {
+    if (contexto.filaId === undefined) return false;
     const atendimento = await transacao.atendimento.findFirst({
       select: { id: true },
       where: {
@@ -89,7 +90,7 @@ export class RepositorioOrdensServicoPrisma
             versaoFluxoId,
           },
         },
-        filaAtualId: contexto.filaId,
+        filaAtualId: null,
         id: contexto.atendimentoId,
         modo: 'BOT',
         protocoloErp: {

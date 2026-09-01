@@ -43,7 +43,6 @@ export type PreparacaoNoProtocoloOrdemFluxo =
       readonly clienteExternoId: string;
       readonly contratoExternoId: string;
       readonly descricao: string;
-      readonly filaId: string;
       readonly protocoloOficial: string;
       readonly resultado: 'PRONTA';
       readonly tipo: 'CRIAR_ORDEM_SERVICO';
@@ -87,7 +86,6 @@ export class ServicoProtocolosOrdensFluxo {
             contratoExternoAtivoId: true,
           },
         },
-        filaAtualId: true,
         iniciadoEm: true,
         protocoloErp: {
           select: { estado: true, protocoloOficial: true },
@@ -121,7 +119,6 @@ export class ServicoProtocolosOrdensFluxo {
     const assunto = Reflect.get(no.parametros, 'assunto');
     const descricao = Reflect.get(no.parametros, 'descricao');
     if (
-      atendimento.filaAtualId === null ||
       atendimento.contexto === null ||
       atendimento.contexto.contratoExternoAtivoId === null ||
       atendimento.protocoloErp?.estado !== 'OFICIAL' ||
@@ -146,7 +143,6 @@ export class ServicoProtocolosOrdensFluxo {
       clienteExternoId: atendimento.contexto.clienteExternoAtivoId,
       contratoExternoId: atendimento.contexto.contratoExternoAtivoId,
       descricao: descricao.trim(),
-      filaId: atendimento.filaAtualId,
       protocoloOficial: atendimento.protocoloErp.protocoloOficial,
       resultado: 'PRONTA',
       tipo: no.tipo,
@@ -227,7 +223,6 @@ export class ServicoProtocolosOrdensFluxo {
       confirmacaoExplicita: true as const,
       contratoExternoId: preparacao.contratoExternoId,
       descricao: preparacao.descricao,
-      filaId: preparacao.filaId,
       protocoloOficial: preparacao.protocoloOficial,
       proximaAcaoEm: new Date(Date.now() + 60_000),
     };

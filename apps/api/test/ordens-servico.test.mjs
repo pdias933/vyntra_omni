@@ -164,7 +164,7 @@ function criarCenario(adaptadorPersonalizado = {}) {
       versaoFluxoId,
     ) =>
       contexto.atendimentoId === atendimentoId &&
-      contexto.filaId === filaId &&
+      contexto.filaId === undefined &&
       contexto.clienteExternoId === clienteExternoId &&
       contexto.contratoExternoId === contratoExternoId &&
       contexto.protocoloOficial === protocoloOficial &&
@@ -335,7 +335,7 @@ test('criação por fluxo não fabrica usuário e revalida autoridade automatiza
   const ator = { fluxoId: randomUUID(), versaoFluxoId: randomUUID() };
   const resultado = await cenario.servico.criar(
     ator,
-    entradaCriacao(),
+    entradaCriacao({ filaId: undefined }),
     cenario.adaptador,
   );
   assert.equal(resultado.situacao, 'CONCLUIDA');
@@ -345,6 +345,11 @@ test('criação por fluxo não fabrica usuário e revalida autoridade automatiza
   assert.equal(cenario.auditorias[0].versaoFluxoId, ator.versaoFluxoId);
   assert.equal(cenario.auditorias[0].usuarioId, undefined);
   assert.equal(cenario.auditorias[0].sessaoId, undefined);
+
+  await assert.rejects(
+    cenario.servico.criar(ator, entradaCriacao(), cenario.adaptador),
+    ErroEntradaOrdemServicoInvalida,
+  );
 });
 
 test('resposta perdida na criação reconcilia sem repetir a escrita', async () => {

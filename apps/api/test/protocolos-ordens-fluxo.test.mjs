@@ -101,7 +101,7 @@ test('OS deriva contexto interno, mantém chave estável e audita como fluxo no 
       clienteExternoAtivoId: 'cliente-erp-1',
       contratoExternoAtivoId: 'contrato-erp-1',
     },
-    filaAtualId: ids.fila,
+    filaAtualId: null,
     iniciadoEm: execucao.iniciadaEm,
     protocoloErp: { estado: 'OFICIAL', protocoloOficial: 'ERP-123' },
   };
@@ -128,5 +128,6 @@ test('OS deriva contexto interno, mantém chave estável e audita como fluxo no 
   });
   assert.equal(chamadas[0][1].confirmacaoExplicita, true);
   assert.equal(chamadas[0][1].clienteExternoId, 'cliente-erp-1');
+  assert.equal(chamadas[0][1].filaId, undefined);
   assert.equal(chamadas[0][2], adaptador);
 });

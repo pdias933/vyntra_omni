@@ -68,7 +68,7 @@ export class ServicoOrdensServicoErp {
     adaptador: EscritasErp,
   ): Promise<ResultadoOperacaoOrdemServicoErp> {
     this.validarAtor(sessao);
-    this.validarCriacao(entrada);
+    this.validarCriacao(entrada, this.ehAtorFluxo(sessao));
     const preparada = await this.prepararCriacao(sessao, entrada);
     const existente = await this.resultadoCriacaoExistente(
       preparada,
@@ -143,7 +143,7 @@ export class ServicoOrdensServicoErp {
     adaptador: EscritasErp,
   ): Promise<ResultadoOperacaoOrdemServicoErp> {
     this.validarAtor(sessao);
-    this.validarCriacao(entrada);
+    this.validarCriacao(entrada, this.ehAtorFluxo(sessao));
     const preparada = await this.prepararCriacao(sessao, entrada);
     const existente = await this.resultadoCriacaoExistente(preparada, true);
     if (existente !== undefined) return existente;
@@ -792,6 +792,9 @@ export class ServicoOrdensServicoErp {
       }
       return;
     }
+    if (contexto.filaId === undefined) {
+      throw new Error('CONTEXTO_ORDEM_SERVICO_SEM_FILA');
+    }
     await this.autorizacao.autorizar(
       {
         filaId: contexto.filaId,
@@ -818,6 +821,9 @@ export class ServicoOrdensServicoErp {
     transacao: TransacaoPrisma,
   ): Promise<OrdemServicoErpPersistida> {
     const contexto = this.contexto(entrada);
+    if (contexto.filaId === undefined) {
+      throw new Error('CONTEXTO_ORDEM_SERVICO_SEM_FILA');
+    }
     let ordem: OrdemServicoErpPersistida | undefined;
     await this.autorizacao.autorizar(
       {
@@ -860,7 +866,7 @@ export class ServicoOrdensServicoErp {
         entidadeId: ordemServicoId ?? entrada.atendimentoId,
         entidadeTipo:
           ordemServicoId === undefined ? 'ATENDIMENTO' : 'ORDEM_SERVICO',
-        filaId: entrada.filaId,
+        ...(entrada.filaId === undefined ? {} : { filaId: entrada.filaId }),
         ...(this.ehAtorFluxo(sessao)
           ? {
               fluxoId: sessao.fluxoId,
@@ -1017,7 +1023,7 @@ export class ServicoOrdensServicoErp {
       atendimentoId: entrada.atendimentoId,
       clienteExternoId: entrada.clienteExternoId.trim(),
       contratoExternoId: entrada.contratoExternoId.trim(),
-      filaId: entrada.filaId,
+      ...(entrada.filaId === undefined ? {} : { filaId: entrada.filaId }),
       protocoloOficial: entrada.protocoloOficial.trim(),
     };
   }
@@ -1042,10 +1048,16 @@ export class ServicoOrdensServicoErp {
     return createHash('sha256').update(valor, 'utf8').digest('hex');
   }
 
-  private validarCriacao(entrada: EntradaCriacaoOrdemServicoErp): void {
+  private validarCriacao(
+    entrada: EntradaCriacaoOrdemServicoErp,
+    origemFluxo = false,
+  ): void {
     if (
       !IDENTIFICADOR_UUID.test(entrada.atendimentoId) ||
-      !IDENTIFICADOR_UUID.test(entrada.filaId) ||
+      (origemFluxo
+        ? entrada.filaId !== undefined
+        : entrada.filaId === undefined ||
+          !IDENTIFICADOR_UUID.test(entrada.filaId)) ||
       !IDENTIFICADOR_UUID.test(entrada.chaveIdempotencia) ||
       entrada.confirmacaoExplicita !== true ||
       !this.identificadorExternoValido(entrada.clienteExternoId) ||
