@@ -67,7 +67,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 043 | CONCLUÍDA | `xhigh` |
 | 044 | CONCLUÍDA | `xhigh` |
 | 045 | CONCLUÍDA | `xhigh` |
-| 046 | EM ANDAMENTO | `high` |
+| 046 | CONCLUÍDA | `high` |
 | 047 | PENDENTE | `high` |
 | 048 | PENDENTE | `high` |
 | 049 | PENDENTE | `xhigh` |
@@ -369,6 +369,10 @@ Aceite concluído em 1º de setembro de 2026: o adapter passou a verificar `X-Hu
 ### PR 045 — saída do AdaptadorMetaCloud
 
 Aceite concluído em 1º de setembro de 2026: o adapter de saída passou a exigir versão e credencial externas explícitas, converter somente o comando interno de texto e considerar a mensagem `ACEITA` apenas quando a Meta responde em HTTP 2xx com identificador externo válido. Timeout, indisponibilidade, limitação e códigos transitórios produzem falha temporária com repetição controlada; autenticação, configuração, destinatário e payload inválidos produzem falha definitiva. Resposta 2xx sem identificador não confirma envio nem autoriza repetição cega. O despachante grava `ENVIADA` somente após aceite, devolve falha temporária a `NA_FILA` e termina falha definitiva em `FALHOU`. Lint, tipos, 201 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-045` ficou saudável com prontidão `PRONTO`. Em staging, aceite, 2xx sem ID, indisponibilidade e destinatário inválido foram classificados corretamente, migration encerrou com código zero e nenhum erro de nível 50 foi emitido.
+
+### PR 046 — estados de entrega e leitura
+
+Aceite concluído em 1º de setembro de 2026: recibos externos de envio, entrega, leitura e falha passaram a ser normalizados no adapter e deduplicados por conta + identificador determinístico. A aplicação é monotônica: leitura pode avançar diretamente de `ENVIADA` para `LIDA`, materializando a entrega ausente; entrega, envio ou falha atrasados não vencem `ENTREGUE/LIDA`. Todo recibo único é preservado, mas somente avanço real marca a recepção como aplicada e emite `ESTADO_MENSAGEM_ATUALIZADO`. Lint, tipos, 203 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002800_criar_estados_mensagem` terminou com código zero e `vyntra/api-staging:pr-046` ficou saudável com prontidão `PRONTO`. Em staging, leitura fora de ordem chegou a `LIDA` na versão 4, entrega atrasada permaneceu não aplicada, replay inseriu zero linhas, dois recibos foram preservados com somente um aplicado, houve rollback e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
