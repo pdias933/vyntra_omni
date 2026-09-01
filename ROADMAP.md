@@ -105,7 +105,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 081 | CONCLUÍDA | `xhigh` |
 | 082 | CONCLUÍDA | `xhigh` |
 | 083 | CONCLUÍDA | `xhigh` |
-| 084 | EM ANDAMENTO | `xhigh` |
+| 084 | CONCLUÍDA | `xhigh` |
 | 085 | PENDENTE | `high` |
 | 086 | PENDENTE | `high` |
 | 087 | PENDENTE | `high` |
@@ -505,6 +505,10 @@ Aceite concluído em 1º de setembro de 2026: `TRANSFERIR_PARA_FILA`, `AGUARDAR_
 ### PR 083 — corrida entre resgate e envio automático
 
 Aceite concluído em 1º de setembro de 2026: mensagens automáticas passaram a fixar a execução de origem e a versão de atribuição, enquanto criação, despacho, transferência e resgate compartilham uma autoridade de saída serializada no PostgreSQL. O resgate cancela somente automáticas ainda `NA_FILA`; mensagens humanas e disparos transacionais ficam fora desse conjunto. O despachante revalida atendimento BOT, execução e versão sob lock, aplica timeout ao canal e nunca mantém provider real ou simulado registrado no runtime. Lint, tipos, 399 testes da API, 205 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901013500_corrida_resgate_envio_automatico` cancelou quatro automáticas legadas ainda não enviadas e terminou sem pendências; `vyntra/api-staging:pr-083` e duas instâncias homogêneas de `vyntra/worker-fluxos-staging:pr-083` ficaram saudáveis com prontidão `PRONTO`. Em staging, aceite anterior ao resgate fez uma chamada e terminou `ENVIADA`; resgate anterior terminou `CANCELADA/IGNORADA` sem chamada; falha temporária voltou a `NA_FILA` e foi cancelada pelo resgate. Nos três casos a transferência aguardou a seção crítica quando necessário, as mensagens humanas permaneceram `NA_FILA`, os atendimentos ficaram sob autoridade humana e as execuções concluíram sem erro de nível 50.
+
+### PR 084 — editor visual
+
+Aceite concluído em 1º de setembro de 2026: o web recebeu editor desktop em três painéis com biblioteca dos 23 nós nativos, canvas XYFlow, inspetor, variáveis tipadas e posições persistidas, sem JSON bruto ou regra de transição no cliente. A API administrativa usa sessão web, origem, CSRF, RBAC, vínculo fluxo-versão e revisão otimista; salvar, validar e publicar permanecem comandos separados, e versões imutáveis criam novo rascunho. A inspeção no navegador comprovou estados salvo/alterado, bloqueio de validação com mudança pendente, configuração tipada e `prefers-reduced-motion`; a atribuição exigida pela licença do canvas foi preservada. O transitivo `mysql2` do Prisma foi fixado em 3.24.2 após o scanner detectar `GHSA-3f6p-5ww8-9rcr`, sem abrir exceção, e o PostgreSQL continua sendo o único driver de runtime. Lint, tipos, 399 testes da API, 208 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `20260901013500_corrida_resgate_envio_automatico` permaneceu como marca. `vyntra/api-staging:pr-084` e duas instâncias homogêneas de `vyntra/worker-fluxos-staging:pr-084` ficaram saudáveis com prontidão `PRONTO`. Em staging, posição foi persistida, revisão obsoleta foi recusada, grafo inválido permaneceu `RASCUNHO`, salvar não moveu o ponteiro, validação válida promoveu a `EM_TESTE` e publicação explícita trocou novas execuções para a versão 2 enquanto a versão 1 continuou consultável como fixa/arquivada. O aceite gerou oito auditorias sanitizadas na transação revertida e deixou zero massa sintética residual.
 
 ## 7. Mensageria Meta
 
