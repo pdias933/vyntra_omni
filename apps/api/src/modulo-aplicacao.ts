@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { ModuloAuditoria } from './auditoria/modulo-auditoria.js';
+import { ModuloAtribuicoesAtendimento } from './atribuicoes-atendimento/modulo-atribuicoes-atendimento.js';
 import { ModuloAutenticacao } from './autenticacao/modulo-autenticacao.js';
 import { ModuloAutorizacao } from './autorizacao/modulo-autorizacao.js';
 import { ModuloContasWhatsApp } from './contas-whatsapp/modulo-contas-whatsapp.js';
@@ -30,6 +31,7 @@ import { ModuloSnapshotsCliente } from './snapshots-cliente/modulo-snapshots-cli
   ],
   imports: [
     ModuloAuditoria,
+    ModuloAtribuicoesAtendimento,
     ModuloAutenticacao,
     ModuloAutorizacao,
     ModuloContasWhatsApp,

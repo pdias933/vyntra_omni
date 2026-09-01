@@ -1,0 +1,22 @@
+export class ErroEntradaAtribuicaoAtendimentoInvalida extends Error {
+  public constructor() {
+    super('ENTRADA_ATRIBUICAO_ATENDIMENTO_INVALIDA');
+    this.name = 'ErroEntradaAtribuicaoAtendimentoInvalida';
+  }
+}
+
+export class ErroAtendimentoAtribuicaoAusente extends Error {
+  public constructor() {
+    super('ATENDIMENTO_ATRIBUICAO_AUSENTE');
+    this.name = 'ErroAtendimentoAtribuicaoAusente';
+  }
+}
+
+export class ErroConflitoResgateAtendimento extends Error {
+  public constructor(
+    public readonly usuarioResponsavelVencedorId?: string | undefined,
+  ) {
+    super('CONFLITO_RESGATE_ATENDIMENTO');
+    this.name = 'ErroConflitoResgateAtendimento';
+  }
+}
