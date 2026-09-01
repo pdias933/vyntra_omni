@@ -104,3 +104,31 @@ test('nós de mensagem usam domínio, passos sanitizados e saídas nominais', as
   assert.match(processo, /executor\.executarCiclo/);
   assert.doesNotMatch(`${executor}\n${processo}`, /Redis|BullMQ/);
 });
+
+test('condições e variáveis são tipadas, limitadas e ficam fora do diagnóstico', async () => {
+  const [valores, contexto, executor, validador, execucoes] = await Promise.all([
+    ler('apps/api/src/fluxos/valor-variavel-fluxo.ts'),
+    ler(
+      'apps/api/src/execucoes-fluxo/contexto-variaveis-execucao-fluxo.ts',
+    ),
+    ler('apps/api/src/execucoes-fluxo/servico-executor-nos-fluxo.ts'),
+    ler('apps/api/src/fluxos/validador-publicacao-fluxo.ts'),
+    ler('apps/api/src/execucoes-fluxo/servico-execucoes-fluxo.ts'),
+  ]);
+  assert.match(valores, /BOOLEANO:[\s\S]*DATA_HORA:[\s\S]*DECIMAL:/);
+  assert.match(valores, /decimalEscalado/);
+  assert.match(valores, /avaliarCondicaoTipada/);
+  assert.match(contexto, /variaveisFluxo/);
+  assert.match(contexto, /iteracoesFluxo/);
+  assert.match(executor, /'CONDICAO'/);
+  assert.match(executor, /'DEFINIR_VARIAVEL'/);
+  assert.match(executor, /VARIAVEL_INDISPONIVEL/);
+  assert.match(executor, /LIMITE_ITERACOES_EXCEDIDO/);
+  assert.match(validador, /LIMITE_ITERACOES_SEM_SAIDA/);
+  assert.match(validador, /temCicloNoSubgrafo/);
+  assert.doesNotMatch(execucoes, /dadosNovos:[\s\S]{0,400}contextoProtegido/);
+  assert.doesNotMatch(
+    `${valores}\n${contexto}\n${executor}`,
+    /\beval\s*\(|new Function|child_process|\bsql\b|https?:\/\//,
+  );
+});

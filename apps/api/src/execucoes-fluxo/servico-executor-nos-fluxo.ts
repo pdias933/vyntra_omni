@@ -6,11 +6,23 @@ import type {
   ConexaoDefinicaoFluxo,
   DefinicaoFluxoV1,
   NoDefinicaoFluxo,
+  VariavelDefinicaoFluxo,
 } from '../fluxos/modelo-validacao-fluxo.js';
 import { ServicoCatalogoFluxos } from '../fluxos/servico-catalogo-fluxos.js';
+import {
+  avaliarCondicaoTipada,
+  ehOperadorCondicaoFluxo,
+  valorCompativelComTipo,
+} from '../fluxos/valor-variavel-fluxo.js';
 import { ServicoMensagensSaida } from '../mensagens/servico-mensagens-saida.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
+import type { ObjetoJsonProtegido } from '../seguranca/modelo-dados-protegidos.js';
+import {
+  definirValorVariavelExecucao,
+  lerValorVariavelExecucao,
+  registrarIteracaoNoFluxo,
+} from './contexto-variaveis-execucao-fluxo.js';
 import {
   ErroConflitoExecucaoFluxo,
   ErroExecucaoFluxoInvalida,
@@ -31,11 +43,20 @@ import {
 import { ServicoExecucoesFluxo } from './servico-execucoes-fluxo.js';
 
 const TIPOS_SUPORTADOS = new Set([
+  'CONDICAO',
+  'DEFINIR_VARIAVEL',
   'ENVIAR_BOTOES_OU_LISTA',
   'ENVIAR_MENSAGEM',
   'FIM',
   'INICIO',
 ]);
+
+interface ResultadoExecucaoNo {
+  readonly resultado: string;
+  readonly codigo?: string | undefined;
+  readonly contextoProtegido?: ObjetoJsonProtegido | undefined;
+  readonly mensagem?: { readonly id: string } | undefined;
+}
 
 @Injectable()
 export class ServicoExecutorNosFluxo {
@@ -174,15 +195,17 @@ export class ServicoExecutorNosFluxo {
       return;
     }
 
-    const resultado =
-      no.tipo === 'INICIO'
-        ? ({ resultado: 'SUCESSO' } as const)
-        : await this.executarMensagem(no, execucao, transacao, relogio);
+    const resultado = await this.executarOperacaoNo(
+      no,
+      definicao,
+      execucao,
+      transacao,
+      relogio,
+    );
     const saida = this.validarSaida(no, resultado.resultado);
     const destino = this.obterDestino(definicao.conexoes, no.id, saida);
-    const codigo = 'codigo' in resultado ? resultado.codigo : undefined;
-    const mensagemId =
-      'mensagem' in resultado ? resultado.mensagem.id : undefined;
+    const codigo = resultado.codigo;
+    const mensagemId = resultado.mensagem?.id;
     await this.finalizarPasso(
       passo,
       {
@@ -195,6 +218,9 @@ export class ServicoExecutorNosFluxo {
     );
     await this.execucoes.avancarNo(
       {
+        ...(resultado.contextoProtegido === undefined
+          ? {}
+          : { contextoProtegido: resultado.contextoProtegido }),
         execucaoFluxoId: execucao.id,
         proximoNoId: destino,
         revisaoEsperada: execucao.revisao,
@@ -202,6 +228,149 @@ export class ServicoExecutorNosFluxo {
       transacao,
       () => agora,
     );
+  }
+
+  private async executarOperacaoNo(
+    no: NoDefinicaoFluxo,
+    definicao: DefinicaoFluxoV1,
+    execucao: ExecucaoFluxoPersistida,
+    transacao: TransacaoPrisma,
+    relogio: () => Date,
+  ): Promise<ResultadoExecucaoNo> {
+    const iteracao = registrarIteracaoNoFluxo(
+      execucao.contextoProtegido,
+      no.id,
+      no.limiteIteracoes,
+    );
+    if (!iteracao.valido) {
+      return {
+        codigo: 'CONTEXTO_ITERACOES_INVALIDO',
+        resultado: 'FALHA',
+      };
+    }
+    if (iteracao.excedeu) {
+      return {
+        codigo: 'LIMITE_ITERACOES_EXCEDIDO',
+        contextoProtegido: iteracao.contexto,
+        resultado: 'FALHA',
+      };
+    }
+    if (no.tipo === 'INICIO') return { resultado: 'SUCESSO' };
+    if (
+      no.tipo === 'ENVIAR_MENSAGEM' ||
+      no.tipo === 'ENVIAR_BOTOES_OU_LISTA'
+    ) {
+      return this.executarMensagem(no, execucao, transacao, relogio);
+    }
+    if (no.tipo === 'DEFINIR_VARIAVEL') {
+      return this.definirVariavel(no, definicao, iteracao.contexto);
+    }
+    if (no.tipo === 'CONDICAO') {
+      return this.avaliarCondicao(no, definicao, iteracao.contexto);
+    }
+    throw new ErroExecucaoFluxoInvalida();
+  }
+
+  private definirVariavel(
+    no: NoDefinicaoFluxo,
+    definicao: DefinicaoFluxoV1,
+    contexto: ObjetoJsonProtegido,
+  ): ResultadoExecucaoNo {
+    const variavel = this.obterVariavelDoNo(no, definicao, 'SAIDA');
+    const valor = Reflect.get(no.parametros, 'valor');
+    if (
+      variavel === undefined ||
+      variavel.sensivel ||
+      !valorCompativelComTipo(variavel.tipo, valor)
+    ) {
+      return {
+        codigo: 'CONFIGURACAO_VARIAVEL_INVALIDA',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    const atualizado = definirValorVariavelExecucao(
+      contexto,
+      variavel.nome,
+      variavel.tipo,
+      valor,
+    );
+    if (atualizado === undefined) {
+      return {
+        codigo: 'CONFIGURACAO_VARIAVEL_INVALIDA',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    return { contextoProtegido: atualizado, resultado: 'SUCESSO' };
+  }
+
+  private avaliarCondicao(
+    no: NoDefinicaoFluxo,
+    definicao: DefinicaoFluxoV1,
+    contexto: ObjetoJsonProtegido,
+  ): ResultadoExecucaoNo {
+    const variavel = this.obterVariavelDoNo(no, definicao, 'ENTRADA');
+    const operador = Reflect.get(no.parametros, 'operador');
+    const esperado = Reflect.get(no.parametros, 'valor');
+    if (
+      variavel === undefined ||
+      !ehOperadorCondicaoFluxo(operador) ||
+      !valorCompativelComTipo(variavel.tipo, esperado)
+    ) {
+      return {
+        codigo: 'CONFIGURACAO_VARIAVEL_INVALIDA',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    const atual = lerValorVariavelExecucao(
+      contexto,
+      variavel.nome,
+      variavel.tipo,
+    );
+    if (atual === undefined) {
+      return {
+        codigo: 'VARIAVEL_INDISPONIVEL',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    const resultado = avaliarCondicaoTipada(
+      variavel.tipo,
+      operador,
+      atual,
+      esperado,
+    );
+    return resultado === undefined
+      ? {
+          codigo: 'CONFIGURACAO_VARIAVEL_INVALIDA',
+          contextoProtegido: contexto,
+          resultado: 'FALHA',
+        }
+      : {
+          contextoProtegido: contexto,
+          resultado: resultado ? 'VERDADEIRO' : 'FALSO',
+        };
+  }
+
+  private obterVariavelDoNo(
+    no: NoDefinicaoFluxo,
+    definicao: DefinicaoFluxoV1,
+    direcao: 'ENTRADA' | 'SAIDA',
+  ): VariavelDefinicaoFluxo | undefined {
+    const nome = Reflect.get(no.parametros, 'variavel');
+    const nomes = direcao === 'ENTRADA' ? no.variaveisEntrada : no.variaveisSaida;
+    const opostos = direcao === 'ENTRADA' ? no.variaveisSaida : no.variaveisEntrada;
+    if (
+      typeof nome !== 'string' ||
+      nomes.length !== 1 ||
+      nomes[0] !== nome ||
+      opostos.length !== 0
+    ) {
+      return undefined;
+    }
+    return definicao.variaveis.find((variavel) => variavel.nome === nome);
   }
 
   private executarMensagem(
@@ -260,18 +429,34 @@ export class ServicoExecutorNosFluxo {
   private validarSaida(
     no: NoDefinicaoFluxo,
     resultado: string,
-  ): ResultadoNoMensagemFluxo | 'SUCESSO' {
-    const permitidas =
-      no.tipo === 'ENVIAR_BOTOES_OU_LISTA'
-        ? new Set([
-            'SUCESSO',
-            'FALLBACK',
-            'FALHA_TEMPORARIA',
-            'FALHA_DEFINITIVA',
-          ])
-        : new Set(['SUCESSO', 'FALHA_TEMPORARIA', 'FALHA_DEFINITIVA']);
+  ): ResultadoNoMensagemFluxo | 'SUCESSO' | 'VERDADEIRO' | 'FALSO' | 'FALHA' {
+    const permitidas = (() => {
+      if (no.tipo === 'ENVIAR_BOTOES_OU_LISTA') {
+        return new Set([
+          'SUCESSO',
+          'FALLBACK',
+          'FALHA_TEMPORARIA',
+          'FALHA_DEFINITIVA',
+        ]);
+      }
+      if (no.tipo === 'ENVIAR_MENSAGEM') {
+        return new Set(['SUCESSO', 'FALHA_TEMPORARIA', 'FALHA_DEFINITIVA']);
+      }
+      if (no.tipo === 'CONDICAO') {
+        return new Set(['VERDADEIRO', 'FALSO', 'FALHA']);
+      }
+      if (no.tipo === 'DEFINIR_VARIAVEL') {
+        return new Set(['SUCESSO', 'FALHA']);
+      }
+      return new Set(['SUCESSO']);
+    })();
     if (!permitidas.has(resultado)) throw new ErroExecucaoFluxoInvalida();
-    return resultado as ResultadoNoMensagemFluxo | 'SUCESSO';
+    return resultado as
+      | ResultadoNoMensagemFluxo
+      | 'SUCESSO'
+      | 'VERDADEIRO'
+      | 'FALSO'
+      | 'FALHA';
   }
 
   private obterDestino(

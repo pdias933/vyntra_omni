@@ -34,12 +34,12 @@ export class MaquinaEstadoExecucaoFluxo {
     atual: ExecucaoFluxoPersistida,
     proximoNoId: string,
     agora: Date,
+    contextoProtegido: unknown = atual.contextoProtegido,
   ): ExecucaoFluxoPersistida {
     this.validar(atual);
     if (
       atual.estado !== 'EXECUTANDO' ||
       !IDENTIFICADOR_NO.test(proximoNoId) ||
-      proximoNoId === atual.noAtualId ||
       !Number.isFinite(agora.getTime()) ||
       agora < atual.atualizadaEm
     ) {
@@ -48,9 +48,10 @@ export class MaquinaEstadoExecucaoFluxo {
     const proxima = {
       ...atual,
       atualizadaEm: agora,
+      contextoProtegido,
       noAtualId: proximoNoId,
       revisao: atual.revisao + 1,
-    };
+    } as ExecucaoFluxoPersistida;
     this.validar(proxima);
     return proxima;
   }

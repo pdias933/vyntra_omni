@@ -563,3 +563,13 @@ A migration obrigatória passa a `20260901012000_nos_mensagem_lista`. Ela cria `
 Monitorar execuções `EXECUTANDO` sem avanço, passos `INICIADO` antigos, crescimento de `FALHA_TEMPORARIA`, `AUTORIDADE_AUTOMACAO_PERDIDA`, `JANELA_CANAL_FECHADA`, `DEFINICAO_FLUXO_INVALIDA` e volume de `FALLBACK`. Um passo `INICIADO` não deve ficar visível após commit normal, porque início, término e avanço compartilham transação. Cada execução usa uma transação própria: definição fixa inconsistente termina aquela execução, preserva a auditoria controlada e não bloqueia o restante do lote. Não finalizar passo nem avançar nó por SQL. Reiniciar o worker é seguro; `FOR UPDATE SKIP LOCKED`, revisão da execução e unicidade do passo impedem dois efeitos locais.
 
 Rollback da imagem preserva passos e mensagens já enfileiradas. Não remover a migration. Se a imagem anterior não conhecer a tabela, manter o worker PR 074 parado apenas depois de confirmar que não há execução ativa dependente dos novos nós; mensagens `NA_FILA` permanecem responsabilidade da caixa de saída e nunca devem ser apagadas para “corrigir” o fluxo.
+
+## 22. Operação de condição e variável da PR 075
+
+Não há migration nova; a marca obrigatória permanece `20260901012000_nos_mensagem_lista`. API e todas as instâncias de `worker_fluxos` devem usar a mesma imagem PR 075 antes de publicar versão que contenha `CONDICAO` ou `DEFINIR_VARIAVEL`.
+
+Monitorar `VARIAVEL_INDISPONIVEL`, `CONFIGURACAO_VARIAVEL_INVALIDA`, `LIMITE_ITERACOES_EXCEDIDO`, execuções `EXECUTANDO` sem avanço e passo `INICIADO` antigo. Crescimento de falha por variável ausente indica contrato de entrada ou caminho incorreto; corrigir em nova versão, nunca preenchendo contexto por SQL. Estouro recorrente é uma saída de negócio configurada, mas ausência de avanço depois dele é incidente e bloqueia promoção.
+
+No aceite, usar dois workers e um fluxo sintético que percorra atribuição decimal/booleana, condição verdadeira, condição falsa, auto-ciclo limitado e variável ausente. Confirmar uma revisão por passo, saída do ciclo após o limite, conclusão única e ausência de nomes/literais em passo e auditoria. Reiniciar worker não pode zerar contador, trocar versão ou repetir revisão.
+
+Rollback de imagem preserva contexto e passos. Antes de voltar a um worker PR 074, confirmar que nenhuma execução não terminal aponta para nós da PR 075; a versão antiga trata definição não suportada como inválida e pode finalizar a execução afetada.

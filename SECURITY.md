@@ -572,3 +572,17 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - Fallback estruturado não pode ser rotulado como sucesso. Falha temporária, falha definitiva e perda de autoridade possuem saídas distintas.
 - Passo e execução usam revisão/constraint no PostgreSQL; repetição da mesma revisão não cria outro efeito.
 - Mensagem, evento, caixa de saída, passo e avanço do nó pertencem à mesma transação. Falha parcial resulta em rollback.
+
+## 18. Controles de condição e variável
+
+- `CONDICAO` e `DEFINIR_VARIAVEL` aceitam schema fechado; campo adicional invalida a definição.
+- Não existe avaliação de expressão, JavaScript, função, SQL, shell, URL ou chamada externa nesses nós.
+- Tipo do literal precisa coincidir exatamente com a declaração. `"1"`, `1` e `true` nunca são equivalentes por coerção.
+- Decimal usa representação canônica em string e comparação inteira escalada; não usa ponto flutuante para decidir rota.
+- Data/hora exige ISO UTC canônico com milissegundos; UUID exige forma canônica minúscula.
+- Variável marcada `sensivel` não pode receber literal versionado por `DEFINIR_VARIAVEL`.
+- Valores ficam apenas no contexto protegido. Entrada/saída de passo e auditoria recebem tipo, resultado e código controlado, nunca nome ou valor da variável.
+- Variável ausente ou contexto de tipo divergente segue `FALHA/VARIAVEL_INDISPONIVEL`; configuração inconsistente segue `FALHA/CONFIGURACAO_VARIAVEL_INVALIDA`.
+- Contador persistido malformado falha fechado como `CONTEXTO_ITERACOES_INVALIDO`; nunca é zerado para contornar o limite.
+- Cada ciclo precisa atravessar ao menos um nó limitado, sem subciclo ilimitado, e a `FALHA` do limite precisa sair do ciclo. Excesso segue `FALHA/LIMITE_ITERACOES_EXCEDIDO`.
+- O contador fica no PostgreSQL junto ao contexto e à revisão. Redis, memória do worker e repetição de job não são autoridade para o limite.

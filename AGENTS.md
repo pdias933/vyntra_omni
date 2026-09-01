@@ -201,6 +201,9 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - Ciclo sempre tem limite; integração sempre tem timeout/saída de falha.
 - Espera longa persiste `retomar_em`; worker não dorme.
 - Passos são sanitizados.
+- Condição e atribuição usam somente tipos/operadores do catálogo; nunca acrescente expressão, coerção implícita ou código executável.
+- Valores e contadores ficam no contexto protegido do PostgreSQL e nunca em passo, auditoria ou log.
+- Todo subciclo atravessa limite persistido, e a saída `FALHA` do nó limitado deixa o ciclo.
 - Publicar configuração não concede capacidade nova.
 - Simulador não chama produção externa nem altera dados reais.
 

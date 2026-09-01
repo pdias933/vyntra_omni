@@ -69,4 +69,5 @@ export interface EntradaAvancoNoExecucaoFluxo {
   readonly execucaoFluxoId: unknown;
   readonly revisaoEsperada: unknown;
   readonly proximoNoId: unknown;
+  readonly contextoProtegido?: ObjetoJsonProtegido | undefined;
 }

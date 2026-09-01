@@ -17,6 +17,11 @@ import {
   type TipoVariavelFluxo,
   type VariavelDefinicaoFluxo,
 } from './modelo-validacao-fluxo.js';
+import {
+  ehOperadorCondicaoFluxo,
+  operadorCompativelComTipo,
+  valorCompativelComTipo,
+} from './valor-variavel-fluxo.js';
 
 const IDENTIFICADOR = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/u;
 const UUID =
@@ -245,7 +250,8 @@ export class ValidadorPublicacaoFluxo {
         (!Number.isInteger(valor.limiteIteracoes) ||
           typeof valor.limiteIteracoes !== 'number' ||
           valor.limiteIteracoes < 1 ||
-          valor.limiteIteracoes > 100))
+          valor.limiteIteracoes > 100 ||
+          !['CONDICAO', 'DEFINIR_VARIAVEL'].includes(valor.tipo)))
     ) {
       return undefined;
     }
@@ -317,6 +323,30 @@ export class ValidadorPublicacaoFluxo {
           1;
       }
       return tamanhoFallback <= 4_096;
+    }
+    if (tipo === 'CONDICAO') {
+      return (
+        this.temExatamenteChaves(parametros, [
+          'operador',
+          'valor',
+          'variavel',
+        ]) &&
+        typeof parametros.variavel === 'string' &&
+        IDENTIFICADOR.test(parametros.variavel) &&
+        ehOperadorCondicaoFluxo(parametros.operador) &&
+        ['boolean', 'number', 'string'].includes(typeof parametros.valor)
+      );
+    }
+    if (tipo === 'DEFINIR_VARIAVEL') {
+      return (
+        this.temExatamenteChaves(parametros, ['valor', 'variavel']) &&
+        typeof parametros.variavel === 'string' &&
+        IDENTIFICADOR.test(parametros.variavel) &&
+        ['boolean', 'number', 'string'].includes(typeof parametros.valor)
+      );
+    }
+    if (tipo === 'INICIO' || tipo === 'FIM') {
+      return this.temExatamenteChaves(parametros, []);
     }
     return true;
   }
@@ -578,6 +608,7 @@ export class ValidadorPublicacaoFluxo {
       definicao.nos.flatMap(({ variaveisSaida }) => variaveisSaida),
     );
     for (const no of definicao.nos) {
+      this.validarNoDeVariavel(no, variaveis, problemas);
       for (const nome of [...no.variaveisEntrada, ...no.variaveisSaida]) {
         if (!variaveis.has(nome)) {
           this.adicionar(problemas, {
@@ -664,6 +695,42 @@ export class ValidadorPublicacaoFluxo {
     }
   }
 
+  private validarNoDeVariavel(
+    no: NoDefinicaoFluxo,
+    variaveis: ReadonlyMap<string, VariavelDefinicaoFluxo>,
+    problemas: ProblemaValidacaoFluxo[],
+  ): void {
+    if (no.tipo !== 'CONDICAO' && no.tipo !== 'DEFINIR_VARIAVEL') return;
+    const nome = Reflect.get(no.parametros, 'variavel');
+    const valor = Reflect.get(no.parametros, 'valor');
+    const variavel = typeof nome === 'string' ? variaveis.get(nome) : undefined;
+    const listasCoerentes =
+      typeof nome === 'string' &&
+      (no.tipo === 'CONDICAO'
+        ? no.variaveisEntrada.length === 1 &&
+          no.variaveisEntrada[0] === nome &&
+          no.variaveisSaida.length === 0
+        : no.variaveisEntrada.length === 0 &&
+          no.variaveisSaida.length === 1 &&
+          no.variaveisSaida[0] === nome);
+    const operador = Reflect.get(no.parametros, 'operador');
+    const configuracaoValida =
+      variavel !== undefined &&
+      listasCoerentes &&
+      valorCompativelComTipo(variavel.tipo, valor) &&
+      (no.tipo === 'CONDICAO'
+        ? ehOperadorCondicaoFluxo(operador) &&
+          operadorCompativelComTipo(variavel.tipo, operador)
+        : variavel.sensivel === false);
+    if (!configuracaoValida) {
+      this.adicionar(problemas, {
+        codigo: 'CONFIGURACAO_VARIAVEL_INVALIDA',
+        noId: no.id,
+        ...(typeof nome === 'string' ? { variavel: nome } : {}),
+      });
+    }
+  }
+
   private validarCiclos(
     definicao: DefinicaoFluxoV1,
     alcancaveis: ReadonlySet<string>,
@@ -682,11 +749,36 @@ export class ValidadorPublicacaoFluxo {
       const noCicloId = componente[0];
       if (noCicloId === undefined) continue;
       const nos = definicao.nos.filter(({ id }) => conjunto.has(id));
-      if (!nos.some(({ limiteIteracoes }) => limiteIteracoes !== undefined)) {
+      const limitados = nos.filter(
+        ({ limiteIteracoes }) => limiteIteracoes !== undefined,
+      );
+      const naoLimitados = new Set(
+        nos
+          .filter(({ limiteIteracoes }) => limiteIteracoes === undefined)
+          .map(({ id }) => id),
+      );
+      if (
+        limitados.length === 0 ||
+        this.temCicloNoSubgrafo(definicao, naoLimitados)
+      ) {
         this.adicionar(problemas, {
           codigo: 'CICLO_SEM_LIMITE',
           noId: noCicloId,
         });
+      }
+      for (const noLimitado of limitados) {
+        const falhaSaiDoCiclo = definicao.conexoes.some(
+          ({ destinoNoId, origemNoId, saida }) =>
+            origemNoId === noLimitado.id &&
+            saida === 'FALHA' &&
+            !conjunto.has(destinoNoId),
+        );
+        if (!falhaSaiDoCiclo) {
+          this.adicionar(problemas, {
+            codigo: 'LIMITE_ITERACOES_SEM_SAIDA',
+            noId: noLimitado.id,
+          });
+        }
       }
       if (
         !definicao.conexoes.some(
@@ -700,6 +792,23 @@ export class ValidadorPublicacaoFluxo {
         });
       }
     }
+  }
+
+  private temCicloNoSubgrafo(
+    definicao: DefinicaoFluxoV1,
+    nos: ReadonlySet<string>,
+  ): boolean {
+    if (nos.size === 0) return false;
+    return this.obterComponentesFortementeConectados(definicao, nos).some(
+      (componente) =>
+        componente.length > 1 ||
+        definicao.conexoes.some(
+          ({ destinoNoId, origemNoId }) =>
+            componente[0] !== undefined &&
+            origemNoId === componente[0] &&
+            destinoNoId === componente[0],
+        ),
+    );
   }
 
   private obterComponentesFortementeConectados(
@@ -810,6 +919,16 @@ export class ValidadorPublicacaoFluxo {
   ): boolean {
     const conjunto = new Set(permitidas);
     return Object.keys(valor).every((chave) => conjunto.has(chave));
+  }
+
+  private temExatamenteChaves(
+    valor: Readonly<Record<string, unknown>>,
+    esperadas: readonly string[],
+  ): boolean {
+    return (
+      Object.keys(valor).length === esperadas.length &&
+      this.temSomenteChaves(valor, esperadas)
+    );
   }
 
   private intersecao(conjuntos: readonly ReadonlySet<string>[]): Set<string> {

@@ -559,3 +559,34 @@ ENVIAR_BOTOES_OU_LISTA
 ```
 
 Antes de persistir, `ServicoMensagensSaida` confirma a revisão e que o atendimento ainda é BOT sem responsável. `MENSAGEM`, `EventoDominio`, `ItemCaixaSaida`, passo final, revisão e próximo nó confirmam na mesma transação. Perda de autoridade ou janela fechada não produz mensagem e segue falha definitiva. Falha técnica que impede a própria transação causa rollback e nova varredura, sem fabricar sucesso ou passo parcial.
+
+## 23. Nós de condição e variável da PR 075
+
+`DEFINIR_VARIAVEL` possui parâmetros exatos `{ variavel, valor }`, nenhuma entrada e exatamente a variável declarada como saída. `CONDICAO` possui parâmetros exatos `{ variavel, operador, valor }`, exatamente a variável declarada como entrada e nenhuma saída de variável. Atribuição de literal a variável `sensivel` é recusada: segredo não pertence à definição versionada.
+
+Os tipos e operadores aceitos são:
+
+| Tipo | Representação | Operadores |
+|---|---|---|
+| `BOOLEANO` | booleano JSON | `IGUAL`, `DIFERENTE` |
+| `DATA_HORA` | ISO UTC `YYYY-MM-DDTHH:mm:ss.sssZ` | `IGUAL`, `DIFERENTE`, `ANTES_DE`, `DEPOIS_DE` |
+| `DECIMAL` | string canônica, até 15 inteiros e 6 decimais | igualdade e ordem |
+| `INTEIRO` | inteiro seguro JSON | igualdade e ordem |
+| `TEXTO` | até 4.096 caracteres, sem byte nulo | `IGUAL`, `DIFERENTE`, `CONTEM`, `COMECA_COM`, `TERMINA_COM` |
+| `UUID` | UUID canônico minúsculo | `IGUAL`, `DIFERENTE` |
+
+Igualdade e ordem numérica usam `IGUAL`, `DIFERENTE`, `MENOR_QUE`, `MENOR_OU_IGUAL`, `MAIOR_QUE` e `MAIOR_OU_IGUAL`. Decimal é convertido para inteiro escalado antes da comparação; não sofre arredondamento binário. Nenhum tipo aceita coerção, expressão ou referência dinâmica no lugar do literal.
+
+Saídas:
+
+```text
+DEFINIR_VARIAVEL
+  SUCESSO | FALHA
+
+CONDICAO
+  VERDADEIRO | FALSO | FALHA
+```
+
+O contexto persistido usa `variaveisFluxo` para valores e `iteracoesFluxo` para contadores. Atribuição, contador, passo e avanço pertencem à mesma transação e revisão. Passos guardam somente `tipoNo`, resultado e código canônico. Variável ausente segue `VARIAVEL_INDISPONIVEL`; definição defensivamente inválida segue `CONFIGURACAO_VARIAVEL_INVALIDA`.
+
+Um ciclo publicável não pode conter subciclo formado apenas por nós ilimitados. Cada nó limitado aceita 1–100 iterações e sua conexão `FALHA` precisa sair do componente cíclico. A tentativa seguinte ao limite registra `LIMITE_ITERACOES_EXCEDIDO`, percorre `FALHA` e conserva o contador no PostgreSQL para diagnóstico protegido e recuperação determinística.

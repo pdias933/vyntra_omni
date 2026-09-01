@@ -131,18 +131,36 @@ test('variável precisa existir em todos os caminhos e sensível não sai ao cli
     ],
     nos: [
       no('inicio', 'INICIO'),
-      no('decisao', 'CONDICAO'),
-      no('definir', 'DEFINIR_VARIAVEL', { variaveisSaida: ['documento'] }),
+      no('decisao', 'CONDICAO', {
+        parametros: { operador: 'IGUAL', valor: true, variavel: 'autorizar' },
+        variaveisEntrada: ['autorizar'],
+      }),
+      no('definir', 'DEFINIR_VARIAVEL', {
+        parametros: { valor: 'disponível', variavel: 'documento' },
+        variaveisSaida: ['documento'],
+      }),
       no('mensagem', 'ENVIAR_MENSAGEM', {
         parametros: { texto: 'Documento disponível' },
-        variaveisEntrada: ['documento'],
+        variaveisEntrada: ['documento', 'segredo'],
       }),
       no('fim', 'FIM'),
     ],
     variaveis: [
       {
+        disponivelNaEntrada: true,
+        nome: 'autorizar',
+        sensivel: false,
+        tipo: 'BOOLEANO',
+      },
+      {
         disponivelNaEntrada: false,
         nome: 'documento',
+        sensivel: false,
+        tipo: 'TEXTO',
+      },
+      {
+        disponivelNaEntrada: true,
+        nome: 'segredo',
         sensivel: true,
         tipo: 'TEXTO',
       },
@@ -157,6 +175,12 @@ test('variável precisa existir em todos os caminhos e sensível não sai ao cli
 });
 
 test('ciclo exige limite defensivo e caminho de saída', () => {
+  const noCiclo = (sobrescritas = {}) =>
+    no('ciclo', 'CONDICAO', {
+      parametros: { operador: 'IGUAL', valor: true, variavel: 'continuar' },
+      variaveisEntrada: ['continuar'],
+      ...sobrescritas,
+    });
   const semLimite = definicaoBasica({
     conexoes: [
       conexao('inicio', 'SUCESSO', 'ciclo'),
@@ -164,7 +188,15 @@ test('ciclo exige limite defensivo e caminho de saída', () => {
       conexao('ciclo', 'FALSO', 'fim'),
       conexao('ciclo', 'FALHA', 'fim'),
     ],
-    nos: [no('inicio', 'INICIO'), no('ciclo', 'CONDICAO'), no('fim', 'FIM')],
+    nos: [no('inicio', 'INICIO'), noCiclo(), no('fim', 'FIM')],
+    variaveis: [
+      {
+        disponivelNaEntrada: true,
+        nome: 'continuar',
+        sensivel: false,
+        tipo: 'BOOLEANO',
+      },
+    ],
   });
   assert.ok(
     codigos(
@@ -175,7 +207,7 @@ test('ciclo exige limite defensivo e caminho de saída', () => {
     ...semLimite,
     nos: [
       no('inicio', 'INICIO'),
-      no('ciclo', 'CONDICAO', { limiteIteracoes: 10 }),
+      noCiclo({ limiteIteracoes: 10 }),
       no('fim', 'FIM'),
     ],
   };
@@ -196,6 +228,65 @@ test('ciclo exige limite defensivo e caminho de saída', () => {
     codigos(
       new ValidadorPublicacaoFluxo().validar(semSaida, contexto()),
     ).includes('CICLO_SEM_SAIDA'),
+  );
+  assert.ok(
+    codigos(
+      new ValidadorPublicacaoFluxo().validar(semSaida, contexto()),
+    ).includes('LIMITE_ITERACOES_SEM_SAIDA'),
+  );
+  const falhaDoLimiteRetornaAoCiclo = {
+    ...limitado,
+    conexoes: [
+      conexao('inicio', 'SUCESSO', 'ciclo'),
+      conexao('ciclo', 'VERDADEIRO', 'ciclo'),
+      conexao('ciclo', 'FALSO', 'fim'),
+      conexao('ciclo', 'FALHA', 'ciclo'),
+    ],
+  };
+  assert.ok(
+    codigos(
+      new ValidadorPublicacaoFluxo().validar(
+        falhaDoLimiteRetornaAoCiclo,
+        contexto(),
+      ),
+    ).includes('LIMITE_ITERACOES_SEM_SAIDA'),
+  );
+  const subcicloSemLimite = definicaoBasica({
+    conexoes: [
+      conexao('inicio', 'SUCESSO', 'limitado'),
+      conexao('limitado', 'VERDADEIRO', 'livre'),
+      conexao('limitado', 'FALSO', 'fim'),
+      conexao('limitado', 'FALHA', 'fim'),
+      conexao('livre', 'VERDADEIRO', 'livre'),
+      conexao('livre', 'FALSO', 'limitado'),
+      conexao('livre', 'FALHA', 'fim'),
+    ],
+    nos: [
+      no('inicio', 'INICIO'),
+      no('limitado', 'CONDICAO', {
+        limiteIteracoes: 10,
+        parametros: { operador: 'IGUAL', valor: true, variavel: 'continuar' },
+        variaveisEntrada: ['continuar'],
+      }),
+      no('livre', 'CONDICAO', {
+        parametros: { operador: 'IGUAL', valor: true, variavel: 'continuar' },
+        variaveisEntrada: ['continuar'],
+      }),
+      no('fim', 'FIM'),
+    ],
+    variaveis: [
+      {
+        disponivelNaEntrada: true,
+        nome: 'continuar',
+        sensivel: false,
+        tipo: 'BOOLEANO',
+      },
+    ],
+  });
+  assert.ok(
+    codigos(
+      new ValidadorPublicacaoFluxo().validar(subcicloSemLimite, contexto()),
+    ).includes('CICLO_SEM_LIMITE'),
   );
 });
 
@@ -252,6 +343,159 @@ test('mensagem e lista possuem parâmetros tipados e fallback limitado', () => {
     codigos(
       new ValidadorPublicacaoFluxo().validar(listaInvalida, contexto()),
     ).includes('DEFINICAO_ESTRUTURAL_INVALIDA'),
+  );
+});
+
+test('condição e definição aceitam somente operadores e literais tipados', () => {
+  const casos = [
+    ['BOOLEANO', 'IGUAL', true],
+    ['DATA_HORA', 'ANTES_DE', '2026-09-02T00:00:00.000Z'],
+    ['DECIMAL', 'MAIOR_OU_IGUAL', '10.250000'],
+    ['INTEIRO', 'MENOR_QUE', 20],
+    ['TEXTO', 'CONTEM', 'premium'],
+    ['UUID', 'DIFERENTE', randomUUID()],
+  ];
+  for (const [tipo, operador, valor] of casos) {
+    const definicao = definicaoBasica({
+      conexoes: [
+        conexao('inicio', 'SUCESSO', 'condicao'),
+        conexao('condicao', 'VERDADEIRO', 'fim'),
+        conexao('condicao', 'FALSO', 'fim'),
+        conexao('condicao', 'FALHA', 'fim'),
+      ],
+      nos: [
+        no('inicio', 'INICIO'),
+        no('condicao', 'CONDICAO', {
+          parametros: { operador, valor, variavel: 'valorAtual' },
+          variaveisEntrada: ['valorAtual'],
+        }),
+        no('fim', 'FIM'),
+      ],
+      variaveis: [
+        {
+          disponivelNaEntrada: true,
+          nome: 'valorAtual',
+          sensivel: false,
+          tipo,
+        },
+      ],
+    });
+    assert.equal(
+      new ValidadorPublicacaoFluxo().validar(definicao, contexto()).valido,
+      true,
+      `${tipo}/${operador}`,
+    );
+  }
+
+  const definicao = definicaoBasica({
+    conexoes: [
+      conexao('inicio', 'SUCESSO', 'definir'),
+      conexao('definir', 'SUCESSO', 'fim'),
+      conexao('definir', 'FALHA', 'fim'),
+    ],
+    nos: [
+      no('inicio', 'INICIO'),
+      no('definir', 'DEFINIR_VARIAVEL', {
+        parametros: { valor: '10.50', variavel: 'total' },
+        variaveisSaida: ['total'],
+      }),
+      no('fim', 'FIM'),
+    ],
+    variaveis: [
+      {
+        disponivelNaEntrada: false,
+        nome: 'total',
+        sensivel: false,
+        tipo: 'DECIMAL',
+      },
+    ],
+  });
+  assert.equal(
+    new ValidadorPublicacaoFluxo().validar(definicao, contexto()).valido,
+    true,
+  );
+});
+
+test('condição recusa coerção, expressão, operador incompatível e segredo constante', () => {
+  const casos = [
+    {
+      operador: 'MAIOR_QUE',
+      tipo: 'DECIMAL',
+      valor: 10.5,
+    },
+    {
+      operador: 'CONTEM',
+      tipo: 'INTEIRO',
+      valor: 10,
+    },
+    {
+      operador: 'IGUAL',
+      tipo: 'TEXTO',
+      valor: { expressao: 'contexto.total' },
+    },
+  ];
+  for (const caso of casos) {
+    const definicao = definicaoBasica({
+      conexoes: [
+        conexao('inicio', 'SUCESSO', 'condicao'),
+        conexao('condicao', 'VERDADEIRO', 'fim'),
+        conexao('condicao', 'FALSO', 'fim'),
+        conexao('condicao', 'FALHA', 'fim'),
+      ],
+      nos: [
+        no('inicio', 'INICIO'),
+        no('condicao', 'CONDICAO', {
+          parametros: {
+            operador: caso.operador,
+            valor: caso.valor,
+            variavel: 'alvo',
+          },
+          variaveisEntrada: ['alvo'],
+        }),
+        no('fim', 'FIM'),
+      ],
+      variaveis: [
+        {
+          disponivelNaEntrada: true,
+          nome: 'alvo',
+          sensivel: false,
+          tipo: caso.tipo,
+        },
+      ],
+    });
+    assert.equal(
+      new ValidadorPublicacaoFluxo().validar(definicao, contexto()).valido,
+      false,
+    );
+  }
+
+  const segredo = definicaoBasica({
+    conexoes: [
+      conexao('inicio', 'SUCESSO', 'definir'),
+      conexao('definir', 'SUCESSO', 'fim'),
+      conexao('definir', 'FALHA', 'fim'),
+    ],
+    nos: [
+      no('inicio', 'INICIO'),
+      no('definir', 'DEFINIR_VARIAVEL', {
+        parametros: { valor: 'nao-versionar', variavel: 'chave' },
+        variaveisSaida: ['chave'],
+      }),
+      no('fim', 'FIM'),
+    ],
+    variaveis: [
+      {
+        disponivelNaEntrada: false,
+        nome: 'chave',
+        sensivel: true,
+        tipo: 'TEXTO',
+      },
+    ],
+  });
+  assert.ok(
+    codigos(
+      new ValidadorPublicacaoFluxo().validar(segredo, contexto()),
+    ).includes('CONFIGURACAO_VARIAVEL_INVALIDA'),
   );
 });
 

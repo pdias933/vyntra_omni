@@ -191,6 +191,7 @@ export class ServicoExecucoesFluxo {
       atual,
       proximoNoId,
       this.obterAgora(relogio),
+      entrada.contextoProtegido ?? atual.contextoProtegido,
     );
     if (
       !(await this.repositorio.alterarCondicional(

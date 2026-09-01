@@ -57,16 +57,17 @@ test('máquina percorre esperas e retoma sem trocar versão ou nó', () => {
   assert.equal(retomada.revisao, 3);
 });
 
-test('máquina avança somente entre nós distintos durante execução', () => {
+test('máquina avança e permite revisitar nó em ciclo controlado', () => {
   const maquina = new MaquinaEstadoExecucaoFluxo();
   const avancada = maquina.avancarNo(execucao(), 'mensagem', depois(1));
   assert.equal(avancada.noAtualId, 'mensagem');
   assert.equal(avancada.estado, 'EXECUTANDO');
   assert.equal(avancada.revisao, 2);
-  assert.throws(
-    () => maquina.avancarNo(execucao(), 'inicio', depois(1)),
-    ErroTransicaoExecucaoFluxoInvalida,
-  );
+  const revisitada = maquina.avancarNo(execucao(), 'inicio', depois(1));
+  assert.equal(revisitada.noAtualId, 'inicio');
+  assert.equal(revisitada.revisao, 2);
+  assert.throws(() => maquina.avancarNo(execucao(), 'id inválido', depois(1)),
+    ErroTransicaoExecucaoFluxoInvalida);
 });
 
 test('conclusão, falha, cancelamento e suspensão materializam terminal', () => {
@@ -342,7 +343,12 @@ test('recuperação retoma somente lote vencido na mesma transação', async () 
   assert.deepEqual(chamadas.transicoes[0][2](), depois(60));
 });
 
-function criarExecutor({ no, resultadoMensagem }) {
+function criarExecutor({
+  contextoProtegido = {},
+  no,
+  resultadoMensagem,
+  variaveis = [],
+}) {
   const chamadas = {
     avancos: [],
     catalogo: [],
@@ -351,9 +357,11 @@ function criarExecutor({ no, resultadoMensagem }) {
     passosIniciados: [],
     transicoes: [],
   };
-  const atual = execucao({ noAtualId: no.id, revisao: 7 });
+  const atual = execucao({ contextoProtegido, noAtualId: no.id, revisao: 7 });
   const fim = { id: 'fim', parametros: {}, referencias: [], tipo: 'FIM', variaveisEntrada: [], variaveisSaida: [] };
   const saidas = {
+    CONDICAO: ['VERDADEIRO', 'FALSO', 'FALHA'],
+    DEFINIR_VARIAVEL: ['SUCESSO', 'FALHA'],
     ENVIAR_BOTOES_OU_LISTA: ['SUCESSO', 'FALLBACK', 'FALHA_TEMPORARIA', 'FALHA_DEFINITIVA'],
     ENVIAR_MENSAGEM: ['SUCESSO', 'FALHA_TEMPORARIA', 'FALHA_DEFINITIVA'],
     INICIO: ['SUCESSO'],
@@ -362,7 +370,7 @@ function criarExecutor({ no, resultadoMensagem }) {
     conexoes: saidas.map((saida) => ({ destinoNoId: 'fim', origemNoId: no.id, saida })),
     inicioNoId: no.tipo === 'INICIO' ? no.id : 'inicio',
     nos: [no, fim],
-    variaveis: [],
+    variaveis,
     versaoSchema: 1,
   };
   let entregue = false;
@@ -495,6 +503,171 @@ test('lista e falhas seguem saídas nominais sem chamar adapter', async () => {
   assert.equal(
     falha.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
     'FALHA_DEFINITIVA',
+  );
+});
+
+test('definição de variável grava literal tipado somente no contexto protegido', async () => {
+  const cenario = criarExecutor({
+    no: {
+      id: 'definir',
+      parametros: { valor: '125.50', variavel: 'total' },
+      referencias: [],
+      tipo: 'DEFINIR_VARIAVEL',
+      variaveisEntrada: [],
+      variaveisSaida: ['total'],
+    },
+    variaveis: [
+      {
+        disponivelNaEntrada: false,
+        nome: 'total',
+        sensivel: false,
+        tipo: 'DECIMAL',
+      },
+    ],
+  });
+  await cenario.executor.executarCiclo(1, () => depois(10));
+  assert.deepEqual(cenario.chamadas.avancos[0][0].contextoProtegido, {
+    variaveisFluxo: { total: '125.50' },
+  });
+  assert.deepEqual(cenario.chamadas.passosFinalizados[0].saidaSanitizada, {
+    resultado: 'SUCESSO',
+  });
+  assert.equal(
+    JSON.stringify(cenario.chamadas.passosFinalizados).includes('125.50'),
+    false,
+  );
+  assert.equal(cenario.chamadas.mensagens.length, 0);
+});
+
+test('condição tipada escolhe verdadeiro sem expor valores no passo', async () => {
+  const cenario = criarExecutor({
+    contextoProtegido: { variaveisFluxo: { idade: 21 } },
+    no: {
+      id: 'condicao',
+      parametros: { operador: 'MAIOR_OU_IGUAL', valor: 18, variavel: 'idade' },
+      referencias: [],
+      tipo: 'CONDICAO',
+      variaveisEntrada: ['idade'],
+      variaveisSaida: [],
+    },
+    variaveis: [
+      {
+        disponivelNaEntrada: true,
+        nome: 'idade',
+        sensivel: false,
+        tipo: 'INTEIRO',
+      },
+    ],
+  });
+  await cenario.executor.executarCiclo(1, () => depois(10));
+  assert.equal(cenario.chamadas.avancos[0][0].proximoNoId, 'fim');
+  assert.deepEqual(cenario.chamadas.passosFinalizados[0].saidaSanitizada, {
+    resultado: 'VERDADEIRO',
+  });
+  assert.equal(
+    JSON.stringify(cenario.chamadas.passosFinalizados).includes('idade'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(cenario.chamadas.passosFinalizados).includes('"valor":18'),
+    false,
+  );
+});
+
+test('variável ausente percorre FALHA e limite encerra ciclo determinístico', async () => {
+  const ausente = criarExecutor({
+    no: {
+      id: 'condicao',
+      parametros: { operador: 'IGUAL', valor: true, variavel: 'ativo' },
+      referencias: [],
+      tipo: 'CONDICAO',
+      variaveisEntrada: ['ativo'],
+      variaveisSaida: [],
+    },
+    variaveis: [
+      {
+        disponivelNaEntrada: true,
+        nome: 'ativo',
+        sensivel: false,
+        tipo: 'BOOLEANO',
+      },
+    ],
+  });
+  await ausente.executor.executarCiclo(1, () => depois(10));
+  assert.equal(ausente.chamadas.passosFinalizados[0].estado, 'FALHOU');
+  assert.equal(
+    ausente.chamadas.passosFinalizados[0].codigoErro,
+    'VARIAVEL_INDISPONIVEL',
+  );
+  assert.equal(
+    ausente.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
+    'FALHA',
+  );
+
+  const limite = criarExecutor({
+    contextoProtegido: {
+      iteracoesFluxo: { condicao: 2 },
+      variaveisFluxo: { ativo: true },
+    },
+    no: {
+      id: 'condicao',
+      limiteIteracoes: 2,
+      parametros: { operador: 'IGUAL', valor: true, variavel: 'ativo' },
+      referencias: [],
+      tipo: 'CONDICAO',
+      variaveisEntrada: ['ativo'],
+      variaveisSaida: [],
+    },
+    variaveis: [
+      {
+        disponivelNaEntrada: true,
+        nome: 'ativo',
+        sensivel: false,
+        tipo: 'BOOLEANO',
+      },
+    ],
+  });
+  await limite.executor.executarCiclo(1, () => depois(10));
+  assert.equal(
+    limite.chamadas.passosFinalizados[0].codigoErro,
+    'LIMITE_ITERACOES_EXCEDIDO',
+  );
+  assert.equal(
+    limite.chamadas.avancos[0][0].contextoProtegido.iteracoesFluxo.condicao,
+    3,
+  );
+
+  const contadorInvalido = criarExecutor({
+    contextoProtegido: {
+      iteracoesFluxo: { condicao: 'reiniciar' },
+      variaveisFluxo: { ativo: true },
+    },
+    no: {
+      id: 'condicao',
+      limiteIteracoes: 2,
+      parametros: { operador: 'IGUAL', valor: true, variavel: 'ativo' },
+      referencias: [],
+      tipo: 'CONDICAO',
+      variaveisEntrada: ['ativo'],
+      variaveisSaida: [],
+    },
+    variaveis: [
+      {
+        disponivelNaEntrada: true,
+        nome: 'ativo',
+        sensivel: false,
+        tipo: 'BOOLEANO',
+      },
+    ],
+  });
+  await contadorInvalido.executor.executarCiclo(1, () => depois(10));
+  assert.equal(
+    contadorInvalido.chamadas.passosFinalizados[0].codigoErro,
+    'CONTEXTO_ITERACOES_INVALIDO',
+  );
+  assert.equal(
+    contadorInvalido.chamadas.avancos[0][0].contextoProtegido,
+    undefined,
   );
 });
 
