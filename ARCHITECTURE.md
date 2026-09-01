@@ -627,6 +627,8 @@ Na PR 069, `fluxos` introduz o catálogo interno do Motor de Fluxos. `ServicoCat
 
 Na PR 070, `ServicoPublicacaoFluxos` concentra as transições de ponteiro sob `PUBLICAR_FLUXO` ou `REVERTER_FLUXO`. A transação externa serializa o fluxo, compara revisão e estado, arquiva a versão atual, promove ou reativa o alvo, troca o ponteiro e acrescenta histórico e auditoria. `HistoricoPublicacaoFluxo` é append-only e sua revisão resultante é única por fluxo. O serviço permanece interno e sem controller; o validador da PR 071 é o portão que produzirá `EM_TESTE` antes de qualquer exposição administrativa.
 
+Na PR 071, `ValidadorPublicacaoFluxo` é puro e recebe definição desconhecida mais um contexto já resolvido no backend. Ele aplica schema fechado, catálogo de nós, análise de alcance e disponibilidade de variáveis, componentes fortemente conectados para limitar ciclos, referências ativas, capacidades habilitadas e saídas obrigatórias. `ProvedorContextoValidacaoFluxo` é a porta interna para compor esse contexto a partir de autoridades da instalação; sua implementação conservadora não anuncia capacidade ou referência externa. `ServicoValidacaoPublicacaoFluxos` autoriza antes da leitura, serializa o fluxo e promove condicionalmente apenas `RASCUNHO` válido para `EM_TESTE`, com auditoria na mesma transação. Não há controller, executor, worker, Redis ou migration nova.
+
 ## 14. Observabilidade
 
 Quatro sinais distintos:

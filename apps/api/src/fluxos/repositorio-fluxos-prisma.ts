@@ -266,6 +266,29 @@ export class RepositorioFluxosPrisma implements RepositorioFluxos {
     });
   }
 
+  public async marcarVersaoEmTeste(
+    versaoFluxoId: string,
+    fluxoId: string,
+    revisaoEsperada: number,
+    atualizadoEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const resultado = await transacao.versaoFluxo.updateMany({
+      data: {
+        atualizadaEm: atualizadoEm,
+        estado: 'EM_TESTE',
+        revisao: { increment: 1 },
+      },
+      where: {
+        estado: 'RASCUNHO',
+        fluxoId,
+        id: versaoFluxoId,
+        revisao: revisaoEsperada,
+      },
+    });
+    return resultado.count === 1;
+  }
+
   private mapearVersao(versao: {
     readonly atualizadaEm: Date;
     readonly criadaEm: Date;

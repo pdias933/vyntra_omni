@@ -68,4 +68,11 @@ export interface RepositorioFluxos {
     historico: HistoricoPublicacaoFluxoPersistido,
     transacao: TransacaoPrisma,
   ): Promise<void>;
+  marcarVersaoEmTeste(
+    versaoFluxoId: string,
+    fluxoId: string,
+    revisaoEsperada: number,
+    atualizadoEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
 }

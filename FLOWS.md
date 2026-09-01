@@ -474,3 +474,13 @@ O ponteiro publicado é uma referência composta para garantir que a versão per
 As três operações são serializadas por lock do fluxo e exigem `revisaoFluxoEsperada`. Publicação usa `PUBLICAR_FLUXO` e somente promove `EM_TESTE`; arquivamento usa a mesma capacidade e remove explicitamente o ponteiro; reversão usa `REVERTER_FLUXO` e somente reativa uma versão `ARQUIVADA`. Em publicação ou reversão, a versão atual é arquivada antes da promoção e a constraint diferida valida o estado final do commit.
 
 Ponteiro, estados, revisão, `HistoricoPublicacaoFluxo` e `RegistroAuditoria` pertencem à mesma transação fornecida. Uma falha em qualquer escrita reverte o conjunto. Reversão conserva `publicada_por` e `publicada_em` originais; o ator da reversão aparece no histórico novo. O módulo continua sem controller. Até a PR 071 concluir a validação semântica e promover um rascunho válido a `EM_TESTE`, não existe caminho público para publicar.
+
+## 19. Portão semântico da PR 071
+
+`ValidadorPublicacaoFluxo` aceita somente `versaoSchema=1`, campos conhecidos, até 500 nós, 2.000 conexões e 200 variáveis. Há exatamente um `INICIO`, pelo menos um `FIM`, nenhum nó inalcançável e uma conexão única para cada saída nominal. Cada tipo possui saídas obrigatórias; falha, indisponibilidade, timeout, fallback ou resultado incerto não podem desaparecer quando forem parte de seu contrato.
+
+Variáveis são declaradas com tipo controlado, sensibilidade e disponibilidade na entrada. Toda leitura precisa estar definida em todos os caminhos anteriores. Dado marcado sensível não pode alimentar nó de mensagem ao contato. Regras específicas de condição e atribuição permanecem no nó tipado da PR 075; a definição nunca aceita código, SQL, shell, credencial, endpoint ou URL arbitrária.
+
+Ciclos são encontrados no grafo completo: cada componente cíclico exige `limiteIteracoes` entre 1 e 100 em ao menos um nó e uma aresta de saída. Referências exigidas por nó precisam existir e estar ativas. Nós não nativos exigem capacidade habilitada. Esses fatos vêm de `ProvedorContextoValidacaoFluxo`, composto no backend; o editor não os fornece e publicar configuração não os cria.
+
+`ServicoValidacaoPublicacaoFluxos.prepararParaPublicacao` exige `PUBLICAR_FLUXO`, versão `RASCUNHO`, fluxo ativo e revisão esperada. Só relatório válido permite a alteração condicional para `EM_TESTE` e auditoria na mesma transação. Validação e publicação continuam operações separadas. A implementação conservadora inicial reconhece apenas nós nativos sem referência externa; demais nós permanecem não publicáveis até o PR que registrar sua capacidade real.

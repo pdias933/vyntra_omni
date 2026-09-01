@@ -60,3 +60,19 @@ export class ErroTransicaoPublicacaoFluxoInvalida extends Error {
     this.name = 'ErroTransicaoPublicacaoFluxoInvalida';
   }
 }
+
+export class ErroFluxoNaoPublicavel extends Error {
+  public constructor(
+    public readonly problemas: readonly Readonly<Record<string, string>>[],
+  ) {
+    super('FLUXO_NAO_PUBLICAVEL');
+    this.name = 'ErroFluxoNaoPublicavel';
+  }
+}
+
+export class ErroVersaoFluxoNaoValidavel extends Error {
+  public constructor() {
+    super('VERSAO_FLUXO_NAO_VALIDAVEL');
+    this.name = 'ErroVersaoFluxoNaoValidavel';
+  }
+}

@@ -422,6 +422,8 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - Nova execução fixa o `versao_fluxo_id` apontado no início e nunca relê o ponteiro para migrar em curso.
 - Não acrescente controller, publicação, executor, worker ou nó antes do PR correspondente.
 - Definição não aceita código, função, SQL, shell, URL arbitrária ou segredo; publicação futura exige validação semântica completa.
+- Somente o validador autorizado promove `RASCUNHO` para `EM_TESTE`; editor, controller e fixture nunca declaram esse estado diretamente.
+- Capacidade habilitada e referência ativa vêm do backend/PostgreSQL por `ProvedorContextoValidacaoFluxo`, nunca da definição ou requisição. O provedor conservador nega recursos externos ainda não registrados.
 - Publicação aceita somente `EM_TESTE`; reversão aceita somente `ARQUIVADA`. Não contorne esses estados para acelerar testes ou UI.
 - Troque estado atual, alvo, ponteiro, revisão, histórico e auditoria na mesma transação sob lock do fluxo.
 - `PUBLICAR_FLUXO` não concede `REVERTER_FLUXO`; editar não concede nenhuma das duas.

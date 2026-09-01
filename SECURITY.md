@@ -393,6 +393,8 @@ Replay ou duplicidade retorna sucesso compatível sem repetir o efeito. Status f
 - resgate humano suspende automação de modo atômico;
 - contexto de execução não armazena segredo desnecessário.
 
+O contexto usado para validar publicação é fornecido exclusivamente pelo backend. Cliente, editor ou definição não podem declarar que uma capacidade está habilitada nem que fila, calendário, modelo ou formulário está ativo. O provedor conservador nega toda referência e capacidade externa até que uma autoridade real seja registrada. Problemas devolvem apenas código e identificadores internos controlados; definição e parâmetros não entram em erro ou auditoria. Uma validação inválida não muda estado nem produz auditoria de sucesso.
+
 Exemplo de desbloqueio:
 
 ```text
