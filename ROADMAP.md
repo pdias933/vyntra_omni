@@ -83,7 +83,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 059 | CONCLUÍDA | `xhigh` |
 | 060 | CONCLUÍDA | `high` |
 | 061 | CONCLUÍDA | `xhigh` |
-| 062 | EM ANDAMENTO | `xhigh` |
+| 062 | CONCLUÍDA | `xhigh` |
 | 063 | PENDENTE | `xhigh` |
 | 064 | PENDENTE | `xhigh` |
 | 065 | PENDENTE | `xhigh` |
@@ -433,6 +433,10 @@ Aceite concluído em 1º de setembro de 2026: a porta ERP passou a oferecer busc
 ### PR 061 — financeiro e faturas em tempo real
 
 Aceite concluído em 1º de setembro de 2026: a porta ERP passou a consultar fatura, documento e dados de pagamento separadamente. `ServicoFinanceiroErp` valida vínculo ao contrato, situação, valor, vencimento, assinatura/tamanho do PDF, Pix e linha digitável. Documento e pagamento declaram disponibilidade independente; ausência ou capacidade indisponível produz `PARCIAL` com motivo, sem inventar valor. Fatura e complementos bem-sucedidos são sempre `TEMPO_REAL`; snapshot financeiro não é fallback. O modelo interno usa bytes de PDF e não deixa URL, Base64 ou DTO externo atravessar a fronteira. Lint, tipos, 255 testes da API, 174 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-061` ficou saudável com prontidão `PRONTO`. Em staging, o caso completo confirmou situação, PDF e pagamento; o caso parcial identificou os dois complementos como `NAO_FORNECIDO`, e nenhum erro de nível 50 foi emitido.
+
+### PR 062 — sincronização do SnapshotCliente
+
+Aceite concluído em 1º de setembro de 2026: `SnapshotCliente` passou a persistir `ATUAL`, `OBSOLETO` ou `EXCLUIDO`, com motivo, instante e versão. Incremental aceita atualização e tombstone explícito; reconciliação só aceita ausências quando a enumeração é declarada completa. Lotes são limitados a 100 e não admitem o mesmo vínculo duas vezes. Obsolescência preserva o documento protegido, evidência antiga não regride estado e observação posterior reativa. O aceite PostgreSQL revelou e corrigiu um byte nulo indevido na chave do advisory lock. Lint, tipos, 260 testes da API, 175 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901003500_estado_snapshot_cliente` terminou com código zero e `vyntra/api-staging:pr-062` ficou saudável com prontidão `PRONTO`. Em staging, o serviço e repositório reais percorreram `ATUAL→OBSOLETO→ATUAL→EXCLUIDO`, a leitura expôs motivo/versão, dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
