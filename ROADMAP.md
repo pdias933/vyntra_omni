@@ -82,7 +82,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 058 | CONCLUÍDA | `xhigh` |
 | 059 | CONCLUÍDA | `xhigh` |
 | 060 | CONCLUÍDA | `high` |
-| 061 | EM ANDAMENTO | `xhigh` |
+| 061 | CONCLUÍDA | `xhigh` |
 | 062 | PENDENTE | `xhigh` |
 | 063 | PENDENTE | `xhigh` |
 | 064 | PENDENTE | `xhigh` |
@@ -429,6 +429,10 @@ Aceite concluído em 1º de setembro de 2026: a integração MK Solutions recebe
 ### PR 060 — consultas de cliente e contrato
 
 Aceite concluído em 1º de setembro de 2026: a porta ERP passou a oferecer busca e detalhes exatos de cliente e contrato em modelos internos normalizados. `ServicoConsultasClienteContratoErp` valida entrada e resposta, limita resultados, exige coerência cliente↔contrato e recusa qualquer campo desconhecido. Ausência, indisponibilidade e resposta inválida são distintas; sucesso sempre declara origem `TEMPO_REAL`. Nenhum nome, DTO, endpoint ou provider MK atravessa a fronteira, e o adapter real permanece desligado até a observação aprovada. Lint, tipos, 250 testes da API, 172 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-060` ficou saudável com prontidão `PRONTO`. Em staging, busca, cliente e contrato normalizados tiveram sucesso, ausência foi preservada, documento de busca não vazou e nenhum erro de nível 50 foi emitido.
+
+### PR 061 — financeiro e faturas em tempo real
+
+Aceite concluído em 1º de setembro de 2026: a porta ERP passou a consultar fatura, documento e dados de pagamento separadamente. `ServicoFinanceiroErp` valida vínculo ao contrato, situação, valor, vencimento, assinatura/tamanho do PDF, Pix e linha digitável. Documento e pagamento declaram disponibilidade independente; ausência ou capacidade indisponível produz `PARCIAL` com motivo, sem inventar valor. Fatura e complementos bem-sucedidos são sempre `TEMPO_REAL`; snapshot financeiro não é fallback. O modelo interno usa bytes de PDF e não deixa URL, Base64 ou DTO externo atravessar a fronteira. Lint, tipos, 255 testes da API, 174 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-061` ficou saudável com prontidão `PRONTO`. Em staging, o caso completo confirmou situação, PDF e pagamento; o caso parcial identificou os dois complementos como `NAO_FORNECIDO`, e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
