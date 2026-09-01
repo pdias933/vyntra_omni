@@ -15,6 +15,7 @@ import { ServicoInformacoesApi } from './sistema/servico-informacoes-api.js';
 import { ControladorSaude } from './saude/controlador-saude.js';
 import { ServicoProntidao } from './saude/servico-prontidao.js';
 import { ModuloReleases } from './releases/modulo-releases.js';
+import { ModuloSnapshotsCliente } from './snapshots-cliente/modulo-snapshots-cliente.js';
 
 @Module({
   controllers: [
@@ -33,6 +34,7 @@ import { ModuloReleases } from './releases/modulo-releases.js';
     ModuloIdempotencia,
     ModuloPersistencia,
     ModuloReleases,
+    ModuloSnapshotsCliente,
   ],
   providers: [ServicoInformacoesApi, ServicoProntidao],
 })

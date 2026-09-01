@@ -270,6 +270,7 @@ A V1 está apta ao piloto quando, no mínimo:
 - remover acesso a uma fila invalida dados e eventos não autorizados nos clientes;
 - o ERP indisponível não impede identificar pelo snapshot, abrir chat ou transferir para humano;
 - nenhuma escrita ERP usa snapshot desatualizado;
+- toda leitura de contingência identifica `SNAPSHOT` e sua idade; ausência de política sincronizada não é escondida por um selo fictício de atualidade;
 - texto livre fora da janela Meta é bloqueado antes do envio;
 - notas internas nunca aparecem na Meta nem na transcrição pública;
 - operação normal não expõe realtime, sincronização ou `Última atualização`;

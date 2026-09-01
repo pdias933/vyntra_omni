@@ -585,6 +585,8 @@ Na PR 021, `AdaptadorSessaoAcesso` é uma porta independente de `AdaptadorErp`, 
 
 Na PR 025, o módulo `contextos-cliente` separa vínculos persistentes da seleção usada por um atendimento. O repositório recebe a transação do caso de uso, valida o alvo por chaves compostas e executa troca por versão esperada. O serviço central de autorização verifica a permissão e o recurso antes da mutação; a auditoria participa da mesma transação. Não há controller de vínculo/contexto nem consulta ao MK nesta etapa. `contexto_atendimento.atendimento_id` fica reservado até a tabela `Atendimento` da PR 028, quando uma migration aditiva deve acrescentar a FK sem reescrever esta migration aplicada.
 
+Na PR 026, `snapshots-cliente` é um módulo persistente e interno: serializa por vínculo, exige vínculo ativo e mantém um documento protegido corrente no PostgreSQL. Hash+instante capturado distinguem replay, atraso e conflito; versão esperada protege a substituição. A leitura calcula idade no servidor e declara origem `SNAPSHOT`. Não há controller, escrita ERP, cache obrigatório ou provider MK. Se Redis for acrescentado depois, será apenas uma projeção descartável reconstruída dessa autoridade.
+
 ## 14. Observabilidade
 
 Quatro sinais distintos:

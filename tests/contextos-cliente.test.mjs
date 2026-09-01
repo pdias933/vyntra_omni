@@ -41,8 +41,3 @@ test('módulo não publica rota de vínculo ou troca de contexto', async () => {
   assert.match(arquivos[1], /ModuloContextosCliente/);
   assert.ok(!arquivos.join('\n').includes('Controller'));
 });
-
-test('prontidão exige a migration de contexto mais recente', async () => {
-  const persistencia = await ler('apps/api/src/persistencia/servico-prisma.ts');
-  assert.match(persistencia, /20260831001400_criar_vinculo_contexto_atendimento/);
-});

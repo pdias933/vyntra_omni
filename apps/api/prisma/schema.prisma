@@ -259,6 +259,12 @@ enum OrigemContextoAtendimento {
   @@map("origem_contexto_atendimento")
 }
 
+enum OrigemSnapshotCliente {
+  INTEGRACAO_ERP
+
+  @@map("origem_snapshot_cliente")
+}
+
 model RegistroAuditoria {
   id                         String          @id @db.Uuid
   tipoEvento                 String          @map("tipo_evento") @db.VarChar(100)
@@ -749,11 +755,28 @@ model VinculoCliente {
   verificadoPorUsuario       Usuario?           @relation("UsuarioVerificacaoVinculoCliente", fields: [verificadoPorUsuarioId], references: [id], onDelete: Restrict)
   contratos                  VinculoContrato[]
   contextosAtendimento       ContextoAtendimento[]
+  snapshotCliente            SnapshotCliente?
 
   @@unique([id, contatoId], map: "vinculo_cliente_id_contato_key")
   @@index([contatoId, revogadoEm, preferencial, criadoEm], map: "vinculo_cliente_contato_estado_idx")
   @@index([clienteExternoId, revogadoEm, contatoId], map: "vinculo_cliente_cliente_idx")
   @@map("vinculo_cliente")
+}
+
+model SnapshotCliente {
+  id                         String                @id @db.Uuid
+  vinculoClienteId           String                @unique(map: "snapshot_cliente_vinculo_key") @map("vinculo_cliente_id") @db.Uuid
+  origem                     OrigemSnapshotCliente @default(INTEGRACAO_ERP)
+  dadosProtegidos            Json                  @map("dados_protegidos")
+  conteudoHash               String                @map("conteudo_hash") @db.Char(64)
+  capturadoEm                DateTime              @map("capturado_em") @db.Timestamptz(6)
+  persistidoEm               DateTime              @default(now()) @map("persistido_em") @db.Timestamptz(6)
+  atualizadoEm               DateTime              @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  versao                     Int                   @default(1)
+  vinculoCliente             VinculoCliente        @relation(fields: [vinculoClienteId], references: [id], onDelete: Restrict)
+
+  @@index([capturadoEm, vinculoClienteId], map: "snapshot_cliente_capturado_idx")
+  @@map("snapshot_cliente")
 }
 
 model VinculoContrato {

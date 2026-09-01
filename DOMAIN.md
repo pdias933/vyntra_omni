@@ -196,22 +196,6 @@ A PR 023 materializa `Contato` e `IdentidadeWhatsApp`. O serviço recebe do adap
 
 A PR 024 acrescenta `AliasIdentidadeWhatsApp` e `EventoAlteracaoIdentidadeWhatsApp`. Somente um par explícito anterior→atual de conta ativa pode substituir o identificador corrente. A alteração preserva `IdentidadeWhatsApp`, `Contato` e todo vínculo/timeline futuro; o valor anterior passa a resolver pelo alias. Repetição do mesmo par é idempotente. Se o anterior não existe, aponta apenas para alias antigo incompatível ou o atual já pertence a outro contato, o resultado é `SEPARADA_INCERTA`: o identificador atual permanece ou nasce em contato separado, sem merge automático.
 
-### 4.4 Vínculos e contexto do atendimento
-
-`VinculoCliente` registra uma associação persistente possível entre o contato e uma identidade de cliente do ERP; um contato pode possuir vários. `VinculoContrato` pertence exatamente a um vínculo de cliente e também admite múltiplos contratos ativos. Preferência ajuda a interface, mas nunca seleciona silenciosamente o alvo de uma ação.
-
-`ContextoAtendimento` é a escolha operacional congelada para um atendimento: contato, vínculo de cliente, vínculo de contrato opcional, origem, versão e ator da última troca. Cliente/contrato externos ativos são materializados junto do contexto para preservar o que foi usado, mas não substituem os vínculos validados. A integridade composta impede combinar contrato de outro cliente ou vínculo de outro contato.
-
-Regras obrigatórias:
-
-- vínculo persistente não é criado por observação WhatsApp, telefone, username ou primeiro resultado de busca;
-- criação/revalidação de vínculo permanece fechada até o caso de uso autorizado correspondente;
-- inicialização interna exige vínculo ativo e origem explícita `IDENTIFICACAO`, `FLUXO` ou `SISTEMA`;
-- troca humana exige `ALTERAR_CONTEXTO_CLIENTE`, sessão válida, alvo ativo e versão esperada;
-- conflito de versão não produz troca nem auditoria de sucesso;
-- auditoria registra IDs internos e presença de contrato, nunca os identificadores externos do ERP;
-- antes da PR 028, `atendimento_id` é um UUID reservado sem rota pública; a PR 028 acrescenta a FK restritiva ao criar `Atendimento`.
-
 ### 4.4 `VinculoCliente`
 
 ```text
@@ -246,6 +230,16 @@ contexto_alterado_por?
 ```
 
 Trocar o contexto não troca contato, conversa ou protocolo. Toda troca gera evento e auditoria. A ação de ERP deve declarar explicitamente qual cliente e contrato utiliza; nunca usa implicitamente “o primeiro contrato”.
+
+A materialização da PR 025 usa FKs compostas para impedir contrato de outro vínculo ou vínculo de outro contato. Inicialização exige alvo ativo e origem explícita; troca humana exige `ALTERAR_CONTEXTO_CLIENTE` e versão esperada. Auditoria guarda apenas referências internas. Criação/revalidação de vínculo permanece sem rota pública. Até a PR 028, `atendimento_id` é UUID reservado; a tabela `Atendimento` acrescentará a FK por migration aditiva.
+
+### 4.6 `SnapshotCliente`
+
+Um vínculo ativo possui no máximo um snapshot corrente. O snapshot contém somente campos internos normalizados em `dados_protegidos`; documento e telefone entram apenas mascarados, e CPF/CNPJ bruto ou campo externo desconhecido é recusado. O PostgreSQL conserva origem `INTEGRACAO_ERP`, instante capturado, hash do conteúdo, instantes de persistência/atualização e versão.
+
+Atualizações são serializadas por vínculo. Captura mais antiga não substitui a atual; repetição do mesmo instante/conteúdo é idempotente; mesmo instante com conteúdo diferente é conflito. A leitura retorna `origem: SNAPSHOT` e `idade_segundos`, sem afirmar que o dado é tempo real. A PR 026 não inventa limiar de obsolescência: tombstones, política de idade e reconciliação serão materializados com a sincronização real da PR 062.
+
+O snapshot sustenta somente leitura de identificação/contexto permitida. Ele nunca comprova situação financeira atual, sessão de acesso, protocolo, elegibilidade ou execução de escrita no ERP. Redis pode futuramente acelerar uma leitura, mas sua perda não remove nem altera o snapshot do PostgreSQL.
 
 ## 5. Conversa, conta de origem e timeline
 

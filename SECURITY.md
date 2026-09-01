@@ -500,6 +500,8 @@ Controles de persistência obrigatórios:
 
 Vínculo e contexto obedecem a uma defesa adicional contra associação indevida: atributos do WhatsApp não provam identidade ERP, resultado preferencial não vira escolha implícita e contrato precisa pertencer ao vínculo/contato por FK composta. A troca humana passa pelo serviço central com `ALTERAR_CONTEXTO_CLIENTE`, usa concorrência otimista e audita na mesma transação sem guardar identificador externo. A PR 025 não publica rota para criar vínculos; essa capacidade continua `default deny` até a revalidação aprovada do caso de uso.
 
+O snapshot da PR 026 aceita apenas o vocabulário interno permitido e documento/telefone mascarados. Campo bruto ou desconhecido falha antes do lock/persistência. Origem, idade, hash e versão permanecem explícitos; captura atrasada não regride o dado e divergência no mesmo instante falha fechada. O módulo não publica controller nem ação ERP. Snapshot, ainda que recente, nunca concede permissão, comprova identidade de alto risco ou autoriza escrita; Redis não participa dessa autoridade.
+
 ## 15. Regras de código seguro
 
 - Não adicionar dependência sem necessidade, análise e justificativa.
