@@ -54,7 +54,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 030 | CONCLUÍDA | `high` |
 | 031 | CONCLUÍDA | `medium` |
 | 032 | CONCLUÍDA | `high` |
-| 033 | EM ANDAMENTO | `xhigh` |
+| 033 | CONCLUÍDA | `xhigh` |
 | 034 | PENDENTE | `high` |
 | 035 | PENDENTE | `xhigh` |
 | 036 | PENDENTE | `xhigh` |
@@ -317,6 +317,10 @@ Aceite concluído em 1º de setembro de 2026: `DisponibilidadeUsuario` passou a 
 ### PR 032 — histórico de atribuição
 
 Aceite concluído em 1º de setembro de 2026: `HistoricoAtribuicao` passou a materializar intervalos de fila e responsabilidade por atendimento, com os seis motivos aprovados e executor humano opcional. O serviço serializa por atendimento, exige que o novo intervalo corresponda à atribuição atual, fecha o anterior e abre o seguinte no mesmo instante. O PostgreSQL garante um único intervalo aberto, combinações coerentes de fila/responsável e imutabilidade, permitindo somente fechar um intervalo ainda aberto. Índices temporais suportam métricas sem reconstrução de logs. Lint, tipos, 150 testes da API, 126 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002000_criar_historico_atribuicao` terminou com código zero e `vyntra/api-staging:pr-032` ficou saudável com prontidão `PRONTO`. Em staging, a espera em fila foi calculada em 300 segundos, houve exatamente um intervalo atual `RESGATE`, segundo intervalo aberto e reescrita histórica foram recusados, a transação sintética foi revertida e não houve erro de nível 50.
+
+### PR 033 — resgate atômico
+
+Aceite concluído em 1º de setembro de 2026: o resgate passou a exigir cumulativamente `VISUALIZAR_FILA` e `RESGATAR_ATENDIMENTO` no escopo da fila. A escrita condicional compara estado `AGUARDANDO`, modo `FILA_HUMANA`, fila esperada, responsável nulo e `versao_atribuicao`; somente o vencedor muda para `EM_ATENDIMENTO/HUMANO`, incrementa as versões e registra histórico, evento e auditoria na mesma transação. O perdedor recebe conflito com o responsável vencedor e não produz efeitos derivados. Lint, tipos, 154 testes da API, 128 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve nova migration; `vyntra/api-staging:pr-033` ficou saudável com prontidão `PRONTO`. Em staging, dois candidatos produziram uma única alteração, a segunda comparação afetou zero registros, a versão avançou de 7 para 8, restou um único histórico aberto, a transação sintética foi revertida e não houve erro de nível 50.
 
 ## 7. Mensageria Meta
 
