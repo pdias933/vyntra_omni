@@ -760,3 +760,9 @@ A troca de contexto deriva fila e identificadores externos dos vínculos persist
 ### 13.17 Administração de usuários e RBAC
 
 A PR 093 projeta usuários, perfis, ajustes de permissão, filas, quantidades de sessões/dispositivos e auditoria recente somente depois de `ADMINISTRAR_USUARIOS`. Trocar perfil e filas é uma operação transacional com versão esperada. O backend valida perfil e filas ativos, impede auto-rebaixamento administrativo e preserva pelo menos um administrador ativo. Depois da escrita, `ServicoInvalidacaoPermissoes` incrementa a versão e publica `PERMISSOES_ALTERADAS` no mesmo commit; a auditoria sanitizada fecha a unidade. Revogação de sessões web e dispositivos mobile reutiliza os serviços de autenticação existentes.
+
+### 13.18 Administração operacional
+
+A PR 094 resolve separadamente `ADMINISTRAR_INTEGRACOES`, `ADMINISTRAR_FILAS` e `ADMINISTRAR_CALENDARIOS` antes de consultar cada projeção. Contas de canal não expõem identificadores externos; filas agregam somente contagens operacionais, calendário e limites SLA. O estado de integração vem da presença do provider no runtime, nunca de variável declarada pelo cliente: adapter ausente aparece como `NAO_CONFIGURADA`.
+
+Criação/inativação de fila e override temporário de calendário reutilizam `ServicoFilas` e `ServicoCalendarios`, preservando RBAC, locks, invalidação e auditoria existentes. Política SLA é somente projetada nesta etapa; não existe editor que grave limites sem um serviço de domínio correspondente.

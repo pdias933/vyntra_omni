@@ -115,7 +115,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 091 | CONCLUÍDA | `xhigh` |
 | 092 | CONCLUÍDA | `xhigh` |
 | 093 | CONCLUÍDA | `xhigh` |
-| 094 | PENDENTE | `high` |
+| 094 | CONCLUÍDA | `high` |
 | 095 | PENDENTE | `xhigh` |
 | 096 | PENDENTE | `xhigh` |
 | 097 | PENDENTE | `xhigh` |
@@ -626,6 +626,10 @@ Aceite concluído em 1º de setembro de 2026: nome/avatar abre Detalhes do Conta
 ### PR 093 — administração de usuários/RBAC
 
 Aceite concluído em 1º de setembro de 2026: a área `Usuários e acessos` lista equipe, perfis base, concessões/negações, filas, sessões web, dispositivos mobile e auditoria recente em uma composição desktop própria. A projeção inteira exige `ADMINISTRAR_USUARIOS` antes de tocar dados. Perfil e filas mudam em uma transação com versão esperada, validação de alvos ativos, proteção contra auto-rebaixamento e preservação do último administrador. A mudança incrementa `versao_permissoes`, publica invalidação e audita no mesmo commit. Revogações de sessão/dispositivo reutilizam os serviços seguros existentes e exigem confirmação visual. O web usa somente o SDK OpenAPI gerado. Não houve migration. Lint, tipos, 421 testes da API e 234 testes de arquitetura foram aprovados. Effort `xhigh` foi mantido pela prevenção de lockout, concorrência otimista e invalidação distribuída.
+
+### PR 094 — administração operacional
+
+Aceite concluído em 1º de setembro de 2026: `Configuração operacional` recebeu inventário de contas WhatsApp, filas com calendário/SLA/contagens, calendários com override vigente e estado observado das integrações. Cada seção é projetada somente depois da sua permissão administrativa; nenhuma credencial ou identificador externo atravessa a API. Provider não registrado aparece `Não configurada`, sem saúde fictícia. Criar/inativar fila e aplicar override temporário reutilizam os serviços de domínio auditados, com sessão+origem+CSRF e confirmação antes da inativação. SLA permanece leitura enquanto não existe serviço de configuração aprovado. O web usa apenas o SDK gerado. Não houve migration. Lint, tipos, 422 testes da API e 236 testes de arquitetura foram aprovados. Effort `high` foi confirmado pela projeção por capacidade e reaproveitamento das invariantes operacionais.
 
 ## 12. Mobile
 

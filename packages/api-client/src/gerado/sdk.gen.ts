@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcompanharEventosWebData, AcompanharEventosWebResponses, AlterarAcessoUsuarioAdministracaoData, AlterarAcessoUsuarioAdministracaoResponses, AlterarContextoContatoWebData, AlterarContextoContatoWebResponses, AtualizarControleRecursoData, AtualizarControleRecursoResponses, AtualizarPoliticaVersaoMobileData, AtualizarPoliticaVersaoMobileResponses, AvaliarVersaoMobileData, AvaliarVersaoMobileResponses, BaixarMidiaWebData, BaixarMidiaWebResponses, BuscarConversaWebData, BuscarConversaWebResponses, CancelarPareamentoQrWebData, CancelarPareamentoQrWebResponses, ConcluirPareamentoQrMobileData, ConcluirPareamentoQrMobileResponses, ConfirmarLeituraTimelineWebData, ConfirmarLeituraTimelineWebResponses, ConfirmarPareamentoQrWebData, ConfirmarPareamentoQrWebResponses, ConsultarFinanceiroContatoWebData, ConsultarFinanceiroContatoWebResponses, ConsultarPareamentoQrMobileData, ConsultarPareamentoQrMobileResponses, ConsultarPareamentoQrWebData, ConsultarPareamentoQrWebResponses, CriarFluxoEditorData, CriarFluxoEditorResponses, CriarVersaoFluxoEditorData, CriarVersaoFluxoEditorResponses, EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, EnviarMidiaWebData, EnviarMidiaWebResponses, EnviarModeloAprovadoWebData, EnviarModeloAprovadoWebResponses, EnviarTextoWebData, EnviarTextoWebResponses, ExecutarAcaoErpContatoWebData, ExecutarAcaoErpContatoWebResponses, GerarPareamentoQrWebData, GerarPareamentoQrWebResponses, ListarAdministracaoReleasesData, ListarAdministracaoReleasesResponses, ListarAdministracaoUsuariosData, ListarAdministracaoUsuariosResponses, ListarAtendimentosWebData, ListarAtendimentosWebResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarFluxosEditorData, ListarFluxosEditorResponses, ListarGaleriaConversaWebData, ListarGaleriaConversaWebResponses, ListarModelosAprovadosWebData, ListarModelosAprovadosWebResponses, ListarRespostasRapidasWebData, ListarRespostasRapidasWebResponses, ListarSessoesWebData, ListarSessoesWebResponses, MarcarTimelineWebNaoLidaData, MarcarTimelineWebNaoLidaResponses, ObterConfiguracaoMobileAtualData, ObterConfiguracaoMobileAtualResponses, ObterConfiguracaoWebAtualData, ObterConfiguracaoWebAtualResponses, ObterDetalhesContatoWebData, ObterDetalhesContatoWebResponses, ObterFluxoEditorData, ObterFluxoEditorResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, ObterTimelineWebData, ObterTimelineWebResponses, PrepararAcaoErpContatoWebData, PrepararAcaoErpContatoWebResponses, PrepararPublicacaoFluxoEditorData, PrepararPublicacaoFluxoEditorResponses, PublicarVersaoFluxoEditorData, PublicarVersaoFluxoEditorResponses, ReagirMensagemWebData, ReagirMensagemWebResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, ResgatarPareamentoQrMobileData, ResgatarPareamentoQrMobileResponses, RessincronizarCompletaData, RessincronizarCompletaResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, SalvarRascunhoFluxoEditorData, SalvarRascunhoFluxoEditorResponses, SimularFluxoEditorData, SimularFluxoEditorResponses, SincronizarIncrementalData, SincronizarIncrementalResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
+import type { AcompanharEventosWebData, AcompanharEventosWebResponses, AlterarAcessoUsuarioAdministracaoData, AlterarAcessoUsuarioAdministracaoResponses, AlterarContextoContatoWebData, AlterarContextoContatoWebResponses, AtualizarControleRecursoData, AtualizarControleRecursoResponses, AtualizarPoliticaVersaoMobileData, AtualizarPoliticaVersaoMobileResponses, AvaliarVersaoMobileData, AvaliarVersaoMobileResponses, BaixarMidiaWebData, BaixarMidiaWebResponses, BuscarConversaWebData, BuscarConversaWebResponses, CancelarPareamentoQrWebData, CancelarPareamentoQrWebResponses, ConcluirPareamentoQrMobileData, ConcluirPareamentoQrMobileResponses, ConfirmarLeituraTimelineWebData, ConfirmarLeituraTimelineWebResponses, ConfirmarPareamentoQrWebData, ConfirmarPareamentoQrWebResponses, ConsultarFinanceiroContatoWebData, ConsultarFinanceiroContatoWebResponses, ConsultarPareamentoQrMobileData, ConsultarPareamentoQrMobileResponses, ConsultarPareamentoQrWebData, ConsultarPareamentoQrWebResponses, CriarFilaAdministracaoOperacionalData, CriarFilaAdministracaoOperacionalResponses, CriarFluxoEditorData, CriarFluxoEditorResponses, CriarVersaoFluxoEditorData, CriarVersaoFluxoEditorResponses, DefinirOverrideCalendarioAdministracaoOperacionalData, DefinirOverrideCalendarioAdministracaoOperacionalResponses, EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, EnviarMidiaWebData, EnviarMidiaWebResponses, EnviarModeloAprovadoWebData, EnviarModeloAprovadoWebResponses, EnviarTextoWebData, EnviarTextoWebResponses, ExecutarAcaoErpContatoWebData, ExecutarAcaoErpContatoWebResponses, GerarPareamentoQrWebData, GerarPareamentoQrWebResponses, InativarFilaAdministracaoOperacionalData, InativarFilaAdministracaoOperacionalResponses, ListarAdministracaoOperacionalData, ListarAdministracaoOperacionalResponses, ListarAdministracaoReleasesData, ListarAdministracaoReleasesResponses, ListarAdministracaoUsuariosData, ListarAdministracaoUsuariosResponses, ListarAtendimentosWebData, ListarAtendimentosWebResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarFluxosEditorData, ListarFluxosEditorResponses, ListarGaleriaConversaWebData, ListarGaleriaConversaWebResponses, ListarModelosAprovadosWebData, ListarModelosAprovadosWebResponses, ListarRespostasRapidasWebData, ListarRespostasRapidasWebResponses, ListarSessoesWebData, ListarSessoesWebResponses, MarcarTimelineWebNaoLidaData, MarcarTimelineWebNaoLidaResponses, ObterConfiguracaoMobileAtualData, ObterConfiguracaoMobileAtualResponses, ObterConfiguracaoWebAtualData, ObterConfiguracaoWebAtualResponses, ObterDetalhesContatoWebData, ObterDetalhesContatoWebResponses, ObterFluxoEditorData, ObterFluxoEditorResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, ObterTimelineWebData, ObterTimelineWebResponses, PrepararAcaoErpContatoWebData, PrepararAcaoErpContatoWebResponses, PrepararPublicacaoFluxoEditorData, PrepararPublicacaoFluxoEditorResponses, PublicarVersaoFluxoEditorData, PublicarVersaoFluxoEditorResponses, ReagirMensagemWebData, ReagirMensagemWebResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, ResgatarPareamentoQrMobileData, ResgatarPareamentoQrMobileResponses, RessincronizarCompletaData, RessincronizarCompletaResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, SalvarRascunhoFluxoEditorData, SalvarRascunhoFluxoEditorResponses, SimularFluxoEditorData, SimularFluxoEditorResponses, SincronizarIncrementalData, SincronizarIncrementalResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -34,28 +34,58 @@ export const verificarProcessoVivo = <ThrowOnError extends boolean = false>(opti
 export const verificarAplicacaoPronta = <ThrowOnError extends boolean = false>(options?: Options<VerificarAplicacaoProntaData, ThrowOnError>): RequestResult<VerificarAplicacaoProntaResponses, VerificarAplicacaoProntaErrors, ThrowOnError> => (options?.client ?? client).get<VerificarAplicacaoProntaResponses, VerificarAplicacaoProntaErrors, ThrowOnError>({ url: '/api/v1/saude/pronto', ...options });
 
 /**
- * Lista usuários, RBAC, filas, sessões e auditoria autorizados
+ * Lista contas, filas, calendários, SLA e integrações por capacidade
  */
-export const listarAdministracaoUsuarios = <ThrowOnError extends boolean = false>(options?: Options<ListarAdministracaoUsuariosData, ThrowOnError>): RequestResult<ListarAdministracaoUsuariosResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListarAdministracaoUsuariosResponses, unknown, ThrowOnError>({
+export const listarAdministracaoOperacional = <ThrowOnError extends boolean = false>(options?: Options<ListarAdministracaoOperacionalData, ThrowOnError>): RequestResult<ListarAdministracaoOperacionalResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListarAdministracaoOperacionalResponses, unknown, ThrowOnError>({
     security: [{
             in: 'cookie',
             name: '__Host-vyntra_sessao',
             type: 'apiKey'
         }],
-    url: '/api/v1/administracao/usuarios',
+    url: '/api/v1/administracao/operacao',
     ...options
 });
 
 /**
- * Altera perfil e filas com versão esperada e invalidação imediata
+ * Cria fila por serviço de domínio auditado
  */
-export const alterarAcessoUsuarioAdministracao = <ThrowOnError extends boolean = false>(options: Options<AlterarAcessoUsuarioAdministracaoData, ThrowOnError>): RequestResult<AlterarAcessoUsuarioAdministracaoResponses, unknown, ThrowOnError> => (options.client ?? client).put<AlterarAcessoUsuarioAdministracaoResponses, unknown, ThrowOnError>({
+export const criarFilaAdministracaoOperacional = <ThrowOnError extends boolean = false>(options: Options<CriarFilaAdministracaoOperacionalData, ThrowOnError>): RequestResult<CriarFilaAdministracaoOperacionalResponses, unknown, ThrowOnError> => (options.client ?? client).post<CriarFilaAdministracaoOperacionalResponses, unknown, ThrowOnError>({
     security: [{
             in: 'cookie',
             name: '__Host-vyntra_sessao',
             type: 'apiKey'
         }],
-    url: '/api/v1/administracao/usuarios/{usuarioId}/acesso',
+    url: '/api/v1/administracao/operacao/filas',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Inativa fila e invalida acessos afetados
+ */
+export const inativarFilaAdministracaoOperacional = <ThrowOnError extends boolean = false>(options: Options<InativarFilaAdministracaoOperacionalData, ThrowOnError>): RequestResult<InativarFilaAdministracaoOperacionalResponses, unknown, ThrowOnError> => (options.client ?? client).post<InativarFilaAdministracaoOperacionalResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/administracao/operacao/filas/{filaId}/inativar',
+    ...options
+});
+
+/**
+ * Define abertura ou fechamento temporário auditado
+ */
+export const definirOverrideCalendarioAdministracaoOperacional = <ThrowOnError extends boolean = false>(options: Options<DefinirOverrideCalendarioAdministracaoOperacionalData, ThrowOnError>): RequestResult<DefinirOverrideCalendarioAdministracaoOperacionalResponses, unknown, ThrowOnError> => (options.client ?? client).post<DefinirOverrideCalendarioAdministracaoOperacionalResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/administracao/operacao/calendarios/{calendarioId}/override',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -325,6 +355,36 @@ export const revogarDispositivosMobileAdministrativamente = <ThrowOnError extend
         }],
     url: '/api/v1/autenticacao/web/usuarios/{usuarioId}/revogar-dispositivos-mobile',
     ...options
+});
+
+/**
+ * Lista usuários, RBAC, filas, sessões e auditoria autorizados
+ */
+export const listarAdministracaoUsuarios = <ThrowOnError extends boolean = false>(options?: Options<ListarAdministracaoUsuariosData, ThrowOnError>): RequestResult<ListarAdministracaoUsuariosResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListarAdministracaoUsuariosResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/administracao/usuarios',
+    ...options
+});
+
+/**
+ * Altera perfil e filas com versão esperada e invalidação imediata
+ */
+export const alterarAcessoUsuarioAdministracao = <ThrowOnError extends boolean = false>(options: Options<AlterarAcessoUsuarioAdministracaoData, ThrowOnError>): RequestResult<AlterarAcessoUsuarioAdministracaoResponses, unknown, ThrowOnError> => (options.client ?? client).put<AlterarAcessoUsuarioAdministracaoResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/administracao/usuarios/{usuarioId}/acesso',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

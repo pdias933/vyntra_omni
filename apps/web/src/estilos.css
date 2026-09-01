@@ -213,6 +213,43 @@ a {
 .auditoria-admin span { color: #405047; font-size: 9px; }
 .auditoria-admin time { color: #8b958f; font-size: 7px; }
 .skeleton-administracao { height: 500px; margin-top: 18px; border-radius: 16px; background: linear-gradient(100deg,#e5ebe7 30%,#f2f5f3 45%,#e5ebe7 60%); background-size: 300% 100%; animation: skeleton-lista 1.2s ease infinite; }
+.administracao-operacional { overflow: auto; background: #f5f7f6; }
+.grade-operacional { display: grid; gap: 14px; margin-top: 18px; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.painel-operacional { overflow: hidden; border: 1px solid #dfe6e2; border-radius: 16px; background: white; box-shadow: 0 12px 38px rgba(23,42,31,.05); }
+.painel-operacional > header { display: flex; align-items: center; justify-content: space-between; padding: 15px 17px; border-bottom: 1px solid #e8ece9; }
+.painel-operacional header small { color: #7b887f; font-size: 9px; }
+.painel-operacional > article,
+.grade-integracoes article { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #edf0ee; }
+.painel-operacional article > div,
+.grade-integracoes article > div { display: grid; min-width: 0; flex: 1; gap: 3px; }
+.painel-operacional article small,
+.grade-integracoes article small { color: #78847c; font-size: 8px; }
+.painel-operacional article em { color: #6e5a29; font-size: 8px; font-style: normal; }
+.painel-operacional article > span { padding: 4px 7px; border-radius: 999px; color: #846244; background: #fff4e8; font-size: 7px; }
+.painel-operacional article > span.selo-operacional-ativo { color: #137942; background: #e9f7ee; }
+.painel-operacional article > button { padding: 6px 8px; border: 1px solid #e4d4ce; border-radius: 7px; color: #8d5546; background: #fff9f7; cursor: pointer; font-size: 8px; }
+.grade-integracoes { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.grade-integracoes article { border-right: 1px solid #edf0ee; }
+.grade-integracoes i { width: 9px; height: 9px; border-radius: 50%; background: #d89b56; box-shadow: 0 0 0 4px #fff3e4; }
+.grade-integracoes i.integracao-ativa { background: #28a05a; box-shadow: 0 0 0 4px #e9f7ee; }
+.grade-integracoes span { color: #77837b; font-size: 7px; }
+.painel-contas > p { padding: 18px; color: #7b877f; font-size: 9px; }
+.nova-fila { display: flex; gap: 7px; padding: 11px 15px; border-bottom: 1px solid #edf0ee; }
+.nova-fila input,
+.form-override input,
+.form-override select { min-width: 0; flex: 1; padding: 8px; border: 1px solid #dbe3de; border-radius: 8px; font-size: 9px; }
+.nova-fila button,
+.form-override button { padding: 8px 10px; border: 0; border-radius: 8px; color: white; background: #148a49; cursor: pointer; font-size: 9px; font-weight: 700; }
+.form-override { display: grid; gap: 8px; padding: 14px 16px; background: #f8faf9; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.form-override > strong,
+.form-override > input { grid-column: 1/-1; }
+.form-override label { display: flex; align-items: center; gap: 5px; color: #68756d; font-size: 8px; }
+.form-override label input { max-width: 65px; }
+.confirmacao-operacional { position: fixed; z-index: 50; right: 32px; bottom: 28px; width: 360px; padding: 16px; border: 1px solid #ead5bc; border-radius: 13px; background: #fffaf2; box-shadow: 0 18px 45px rgba(37,28,19,.16); }
+.confirmacao-operacional p { color: #796c5b; font-size: 9px; }
+.confirmacao-operacional button { margin-right: 7px; padding: 8px 10px; border: 1px solid #d8dfdb; border-radius: 8px; background: white; cursor: pointer; font-size: 9px; }
+.confirmacao-operacional button:last-child { color: white; border-color: #a85846; background: #a85846; }
+.mensagem-operacional { position: fixed; z-index: 45; right: 32px; bottom: 28px; padding: 11px 14px; border-radius: 10px; color: #315f45; background: #eaf7ef; box-shadow: 0 12px 35px rgba(24,55,37,.12); font-size: 9px; }
 
 .carregamento-shell { display: grid; width: 100%; height: 100%; place-content: center; justify-items: center; gap: 24px; background: #f7f9f8; }
 .marca-login { display: flex; align-items: center; gap: 11px; color: white; }

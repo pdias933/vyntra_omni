@@ -19,63 +19,61 @@ export type EstadoSaudeDto = {
     estado: 'VIVO' | 'PRONTO';
 };
 
-export type PerfilResumoAdministracaoUsuarioDto = {
+export type ContaOperacionalDto = {
     id: string;
     nome: string;
-    papel_base: string;
-};
-
-export type FilaAdministracaoUsuarioDto = {
-    id: string;
-    nome: string;
-};
-
-export type ResumoAdministracaoUsuarioDto = {
-    id: string;
-    nome_exibicao: string;
     estado: string;
-    perfil?: PerfilResumoAdministracaoUsuarioDto;
-    filas: Array<FilaAdministracaoUsuarioDto>;
-    sessoes_web_ativas: number;
-    dispositivos_mobile_ativos: number;
-    versao_permissoes: number;
+    telefone_mascarado?: string;
+    versao: number;
 };
 
-export type PermissaoPerfilAdministracaoDto = {
-    codigo: string;
-    efeito: 'CONCEDER' | 'NEGAR';
-};
-
-export type PerfilAdministracaoUsuarioDto = {
+export type FilaOperacionalDto = {
     id: string;
     nome: string;
-    papel_base: string;
-    permissoes: Array<PermissaoPerfilAdministracaoDto>;
+    estado: string;
+    usuarios_ativos: number;
+    atendimentos_abertos: number;
+    calendario?: string;
+    sla?: {
+        [key: string]: unknown;
+    };
 };
 
-export type ItemAuditoriaAdministracaoUsuarioDto = {
+export type CalendarioOperacionalDto = {
     id: string;
-    acao: string;
-    criado_em: string;
-    entidade_id?: string;
-    usuario_ator_id?: string;
+    nome: string;
+    fuso_horario: string;
+    modo: string;
+    override_atual?: {
+        [key: string]: unknown;
+    };
 };
 
-export type PainelAdministracaoUsuariosDto = {
-    usuarios: Array<ResumoAdministracaoUsuarioDto>;
-    perfis: Array<PerfilAdministracaoUsuarioDto>;
-    filas: Array<FilaAdministracaoUsuarioDto>;
-    auditoria_recente: Array<ItemAuditoriaAdministracaoUsuarioDto>;
+export type IntegracaoOperacionalDto = {
+    codigo: string;
+    estado: 'ATIVA' | 'NAO_CONFIGURADA';
+    detalhe: string;
 };
 
-export type EntradaAlteracaoAcessoUsuarioDto = {
-    perfil_id: string;
-    fila_ids: Array<string>;
-    versao_esperada: number;
+export type PainelAdministracaoOperacionalDto = {
+    capacidades: {
+        [key: string]: unknown;
+    };
+    contas: Array<ContaOperacionalDto>;
+    filas: Array<FilaOperacionalDto>;
+    calendarios: Array<CalendarioOperacionalDto>;
+    integracoes: Array<IntegracaoOperacionalDto>;
 };
 
-export type ResultadoAlteracaoAcessoUsuarioDto = {
-    versao_permissoes: number;
+export type EntradaCriacaoFilaOperacionalDto = {
+    nome: string;
+};
+
+export type EntradaOverrideCalendarioOperacionalDto = {
+    estado: 'ABERTO' | 'FECHADO';
+    motivo: string;
+    vigente_de: string;
+    vigente_ate: string;
 };
 
 export type EntradaResgatePareamentoQrDto = {
@@ -189,6 +187,65 @@ export type ResumoSessaoWebDto = {
     autenticada_em: string;
     ultima_atividade_em: string;
     expira_em: string;
+};
+
+export type PerfilResumoAdministracaoUsuarioDto = {
+    id: string;
+    nome: string;
+    papel_base: string;
+};
+
+export type FilaAdministracaoUsuarioDto = {
+    id: string;
+    nome: string;
+};
+
+export type ResumoAdministracaoUsuarioDto = {
+    id: string;
+    nome_exibicao: string;
+    estado: string;
+    perfil?: PerfilResumoAdministracaoUsuarioDto;
+    filas: Array<FilaAdministracaoUsuarioDto>;
+    sessoes_web_ativas: number;
+    dispositivos_mobile_ativos: number;
+    versao_permissoes: number;
+};
+
+export type PermissaoPerfilAdministracaoDto = {
+    codigo: string;
+    efeito: 'CONCEDER' | 'NEGAR';
+};
+
+export type PerfilAdministracaoUsuarioDto = {
+    id: string;
+    nome: string;
+    papel_base: string;
+    permissoes: Array<PermissaoPerfilAdministracaoDto>;
+};
+
+export type ItemAuditoriaAdministracaoUsuarioDto = {
+    id: string;
+    acao: string;
+    criado_em: string;
+    entidade_id?: string;
+    usuario_ator_id?: string;
+};
+
+export type PainelAdministracaoUsuariosDto = {
+    usuarios: Array<ResumoAdministracaoUsuarioDto>;
+    perfis: Array<PerfilAdministracaoUsuarioDto>;
+    filas: Array<FilaAdministracaoUsuarioDto>;
+    auditoria_recente: Array<ItemAuditoriaAdministracaoUsuarioDto>;
+};
+
+export type EntradaAlteracaoAcessoUsuarioDto = {
+    perfil_id: string;
+    fila_ids: Array<string>;
+    versao_esperada: number;
+};
+
+export type ResultadoAlteracaoAcessoUsuarioDto = {
+    versao_permissoes: number;
 };
 
 export type IdentidadeContatoWebDto = {
@@ -708,36 +765,70 @@ export type VerificarAplicacaoProntaResponses = {
 
 export type VerificarAplicacaoProntaResponse = VerificarAplicacaoProntaResponses[keyof VerificarAplicacaoProntaResponses];
 
-export type ListarAdministracaoUsuariosData = {
+export type ListarAdministracaoOperacionalData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/api/v1/administracao/usuarios';
+    url: '/api/v1/administracao/operacao';
 };
 
-export type ListarAdministracaoUsuariosResponses = {
-    200: PainelAdministracaoUsuariosDto;
+export type ListarAdministracaoOperacionalResponses = {
+    200: PainelAdministracaoOperacionalDto;
 };
 
-export type ListarAdministracaoUsuariosResponse = ListarAdministracaoUsuariosResponses[keyof ListarAdministracaoUsuariosResponses];
+export type ListarAdministracaoOperacionalResponse = ListarAdministracaoOperacionalResponses[keyof ListarAdministracaoOperacionalResponses];
 
-export type AlterarAcessoUsuarioAdministracaoData = {
-    body: EntradaAlteracaoAcessoUsuarioDto;
+export type CriarFilaAdministracaoOperacionalData = {
+    body: EntradaCriacaoFilaOperacionalDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/administracao/operacao/filas';
+};
+
+export type CriarFilaAdministracaoOperacionalResponses = {
+    200: PainelAdministracaoOperacionalDto;
+};
+
+export type CriarFilaAdministracaoOperacionalResponse = CriarFilaAdministracaoOperacionalResponses[keyof CriarFilaAdministracaoOperacionalResponses];
+
+export type InativarFilaAdministracaoOperacionalData = {
+    body?: never;
     headers: {
         'x-csrf-token': string;
     };
     path: {
-        usuarioId: string;
+        filaId: string;
     };
     query?: never;
-    url: '/api/v1/administracao/usuarios/{usuarioId}/acesso';
+    url: '/api/v1/administracao/operacao/filas/{filaId}/inativar';
 };
 
-export type AlterarAcessoUsuarioAdministracaoResponses = {
-    200: ResultadoAlteracaoAcessoUsuarioDto;
+export type InativarFilaAdministracaoOperacionalResponses = {
+    204: void;
 };
 
-export type AlterarAcessoUsuarioAdministracaoResponse = AlterarAcessoUsuarioAdministracaoResponses[keyof AlterarAcessoUsuarioAdministracaoResponses];
+export type InativarFilaAdministracaoOperacionalResponse = InativarFilaAdministracaoOperacionalResponses[keyof InativarFilaAdministracaoOperacionalResponses];
+
+export type DefinirOverrideCalendarioAdministracaoOperacionalData = {
+    body: EntradaOverrideCalendarioOperacionalDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        calendarioId: string;
+    };
+    query?: never;
+    url: '/api/v1/administracao/operacao/calendarios/{calendarioId}/override';
+};
+
+export type DefinirOverrideCalendarioAdministracaoOperacionalResponses = {
+    200: PainelAdministracaoOperacionalDto;
+};
+
+export type DefinirOverrideCalendarioAdministracaoOperacionalResponse = DefinirOverrideCalendarioAdministracaoOperacionalResponses[keyof DefinirOverrideCalendarioAdministracaoOperacionalResponses];
 
 export type ResgatarPareamentoQrMobileData = {
     body: EntradaResgatePareamentoQrDto;
@@ -1085,6 +1176,37 @@ export type RevogarDispositivosMobileAdministrativamenteResponses = {
 };
 
 export type RevogarDispositivosMobileAdministrativamenteResponse = RevogarDispositivosMobileAdministrativamenteResponses[keyof RevogarDispositivosMobileAdministrativamenteResponses];
+
+export type ListarAdministracaoUsuariosData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/administracao/usuarios';
+};
+
+export type ListarAdministracaoUsuariosResponses = {
+    200: PainelAdministracaoUsuariosDto;
+};
+
+export type ListarAdministracaoUsuariosResponse = ListarAdministracaoUsuariosResponses[keyof ListarAdministracaoUsuariosResponses];
+
+export type AlterarAcessoUsuarioAdministracaoData = {
+    body: EntradaAlteracaoAcessoUsuarioDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        usuarioId: string;
+    };
+    query?: never;
+    url: '/api/v1/administracao/usuarios/{usuarioId}/acesso';
+};
+
+export type AlterarAcessoUsuarioAdministracaoResponses = {
+    200: ResultadoAlteracaoAcessoUsuarioDto;
+};
+
+export type AlterarAcessoUsuarioAdministracaoResponse = AlterarAcessoUsuarioAdministracaoResponses[keyof AlterarAcessoUsuarioAdministracaoResponses];
 
 export type ObterDetalhesContatoWebData = {
     body?: never;

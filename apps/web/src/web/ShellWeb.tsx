@@ -9,6 +9,7 @@ import type { FormEvent, ReactNode } from 'react';
 
 import { AplicacaoEditorFluxos } from '../Aplicacao';
 import { AdministracaoUsuariosWeb } from './administracao/AdministracaoUsuariosWeb';
+import { AdministracaoOperacionalWeb } from './administracao/AdministracaoOperacionalWeb';
 import { ListaAtendimentosWeb } from './atendimentos/ListaAtendimentosWeb';
 import { obterCsrf } from './seguranca-web';
 
@@ -206,10 +207,10 @@ export function ShellWeb() {
 
 function ConteudoRota({ rota }: { readonly rota: RotaWeb }) {
   if (rota === '/administracao/fluxos') return <AplicacaoEditorFluxos />;
+  if (rota === '/administracao/operacao') return <AdministracaoOperacionalWeb />;
   if (rota === '/administracao/usuarios') return <AdministracaoUsuariosWeb />;
   if (rota === '/atendimentos') return <ListaAtendimentosWeb />;
-  const titulos: Record<Exclude<RotaWeb, '/administracao/fluxos' | '/administracao/usuarios' | '/atendimentos'>, readonly [string, string]> = {
-    '/administracao/operacao': ['Configuração operacional', 'Contas, filas, calendários, SLA e integrações.'],
+  const titulos: Record<Exclude<RotaWeb, '/administracao/fluxos' | '/administracao/operacao' | '/administracao/usuarios' | '/atendimentos'>, readonly [string, string]> = {
     '/saude': ['Saúde e releases', 'Componentes, recuperação e liberação controlada.'],
   };
   const [titulo, descricao] = titulos[rota];
