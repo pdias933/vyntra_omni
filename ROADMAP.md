@@ -53,7 +53,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 029 | CONCLUÍDA | `high` |
 | 030 | CONCLUÍDA | `high` |
 | 031 | CONCLUÍDA | `medium` |
-| 032 | EM ANDAMENTO | `high` |
+| 032 | CONCLUÍDA | `high` |
 | 033 | PENDENTE | `xhigh` |
 | 034 | PENDENTE | `high` |
 | 035 | PENDENTE | `xhigh` |
@@ -313,6 +313,10 @@ Aceite concluído em 31 de agosto de 2026: `ServicoFilas` passou a cadastrar/ina
 ### PR 031 — disponibilidade manual
 
 Aceite concluído em 1º de setembro de 2026: `DisponibilidadeUsuario` passou a guardar `DISPONIVEL`/`INDISPONIVEL`, autor da alteração, instante e versão otimista. A própria pessoa pode alterar seu estado com permissão específica; supervisão/administração exige capacidade separada. Sessão, conexão, aplicativo aberto, dispositivo, push e heartbeat não inferem nem modificam disponibilidade. O módulo é interno, autoriza e audita na mesma transação e não publica controller prematuro. Lint, tipos, 146 testes da API, 124 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001900_criar_disponibilidade_manual` terminou com código zero e `vyntra/api-staging:pr-031` ficou saudável com prontidão `PRONTO`. Em staging, a mudança explícita incrementou a versão, o banco recusou versão inválida, não havia gatilho técnico de inferência, a transação sintética foi revertida e não houve erro de nível 50.
+
+### PR 032 — histórico de atribuição
+
+Aceite concluído em 1º de setembro de 2026: `HistoricoAtribuicao` passou a materializar intervalos de fila e responsabilidade por atendimento, com os seis motivos aprovados e executor humano opcional. O serviço serializa por atendimento, exige que o novo intervalo corresponda à atribuição atual, fecha o anterior e abre o seguinte no mesmo instante. O PostgreSQL garante um único intervalo aberto, combinações coerentes de fila/responsável e imutabilidade, permitindo somente fechar um intervalo ainda aberto. Índices temporais suportam métricas sem reconstrução de logs. Lint, tipos, 150 testes da API, 126 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002000_criar_historico_atribuicao` terminou com código zero e `vyntra/api-staging:pr-032` ficou saudável com prontidão `PRONTO`. Em staging, a espera em fila foi calculada em 300 segundos, houve exatamente um intervalo atual `RESGATE`, segundo intervalo aberto e reescrita histórica foram recusados, a transação sintética foi revertida e não houve erro de nível 50.
 
 ## 7. Mensageria Meta
 
