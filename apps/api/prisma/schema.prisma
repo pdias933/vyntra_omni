@@ -112,6 +112,38 @@ enum VisibilidadeNotaInterna {
   @@map("visibilidade_nota_interna")
 }
 
+enum DirecaoMensagem {
+  ENTRADA
+  SAIDA
+
+  @@map("direcao_mensagem")
+}
+
+enum TipoMensagem {
+  TEXTO
+  IMAGEM
+  AUDIO
+  VIDEO
+  PDF
+  INTERATIVA
+  MODELO_APROVADO
+  REACAO
+
+  @@map("tipo_mensagem")
+}
+
+enum EstadoSaidaMensagem {
+  NA_FILA
+  ENVIANDO
+  ENVIADA
+  ENTREGUE
+  LIDA
+  FALHOU
+  CANCELADA
+
+  @@map("estado_saida_mensagem")
+}
+
 enum PapelBase {
   ADMINISTRADOR
   SUPERVISOR
@@ -142,6 +174,7 @@ enum CodigoPermissao {
   ENCERRAR_ATENDIMENTO
   REABRIR_ATENDIMENTO
   ASSUMIR_ATENDIMENTO
+  ENVIAR_MENSAGEM
   ADICIONAR_NOTA_INTERNA
   VISUALIZAR_NOTA_INTERNA
   CONSULTAR_CLIENTE
@@ -511,6 +544,7 @@ model Usuario {
   historicosAtribuicaoExecutados HistoricoAtribuicao[] @relation("UsuarioExecutorHistoricoAtribuicao")
   overridesCalendarioExecutados OverrideCalendario[]
   notasInternasCriadas NotaInterna[]
+  mensagensEnviadas Mensagem[]
 
   @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
   @@index([perfilId], map: "usuario_perfil_idx")
@@ -791,6 +825,7 @@ model ContaWhatsApp {
   atendimentosOrigem              Atendimento[]
   calendarioAtendimento           CalendarioAtendimento? @relation("CalendarioContaWhatsApp")
   janelasAtendimentoCanal         JanelaAtendimentoCanal[]
+  mensagens                       Mensagem[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorCanalExterno], map: "conta_whatsapp_identidade_externa_key")
   @@index([estado, nomeExibicao, id], map: "conta_whatsapp_estado_nome_idx")
@@ -812,6 +847,7 @@ model Contato {
   contextosAtendimento  ContextoAtendimento[]
   conversa              Conversa?
   janelasAtendimentoCanal JanelaAtendimentoCanal[]
+  mensagensRecebidas     Mensagem[]
 
   @@index([estado, ultimaInteracaoEm, id], map: "contato_estado_ultima_interacao_idx")
   @@map("contato")
@@ -828,6 +864,7 @@ model Conversa {
   contasParticipantes   ParticipacaoContaConversa[]
   atendimentos          Atendimento[]
   notasInternas         NotaInterna[]
+  mensagens             Mensagem[]
 
   @@index([ultimaAtividadeEm, id], map: "conversa_ultima_atividade_idx")
   @@map("conversa")
@@ -879,6 +916,7 @@ model Atendimento {
   historicosAtribuicao            HistoricoAtribuicao[]
   relogiosSla                     RelogioSlaAtendimento[]
   notasInternas                   NotaInterna[]
+  mensagens                       Mensagem[]
 
   @@unique([id, conversaId], map: "atendimento_id_conversa_key")
   @@index([conversaId, iniciadoEm, id], map: "atendimento_conversa_inicio_idx")
@@ -1090,6 +1128,51 @@ model NotaInterna {
   @@index([atendimentoId, criadaEm, id], map: "nota_interna_atendimento_criada_idx")
   @@index([autorUsuarioId, criadaEm, id], map: "nota_interna_autor_criada_idx")
   @@map("nota_interna")
+}
+
+model Mensagem {
+  id                              String                  @id @db.Uuid
+  conversaId                      String                  @map("conversa_id") @db.Uuid
+  atendimentoId                   String                  @map("atendimento_id") @db.Uuid
+  contaWhatsAppId                 String                  @map("conta_whatsapp_id") @db.Uuid
+  direcao                         DirecaoMensagem
+  tipo                            TipoMensagem
+  estadoSaida                     EstadoSaidaMensagem?    @map("estado_saida")
+  conteudoProtegido               Json                    @map("conteudo_protegido")
+  conteudoHash                    String                  @map("conteudo_hash") @db.Char(64)
+  identificadorExternoMensagem   String?                 @map("identificador_externo_mensagem") @db.VarChar(256)
+  mensagemClienteId               String?                 @map("mensagem_cliente_id") @db.Uuid
+  respondeAMensagemId             String?                 @map("responde_a_mensagem_id") @db.Uuid
+  mensagemAlvoReacaoId            String?                 @map("mensagem_alvo_reacao_id") @db.Uuid
+  usuarioRemetenteId              String?                 @map("usuario_remetente_id") @db.Uuid
+  contatoRemetenteId              String?                 @map("contato_remetente_id") @db.Uuid
+  criadaDispositivoEm             DateTime?               @map("criada_dispositivo_em") @db.Timestamptz(6)
+  recebidaServidorEm              DateTime                @map("recebida_servidor_em") @db.Timestamptz(6)
+  proximaTentativaEm              DateTime?               @map("proxima_tentativa_em") @db.Timestamptz(6)
+  tentativasEnvio                 Int                     @default(0) @map("tentativas_envio")
+  enviadaEm                       DateTime?               @map("enviada_em") @db.Timestamptz(6)
+  entregueEm                      DateTime?               @map("entregue_em") @db.Timestamptz(6)
+  lidaEm                          DateTime?               @map("lida_em") @db.Timestamptz(6)
+  falhouEm                        DateTime?               @map("falhou_em") @db.Timestamptz(6)
+  canceladaEm                     DateTime?               @map("cancelada_em") @db.Timestamptz(6)
+  codigoFalha                     String?                 @map("codigo_falha") @db.VarChar(100)
+  versao                          Int                     @default(1)
+  conversa                        Conversa                @relation(fields: [conversaId], references: [id], onDelete: Restrict)
+  atendimento                     Atendimento             @relation(fields: [atendimentoId, conversaId], references: [id, conversaId], onDelete: Restrict)
+  contaWhatsApp                   ContaWhatsApp           @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  usuarioRemetente                Usuario?                @relation(fields: [usuarioRemetenteId], references: [id], onDelete: Restrict)
+  contatoRemetente                Contato?                @relation(fields: [contatoRemetenteId], references: [id], onDelete: Restrict)
+  respondeAMensagem               Mensagem?               @relation("RespostaMensagem", fields: [respondeAMensagemId], references: [id], onDelete: Restrict)
+  respostas                       Mensagem[]               @relation("RespostaMensagem")
+  mensagemAlvoReacao              Mensagem?               @relation("ReacaoMensagem", fields: [mensagemAlvoReacaoId], references: [id], onDelete: Restrict)
+  reacoes                         Mensagem[]               @relation("ReacaoMensagem")
+
+  @@unique([contaWhatsAppId, identificadorExternoMensagem], map: "mensagem_conta_identificador_externo_key")
+  @@unique([usuarioRemetenteId, mensagemClienteId], map: "mensagem_usuario_cliente_key")
+  @@index([conversaId, recebidaServidorEm, id], map: "mensagem_conversa_recebida_idx")
+  @@index([atendimentoId, recebidaServidorEm, id], map: "mensagem_atendimento_recebida_idx")
+  @@index([estadoSaida, proximaTentativaEm, recebidaServidorEm], map: "mensagem_saida_pendente_idx")
+  @@map("mensagem")
 }
 
 model ProtocoloErp {

@@ -10,7 +10,7 @@ import { ServicoEventoDominio } from './servico-evento-dominio.js';
 import { ServicoTransacaoDominio } from './servico-transacao-dominio.js';
 
 @Module({
-  exports: [ServicoEventoDominio, ServicoTransacaoDominio],
+  exports: [ServicoCaixaSaida, ServicoEventoDominio, ServicoTransacaoDominio],
   imports: [ModuloPersistencia],
   providers: [
     RepositorioCaixaSaidaPrisma,

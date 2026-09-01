@@ -15,6 +15,7 @@ import { ModuloFilas } from './filas/modulo-filas.js';
 import { ModuloHistoricoAtribuicao } from './historico-atribuicao/modulo-historico-atribuicao.js';
 import { ModuloIdempotencia } from './idempotencia/modulo-idempotencia.js';
 import { ModuloJanelaCanal } from './janela-canal/modulo-janela-canal.js';
+import { ModuloMensagens } from './mensagens/modulo-mensagens.js';
 import { ModuloNotasInternas } from './notas-internas/modulo-notas-internas.js';
 import { ModuloPersistencia } from './persistencia/modulo-persistencia.js';
 import { ModuloProtocolosErp } from './protocolos-erp/modulo-protocolos-erp.js';
@@ -49,6 +50,7 @@ import { ModuloSla } from './sla/modulo-sla.js';
     ModuloHistoricoAtribuicao,
     ModuloIdempotencia,
     ModuloJanelaCanal,
+    ModuloMensagens,
     ModuloNotasInternas,
     ModuloPersistencia,
     ModuloProtocolosErp,
