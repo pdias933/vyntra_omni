@@ -73,6 +73,25 @@ export class RepositorioAtribuicoesAtendimentoPrisma
     );
   }
 
+  public async usuarioTemAutoridadeAtual(
+    atendimentoId: string,
+    usuarioId: string,
+    versaoAtribuicao: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    return (
+      (await transacao.atendimento.findFirst({
+        select: { id: true },
+        where: {
+          estado: 'EM_ATENDIMENTO',
+          id: atendimentoId,
+          usuarioResponsavelId: usuarioId,
+          versaoAtribuicao,
+        },
+      })) !== null
+    );
+  }
+
   public async resgatarCondicional(
     proximo: AtendimentoPersistido,
     filaEsperadaId: string,
@@ -163,5 +182,33 @@ export class RepositorioAtribuicoesAtendimentoPrisma
       `,
     );
     return quantidade === 1;
+  }
+
+  public async assumirCondicional(
+    proximo: AtendimentoPersistido,
+    filaEsperadaId: string,
+    responsavelAnteriorEsperadoId: string | undefined,
+    versaoAtribuicaoEsperada: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const resultado = await transacao.atendimento.updateMany({
+      data: {
+        atualizadoEm: proximo.atualizadoEm,
+        estado: 'EM_ATENDIMENTO',
+        modo: 'HUMANO',
+        motivoEspera: 'NENHUM',
+        usuarioResponsavelId: proximo.usuarioResponsavelId!,
+        versaoAtribuicao: proximo.versaoAtribuicao,
+        versaoEstado: proximo.versaoEstado,
+      },
+      where: {
+        estado: { in: ['AGUARDANDO', 'EM_ATENDIMENTO'] },
+        filaAtualId: filaEsperadaId,
+        id: proximo.id,
+        usuarioResponsavelId: responsavelAnteriorEsperadoId ?? null,
+        versaoAtribuicao: versaoAtribuicaoEsperada,
+      },
+    });
+    return resultado.count === 1;
   }
 }

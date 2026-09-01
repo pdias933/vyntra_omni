@@ -34,4 +34,17 @@ export interface RepositorioAtribuicoesAtendimento {
     versaoAtribuicaoEsperada: number,
     transacao: TransacaoPrisma,
   ): Promise<boolean>;
+  assumirCondicional(
+    proximo: AtendimentoPersistido,
+    filaEsperadaId: string,
+    responsavelAnteriorEsperadoId: string | undefined,
+    versaoAtribuicaoEsperada: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+  usuarioTemAutoridadeAtual(
+    atendimentoId: string,
+    usuarioId: string,
+    versaoAtribuicao: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
 }

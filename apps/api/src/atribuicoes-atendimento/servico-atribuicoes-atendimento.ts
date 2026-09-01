@@ -3,6 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { MaquinaEstadoAtendimento } from '../atendimentos/maquina-estado-atendimento.js';
 import type { AtendimentoPersistido } from '../atendimentos/modelo-atendimento.js';
 import { ServicoAuditoria } from '../auditoria/servico-auditoria.js';
+import { ErroPermissaoNegada } from '../autorizacao/erros-autorizacao.js';
 import type { ContextoSessaoAutorizacao } from '../autorizacao/modelo-autorizacao.js';
 import { ServicoAutorizacao } from '../autorizacao/servico-autorizacao.js';
 import { ServicoEventoDominio } from '../eventos/servico-evento-dominio.js';
@@ -10,6 +11,7 @@ import { ServicoHistoricoAtribuicao } from '../historico-atribuicao/servico-hist
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import {
   ErroAtendimentoAtribuicaoAusente,
+  ErroConflitoAssuncaoAtendimento,
   ErroConflitoResgateAtendimento,
   ErroConflitoTransferenciaAtendimento,
   ErroDestinatarioTransferenciaIndisponivel,
@@ -399,6 +401,152 @@ export class ServicoAtribuicoesAtendimento {
       transacao,
     );
     return proximo;
+  }
+
+  public async assumirComoSupervisor(
+    sessao: ContextoSessaoAutorizacao,
+    atendimentoId: string,
+    versaoAtribuicaoEsperada: number,
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<AtendimentoPersistido> {
+    if (
+      !UUID.test(atendimentoId) ||
+      !Number.isInteger(versaoAtribuicaoEsperada) ||
+      versaoAtribuicaoEsperada < 1
+    ) {
+      throw new ErroEntradaAtribuicaoAtendimentoInvalida();
+    }
+    const atual = await this.repositorio.obter(atendimentoId, transacao);
+    if (atual === undefined || atual.filaAtualId === undefined) {
+      throw new ErroAtendimentoAtribuicaoAusente();
+    }
+    if (
+      !['AGUARDANDO', 'EM_ATENDIMENTO'].includes(atual.estado) ||
+      atual.versaoAtribuicao !== versaoAtribuicaoEsperada ||
+      atual.usuarioResponsavelId === sessao.usuarioId
+    ) {
+      throw new ErroConflitoAssuncaoAtendimento();
+    }
+    const filaId = atual.filaAtualId;
+    const concessao = await this.autorizacao.autorizar(
+      {
+        filaId,
+        permissao: 'ASSUMIR_ATENDIMENTO',
+        recurso: { id: atendimentoId, tipo: 'ATENDIMENTO' },
+        sessao,
+      },
+      async () => {
+        const atendimento = await this.repositorio.obter(
+          atendimentoId,
+          transacao,
+        );
+        return {
+          acessivel: atendimento?.filaAtualId === filaId,
+          estadoPermiteAcao:
+            atendimento !== undefined &&
+            ['AGUARDANDO', 'EM_ATENDIMENTO'].includes(atendimento.estado),
+        };
+      },
+      transacao,
+    );
+    if (!['SUPERVISOR', 'ADMINISTRADOR'].includes(concessao.papelBase)) {
+      throw new ErroPermissaoNegada();
+    }
+    const agora = relogio();
+    const proximo = this.maquina.transitar(
+      atual,
+      {
+        filaId,
+        tipo: 'ASSUMIR_SUPERVISOR',
+        usuarioId: sessao.usuarioId,
+      },
+      agora,
+    );
+    if (
+      !(await this.repositorio.assumirCondicional(
+        proximo,
+        filaId,
+        atual.usuarioResponsavelId,
+        versaoAtribuicaoEsperada,
+        transacao,
+      ))
+    ) {
+      throw new ErroConflitoAssuncaoAtendimento();
+    }
+    await this.historico.substituir(
+      atendimentoId,
+      {
+        executadoPorUsuarioId: sessao.usuarioId,
+        filaId,
+        tipo: 'ASSUNCAO_SUPERVISOR',
+        usuarioResponsavelId: sessao.usuarioId,
+      },
+      transacao,
+      () => agora,
+    );
+    await this.eventos.acrescentar(
+      {
+        atendimentoId,
+        classificacaoDados: 'OPERACIONAL',
+        conversaId: proximo.conversaId,
+        dados: {
+          responsavelAnteriorId: atual.usuarioResponsavelId ?? null,
+          responsavelAtualId: sessao.usuarioId,
+          versaoAtribuicao: proximo.versaoAtribuicao,
+        },
+        entidadeId: atendimentoId,
+        entidadeTipo: 'ATENDIMENTO',
+        tipo: 'ATENDIMENTO_ASSUMIDO_POR_SUPERVISOR',
+        usuarioAtorId: sessao.usuarioId,
+      },
+      transacao,
+    );
+    await this.auditoria.registrar(
+      {
+        acao: 'ASSUMIR_ATENDIMENTO',
+        atendimentoId,
+        dadosAnteriores: {
+          usuarioResponsavelId: atual.usuarioResponsavelId ?? null,
+          versaoAtribuicao: atual.versaoAtribuicao,
+        },
+        dadosNovos: {
+          usuarioResponsavelId: sessao.usuarioId,
+          versaoAtribuicao: proximo.versaoAtribuicao,
+        },
+        entidadeId: atendimentoId,
+        entidadeTipo: 'ATENDIMENTO',
+        filaId,
+        origem: 'USUARIO',
+        sessaoId: sessao.sessaoId,
+        tipoEvento: 'ATENDIMENTO_ASSUMIDO_POR_SUPERVISOR',
+        usuarioId: sessao.usuarioId,
+      },
+      transacao,
+    );
+    return proximo;
+  }
+
+  public async possuiAutoridadeAtual(
+    atendimentoId: string,
+    usuarioId: string,
+    versaoAtribuicao: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    if (
+      !UUID.test(atendimentoId) ||
+      !UUID.test(usuarioId) ||
+      !Number.isInteger(versaoAtribuicao) ||
+      versaoAtribuicao < 1
+    ) {
+      throw new ErroEntradaAtribuicaoAtendimentoInvalida();
+    }
+    return this.repositorio.usuarioTemAutoridadeAtual(
+      atendimentoId,
+      usuarioId,
+      versaoAtribuicao,
+      transacao,
+    );
   }
 
   private async autorizar(

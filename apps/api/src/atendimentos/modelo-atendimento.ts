@@ -56,6 +56,11 @@ export type ComandoTransicaoAtendimento =
       readonly usuarioId: string;
     }
   | {
+      readonly tipo: 'ASSUMIR_SUPERVISOR';
+      readonly filaId: string;
+      readonly usuarioId: string;
+    }
+  | {
       readonly tipo: 'ALTERAR_MOTIVO_ESPERA';
       readonly motivo: MotivoEsperaAtendimento;
     }

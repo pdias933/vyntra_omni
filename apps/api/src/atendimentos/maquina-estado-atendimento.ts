@@ -134,6 +134,19 @@ export class MaquinaEstadoAtendimento {
           motivoEspera: 'NENHUM',
           usuarioResponsavelId: comando.usuarioId,
         });
+      case 'ASSUMIR_SUPERVISOR':
+        this.exigir(
+          atual.estado === 'AGUARDANDO' || atual.estado === 'EM_ATENDIMENTO',
+          comando.filaId,
+          comando.usuarioId,
+        );
+        return this.atualizarAtribuicao(atual, agora, {
+          estado: 'EM_ATENDIMENTO',
+          filaAtualId: comando.filaId,
+          modo: 'HUMANO',
+          motivoEspera: 'NENHUM',
+          usuarioResponsavelId: comando.usuarioId,
+        });
       case 'ALTERAR_MOTIVO_ESPERA':
         this.exigir(
           atual.estado === 'AGUARDANDO' || atual.estado === 'EM_ATENDIMENTO',
