@@ -97,7 +97,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 073 | CONCLUÍDA | `xhigh` |
 | 074 | CONCLUÍDA | `high` |
 | 075 | CONCLUÍDA | `xhigh` |
-| 076 | PENDENTE | `high` |
+| 076 | EM ANDAMENTO | `high` |
 | 077 | PENDENTE | `xhigh` |
 | 078 | PENDENTE | `xhigh` |
 | 079 | PENDENTE | `xhigh` |
