@@ -27,6 +27,12 @@ interface MensagemConfirmacao {
   readonly sequencia_evento: string;
 }
 
+interface CredenciaisConexaoMobile {
+  readonly dispositivoId: string;
+  readonly segredoDispositivo: string;
+  readonly tokenAcesso: string;
+}
+
 export class ControleConfirmacaoWebSocketMobile {
   private maiorEnviada: bigint;
   private maiorConfirmada: bigint;
@@ -136,17 +142,23 @@ export class GatewayEventosMobile implements OnModuleDestroy {
 
     socket.pause();
     let sessao: SessaoMobileAutenticada;
+    let credenciais: CredenciaisConexaoMobile;
     try {
-      sessao = await this.autenticacao.autenticar(
-        this.obterTokenAcesso(requisicao),
-        this.exigirCabecalho(
+      credenciais = {
+        dispositivoId: this.exigirCabecalho(
           requisicao,
           NOME_HEADER_DISPOSITIVO_MOBILE,
         ),
-        this.exigirCabecalho(
+        segredoDispositivo: this.exigirCabecalho(
           requisicao,
           NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE,
         ),
+        tokenAcesso: this.obterTokenAcesso(requisicao),
+      };
+      sessao = await this.autenticacao.autenticar(
+        credenciais.tokenAcesso,
+        credenciais.dispositivoId,
+        credenciais.segredoDispositivo,
       );
     } catch {
       this.recusarUpgrade(socket, 401, 'Unauthorized');
@@ -159,7 +171,7 @@ export class GatewayEventosMobile implements OnModuleDestroy {
       cabecalho,
       (conexao) => {
         socket.resume();
-        this.aceitarConexao(conexao, sessao, cursor);
+        this.aceitarConexao(conexao, sessao, credenciais, cursor);
       },
     );
   }
@@ -167,10 +179,12 @@ export class GatewayEventosMobile implements OnModuleDestroy {
   private aceitarConexao(
     conexao: WebSocket,
     sessao: SessaoMobileAutenticada,
+    credenciais: CredenciaisConexaoMobile,
     cursor: string,
   ): void {
     const confirmacoes = new ControleConfirmacaoWebSocketMobile(cursor);
     let respondeuHeartbeat = true;
+    let validacaoEmCurso = false;
     let fecharCoordenador: (() => void) | undefined;
     const heartbeat = setInterval(() => {
       if (!respondeuHeartbeat) {
@@ -179,6 +193,14 @@ export class GatewayEventosMobile implements OnModuleDestroy {
       }
       respondeuHeartbeat = false;
       conexao.ping();
+      if (!validacaoEmCurso) {
+        validacaoEmCurso = true;
+        void this.revalidar(credenciais)
+          .catch(() => conexao.close(4003, 'AUTORIZACAO_INVALIDADA'))
+          .finally(() => {
+            validacaoEmCurso = false;
+          });
+      }
     }, INTERVALO_HEARTBEAT_MS);
     const limpar = (): void => {
       clearInterval(heartbeat);
@@ -191,8 +213,19 @@ export class GatewayEventosMobile implements OnModuleDestroy {
     conexao.on('pong', () => {
       respondeuHeartbeat = true;
     });
+    let processamentoMensagens = Promise.resolve();
     conexao.on('message', (dados, binaria) => {
-      this.processarMensagem(conexao, confirmacoes, dados, binaria);
+      processamentoMensagens = processamentoMensagens
+        .then(() =>
+          this.processarMensagem(
+            conexao,
+            confirmacoes,
+            credenciais,
+            dados,
+            binaria,
+          ),
+        )
+        .catch(() => conexao.close(1011, 'PROCESSAMENTO_INDISPONIVEL'));
     });
 
     try {
@@ -215,14 +248,21 @@ export class GatewayEventosMobile implements OnModuleDestroy {
     }
   }
 
-  private processarMensagem(
+  private async processarMensagem(
     conexao: WebSocket,
     confirmacoes: ControleConfirmacaoWebSocketMobile,
+    credenciais: CredenciaisConexaoMobile,
     dados: RawData,
     binaria: boolean,
-  ): void {
+  ): Promise<void> {
     if (binaria) {
       conexao.close(1003, 'MENSAGEM_BINARIA_NAO_SUPORTADA');
+      return;
+    }
+    try {
+      await this.revalidar(credenciais);
+    } catch {
+      conexao.close(4003, 'AUTORIZACAO_INVALIDADA');
       return;
     }
     try {
@@ -259,6 +299,19 @@ export class GatewayEventosMobile implements OnModuleDestroy {
       sequencia_evento: evento.sequenciaEvento,
       tipo: 'EVENTO',
     });
+    if (evento.tipo === 'PERMISSOES_ALTERADAS') {
+      conexao.close(4003, 'ESCOPO_ALTERADO');
+    }
+  }
+
+  private async revalidar(
+    credenciais: CredenciaisConexaoMobile,
+  ): Promise<void> {
+    await this.autenticacao.autenticar(
+      credenciais.tokenAcesso,
+      credenciais.dispositivoId,
+      credenciais.segredoDispositivo,
+    );
   }
 
   private enviar(conexao: WebSocket, mensagem: Readonly<object>): void {

@@ -175,10 +175,73 @@ test('gateway exige sessão mobile vinculada e responde à confirmação explíc
   cliente.close();
   await new Promise((resolver) => cliente.once('close', resolver));
 
-  assert.deepEqual(autenticacoes, [[token, dispositivoId, segredo]]);
+  assert.deepEqual(autenticacoes, [
+    [token, dispositivoId, segredo],
+    [token, dispositivoId, segredo],
+  ]);
   assert.deepEqual(
     mensagens.map(({ tipo }) => tipo).sort(),
     ['CONFIRMADO', 'EVENTO', 'PRONTO'],
   );
   assert.equal(mensagens.find(({ tipo }) => tipo === 'EVENTO').sequencia_evento, '8');
+});
+
+test('evento de permissão chega antes de o gateway encerrar o escopo mobile', async (t) => {
+  const token = 'c'.repeat(43);
+  const dispositivoId = randomUUID();
+  const segredo = 'd'.repeat(43);
+  const servidor = createServer();
+  const gateway = new GatewayEventosMobile(
+    {
+      autenticar: async () => ({
+        contexto: sessao,
+        dispositivoId,
+        nomeExibicao: 'Operador',
+      }),
+    },
+    {
+      abrir: (_contexto, _cursor, destino) => {
+        destino.enviar({
+          ...evento(9),
+          dados: { tipo: 'ACESSO_FILA_REVOGADO', versaoPermissoes: 2 },
+          entidadeId: sessao.usuarioId,
+          entidadeTipo: 'USUARIO',
+          tipo: 'PERMISSOES_ALTERADAS',
+        });
+        return () => undefined;
+      },
+    },
+  );
+  gateway.anexar(servidor);
+  await new Promise((resolver) => servidor.listen(0, '127.0.0.1', resolver));
+  t.after(async () => {
+    gateway.onModuleDestroy();
+    await new Promise((resolver) => servidor.close(resolver));
+  });
+  const endereco = servidor.address();
+  assert.ok(endereco !== null && typeof endereco === 'object');
+  const cliente = new WebSocket(
+    `ws://127.0.0.1:${endereco.port}/api/v1/sincronizacao/eventos-mobile?apos=8`,
+    {
+      headers: {
+        authorization: `Bearer ${token}`,
+        'x-dispositivo-id': dispositivoId,
+        'x-segredo-dispositivo': segredo,
+      },
+    },
+  );
+  const mensagens = [];
+  const fechamento = await new Promise((resolver, rejeitar) => {
+    cliente.on('error', rejeitar);
+    cliente.on('message', (dados) => mensagens.push(JSON.parse(dados.toString())));
+    cliente.on('close', (codigo, motivo) =>
+      resolver({ codigo, motivo: motivo.toString() }),
+    );
+  });
+
+  assert.equal(fechamento.codigo, 4003);
+  assert.equal(fechamento.motivo, 'ESCOPO_ALTERADO');
+  assert.equal(mensagens.length, 1);
+  assert.equal(mensagens[0].tipo, 'EVENTO');
+  assert.equal(mensagens[0].evento.tipo, 'PERMISSOES_ALTERADAS');
 });

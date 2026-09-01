@@ -57,6 +57,7 @@ test('assina antes da marca d’água e entrega backlog, buffer e vivo sem dupli
       enviar: (item) => recebidos.push(item.sequenciaEvento),
       falhar: (erro) => falhas.push(erro),
       heartbeat: () => undefined,
+      invalidarEscopo: () => undefined,
     },
     { intervaloConsultaMs: 5, intervaloHeartbeatMs: 50 },
   );
@@ -81,6 +82,7 @@ test('Last-Event-ID retoma somente depois do último aplicado', async () => {
       enviar: (item) => recebidos.push(item.sequenciaEvento),
       falhar: assert.fail,
       heartbeat: () => undefined,
+      invalidarEscopo: () => undefined,
     },
     { intervaloConsultaMs: 5, intervaloHeartbeatMs: 50 },
   );
@@ -107,10 +109,72 @@ test('falha do distribuidor encerra o stream para recuperação pelo cursor', as
       enviar: assert.fail,
       falhar: (erro) => falhas.push(erro),
       heartbeat: () => undefined,
+      invalidarEscopo: () => undefined,
     },
     { intervaloConsultaMs: 5, intervaloHeartbeatMs: 50 },
   );
   await aguardar(20);
   assert.equal(falhas.length, 1);
   assert.match(falhas[0].message, /DISTRIBUIDOR_INDISPONIVEL/u);
+});
+
+test('evento de permissão é entregue e encerra o escopo SSE', async () => {
+  const alteracao = {
+    ...evento(1),
+    dados: { tipo: 'ACESSO_FILA_REVOGADO', versaoPermissoes: 2 },
+    entidadeId: sessao.usuarioId,
+    entidadeTipo: 'USUARIO',
+    tipo: 'PERMISSOES_ALTERADAS',
+  };
+  const recebidos = [];
+  const invalidacoes = [];
+  new CoordenadorSseSemLacuna({
+    obterMarcaDagua: async () => '1',
+    sincronizar: async (_sessao, _audiencia, apos, limite) =>
+      lote([alteracao], apos, limite),
+  }).abrir(
+    sessao,
+    '0',
+    {
+      enviar: (item) => recebidos.push(item.tipo),
+      falhar: assert.fail,
+      heartbeat: () => undefined,
+      invalidarEscopo: () => invalidacoes.push('ESCOPO_ALTERADO'),
+    },
+    { intervaloConsultaMs: 5, intervaloHeartbeatMs: 50 },
+  );
+  await aguardar(20);
+  assert.deepEqual(recebidos, ['PERMISSOES_ALTERADAS']);
+  assert.deepEqual(invalidacoes, ['ESCOPO_ALTERADO']);
+});
+
+test('revalidação de sessão encerra SSE quando a autoridade deixa de ser válida', async () => {
+  const falhas = [];
+  new CoordenadorSseSemLacuna({
+    obterMarcaDagua: async () => '0',
+    sincronizar: async () => ({
+      eventos: [],
+      sequenciaFinal: '0',
+      temMais: false,
+    }),
+  }).abrir(
+    sessao,
+    '0',
+    {
+      enviar: assert.fail,
+      falhar: (erro) => falhas.push(erro),
+      heartbeat: () => undefined,
+      invalidarEscopo: assert.fail,
+    },
+    {
+      intervaloConsultaMs: 5,
+      intervaloHeartbeatMs: 50,
+      validarAutoridade: async () => {
+        throw new Error('SESSAO_REVOGADA');
+      },
+    },
+  );
+  await aguardar(20);
+  assert.equal(falhas.length, 1);
+  assert.match(falhas[0].message, /SESSAO_REVOGADA/u);
 });

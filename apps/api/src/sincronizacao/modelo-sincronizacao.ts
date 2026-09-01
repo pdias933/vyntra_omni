@@ -83,6 +83,7 @@ export interface PoliticaVersaoSnapshotSincronizacao {
 export interface SnapshotSincronizacaoCompleta {
   readonly sequenciaBase: string;
   readonly geradoEm: string;
+  readonly versaoPermissoes: number;
   readonly permissoes: readonly string[];
   readonly filas: readonly FilaSnapshotSincronizacao[];
   readonly atendimentos: readonly AtendimentoSnapshotSincronizacao[];

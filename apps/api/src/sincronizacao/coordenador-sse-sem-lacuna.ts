@@ -12,11 +12,13 @@ export interface DestinoSse {
   enviar(evento: PayloadEventoWeb): void;
   heartbeat(): void;
   falhar(erro: unknown): void;
+  invalidarEscopo(): void;
 }
 
 export interface OpcoesSse {
   readonly intervaloConsultaMs?: number;
   readonly intervaloHeartbeatMs?: number;
+  readonly validarAutoridade?: () => Promise<void>;
 }
 
 @Injectable()
@@ -48,11 +50,23 @@ export class CoordenadorSseSemLacuna {
       clearInterval(heartbeat);
       destino.falhar(erro);
     };
+    const encerrarPorInvalidacao = (): void => {
+      if (modo === 'ENCERRADO') return;
+      modo = 'ENCERRADO';
+      clearInterval(consultaPeriodica);
+      clearInterval(heartbeat);
+      buffer.length = 0;
+      destino.invalidarEscopo();
+    };
     const emitir = (evento: PayloadEventoWeb): void => {
+      if (modo === 'ENCERRADO') return;
       const sequencia = this.lerSequencia(evento.sequenciaEvento);
       if (sequencia <= maiorEmitida) return;
       maiorEmitida = sequencia;
       destino.enviar(evento);
+      if (evento.tipo === 'PERMISSOES_ALTERADAS') {
+        encerrarPorInvalidacao();
+      }
     };
     const receberDaAssinatura = (
       eventos: readonly PayloadEventoWeb[],
@@ -75,6 +89,7 @@ export class CoordenadorSseSemLacuna {
       if (consultaEmCurso || modo === 'ENCERRADO') return;
       consultaEmCurso = true;
       try {
+        await opcoes.validarAutoridade?.();
         let continuar = true;
         while (continuar) {
           const lote = await this.sincronizacao.sincronizar(

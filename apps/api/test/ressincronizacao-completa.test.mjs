@@ -27,6 +27,7 @@ function snapshot(sobrescritas = {}) {
     permissoes: ['VISUALIZAR_FILA'],
     politicasVersao: [],
     sequenciaBase: '10',
+    versaoPermissoes: 1,
     ...sobrescritas,
   };
 }
@@ -108,10 +109,18 @@ test('aplicação local substitui réplica e cursor atomicamente sem apagar pend
     'PERSISTIR_SEQUENCIA_BASE',
   ]);
   assert.equal(plano.sequenciaBase, '10');
+  assert.equal(plano.versaoPermissoes, 1);
   assert.deepEqual(plano.preservar, estadoLocal);
   assert.throws(
     () => new PlanejadorAplicacaoSnapshot().planejar(
       snapshot({ sequenciaBase: '-1' }),
+      estadoLocal,
+    ),
+    /SNAPSHOT_SINCRONIZACAO_INVALIDO/u,
+  );
+  assert.throws(
+    () => new PlanejadorAplicacaoSnapshot().planejar(
+      snapshot({ versaoPermissoes: 0 }),
       estadoLocal,
     ),
     /SNAPSHOT_SINCRONIZACAO_INVALIDO/u,

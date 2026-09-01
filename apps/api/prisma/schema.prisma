@@ -592,6 +592,7 @@ model Usuario {
   nomeExibicao                   String                            @map("nome_exibicao") @db.VarChar(160)
   estado                         EstadoUsuario                     @default(ATIVO)
   perfilId                       String?                           @map("perfil_id") @db.Uuid
+  versaoPermissoes               Int                               @default(1) @map("versao_permissoes")
   inativadoEm                    DateTime?                         @map("inativado_em") @db.Timestamptz(6)
   criadoEm                       DateTime                          @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm                   DateTime                          @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)

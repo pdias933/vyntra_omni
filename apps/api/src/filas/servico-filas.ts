@@ -5,6 +5,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ServicoAuditoria } from '../auditoria/servico-auditoria.js';
 import type { ContextoSessaoAutorizacao } from '../autorizacao/modelo-autorizacao.js';
 import { ServicoAutorizacao } from '../autorizacao/servico-autorizacao.js';
+import { ServicoInvalidacaoPermissoes } from '../autorizacao/servico-invalidacao-permissoes.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import {
   ErroFilaDuplicada,
@@ -35,6 +36,8 @@ export class ServicoFilas {
     private readonly autorizacao: ServicoAutorizacao,
     @Inject(ServicoAuditoria)
     private readonly auditoria: ServicoAuditoria,
+    @Inject(ServicoInvalidacaoPermissoes)
+    private readonly invalidacaoPermissoes: ServicoInvalidacaoPermissoes,
   ) {}
 
   public async cadastrar(
@@ -77,6 +80,8 @@ export class ServicoFilas {
     const fila = await this.repositorio.obterFila(filaId, transacao);
     if (fila === undefined) throw new ErroFilaIndisponivel();
     if (fila.estado === 'INATIVA') return;
+    const usuariosAfetados =
+      await this.repositorio.listarUsuariosAfetadosFila(filaId, transacao);
     const agora = this.obterAgora(relogio);
     if (!(await this.repositorio.inativarFila(filaId, agora, transacao))) {
       throw new ErroFilaIndisponivel();
@@ -84,6 +89,17 @@ export class ServicoFilas {
     await this.auditar(sessao, 'FILA_INATIVADA', 'INATIVAR_FILA', filaId, transacao, {
       estado: 'INATIVA',
     });
+    for (const usuarioAlvoId of usuariosAfetados) {
+      await this.invalidacaoPermissoes.registrar(
+        {
+          filaId,
+          motivo: 'FILA_INATIVADA',
+          usuarioAlvoId,
+          usuarioAtorId: sessao.usuarioId,
+        },
+        transacao,
+      );
+    }
   }
 
   public async concederAcesso(
@@ -112,6 +128,15 @@ export class ServicoFilas {
       usuarioId,
     };
     await this.repositorio.concederAcesso(acesso, transacao);
+    await this.invalidacaoPermissoes.registrar(
+      {
+        filaId,
+        motivo: 'ACESSO_FILA_CONCEDIDO',
+        usuarioAlvoId: usuarioId,
+        usuarioAtorId: sessao.usuarioId,
+      },
+      transacao,
+    );
     await this.auditar(sessao, 'ACESSO_USUARIO_FILA_CONCEDIDO', 'CONCEDER_ACESSO_FILA', filaId, transacao, {
       usuarioId,
     });
@@ -134,6 +159,15 @@ export class ServicoFilas {
     if (!(await this.repositorio.revogarAcesso(filaId, usuarioId, agora, transacao))) {
       throw new ErroFilaIndisponivel();
     }
+    await this.invalidacaoPermissoes.registrar(
+      {
+        filaId,
+        motivo: 'ACESSO_FILA_REVOGADO',
+        usuarioAlvoId: usuarioId,
+        usuarioAtorId: sessao.usuarioId,
+      },
+      transacao,
+    );
     await this.auditar(sessao, 'ACESSO_USUARIO_FILA_REVOGADO', 'REVOGAR_ACESSO_FILA', filaId, transacao, {
       usuarioId,
     });
@@ -209,4 +243,3 @@ export class ServicoFilas {
     return agora;
   }
 }
-

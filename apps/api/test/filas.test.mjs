@@ -45,6 +45,7 @@ function criarCenario(sobrescritas = {}) {
     concessoes: [],
     criacoes: [],
     inativacoes: [],
+    invalidacoes: [],
     revogacoes: [],
   };
   const repositorio = {
@@ -60,6 +61,8 @@ function criarCenario(sobrescritas = {}) {
       chamadas.inativacoes.push(argumentos);
       return sobrescritas.inativada ?? true;
     },
+    listarUsuariosAfetadosFila: async () =>
+      sobrescritas.usuariosAfetados ?? [ids.usuarioAlvo],
     obterAcesso: async () => sobrescritas.acesso,
     obterFila: async () => sobrescritas.fila ?? fila(),
     revogarAcesso: async (...argumentos) => {
@@ -77,9 +80,17 @@ function criarCenario(sobrescritas = {}) {
   const auditoria = {
     registrar: async (...argumentos) => chamadas.auditoria.push(argumentos),
   };
+  const invalidacao = {
+    registrar: async (...argumentos) => chamadas.invalidacoes.push(argumentos),
+  };
   return {
     chamadas,
-    servico: new ServicoFilas(repositorio, autorizacao, auditoria),
+    servico: new ServicoFilas(
+      repositorio,
+      autorizacao,
+      auditoria,
+      invalidacao,
+    ),
     transacao: { id: 'transacao-sintetica' },
   };
 }
@@ -125,6 +136,7 @@ test('concede vínculo somente para fila e usuário ativos', async () => {
     usuarioId: ids.usuarioAlvo,
   });
   assert.equal(cenario.chamadas.concessoes.length, 1);
+  assert.equal(cenario.chamadas.invalidacoes[0][0].motivo, 'ACESSO_FILA_CONCEDIDO');
   assert.equal(cenario.chamadas.auditoria[0][0].tipoEvento, 'ACESSO_USUARIO_FILA_CONCEDIDO');
 
   const inativa = criarCenario({ fila: fila({ estado: 'INATIVA', inativadaEm: agora }) });
@@ -160,11 +172,13 @@ test('concessão repetida e revogação repetida são idempotentes', async () =>
     () => agora,
   );
   assert.equal(cenario.chamadas.revogacoes.length, 1);
+  assert.equal(cenario.chamadas.invalidacoes.at(-1)[0].motivo, 'ACESSO_FILA_REVOGADO');
 
   const revogado = criarCenario({ acesso: { ...ativo, estado: 'REVOGADO', revogadoEm: agora } });
   await revogado.servico.revogarAcesso(sessao, ids.fila, ids.usuarioAlvo, revogado.transacao);
   assert.equal(revogado.chamadas.revogacoes.length, 0);
   assert.equal(revogado.chamadas.auditoria.length, 0);
+  assert.equal(revogado.chamadas.invalidacoes.length, 0);
 });
 
 test('inativar fila preserva vínculos e apenas torna o escopo ineficaz', async () => {
@@ -173,6 +187,7 @@ test('inativar fila preserva vínculos e apenas torna o escopo ineficaz', async 
   assert.equal(cenario.chamadas.inativacoes.length, 1);
   assert.equal(cenario.chamadas.revogacoes.length, 0);
   assert.equal(cenario.chamadas.auditoria[0][0].tipoEvento, 'FILA_INATIVADA');
+  assert.equal(cenario.chamadas.invalidacoes[0][0].motivo, 'FILA_INATIVADA');
 });
 
 test('vínculo de fila não concede uma ação ausente no RBAC', async () => {
@@ -208,4 +223,3 @@ test('vínculo de fila não concede uma ação ausente no RBAC', async () => {
     ErroPermissaoNegada,
   );
 });
-

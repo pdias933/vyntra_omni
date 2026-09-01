@@ -207,6 +207,7 @@ export type EntradaAtualizacaoPoliticaVersaoMobileDto = {
 
 export type SnapshotSincronizacaoDto = {
     sequencia_base: string;
+    versao_permissoes: number;
     gerado_em: string;
     permissoes: Array<string>;
     filas: Array<{

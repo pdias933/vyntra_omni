@@ -80,9 +80,8 @@ export class ControladorSincronizacao {
         'O último evento informado é inválido.',
       );
     }
-    const sessao = await this.autenticacaoWeb.autenticar(
-      obterTokenSessaoWeb(cookies),
-    );
+    const tokenSessao = obterTokenSessaoWeb(cookies);
+    const sessao = await this.autenticacaoWeb.autenticar(tokenSessao);
     return new Observable<MessageEvent>((assinante) => {
       try {
         return this.coordenadorSse.abrir(
@@ -98,6 +97,12 @@ export class ControladorSincronizacao {
             falhar: (erro) => assinante.error(erro),
             heartbeat: () =>
               assinante.next({ data: { estado: 'ATIVO' }, type: 'heartbeat' }),
+            invalidarEscopo: () => assinante.complete(),
+          },
+          {
+            validarAutoridade: async () => {
+              await this.autenticacaoWeb.autenticar(tokenSessao);
+            },
           },
         );
       } catch (erro) {

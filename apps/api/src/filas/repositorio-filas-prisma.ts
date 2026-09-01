@@ -110,6 +110,49 @@ export class RepositorioFilasPrisma implements RepositorioFilas {
     };
   }
 
+  public async listarUsuariosAfetadosFila(
+    filaId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<readonly string[]> {
+    const usuarios = await transacao.$queryRaw<Array<{ readonly id: string }>>(
+      Prisma.sql`
+        SELECT u."id"
+        FROM "usuario" u
+        JOIN "perfil_acesso" p
+          ON p."id"=u."perfil_id" AND p."estado"='ATIVO'
+        WHERE u."estado"='ATIVO'
+          AND NOT EXISTS (
+            SELECT 1 FROM "permissao_perfil" pp
+            WHERE pp."perfil_id"=p."id"
+              AND pp."codigo"='VISUALIZAR_FILA'
+              AND pp."efeito"='NEGAR'
+          )
+          AND (
+            p."papel_base"='ADMINISTRADOR'
+            OR (
+              (
+                p."papel_base" IN ('SUPERVISOR','ATENDENTE')
+                OR EXISTS (
+                  SELECT 1 FROM "permissao_perfil" pp
+                  WHERE pp."perfil_id"=p."id"
+                    AND pp."codigo"='VISUALIZAR_FILA'
+                    AND pp."efeito"='CONCEDER'
+                )
+              )
+              AND EXISTS (
+                SELECT 1 FROM "acesso_usuario_fila" auf
+                WHERE auf."usuario_id"=u."id"
+                  AND auf."fila_id"=${filaId}::uuid
+                  AND auf."estado"='ATIVO'
+              )
+            )
+          )
+        ORDER BY u."id"
+      `,
+    );
+    return usuarios.map(({ id }) => id);
+  }
+
   public async concederAcesso(
     acesso: AcessoUsuarioFilaPersistido,
     transacao: TransacaoPrisma,
@@ -157,4 +200,3 @@ export class RepositorioFilasPrisma implements RepositorioFilas {
     );
   }
 }
-

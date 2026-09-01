@@ -33,6 +33,10 @@ export interface RepositorioFilas {
     usuarioId: string,
     transacao: TransacaoPrisma,
   ): Promise<AcessoUsuarioFilaPersistido | undefined>;
+  listarUsuariosAfetadosFila(
+    filaId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<readonly string[]>;
   concederAcesso(
     acesso: AcessoUsuarioFilaPersistido,
     transacao: TransacaoPrisma,
@@ -44,4 +48,3 @@ export interface RepositorioFilas {
     transacao: TransacaoPrisma,
   ): Promise<boolean>;
 }
-

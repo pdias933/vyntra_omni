@@ -30,6 +30,9 @@ export class SnapshotSincronizacaoDto {
   @ApiProperty({ example: '123' })
   public readonly sequencia_base: string;
 
+  @ApiProperty({ example: 3, minimum: 1 })
+  public readonly versao_permissoes: number;
+
   @ApiProperty({ format: 'date-time' })
   public readonly gerado_em: string;
 
@@ -68,5 +71,6 @@ export class SnapshotSincronizacaoDto {
     this.permissoes = snapshot.permissoes;
     this.politicas_versao = snapshot.politicasVersao;
     this.sequencia_base = snapshot.sequenciaBase;
+    this.versao_permissoes = snapshot.versaoPermissoes;
   }
 }

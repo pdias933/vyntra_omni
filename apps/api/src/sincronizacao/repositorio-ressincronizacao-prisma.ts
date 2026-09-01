@@ -98,6 +98,7 @@ export class RepositorioRessincronizacaoPrisma
       const contexto = await transacao.usuario.findUnique({
         select: {
           estado: true,
+          versaoPermissoes: true,
           perfil: {
             select: {
               estado: true,
@@ -189,6 +190,7 @@ export class RepositorioRessincronizacaoPrisma
         ),
         politicasVersao: politicas,
         sequenciaBase: (linhaSequencia?.sequencia_base ?? 0n).toString(),
+        versaoPermissoes: contexto.versaoPermissoes,
       };
     });
   }

@@ -2085,6 +2085,11 @@
             "type": "string",
             "example": "123"
           },
+          "versao_permissoes": {
+            "type": "number",
+            "example": 3,
+            "minimum": 1
+          },
           "gerado_em": {
             "type": "string",
             "format": "date-time"
@@ -2140,6 +2145,7 @@
         },
         "required": [
           "sequencia_base",
+          "versao_permissoes",
           "gerado_em",
           "permissoes",
           "filas",

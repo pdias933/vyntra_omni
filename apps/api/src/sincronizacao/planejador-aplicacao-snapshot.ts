@@ -11,6 +11,7 @@ export interface PlanoAplicacaoSnapshot {
     'PERSISTIR_SEQUENCIA_BASE',
   ];
   readonly sequenciaBase: string;
+  readonly versaoPermissoes: number;
   readonly preservar: EstadoLocalPreservado;
 }
 
@@ -19,7 +20,11 @@ export class PlanejadorAplicacaoSnapshot {
     snapshot: SnapshotSincronizacaoCompleta,
     estadoLocal: EstadoLocalPreservado,
   ): PlanoAplicacaoSnapshot {
-    if (!/^(0|[1-9][0-9]{0,18})$/u.test(snapshot.sequenciaBase)) {
+    if (
+      !/^(0|[1-9][0-9]{0,18})$/u.test(snapshot.sequenciaBase) ||
+      !Number.isInteger(snapshot.versaoPermissoes) ||
+      snapshot.versaoPermissoes < 1
+    ) {
       throw new Error('SNAPSHOT_SINCRONIZACAO_INVALIDO');
     }
     return {
@@ -32,6 +37,7 @@ export class PlanejadorAplicacaoSnapshot {
         rascunhos: [...estadoLocal.rascunhos],
       },
       sequenciaBase: snapshot.sequenciaBase,
+      versaoPermissoes: snapshot.versaoPermissoes,
     };
   }
 }
