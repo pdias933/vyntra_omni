@@ -86,7 +86,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 062 | CONCLUÍDA | `xhigh` |
 | 063 | CONCLUÍDA | `xhigh` |
 | 064 | CONCLUÍDA | `xhigh` |
-| 065 | EM ANDAMENTO | `xhigh` |
+| 065 | CONCLUÍDA | `xhigh` |
 | 066 | PENDENTE | `xhigh` |
 | 067 | PENDENTE | `xhigh` |
 | 068 | CONDICIONAL | `xhigh` |
@@ -437,6 +437,10 @@ Aceite concluído em 1º de setembro de 2026: a porta ERP passou a consultar fat
 ### PR 062 — sincronização do SnapshotCliente
 
 Aceite concluído em 1º de setembro de 2026: `SnapshotCliente` passou a persistir `ATUAL`, `OBSOLETO` ou `EXCLUIDO`, com motivo, instante e versão. Incremental aceita atualização e tombstone explícito; reconciliação só aceita ausências quando a enumeração é declarada completa. Lotes são limitados a 100 e não admitem o mesmo vínculo duas vezes. Obsolescência preserva o documento protegido, evidência antiga não regride estado e observação posterior reativa. O aceite PostgreSQL revelou e corrigiu um byte nulo indevido na chave do advisory lock. Lint, tipos, 260 testes da API, 175 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901003500_estado_snapshot_cliente` terminou com código zero e `vyntra/api-staging:pr-062` ficou saudável com prontidão `PRONTO`. Em staging, o serviço e repositório reais percorreram `ATUAL→OBSOLETO→ATUAL→EXCLUIDO`, a leitura expôs motivo/versão, dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
+
+### PR 065 — execução de desbloqueio
+
+Aceite concluído em 1º de setembro de 2026: a execução de desbloqueio passou a exigir confirmação explícita, permissão própria, contexto exato e nova elegibilidade ERP em tempo real. Um advisory lock e uma reserva única por contrato fecham a corrida entre chaves distintas. Confirmação grava histórico imutável, conclui idempotência, audita e libera a reserva atomicamente; resposta perdida conserva operação e reserva até reconciliação, sem repetição cega. Campo externo inválido falha conservadoramente, snapshot é recusado e o adapter MK real permanece desligado. Lint, tipos, 276 testes da API, 178 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. O primeiro exercício PostgreSQL revelou e corrigiu o retorno `void` do advisory lock antes da aceitação. A migration `20260901004500_reserva_desbloqueio_confianca` terminou com código zero e `vyntra/api-staging:pr-065` ficou saudável com prontidão `PRONTO`. Em staging, execução e replay produziram um único efeito, histórico e auditoria; a reserva terminou vazia, outra chave foi bloqueada por `INTERVALO_30_DIAS`, dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
