@@ -98,6 +98,14 @@ enum NivelAlertaSla {
   @@map("nivel_alerta_sla")
 }
 
+enum MarcoAlertaJanelaCanal {
+  UMA_HORA
+  TRINTA_MINUTOS
+  DEZ_MINUTOS
+
+  @@map("marco_alerta_janela_canal")
+}
+
 enum PapelBase {
   ADMINISTRADOR
   SUPERVISOR
@@ -775,6 +783,7 @@ model ContaWhatsApp {
   participacoesConversa           ParticipacaoContaConversa[]
   atendimentosOrigem              Atendimento[]
   calendarioAtendimento           CalendarioAtendimento? @relation("CalendarioContaWhatsApp")
+  janelasAtendimentoCanal         JanelaAtendimentoCanal[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorCanalExterno], map: "conta_whatsapp_identidade_externa_key")
   @@index([estado, nomeExibicao, id], map: "conta_whatsapp_estado_nome_idx")
@@ -795,6 +804,7 @@ model Contato {
   vinculosCliente       VinculoCliente[]
   contextosAtendimento  ContextoAtendimento[]
   conversa              Conversa?
+  janelasAtendimentoCanal JanelaAtendimentoCanal[]
 
   @@index([estado, ultimaInteracaoEm, id], map: "contato_estado_ultima_interacao_idx")
   @@map("contato")
@@ -1020,6 +1030,38 @@ model AlertaSla {
   @@unique([relogioSlaId, nivel], map: "alerta_sla_relogio_nivel_key")
   @@index([nivel, emitidoEm, id], map: "alerta_sla_nivel_emitido_idx")
   @@map("alerta_sla")
+}
+
+model JanelaAtendimentoCanal {
+  id                       String                       @id @db.Uuid
+  contatoId                String                       @map("contato_id") @db.Uuid
+  contaWhatsAppId          String                       @map("conta_whatsapp_id") @db.Uuid
+  ultimaEntradaContatoEm   DateTime                     @map("ultima_entrada_contato_em") @db.Timestamptz(6)
+  expiraEm                 DateTime                     @map("expira_em") @db.Timestamptz(6)
+  versao                   Int                          @default(1)
+  criadaEm                 DateTime                     @map("criada_em") @db.Timestamptz(6)
+  atualizadaEm             DateTime                     @map("atualizada_em") @db.Timestamptz(6)
+  contato                  Contato                      @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  contaWhatsApp            ContaWhatsApp                @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  alertas                  AlertaJanelaCanal[]
+
+  @@unique([contatoId, contaWhatsAppId], map: "janela_canal_contato_conta_key")
+  @@index([expiraEm, id], map: "janela_canal_expiracao_idx")
+  @@map("janela_atendimento_canal")
+}
+
+model AlertaJanelaCanal {
+  id                 String                     @id @db.Uuid
+  janelaCanalId      String                     @map("janela_canal_id") @db.Uuid
+  versaoJanela       Int                        @map("versao_janela")
+  marco              MarcoAlertaJanelaCanal
+  previstoEm         DateTime                   @map("previsto_em") @db.Timestamptz(6)
+  emitidoEm          DateTime                   @map("emitido_em") @db.Timestamptz(6)
+  janelaCanal        JanelaAtendimentoCanal     @relation(fields: [janelaCanalId], references: [id], onDelete: Restrict)
+
+  @@unique([janelaCanalId, versaoJanela, marco], map: "alerta_janela_canal_versao_marco_key")
+  @@index([marco, emitidoEm, id], map: "alerta_janela_canal_marco_emitido_idx")
+  @@map("alerta_janela_canal")
 }
 
 model ProtocoloErp {

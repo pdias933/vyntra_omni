@@ -14,6 +14,7 @@ import { ModuloDisponibilidade } from './disponibilidade/modulo-disponibilidade.
 import { ModuloFilas } from './filas/modulo-filas.js';
 import { ModuloHistoricoAtribuicao } from './historico-atribuicao/modulo-historico-atribuicao.js';
 import { ModuloIdempotencia } from './idempotencia/modulo-idempotencia.js';
+import { ModuloJanelaCanal } from './janela-canal/modulo-janela-canal.js';
 import { ModuloPersistencia } from './persistencia/modulo-persistencia.js';
 import { ModuloProtocolosErp } from './protocolos-erp/modulo-protocolos-erp.js';
 import { ControladorInformacoesApi } from './sistema/controlador-informacoes-api.js';
@@ -46,6 +47,7 @@ import { ModuloSla } from './sla/modulo-sla.js';
     ModuloFilas,
     ModuloHistoricoAtribuicao,
     ModuloIdempotencia,
+    ModuloJanelaCanal,
     ModuloPersistencia,
     ModuloProtocolosErp,
     ModuloReleases,
