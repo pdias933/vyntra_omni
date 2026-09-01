@@ -45,7 +45,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 021 | CONCLUÍDA | `medium` |
 | 022 | CONCLUÍDA | `medium` |
 | 023 | CONCLUÍDA | `high` |
-| 024 | EM ANDAMENTO | `xhigh` |
+| 024 | CONCLUÍDA | `xhigh` |
 | 025 | PENDENTE | `xhigh` |
 | 026 | PENDENTE | `xhigh` |
 | 027 | PENDENTE | `xhigh` |
@@ -281,6 +281,10 @@ Aceite concluído em 31 de agosto de 2026: `ContaWhatsApp` passou a representar 
 ### PR 023 — Contato e IdentidadeWhatsApp
 
 Aceite concluído em 31 de agosto de 2026: `Contato` e `IdentidadeWhatsApp` foram materializados com UUID interno, correlação única por portfólio+identificador estável, serialização transacional antes da primeira criação e FKs restritivas. Username, telefone e nome de perfil são opcionais e não participam da chave nem provam identidade ERP; reobservação preserva o contato e a auditoria não recebe seus valores. Lint, tipos, 100 testes da API, 102 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001200_criar_contato_identidade_whatsapp` terminou com código zero e `vyntra/api-staging:pr-023` ficou saudável com prontidão `PRONTO`. Em staging, identidade sem username/telefone foi aceita, atributos repetidos coexistiram, identificador estável duplicado foi recusado, os dados sintéticos foram revertidos e não houve erro de nível 50.
+
+### PR 024 — alteração e alias de identidade
+
+Aceite concluído em 31 de agosto de 2026: alteração explícita anterior→atual passou a preservar `IdentidadeWhatsApp` e `Contato`, manter o identificador anterior em alias e registrar evento idempotente; as duas chaves são serializadas em ordem determinística. Origem ausente, alias fora de ordem ou destino pertencente a outro contato resulta em `SEPARADA_INCERTA`, sem merge automático. Lint, tipos, 106 testes da API, 106 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001300_criar_alias_alteracao_identidade` terminou com código zero e `vyntra/api-staging:pr-024` ficou saudável com prontidão `PRONTO`. Em staging, o alias resolveu para o mesmo contato, os resultados `PRESERVADA` e `SEPARADA_INCERTA` coexistiram, o conflito manteve dois contatos, a transação sintética foi revertida e não houve erro de nível 50.
 
 ## 7. Mensageria Meta
 
