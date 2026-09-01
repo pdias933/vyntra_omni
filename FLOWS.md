@@ -91,6 +91,8 @@ estado:
 no_atual_id
 contexto_criptografado_ou_protegido
 retomar_em?
+revisao
+codigo_finalizacao?
 iniciada_em
 atualizada_em
 finalizada_em?
@@ -484,3 +486,30 @@ Variáveis são declaradas com tipo controlado, sensibilidade e disponibilidade 
 Ciclos são encontrados no grafo completo: cada componente cíclico exige `limiteIteracoes` entre 1 e 100 em ao menos um nó e uma aresta de saída. Referências exigidas por nó precisam existir e estar ativas. Nós não nativos exigem capacidade habilitada. Esses fatos vêm de `ProvedorContextoValidacaoFluxo`, composto no backend; o editor não os fornece e publicar configuração não os cria.
 
 `ServicoValidacaoPublicacaoFluxos.prepararParaPublicacao` exige `PUBLICAR_FLUXO`, versão `RASCUNHO`, fluxo ativo e revisão esperada. Só relatório válido permite a alteração condicional para `EM_TESTE` e auditoria na mesma transação. Validação e publicação continuam operações separadas. A implementação conservadora inicial reconhece apenas nós nativos sem referência externa; demais nós permanecem não publicáveis até o PR que registrar sua capacidade real.
+
+## 20. Máquina persistente da PR 072
+
+Uma execução nasce somente no atendimento automatizável e fixa a versão indicada pelo ponteiro publicado sob lock. A inserção confirma no PostgreSQL que atendimento, fluxo e versão continuam coerentes. Replay do mesmo fluxo devolve a execução ativa; uma publicação posterior não troca seu `versao_fluxo_id`. Duas execuções não terminais do mesmo atendimento são recusadas por índice parcial.
+
+A máquina aceita:
+
+```text
+EXECUTANDO
+  → AGUARDANDO_RESPOSTA
+  → AGUARDANDO_SISTEMA
+  → AGUARDANDO_ATENDENTE
+  → SUSPENSA_POR_ATENDIMENTO_HUMANO | CONCLUIDA | FALHOU | CANCELADA
+
+AGUARDANDO_RESPOSTA
+  → EXECUTANDO | SUSPENSA_POR_ATENDIMENTO_HUMANO | CANCELADA
+
+AGUARDANDO_SISTEMA
+  → EXECUTANDO | SUSPENSA_POR_ATENDIMENTO_HUMANO | FALHOU | CANCELADA
+
+AGUARDANDO_ATENDENTE
+  → SUSPENSA_POR_ATENDIMENTO_HUMANO | CANCELADA
+```
+
+Estado, revisão, instante e auditoria mudam juntos. O PostgreSQL recusa transição fora dessa matriz, identidade alterada, revisão que não seja a próxima, exclusão e qualquer update de terminal. Terminal guarda código canônico e `finalizada_em`, mantém nó/contexto para diagnóstico e nunca possui `retomar_em`.
+
+O módulo não executa nó e não cria `PassoExecucaoFluxo`. Também não agenda retomada: a semântica de `retomar_em` e os jobs reconstruíveis entram na PR 073.

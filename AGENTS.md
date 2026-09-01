@@ -425,6 +425,9 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - Somente o validador autorizado promove `RASCUNHO` para `EM_TESTE`; editor, controller e fixture nunca declaram esse estado diretamente.
 - Capacidade habilitada e referência ativa vêm do backend/PostgreSQL por `ProvedorContextoValidacaoFluxo`, nunca da definição ou requisição. O provedor conservador nega recursos externos ainda não registrados.
 - Publicação aceita somente `EM_TESTE`; reversão aceita somente `ARQUIVADA`. Não contorne esses estados para acelerar testes ou UI.
+- `ExecucaoFluxo` fixa atendimento, fluxo e versão no início; nenhuma publicação ou retomada relê o ponteiro para migrar execução existente.
+- Estados terminais de execução são imutáveis e nunca retomam. Toda transição usa estado e revisão esperados; Redis não guarda autoridade.
+- Não escreva contexto arbitrário, não execute nó e não crie worker/agendamento antes do PR correspondente.
 - Troque estado atual, alvo, ponteiro, revisão, histórico e auditoria na mesma transação sob lock do fluxo.
 - `PUBLICAR_FLUXO` não concede `REVERTER_FLUXO`; editar não concede nenhuma das duas.
 - Não registre controller de publicação antes do validador completo da PR 071.

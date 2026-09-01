@@ -11,6 +11,7 @@ import { ModuloContatos } from './contatos/modulo-contatos.js';
 import { ModuloContextosCliente } from './contextos-cliente/modulo-contextos-cliente.js';
 import { ModuloConversas } from './conversas/modulo-conversas.js';
 import { ModuloEventos } from './eventos/modulo-eventos.js';
+import { ModuloExecucoesFluxo } from './execucoes-fluxo/modulo-execucoes-fluxo.js';
 import { ModuloDisponibilidade } from './disponibilidade/modulo-disponibilidade.js';
 import { ModuloDesbloqueiosConfianca } from './desbloqueios-confianca/modulo-desbloqueios-confianca.js';
 import { ModuloFilas } from './filas/modulo-filas.js';
@@ -52,6 +53,7 @@ import { ModuloSincronizacao } from './sincronizacao/modulo-sincronizacao.js';
     ModuloConversas,
     ModuloDesbloqueiosConfianca,
     ModuloEventos,
+    ModuloExecucoesFluxo,
     ModuloDisponibilidade,
     ModuloFilas,
     ModuloFluxos,

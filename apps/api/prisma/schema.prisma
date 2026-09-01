@@ -96,6 +96,19 @@ enum EstadoVersaoFluxo {
   @@map("estado_versao_fluxo")
 }
 
+enum EstadoExecucaoFluxo {
+  EXECUTANDO
+  AGUARDANDO_RESPOSTA
+  AGUARDANDO_SISTEMA
+  AGUARDANDO_ATENDENTE
+  SUSPENSA_POR_ATENDIMENTO_HUMANO
+  CONCLUIDA
+  FALHOU
+  CANCELADA
+
+  @@map("estado_execucao_fluxo")
+}
+
 enum TipoMudancaPublicacaoFluxo {
   PUBLICACAO
   ARQUIVAMENTO
@@ -697,6 +710,7 @@ model Fluxo {
   versoes             VersaoFluxo[]              @relation("FluxoVersoes")
   versaoPublicada     VersaoFluxo?               @relation("FluxoVersaoPublicada", fields: [versaoPublicadaId, id], references: [id, fluxoId], onDelete: Restrict)
   historicoPublicacao HistoricoPublicacaoFluxo[]
+  execucoes           ExecucaoFluxo[]             @relation("FluxoExecucoes")
 
   @@unique([versaoPublicadaId, id], map: "fluxo_versao_publicada_id_id_key")
   @@index([ativo, tipo, nome, id], map: "fluxo_ativo_tipo_nome_idx")
@@ -723,6 +737,7 @@ model VersaoFluxo {
   publicadaPor             Usuario?                   @relation("UsuarioPublicacaoVersaoFluxo", fields: [publicadaPorUsuarioId], references: [id], onDelete: Restrict)
   historicoComoAnterior    HistoricoPublicacaoFluxo[] @relation("VersaoAnteriorHistoricoPublicacao")
   historicoComoNova        HistoricoPublicacaoFluxo[] @relation("VersaoNovaHistoricoPublicacao")
+  execucoes                 ExecucaoFluxo[]             @relation("VersaoFluxoExecucoes")
 
   @@unique([fluxoId, numeroVersao], map: "versao_fluxo_numero_key")
   @@unique([id, fluxoId], map: "versao_fluxo_id_fluxo_key")
@@ -747,6 +762,30 @@ model HistoricoPublicacaoFluxo {
   @@unique([fluxoId, revisaoFluxoResultante], map: "historico_publicacao_fluxo_revisao_key")
   @@index([fluxoId, executadoEm, id], map: "historico_publicacao_fluxo_data_idx")
   @@map("historico_publicacao_fluxo")
+}
+
+model ExecucaoFluxo {
+  id                 String              @id @db.Uuid
+  atendimentoId      String              @map("atendimento_id") @db.Uuid
+  fluxoId            String              @map("fluxo_id") @db.Uuid
+  versaoFluxoId      String              @map("versao_fluxo_id") @db.Uuid
+  estado             EstadoExecucaoFluxo @default(EXECUTANDO)
+  noAtualId          String              @map("no_atual_id") @db.VarChar(64)
+  contextoProtegido  Json                @map("contexto_protegido")
+  retomarEm          DateTime?           @map("retomar_em") @db.Timestamptz(6)
+  revisao            Int                 @default(1)
+  codigoFinalizacao  String?             @map("codigo_finalizacao") @db.VarChar(100)
+  iniciadaEm         DateTime            @map("iniciada_em") @db.Timestamptz(6)
+  atualizadaEm       DateTime            @map("atualizada_em") @db.Timestamptz(6)
+  finalizadaEm       DateTime?           @map("finalizada_em") @db.Timestamptz(6)
+  atendimento        Atendimento         @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  fluxo              Fluxo               @relation("FluxoExecucoes", fields: [fluxoId], references: [id], onDelete: Restrict)
+  versaoFluxo        VersaoFluxo         @relation("VersaoFluxoExecucoes", fields: [versaoFluxoId, fluxoId], references: [id, fluxoId], onDelete: Restrict)
+
+  @@index([atendimentoId, iniciadaEm, id], map: "execucao_fluxo_atendimento_inicio_idx")
+  @@index([estado, retomarEm, atualizadaEm, id], map: "execucao_fluxo_recuperacao_idx")
+  @@index([versaoFluxoId, estado, atualizadaEm], map: "execucao_fluxo_versao_estado_idx")
+  @@map("execucao_fluxo")
 }
 
 model DisponibilidadeUsuario {
@@ -1129,6 +1168,7 @@ model Atendimento {
   ordensServicoErp            OrdemServicoErp[]
   acoesErp                    RegistroAcaoAtendimentoErp[]
   reservaEncerramentoErp      ReservaEncerramentoAtendimentoErp?
+  execucoesFluxo              ExecucaoFluxo[]
 
   @@unique([id, conversaId], map: "atendimento_id_conversa_key")
   @@index([conversaId, iniciadoEm, id], map: "atendimento_conversa_inicio_idx")

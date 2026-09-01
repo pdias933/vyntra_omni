@@ -821,3 +821,11 @@ Toda execução futura deve copiar `fluxo_id` e o `versao_fluxo_id` indicado no 
 Na PR 070, toda troca do ponteiro incrementa `Fluxo.revisao` e acrescenta `HistoricoPublicacaoFluxo` com tipo `PUBLICACAO`, `ARQUIVAMENTO` ou `REVERSAO`, versão anterior, nova versão, ator e instante. Publicar aceita somente versão em `EM_TESTE`; arquivar deixa o fluxo sem versão publicada; reverter reativa uma versão `ARQUIVADA` sem alterar sua definição ou autoria original. A versão atual é arquivada na mesma transação. O histórico é imutável inclusive contra `TRUNCATE` e suas versões precisam pertencer ao fluxo.
 
 Na PR 071, somente `ServicoValidacaoPublicacaoFluxos` pode promover `RASCUNHO` para `EM_TESTE`. A operação exige `PUBLICAR_FLUXO`, revisão esperada, fluxo ativo e validação integral da definição contra o contexto autoritativo obtido no servidor. A alteração condicional e a auditoria compartilham a transação. Definição inválida, capacidade desligada, referência inativa ou corrida de revisão preserva o rascunho e não registra sucesso.
+
+## 17. Máquina persistente de `ExecucaoFluxo`
+
+Desde a PR 072, iniciar uma automação fixa `atendimento_id`, `fluxo_id`, `versao_fluxo_id` e `no_atual_id`. O início só ocorre para atendimento `AGUARDANDO/BOT/PROCESSANDO_BOT`, sem responsável humano, e para a versão que ainda é o ponteiro `PUBLICADA` do fluxo ativo no instante da inserção. Repetir o início devolve a execução ativa do mesmo fluxo; nunca consulta um ponteiro novo para migrá-la. Um índice parcial impede duas execuções não terminais no mesmo atendimento.
+
+Estados não terminais são `EXECUTANDO`, `AGUARDANDO_RESPOSTA`, `AGUARDANDO_SISTEMA` e `AGUARDANDO_ATENDENTE`. Estados terminais são `SUSPENSA_POR_ATENDIMENTO_HUMANO`, `CONCLUIDA`, `FALHOU` e `CANCELADA`. Terminal exige instante e código de finalização, não possui `retomar_em` e é imutável. Toda transição incrementa `revisao`, preserva a versão fixada e usa alteração condicional por estado e revisão esperados. PostgreSQL repete a matriz de transição, protege a identidade e recusa update/delete terminal.
+
+O contexto nasce vazio e protegido; a PR 072 não oferece escrita arbitrária nele. `PassoExecucaoFluxo`, agendamento recuperável, worker e nós permanecem fora deste PR.

@@ -260,6 +260,7 @@ test('seleção para nova execução devolve exatamente a versão apontada', asy
     ),
     publicada,
   );
+  assert.equal(cenario.chamadas.bloqueios[0][0], 'FLUXO');
   const ausente = criarCenario();
   await assert.rejects(
     ausente.servico.obterVersaoPublicadaParaNovaExecucao(

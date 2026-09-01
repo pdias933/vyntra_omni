@@ -395,6 +395,8 @@ Replay ou duplicidade retorna sucesso compatível sem repetir o efeito. Status f
 
 O contexto usado para validar publicação é fornecido exclusivamente pelo backend. Cliente, editor ou definição não podem declarar que uma capacidade está habilitada nem que fila, calendário, modelo ou formulário está ativo. O provedor conservador nega toda referência e capacidade externa até que uma autoridade real seja registrada. Problemas devolvem apenas código e identificadores internos controlados; definição e parâmetros não entram em erro ou auditoria. Uma validação inválida não muda estado nem produz auditoria de sucesso.
 
+`ExecucaoFluxo` não aceita versão, nó ou contexto declarados pelo cliente. O início resolve a versão publicada no servidor e o banco confirma ponteiro, estado e pertencimento no mesmo comando de inserção. Identidade da execução é imutável; uma publicação posterior não a migra. Transição usa comando fechado, código canônico, relógio válido e revisão esperada. Contexto protegido nunca entra em auditoria. Terminal é append-only no sentido operacional: runtime não atualiza, exclui ou retoma o registro, inclusive após reinício.
+
 Exemplo de desbloqueio:
 
 ```text

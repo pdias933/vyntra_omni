@@ -629,6 +629,8 @@ Na PR 070, `ServicoPublicacaoFluxos` concentra as transições de ponteiro sob `
 
 Na PR 071, `ValidadorPublicacaoFluxo` é puro e recebe definição desconhecida mais um contexto já resolvido no backend. Ele aplica schema fechado, catálogo de nós, análise de alcance e disponibilidade de variáveis, componentes fortemente conectados para limitar ciclos, referências ativas, capacidades habilitadas e saídas obrigatórias. `ProvedorContextoValidacaoFluxo` é a porta interna para compor esse contexto a partir de autoridades da instalação; sua implementação conservadora não anuncia capacidade ou referência externa. `ServicoValidacaoPublicacaoFluxos` autoriza antes da leitura, serializa o fluxo e promove condicionalmente apenas `RASCUNHO` válido para `EM_TESTE`, com auditoria na mesma transação. Não há controller, executor, worker, Redis ou migration nova.
 
+Na PR 072, o módulo interno `execucoes-fluxo` separa máquina pura, serviço e persistência Prisma. `ServicoExecucoesFluxo.iniciar` consulta o ponteiro publicado sob o mesmo lock de publicação; o `INSERT ... SELECT` confirma novamente atendimento automatizável, fluxo ativo e versão ainda publicada. O índice parcial no PostgreSQL arbitra inícios concorrentes. Transições usam `estado + revisao` esperados e auditoria na mesma transação. O trigger do banco replica a matriz, exige incremento unitário de revisão, torna identidade e terminais imutáveis e proíbe exclusão. Recriar API ou serviço apenas relê o registro; não existe estado de execução no Redis. Ainda não há controller, worker, fila ou executor de nó.
+
 ## 14. Observabilidade
 
 Quatro sinais distintos:

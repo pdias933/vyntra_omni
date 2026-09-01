@@ -240,6 +240,7 @@ export class ServicoCatalogoFluxos {
     transacao: TransacaoPrisma,
   ): Promise<VersaoFluxoPersistida> {
     const fluxoId = this.validarId(fluxoIdRecebido);
+    await this.repositorio.bloquearFluxo(fluxoId, transacao);
     const versao = await this.repositorio.obterVersaoPublicada(
       fluxoId,
       transacao,
