@@ -1,0 +1,19 @@
+{
+  "graphApiVersion": "v25.0",
+  "observadaEm": "2026-09-01T00:00:00.000Z",
+  "origemEvidencia": "FIXTURE_SANITIZADA",
+  "identificacao": {
+    "bsuid": "HABILITADA",
+    "username": "HABILITADA",
+    "telefoneOpcional": true
+  },
+  "capacidades": {
+    "flows": "NAO_OBSERVADA",
+    "reactions": "NAO_OBSERVADA",
+    "replyContext": "HABILITADA",
+    "urlPreview": "NAO_OBSERVADA"
+  },
+  "limites": {
+    "throughputMensagensPorSegundo": "NAO_OBSERVADO"
+  }
+}

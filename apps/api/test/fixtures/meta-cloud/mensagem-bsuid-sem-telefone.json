@@ -1,0 +1,40 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "WABA_SANITIZADA",
+      "changes": [
+        {
+          "field": "messages",
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "15550000000",
+              "phone_number_id": "PHONE_NUMBER_ID_SANITIZADO"
+            },
+            "contacts": [
+              {
+                "profile": {
+                  "name": "Pessoa Exemplo",
+                  "username": "pessoa.exemplo"
+                },
+                "user_id": "US.BSUID_SANITIZADO",
+                "wa_id": ""
+              }
+            ],
+            "messages": [
+              {
+                "from": "",
+                "from_user_id": "US.BSUID_SANITIZADO",
+                "id": "wamid.SANITIZADO",
+                "timestamp": "1788220800",
+                "text": { "body": "[CONTEUDO_SANITIZADO]" },
+                "type": "text"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
