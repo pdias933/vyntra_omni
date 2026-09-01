@@ -4,6 +4,7 @@ import { ModuloAuditoria } from './auditoria/modulo-auditoria.js';
 import { ModuloAtribuicoesAtendimento } from './atribuicoes-atendimento/modulo-atribuicoes-atendimento.js';
 import { ModuloAutenticacao } from './autenticacao/modulo-autenticacao.js';
 import { ModuloAutorizacao } from './autorizacao/modulo-autorizacao.js';
+import { ModuloCalendarios } from './calendarios/modulo-calendarios.js';
 import { ModuloContasWhatsApp } from './contas-whatsapp/modulo-contas-whatsapp.js';
 import { ModuloContatos } from './contatos/modulo-contatos.js';
 import { ModuloContextosCliente } from './contextos-cliente/modulo-contextos-cliente.js';
@@ -34,6 +35,7 @@ import { ModuloSnapshotsCliente } from './snapshots-cliente/modulo-snapshots-cli
     ModuloAtribuicoesAtendimento,
     ModuloAutenticacao,
     ModuloAutorizacao,
+    ModuloCalendarios,
     ModuloContasWhatsApp,
     ModuloContatos,
     ModuloContextosCliente,

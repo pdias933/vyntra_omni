@@ -76,6 +76,20 @@ enum EstadoDisponibilidadeUsuario {
   @@map("estado_disponibilidade_usuario")
 }
 
+enum ModoCalendarioAtendimento {
+  PERIODOS
+  VINTE_QUATRO_SETE
+
+  @@map("modo_calendario_atendimento")
+}
+
+enum EstadoOverrideCalendario {
+  ABERTO
+  FECHADO
+
+  @@map("estado_override_calendario")
+}
+
 enum PapelBase {
   ADMINISTRADOR
   SUPERVISOR
@@ -135,6 +149,7 @@ enum CodigoPermissao {
   ADMINISTRAR_RELEASES
   ALTERAR_DISPONIBILIDADE_PROPRIA
   ALTERAR_DISPONIBILIDADE_USUARIO
+  ADMINISTRAR_CALENDARIOS
 
   @@map("codigo_permissao")
 }
@@ -472,6 +487,7 @@ model Usuario {
   disponibilidadesAlteradas DisponibilidadeUsuario[] @relation("UsuarioAlteracaoDisponibilidade")
   historicosResponsabilidade HistoricoAtribuicao[] @relation("UsuarioResponsavelHistoricoAtribuicao")
   historicosAtribuicaoExecutados HistoricoAtribuicao[] @relation("UsuarioExecutorHistoricoAtribuicao")
+  overridesCalendarioExecutados OverrideCalendario[]
 
   @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
   @@index([perfilId], map: "usuario_perfil_idx")
@@ -698,6 +714,7 @@ model Fila {
   atendimentosAtuais Atendimento[] @relation("FilaAtualAtendimento")
   atendimentosFallbackReabertura Atendimento[] @relation("FilaFallbackReaberturaAtendimento")
   historicosAtribuicao HistoricoAtribuicao[]
+  calendarioAtendimento CalendarioAtendimento? @relation("CalendarioFila")
 
   @@index([estado, nome], map: "fila_estado_nome_idx")
   @@map("fila")
@@ -748,6 +765,7 @@ model ContaWhatsApp {
   eventosAlteracaoIdentidade      EventoAlteracaoIdentidadeWhatsApp[]
   participacoesConversa           ParticipacaoContaConversa[]
   atendimentosOrigem              Atendimento[]
+  calendarioAtendimento           CalendarioAtendimento? @relation("CalendarioContaWhatsApp")
 
   @@unique([portfolioEmpresarialExternoId, identificadorCanalExterno], map: "conta_whatsapp_identidade_externa_key")
   @@index([estado, nomeExibicao, id], map: "conta_whatsapp_estado_nome_idx")
@@ -858,6 +876,91 @@ model HistoricoAtribuicao {
   @@index([filaId, iniciadoEm, finalizadoEm], map: "historico_atribuicao_fila_intervalo_idx")
   @@index([usuarioResponsavelId, iniciadoEm, finalizadoEm], map: "historico_atribuicao_responsavel_intervalo_idx")
   @@map("historico_atribuicao")
+}
+
+model CalendarioAtendimento {
+  id                 String                    @id @db.Uuid
+  nome               String                    @db.VarChar(120)
+  fusoHorario        String                    @map("fuso_horario") @db.VarChar(100)
+  modo               ModoCalendarioAtendimento
+  contaWhatsAppId    String?                   @unique(map: "calendario_conta_whatsapp_key") @map("conta_whatsapp_id") @db.Uuid
+  filaId             String?                   @unique(map: "calendario_fila_key") @map("fila_id") @db.Uuid
+  versao             Int                       @default(1)
+  criadoEm           DateTime                  @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm       DateTime                  @map("atualizado_em") @db.Timestamptz(6)
+  contaWhatsApp      ContaWhatsApp?            @relation("CalendarioContaWhatsApp", fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  fila               Fila?                     @relation("CalendarioFila", fields: [filaId], references: [id], onDelete: Restrict)
+  periodosSemanais   PeriodoSemanalCalendario[]
+  feriados           FeriadoCalendario[]
+  excecoes           ExcecaoCalendario[]
+  overrides          OverrideCalendario[]
+
+  @@index([modo, atualizadoEm, id], map: "calendario_atendimento_modo_idx")
+  @@map("calendario_atendimento")
+}
+
+model PeriodoSemanalCalendario {
+  id                 String                 @id @db.Uuid
+  calendarioId       String                 @map("calendario_id") @db.Uuid
+  diaSemana           Int                    @map("dia_semana")
+  minutoInicio        Int                    @map("minuto_inicio")
+  minutoFim           Int                    @map("minuto_fim")
+  calendario          CalendarioAtendimento @relation(fields: [calendarioId], references: [id], onDelete: Restrict)
+
+  @@unique([calendarioId, diaSemana, minutoInicio, minutoFim], map: "periodo_semanal_calendario_intervalo_key")
+  @@index([calendarioId, diaSemana, minutoInicio], map: "periodo_semanal_calendario_busca_idx")
+  @@map("periodo_semanal_calendario")
+}
+
+model FeriadoCalendario {
+  id                 String                 @id @db.Uuid
+  calendarioId       String                 @map("calendario_id") @db.Uuid
+  dataLocal          DateTime               @map("data_local") @db.Date
+  nome               String                 @db.VarChar(120)
+  calendario          CalendarioAtendimento @relation(fields: [calendarioId], references: [id], onDelete: Restrict)
+
+  @@unique([calendarioId, dataLocal], map: "feriado_calendario_data_key")
+  @@map("feriado_calendario")
+}
+
+model ExcecaoCalendario {
+  id                 String                 @id @db.Uuid
+  calendarioId       String                 @map("calendario_id") @db.Uuid
+  dataLocal          DateTime               @map("data_local") @db.Date
+  estado             EstadoOverrideCalendario
+  diaInteiro         Boolean                @default(false) @map("dia_inteiro")
+  calendario          CalendarioAtendimento @relation(fields: [calendarioId], references: [id], onDelete: Restrict)
+  periodos           PeriodoExcecaoCalendario[]
+
+  @@unique([calendarioId, dataLocal], map: "excecao_calendario_data_key")
+  @@map("excecao_calendario")
+}
+
+model PeriodoExcecaoCalendario {
+  id                 String             @id @db.Uuid
+  excecaoId          String             @map("excecao_id") @db.Uuid
+  minutoInicio       Int                @map("minuto_inicio")
+  minutoFim          Int                @map("minuto_fim")
+  excecao            ExcecaoCalendario @relation(fields: [excecaoId], references: [id], onDelete: Restrict)
+
+  @@unique([excecaoId, minutoInicio, minutoFim], map: "periodo_excecao_calendario_intervalo_key")
+  @@map("periodo_excecao_calendario")
+}
+
+model OverrideCalendario {
+  id                    String                    @id @db.Uuid
+  calendarioId          String                    @map("calendario_id") @db.Uuid
+  estado                EstadoOverrideCalendario
+  motivo                String                    @db.VarChar(500)
+  vigenteDe             DateTime                  @map("vigente_de") @db.Timestamptz(6)
+  vigenteAte            DateTime                  @map("vigente_ate") @db.Timestamptz(6)
+  executadoPorUsuarioId String                    @map("executado_por_usuario_id") @db.Uuid
+  criadoEm              DateTime                  @map("criado_em") @db.Timestamptz(6)
+  calendario            CalendarioAtendimento     @relation(fields: [calendarioId], references: [id], onDelete: Restrict)
+  executadoPorUsuario   Usuario                   @relation(fields: [executadoPorUsuarioId], references: [id], onDelete: Restrict)
+
+  @@index([calendarioId, vigenteDe, vigenteAte], map: "override_calendario_vigencia_idx")
+  @@map("override_calendario")
 }
 
 model ProtocoloErp {
