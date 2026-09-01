@@ -27,3 +27,36 @@ export interface ResumoAtendimentoWeb {
   readonly slaEm?: Date;
   readonly janelaExpiraEm?: Date;
 }
+
+export type TipoItemTimelineWeb =
+  | 'EVENTO_OPERACIONAL'
+  | 'FORMULARIO'
+  | 'MENSAGEM'
+  | 'NOTA_INTERNA'
+  | 'SEPARADOR_ATENDIMENTO';
+
+export interface ItemTimelineWeb {
+  readonly id: string;
+  readonly tipo: TipoItemTimelineWeb;
+  readonly ocorridoEm: Date;
+  readonly atendimentoId: string;
+  readonly contaWhatsAppNome?: string;
+  readonly direcao?: 'ENTRADA' | 'SAIDA';
+  readonly estadoMensagem?: string;
+  readonly mensagemTipo?: string;
+  readonly texto?: string;
+  readonly rotulo?: string;
+  readonly somenteEquipe?: boolean;
+}
+
+export interface MarcadorLeituraWeb {
+  readonly ultimaMensagemLidaId?: string;
+  readonly marcadaNaoLida: boolean;
+  readonly versao: number;
+}
+
+export interface PaginaTimelineWeb {
+  readonly itens: readonly ItemTimelineWeb[];
+  readonly marcador: MarcadorLeituraWeb;
+  readonly proximoCursor?: string;
+}

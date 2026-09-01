@@ -109,7 +109,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 085 | CONCLUÍDA | `high` |
 | 086 | CONCLUÍDA | `high` |
 | 087 | CONCLUÍDA | `high` |
-| 088 | EM ANDAMENTO | `high` |
+| 088 | CONCLUÍDA | `high` |
 | 089 | PENDENTE | `high` |
 | 090 | PENDENTE | `high` |
 | 091 | PENDENTE | `xhigh` |
@@ -602,6 +602,10 @@ Aceite concluído em 1º de setembro de 2026: a web recebeu shell desktop autent
 ### PR 087 — lista de atendimentos
 
 Aceite concluído em 1º de setembro de 2026: a web recebeu lista desktop com os filtros únicos `Meus`, `Pendentes`, `Não lidos`, `SLA`, `Expirando` e `Em automação`, sem cards de resumo, atualização manual, horário de sincronização ou infraestrutura no estado saudável. O backend autentica a sessão, resolve cada fila pelo `ServicoAutorizacao` e somente então executa uma consulta parametrizada e limitada no PostgreSQL; filtro e escopo nunca são aplicados depois de carregar conteúdo. `conversa_id` permanece a chave visual e evento SSE provoca recarga silenciosa pela última atividade confirmada. A migration aditiva `20260901014000_marcador_leitura_web` criou o marcador pessoal por usuário+conversa com FKs e coerência, sem alterar mensagens históricas; a marca de prontidão avançou junto. Identidade secundária é mascarada. Lint, tipos, 411 testes da API, 217 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, dependências e segredos foram aprovados.
+
+### PR 088 — timeline e leitura
+
+Aceite concluído em 1º de setembro de 2026: a web recebeu timeline desktop paginada da conversa única do contato, com separadores discretos de atendimento/data/conta, mensagens, formulário com `Ver formulário`, eventos operacionais e notas inequivocamente marcadas `Somente equipe`. O backend autoriza o atendimento antes de consultar conteúdo, resolve no banco a interseção de filas para histórico e notas em permissões independentes e só então projeta o resultado; permissões transversais continuam explícitas e conteúdo negado não chega ao navegador. A migration aditiva `20260901014500_fila_nota_interna_web` liga notas novas à fila e tenta preencher legado sem tornar a coluna obrigatória durante rollout. Leitura e `Marcar não lida` são pessoais, protegidas por sessão+origem+CSRF e versão esperada. O SSE atualiza silenciosamente sem expor infraestrutura. Lint, tipos, 413 testes da API, 220 testes de arquitetura, build web/API/iOS/Android e contratos foram aprovados. Effort permaneceu `high` pela matriz de autorização e concorrência do marcador.
 
 ## 12. Mobile
 

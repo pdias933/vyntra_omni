@@ -156,6 +156,41 @@ export type ListaAtendimentosWebDto = {
     filtro: 'MEUS' | 'PENDENTES' | 'NAO_LIDOS' | 'SLA' | 'EXPIRANDO' | 'EM_AUTOMACAO';
 };
 
+export type ItemTimelineWebDto = {
+    id: string;
+    tipo: 'EVENTO_OPERACIONAL' | 'FORMULARIO' | 'MENSAGEM' | 'NOTA_INTERNA' | 'SEPARADOR_ATENDIMENTO';
+    ocorrido_em: string;
+    atendimento_id: string;
+    conta_whatsapp_nome?: string;
+    direcao?: 'ENTRADA' | 'SAIDA';
+    estado_mensagem?: string;
+    mensagem_tipo?: string;
+    texto?: string;
+    rotulo?: string;
+    somente_equipe?: boolean;
+};
+
+export type PaginaTimelineWebDto = {
+    itens: Array<ItemTimelineWebDto>;
+    proximo_cursor?: string;
+    marcador: {
+        [key: string]: unknown;
+    };
+};
+
+export type EntradaLeituraTimelineWebDto = {
+    mensagem_id: string;
+    versao_esperada: number;
+};
+
+export type MarcadorLeituraWebDto = {
+    versao: number;
+};
+
+export type EntradaMarcarNaoLidaWebDto = {
+    versao_esperada: number;
+};
+
 export type VersaoFluxoEditorDto = {
     id: string;
     fluxo_id: string;
@@ -805,6 +840,59 @@ export type ListarAtendimentosWebResponses = {
 };
 
 export type ListarAtendimentosWebResponse = ListarAtendimentosWebResponses[keyof ListarAtendimentosWebResponses];
+
+export type ObterTimelineWebData = {
+    body?: never;
+    path: {
+        atendimentoId: string;
+    };
+    query?: {
+        cursor?: string;
+    };
+    url: '/api/v1/web/atendimentos/{atendimentoId}/timeline';
+};
+
+export type ObterTimelineWebResponses = {
+    200: PaginaTimelineWebDto;
+};
+
+export type ObterTimelineWebResponse = ObterTimelineWebResponses[keyof ObterTimelineWebResponses];
+
+export type ConfirmarLeituraTimelineWebData = {
+    body: EntradaLeituraTimelineWebDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/leitura';
+};
+
+export type ConfirmarLeituraTimelineWebResponses = {
+    200: MarcadorLeituraWebDto;
+};
+
+export type ConfirmarLeituraTimelineWebResponse = ConfirmarLeituraTimelineWebResponses[keyof ConfirmarLeituraTimelineWebResponses];
+
+export type MarcarTimelineWebNaoLidaData = {
+    body: EntradaMarcarNaoLidaWebDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/marcar-nao-lida';
+};
+
+export type MarcarTimelineWebNaoLidaResponses = {
+    200: MarcadorLeituraWebDto;
+};
+
+export type MarcarTimelineWebNaoLidaResponse = MarcarTimelineWebNaoLidaResponses[keyof MarcarTimelineWebNaoLidaResponses];
 
 export type ListarFluxosEditorData = {
     body?: never;

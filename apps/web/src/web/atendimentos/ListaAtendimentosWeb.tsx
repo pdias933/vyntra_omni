@@ -5,6 +5,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { CabecalhoPagina } from '../ShellWeb';
+import { ConversaWeb } from './ConversaWeb';
 
 type Filtro =
   | 'EM_AUTOMACAO'
@@ -52,6 +53,7 @@ export function ListaAtendimentosWeb() {
   const [itens, definirItens] = useState<readonly ResumoAtendimentoWebDto[]>([]);
   const [estado, definirEstado] = useState<'CARREGANDO' | 'ERRO' | 'PRONTO'>('CARREGANDO');
   const [selecionado, definirSelecionado] = useState<string>();
+  const atendimentoSelecionado = itens.find((item) => item.atendimento_id === selecionado);
   const requisicaoAtual = useRef(0);
 
   const carregar = useCallback(async (filtroAtual: Filtro, silencioso = false) => {
@@ -126,11 +128,11 @@ export function ListaAtendimentosWeb() {
         </div>
       </section>
       <aside className="previa-atendimento">
-        <div>
+        {atendimentoSelecionado === undefined ? <div>
           <span aria-hidden="true">◌</span>
-          <strong>{selecionado === undefined ? 'Selecione uma conversa' : 'Conversa selecionada'}</strong>
-          <p>{selecionado === undefined ? 'O atendimento será aberto aqui sem tirar você da fila.' : 'A timeline entra na próxima etapa.'}</p>
-        </div>
+          <strong>Selecione uma conversa</strong>
+          <p>O atendimento será aberto aqui sem tirar você da fila.</p>
+        </div> : <ConversaWeb atendimento={atendimentoSelecionado} />}
       </aside>
     </main>
   );

@@ -219,6 +219,8 @@ A timeline é única por contato, mas a API filtra conteúdo por atendimento e p
 
 Nota exige `VISUALIZAR_NOTA_INTERNA` e permanece vinculada à fila em que foi criada. Nota sem interseção de fila exige `VISUALIZAR_NOTAS_TRANSVERSAIS`; nem Administrador recebe essa permissão implicitamente. Permissão transversal de mensagens não concede a de notas. Conteúdo negado não sai da API; quando necessário, somente um separador neutro, sem data, fila, autor ou assunto, pode indicar descontinuidade. Contexto essencial entre filas vira `EventoConversa` sanitizado, nunca nota privada usada como atalho.
 
+A projeção web materializada na PR 088 resolve esses dois escopos de forma independente antes de buscar texto, dados de formulário ou conteúdo de nota. Nota nova grava a fila vigente; o preenchimento histórico é aditivo e registros legados sem fila permanecem negados, salvo permissão transversal explícita. Cursor e identificadores de rota não concedem acesso. Marca de leitura usa chave usuário+conversa e concorrência otimista; toda escrita exige cookie válido, origem permitida e dupla apresentação do CSRF.
+
 ## 6. Identidade do contato e risco da ação
 
 BSUID/identificador externo resolve correlação técnica; não prova autorização para agir em nome de qualquer cliente ERP. Username e telefone também não são prova isolada.

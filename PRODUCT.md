@@ -166,6 +166,8 @@ No composer, `/` abre respostas rápidas pesquisáveis. O botão dedicado de aç
 
 O shell web autenticado possui composição própria de desktop, rotas estáveis e navegação por histórico. Antes de renderizar qualquer área protegida, ele confirma a sessão no backend. Expiração ou revogação remove a área autenticada; alteração de escopo recebida pelo SSE provoca revalidação imediata. Senha e token de sessão nunca são persistidos pelo JavaScript.
 
+A timeline web mantém a lista e a conversa lado a lado, sem transformar o desktop em uma ampliação do celular. A seleção permanece estável quando uma conversa sobe por evento novo. Itens antigos são paginados sem controle de sincronização; notas usam superfície âmbar e rótulo `Somente equipe`, eventos operacionais usam bloco neutro e submissões de formulário oferecem `Ver formulário`. A leitura é pessoal: abrir a conversa avança o último item lido e `Marcar não lida` não altera o estado dos demais operadores.
+
 ### 4.7 Aplicativo iOS/Android
 
 - Aplicativo real em React Native + Expo Prebuild, com um código-base para as duas plataformas.

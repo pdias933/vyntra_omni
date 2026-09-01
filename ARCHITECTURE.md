@@ -532,6 +532,8 @@ O snapshot completo publica `versao_permissoes`. O coordenador mobile aceita a r
 
 A lista web resolve primeiro as filas autorizadas e executa no PostgreSQL a consulta limitada dos atendimentos. Filtro, estado aberto, não lidos, SLA, janela e automação fazem parte da query; conteúdo não é carregado para filtragem posterior. A chave visual é `conversa_id`, enquanto a ordenação usa `ultima_atividade_em` confirmada. Eventos SSE provocam nova leitura silenciosa; nenhuma memória do navegador vira fonte da ordem.
 
+A PR 088 aplica a mesma fronteira à timeline web. O endpoint recebe um atendimento apenas como ponto de entrada, confirma sessão e `VISUALIZAR_FILA` antes de consultar conteúdo, resolve no backend as filas visíveis e pagina no PostgreSQL a conversa única do contato. Mensagens e eventos históricos exigem interseção de fila ou `VISUALIZAR_HISTORICO_TRANSVERSAL`; notas resolvem separadamente `VISUALIZAR_NOTA_INTERNA` e `VISUALIZAR_NOTAS_TRANSVERSAIS`. A resposta nunca delega filtro ao navegador. O cursor opaco usa instante+identificador em ordem estável, e o marcador pessoal usa versão esperada para impedir que abas concorrentes apaguem uma decisão mais nova.
+
 - A lista deriva do estado autorizado já aplicado e se reorganiza automaticamente.
 - Uma conversa que recebe mensagem sobe suavemente, preservando identidade estável, foco, seleção e rascunhos não relacionados.
 - A timeline é projetada por `Contato`, não por número empresarial.

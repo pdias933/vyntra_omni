@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcompanharEventosWebData, AcompanharEventosWebResponses, AtualizarControleRecursoData, AtualizarControleRecursoResponses, AtualizarPoliticaVersaoMobileData, AtualizarPoliticaVersaoMobileResponses, AvaliarVersaoMobileData, AvaliarVersaoMobileResponses, CancelarPareamentoQrWebData, CancelarPareamentoQrWebResponses, ConcluirPareamentoQrMobileData, ConcluirPareamentoQrMobileResponses, ConfirmarPareamentoQrWebData, ConfirmarPareamentoQrWebResponses, ConsultarPareamentoQrMobileData, ConsultarPareamentoQrMobileResponses, ConsultarPareamentoQrWebData, ConsultarPareamentoQrWebResponses, CriarFluxoEditorData, CriarFluxoEditorResponses, CriarVersaoFluxoEditorData, CriarVersaoFluxoEditorResponses, EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, GerarPareamentoQrWebData, GerarPareamentoQrWebResponses, ListarAdministracaoReleasesData, ListarAdministracaoReleasesResponses, ListarAtendimentosWebData, ListarAtendimentosWebResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarFluxosEditorData, ListarFluxosEditorResponses, ListarSessoesWebData, ListarSessoesWebResponses, ObterConfiguracaoMobileAtualData, ObterConfiguracaoMobileAtualResponses, ObterConfiguracaoWebAtualData, ObterConfiguracaoWebAtualResponses, ObterFluxoEditorData, ObterFluxoEditorResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, PrepararPublicacaoFluxoEditorData, PrepararPublicacaoFluxoEditorResponses, PublicarVersaoFluxoEditorData, PublicarVersaoFluxoEditorResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, ResgatarPareamentoQrMobileData, ResgatarPareamentoQrMobileResponses, RessincronizarCompletaData, RessincronizarCompletaResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, SalvarRascunhoFluxoEditorData, SalvarRascunhoFluxoEditorResponses, SimularFluxoEditorData, SimularFluxoEditorResponses, SincronizarIncrementalData, SincronizarIncrementalResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
+import type { AcompanharEventosWebData, AcompanharEventosWebResponses, AtualizarControleRecursoData, AtualizarControleRecursoResponses, AtualizarPoliticaVersaoMobileData, AtualizarPoliticaVersaoMobileResponses, AvaliarVersaoMobileData, AvaliarVersaoMobileResponses, CancelarPareamentoQrWebData, CancelarPareamentoQrWebResponses, ConcluirPareamentoQrMobileData, ConcluirPareamentoQrMobileResponses, ConfirmarLeituraTimelineWebData, ConfirmarLeituraTimelineWebResponses, ConfirmarPareamentoQrWebData, ConfirmarPareamentoQrWebResponses, ConsultarPareamentoQrMobileData, ConsultarPareamentoQrMobileResponses, ConsultarPareamentoQrWebData, ConsultarPareamentoQrWebResponses, CriarFluxoEditorData, CriarFluxoEditorResponses, CriarVersaoFluxoEditorData, CriarVersaoFluxoEditorResponses, EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, GerarPareamentoQrWebData, GerarPareamentoQrWebResponses, ListarAdministracaoReleasesData, ListarAdministracaoReleasesResponses, ListarAtendimentosWebData, ListarAtendimentosWebResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarFluxosEditorData, ListarFluxosEditorResponses, ListarSessoesWebData, ListarSessoesWebResponses, MarcarTimelineWebNaoLidaData, MarcarTimelineWebNaoLidaResponses, ObterConfiguracaoMobileAtualData, ObterConfiguracaoMobileAtualResponses, ObterConfiguracaoWebAtualData, ObterConfiguracaoWebAtualResponses, ObterFluxoEditorData, ObterFluxoEditorResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, ObterTimelineWebData, ObterTimelineWebResponses, PrepararPublicacaoFluxoEditorData, PrepararPublicacaoFluxoEditorResponses, PublicarVersaoFluxoEditorData, PublicarVersaoFluxoEditorResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, ResgatarPareamentoQrMobileData, ResgatarPareamentoQrMobileResponses, RessincronizarCompletaData, RessincronizarCompletaResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, SalvarRascunhoFluxoEditorData, SalvarRascunhoFluxoEditorResponses, SimularFluxoEditorData, SimularFluxoEditorResponses, SincronizarIncrementalData, SincronizarIncrementalResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -308,6 +308,53 @@ export const listarAtendimentosWeb = <ThrowOnError extends boolean = false>(opti
         }],
     url: '/api/v1/web/atendimentos',
     ...options
+});
+
+/**
+ * Obtém uma página autorizada da timeline única do contato
+ */
+export const obterTimelineWeb = <ThrowOnError extends boolean = false>(options: Options<ObterTimelineWebData, ThrowOnError>): RequestResult<ObterTimelineWebResponses, unknown, ThrowOnError> => (options.client ?? client).get<ObterTimelineWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/web/atendimentos/{atendimentoId}/timeline',
+    ...options
+});
+
+/**
+ * Avança o marcador pessoal de leitura
+ */
+export const confirmarLeituraTimelineWeb = <ThrowOnError extends boolean = false>(options: Options<ConfirmarLeituraTimelineWebData, ThrowOnError>): RequestResult<ConfirmarLeituraTimelineWebResponses, unknown, ThrowOnError> => (options.client ?? client).post<ConfirmarLeituraTimelineWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/web/atendimentos/{atendimentoId}/leitura',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Marca a conversa como não lida para o usuário atual
+ */
+export const marcarTimelineWebNaoLida = <ThrowOnError extends boolean = false>(options: Options<MarcarTimelineWebNaoLidaData, ThrowOnError>): RequestResult<MarcarTimelineWebNaoLidaResponses, unknown, ThrowOnError> => (options.client ?? client).post<MarcarTimelineWebNaoLidaResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/web/atendimentos/{atendimentoId}/marcar-nao-lida',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

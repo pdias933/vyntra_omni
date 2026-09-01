@@ -71,6 +71,7 @@ export class ServicoNotasInternas {
       conteudoProtegido: { texto: textoNormalizado },
       conversaId,
       criadaEm: agora,
+      filaId,
       id: randomUUID(),
       visibilidade: 'SOMENTE_EQUIPE',
     };

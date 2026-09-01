@@ -116,9 +116,11 @@ test('nota exige RBAC, pertence ao atendimento e nunca vaza conteúdo no evento/
   );
   assert.equal(chamadas.autorizacao[0].permissao, 'ADICIONAR_NOTA_INTERNA');
   assert.equal(nota.visibilidade, 'SOMENTE_EQUIPE');
+  assert.equal(nota.filaId, ids.fila);
   assert.equal(nota.conteudoProtegido.texto, 'Cliente pediu retorno interno.');
   assert.equal(chamadas.notas.length, 1);
   assert.equal(chamadas.eventos[0].tipo, 'NOTA_INTERNA_ADICIONADA');
+  assert.equal(chamadas.eventos[0].dados.filaId, ids.fila);
   assert.doesNotMatch(JSON.stringify(chamadas.eventos), /Cliente pediu/);
   assert.doesNotMatch(JSON.stringify(chamadas.auditoria), /Cliente pediu/);
 });

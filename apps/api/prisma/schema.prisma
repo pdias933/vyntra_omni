@@ -1041,6 +1041,7 @@ model Fila {
   historicosAtribuicao           HistoricoAtribuicao[]
   calendarioAtendimento          CalendarioAtendimento?         @relation("CalendarioFila")
   politicaSla                    PoliticaSla?
+  notasInternas                  NotaInterna[]
 
   @@index([estado, nome], map: "fila_estado_nome_idx")
   @@map("fila")
@@ -1418,16 +1419,19 @@ model NotaInterna {
   id                String                  @id @db.Uuid
   conversaId        String                  @map("conversa_id") @db.Uuid
   atendimentoId     String                  @map("atendimento_id") @db.Uuid
+  filaId            String?                 @map("fila_id") @db.Uuid
   autorUsuarioId    String                  @map("autor_usuario_id") @db.Uuid
   visibilidade      VisibilidadeNotaInterna @default(SOMENTE_EQUIPE)
   conteudoProtegido Json                    @map("conteudo_protegido")
   criadaEm          DateTime                @map("criada_em") @db.Timestamptz(6)
   conversa          Conversa                @relation(fields: [conversaId], references: [id], onDelete: Restrict)
   atendimento       Atendimento             @relation(fields: [atendimentoId, conversaId], references: [id, conversaId], onDelete: Restrict)
+  fila              Fila?                   @relation(fields: [filaId], references: [id], onDelete: Restrict)
   autorUsuario      Usuario                 @relation(fields: [autorUsuarioId], references: [id], onDelete: Restrict)
 
   @@index([conversaId, criadaEm, id], map: "nota_interna_conversa_criada_idx")
   @@index([atendimentoId, criadaEm, id], map: "nota_interna_atendimento_criada_idx")
+  @@index([filaId, criadaEm, id], map: "nota_interna_fila_criada_idx")
   @@index([autorUsuarioId, criadaEm, id], map: "nota_interna_autor_criada_idx")
   @@map("nota_interna")
 }

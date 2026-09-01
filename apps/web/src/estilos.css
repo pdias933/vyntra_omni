@@ -248,6 +248,41 @@ a {
 .previa-atendimento span { display: grid; width: 62px; height: 62px; margin-bottom: 17px; place-items: center; border: 1px solid #dfe7e2; border-radius: 20px; color: #28a55e; background: rgba(255,255,255,.88); box-shadow: var(--sombra); font-size: 30px; }
 .previa-atendimento strong { color: #344139; font-size: 14px; }
 .previa-atendimento p { margin: 7px 0; font-size: 11px; line-height: 1.5; }
+.previa-atendimento:has(.conversa-web) { display: block; background: #eef2ef; }
+.conversa-web { display: grid; width: 100%; height: 100%; min-height: 0; grid-template-rows: 72px minmax(0, 1fr) 68px; background: #eef2ef; }
+.conversa-web__cabecalho { z-index: 2; display: grid; min-width: 0; align-items: center; gap: 11px; padding: 0 20px; border-bottom: 1px solid #dfe5e1; background: rgba(255,255,255,.96); grid-template-columns: 40px minmax(0,1fr) auto auto; backdrop-filter: blur(18px); }
+.conversa-web__avatar { display: grid; width: 40px; height: 40px; margin: 0; place-items: center; border-radius: 50%; color: #24623f; background: linear-gradient(145deg,#e3f0e7,#cfe3d6); font-size: 13px; font-weight: 800; }
+.conversa-web__contato { display: grid; min-width: 0; padding: 8px 0; border: 0; background: transparent; cursor: pointer; text-align: left; }
+.conversa-web__contato strong { overflow: hidden; color: #1d2922; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.conversa-web__contato small { overflow: hidden; margin-top: 3px; color: #718078; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.janela-meta { width: auto; height: auto; margin: 0; padding: 6px 9px; border: 1px solid #cce9d6; border-radius: 999px; color: #187645; background: #eff9f3; box-shadow: none; font-size: 9px; font-weight: 750; }
+.acao-cabecalho { padding: 7px 9px; border: 1px solid #dce4df; border-radius: 8px; color: #526158; background: white; cursor: pointer; font-size: 9px; font-weight: 700; }
+.timeline-web { min-height: 0; overflow-y: auto; padding: 20px clamp(22px,5vw,64px); background: radial-gradient(circle at 80% 10%,rgba(31,160,88,.05),transparent 22%), #eef2ef; }
+.carregar-anteriores { display: block; margin: 0 auto 18px; padding: 7px 11px; border: 1px solid #d7e0da; border-radius: 999px; color: #4f6257; background: rgba(255,255,255,.9); cursor: pointer; font-size: 9px; }
+.separador-data { width: max-content; margin: 14px auto; padding: 5px 9px; border-radius: 7px; color: #738078; background: rgba(255,255,255,.76); box-shadow: 0 2px 7px rgba(25,39,31,.05); font-size: 9px; font-weight: 700; }
+.separador-atendimento { display: grid; width: max-content; max-width: 80%; justify-items: center; margin: 18px auto; padding: 8px 13px; border-radius: 10px; color: #637068; background: rgba(255,255,255,.72); font-size: 10px; text-align: center; }
+.separador-atendimento span { display: block; width: auto; height: auto; margin: 0; border: 0; color: #4e5d54; background: none; box-shadow: none; font-size: 10px; }
+.separador-atendimento small { margin-top: 3px; font-size: 8px; }
+.bolha-mensagem { width: fit-content; min-width: 130px; max-width: min(72%,560px); margin: 5px 0; padding: 9px 11px 7px; border: 1px solid #dfe5e1; border-radius: 5px 14px 14px 14px; background: #fff; box-shadow: 0 2px 6px rgba(23,38,29,.05); }
+.bolha-mensagem--saida { margin-left: auto; border-color: #cde8d6; border-radius: 14px 5px 14px 14px; background: #dcf8e6; }
+.bolha-mensagem p { margin: 0; color: #26332b; font-size: 12px; line-height: 1.45; white-space: pre-wrap; }
+.bolha-mensagem small { display: block; margin-top: 5px; color: #75827a; font-size: 8px; text-align: right; }
+.bolha-mensagem button { margin-top: 9px; padding: 6px 9px; border: 1px solid #bee3cc; border-radius: 7px; color: #137542; background: white; cursor: pointer; font-size: 9px; font-weight: 750; }
+.formulario-recebido { display: block; margin-bottom: 5px; color: #147441; font-size: 10px; }
+.bloco-nota-interna { position: relative; width: min(72%,560px); margin: 10px auto; padding: 11px 13px; border: 1px solid #efd99e; border-left: 4px solid #d9a623; border-radius: 10px; color: #5f511f; background: #fff9e8; }
+.bloco-nota-interna span { display: block; width: auto; height: auto; margin: 0; border: 0; color: #8a6c14; background: none; box-shadow: none; font-size: 8px; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
+.bloco-nota-interna p { margin: 6px 0 0; color: #4f481f; font-size: 11px; line-height: 1.45; text-align: left; }
+.bloco-nota-interna time { display: block; color: #8e825b; font-size: 8px; text-align: right; }
+.evento-operacional { display: grid; width: fit-content; max-width: 72%; justify-items: center; margin: 11px auto; padding: 8px 12px; border-radius: 9px; color: #59675e; background: #e2e7e4; text-align: center; }
+.evento-operacional strong { font-size: 9px; }
+.evento-operacional small { margin-top: 3px; font-size: 8px; }
+.composer-web { display: grid; align-items: center; gap: 10px; padding: 10px 20px; border-top: 1px solid #dce3de; background: rgba(255,255,255,.96); grid-template-columns: 38px minmax(0,1fr) 38px; }
+.composer-web > button { width: 36px; height: 36px; border: 1px solid #dce4df; border-radius: 50%; color: #397251; background: #fff; cursor: pointer; }
+.composer-web > div { display: flex; height: 40px; align-items: center; justify-content: space-between; padding: 0 12px; border: 1px solid #dce4df; border-radius: 22px; color: #94a098; background: #fff; font-size: 11px; }
+.composer-web kbd { display: grid; width: 24px; height: 24px; place-items: center; border: 0; border-radius: 50%; color: #526258; background: #f0f3f1; font: 700 11px inherit; }
+.skeleton-timeline { height: 70%; border-radius: 18px; background: linear-gradient(100deg,#e5ebe7 30%,#f2f5f3 45%,#e5ebe7 60%); background-size: 300% 100%; animation: skeleton-lista 1.2s ease infinite; }
+.timeline-erro { display: grid; height: 100%; place-content: center; justify-items: center; color: #8c4a39; }
+.timeline-erro small { margin-top: 5px; color: #79847d; }
 .estado-lista { display: grid; min-height: 360px; place-content: center; justify-items: center; color: #7a867e; text-align: center; }
 .estado-lista > span { display: grid; width: 42px; height: 42px; margin-bottom: 13px; place-items: center; border-radius: 14px; color: #16944e; background: #eaf7ef; }
 .estado-lista strong { color: #39463e; font-size: 13px; }
