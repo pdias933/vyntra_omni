@@ -88,7 +88,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 064 | CONCLUÍDA | `xhigh` |
 | 065 | CONCLUÍDA | `xhigh` |
 | 066 | CONCLUÍDA | `xhigh` |
-| 067 | EM ANDAMENTO | `xhigh` |
+| 067 | CONCLUÍDA | `xhigh` |
 | 068 | CONDICIONAL | `xhigh` |
 | 069 | PENDENTE | `high` |
 | 070 | PENDENTE | `xhigh` |
@@ -445,6 +445,10 @@ Aceite concluído em 1º de setembro de 2026: a execução de desbloqueio passou
 ### PR 066 — ordem de serviço
 
 Aceite concluído em 1º de setembro de 2026: criação e atualização de ordem de serviço passaram a exigir confirmação explícita, `CRIAR_ORDEM_SERVICO`, atendimento/fila autorizados e correspondência exata de cliente, contrato e protocolo oficial. A criação é única pela operação e pelo identificador externo. Atualizações usam versão otimista, advisory lock, reserva exclusiva por ordem e histórico imutável; confirmação atualiza domínio, conclui idempotência, audita e libera a reserva atomicamente. Resultado ambíguo exige reconciliação e não permite repetição cega; snapshot, controller e provider MK real permanecem fora do módulo. Lint, tipos, 287 testes da API, 181 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901005000_ordens_servico_erp` terminou com código zero e `vyntra/api-staging:pr-066` ficou saudável com prontidão `PRONTO`. Em staging, criação e atualização produziram um efeito externo cada, ambos os replays foram estáveis, a ordem terminou na versão 2 com um histórico, a reserva terminou vazia, versão obsoleta foi recusada antes do adapter, a auditoria permaneceu sanitizada, dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
+
+### PR 067 — comentário, encerramento e link
+
+Aceite concluído em 1º de setembro de 2026: comentário de finalização e encerramento por protocolo oficial passaram a exigir confirmação explícita, `ENCERRAR_ATENDIMENTO`, fila autorizada e contexto exato. Comentário confirmado persiste apenas hash e não altera o atendimento. Encerramento usa advisory lock, versão otimista, reserva exclusiva e a máquina de estado; somente a confirmação externa fecha a atribuição, grava evento e deixa o atendimento `ENCERRADO_REABRIVEL`. Resultado ambíguo preserva o atendimento aberto e a reserva até reconciliação, sem repetição cega. Auditoria não recebe comentário, motivo ou protocolo em claro. O link público permanece `DESATIVADO` por aprovação jurídica pendente, sem token, URL ou rota; controller e provider MK real continuam ausentes. Lint, tipos, 300 testes da API, 184 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901005500_acoes_atendimento_erp` terminou com código zero e `vyntra/api-staging:pr-067` ficou saudável com prontidão `PRONTO`. Em staging, comentário e encerramento produziram um efeito externo cada, os replays foram estáveis, a resposta perdida manteve o atendimento aberto até a reconciliação, a transição final gerou um evento, encerrou o histórico, removeu a reserva e preservou auditoria sanitizada. Dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
