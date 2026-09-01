@@ -100,7 +100,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 076 | CONCLUÍDA | `high` |
 | 077 | CONCLUÍDA | `xhigh` |
 | 078 | CONCLUÍDA | `xhigh` |
-| 079 | EM ANDAMENTO | `xhigh` |
+| 079 | CONCLUÍDA | `xhigh` |
 | 080 | PENDENTE | `xhigh` |
 | 081 | PENDENTE | `xhigh` |
 | 082 | PENDENTE | `xhigh` |
@@ -485,6 +485,10 @@ Aceite concluído em 1º de setembro de 2026: os nós `IDENTIFICAR_CONTATO`, `SO
 ### PR 078 — nós de consulta e envio de fatura
 
 Aceite concluído em 1º de setembro de 2026: `CONSULTAR_FATURAS` e `ENVIAR_FATURA` passaram a exigir contexto financeiro exato, usar somente ERP em tempo real e executar a chamada externa fora da transação. O retorno revalida execução, revisão, nó, conta, contato, contrato e versão antes de aplicar qualquer efeito. Zero, uma e múltiplas faturas pagáveis têm caminhos distintos; o motor nunca escolhe a primeira. A seleção permanece em contexto protegido, o envio reconsulta os detalhes e a composição textual pode incluir Pix/linha protegidos sem copiá-los para passo, log ou auditoria. Sem ponte privada de PDF, o resultado integral não é fabricado. O adapter ERP continua opcional e sem provider real ou simulado no runtime. Lint, tipos, 370 testes da API, 201 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `20260901012500_espera_resposta_fluxo` permaneceu como marca mais recente. `vyntra/api-staging:pr-078` e duas instâncias de `vyntra/worker-fluxos-staging:pr-078` ficaram saudáveis com prontidão `PRONTO`. O primeiro ensaio revelou e corrigiu o campo interno da conta de origem antes do fechamento. Na repetição, consulta e envio concluíram seis passos únicos e percorreram `ERP_INDISPONIVEL`; houve zero mensagem, composição, auditoria ou dado financeiro no diagnóstico e nenhum erro nos novos containers.
+
+### PR 079 — nó de WhatsApp Flow
+
+Aceite concluído em 1º de setembro de 2026: `SOLICITAR_FORMULARIO_WHATSAPP` passou a exigir exatamente um formulário interno ativo da conta de origem, nenhuma variável e fallback textual fechado. Sem ponte Meta real caracterizada, o runtime produz somente `FALLBACK` por `ServicoMensagensSaida`; `ENVIADO` não é fabricado e nenhum provider simulado foi registrado. A submissão normalizada deriva autoridade da mensagem de entrada, usa locks por mensagem/referência, hash canônico, duas unicidades e evento sensível sanitizado; replay compatível devolve o primeiro registro e divergência falha fechada. Lint, tipos, 375 testes da API, 202 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `20260901012500_espera_resposta_fluxo` permaneceu como marca mais recente. `vyntra/api-staging:pr-079` e duas instâncias de `vyntra/worker-fluxos-staging:pr-079` ficaram saudáveis com prontidão `PRONTO`. Em staging, três execuções concluíram nove passos únicos: o formulário ativo gerou exatamente uma mensagem e `FALLBACK`; o inativo e o de outra conta seguiram `FALHA/FORMULARIO_INDISPONIVEL` com zero mensagem. A mesma submissão retornou `PERSISTIDA` e depois `DUPLICADA`, conteúdo divergente foi recusado, e ficaram exatamente uma submissão e um evento cujo dado foi persistido como `[PROTEGIDO]`. Passos não expuseram referência/texto e os novos containers tiveram zero erro ou ocorrência de token/resposta sensível nos logs.
 
 ## 7. Mensageria Meta
 
