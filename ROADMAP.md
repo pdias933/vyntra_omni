@@ -43,7 +43,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 019 | CONCLUÍDA | `high` |
 | 020 | CONCLUÍDA | `high` |
 | 021 | CONCLUÍDA | `medium` |
-| 022 | EM ANDAMENTO | `medium` |
+| 022 | CONCLUÍDA | `medium` |
 | 023 | PENDENTE | `high` |
 | 024 | PENDENTE | `xhigh` |
 | 025 | PENDENTE | `xhigh` |
@@ -273,6 +273,10 @@ Aceite concluído em 31 de agosto de 2026: `AdaptadorSessaoAcesso` foi separado 
 | 038 | SLA e escalonamento | Relógio começa na obrigação humana; alerta atendente→supervisor→admin sem transferência. |
 | 039 | Janela Meta | Estado por Contato + Conta, alertas 1 h/30 min/10 min e texto livre bloqueado. |
 | 040 | Timeline composta e NotaInterna | Mensagem, nota, evento, formulário e separador permanecem tipos distintos; nota nunca sai. |
+
+### PR 022 — ContaWhatsApp
+
+Aceite concluído em 31 de agosto de 2026: `ContaWhatsApp` passou a representar múltiplas origens empresariais por UUID interno estável, identidade externa única, telefone de exibição opcional, estado inicial `INATIVA` e histórico sem operação de exclusão. Cadastro exige `ADMINISTRAR_INTEGRACOES`, normaliza os campos textuais e audita na mesma transação sem propagar identificadores externos, telefone ou credencial. Token, segredo e certificado permanecem ausentes do domínio, banco e módulo da aplicação. Lint, tipos, 94 testes da API, 98 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001100_criar_conta_whatsapp` terminou com código zero e a imagem `vyntra/api-staging:pr-022` ficou saudável com prontidão `PRONTO`. Em staging, duas contas coexistiram com IDs distintos e estado inativo; identidade externa duplicada, telefone inválido e telefone repetido foram recusados; nenhuma coluna de credencial existe, os dados sintéticos foram removidos e não houve erro de nível 50.
 
 ## 7. Mensageria Meta
 
