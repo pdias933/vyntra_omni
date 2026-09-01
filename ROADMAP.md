@@ -62,7 +62,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 038 | CONCLUÍDA | `xhigh` |
 | 039 | CONCLUÍDA | `xhigh` |
 | 040 | CONCLUÍDA | `xhigh` |
-| 041 | EM ANDAMENTO | `xhigh` |
+| 041 | CONCLUÍDA | `xhigh` |
 | 042 | PENDENTE | `xhigh` |
 | 043 | PENDENTE | `xhigh` |
 | 044 | PENDENTE | `xhigh` |
@@ -349,6 +349,10 @@ Aceite concluído em 1º de setembro de 2026: `JanelaAtendimentoCanal` passou a 
 ### PR 040 — timeline composta e nota interna
 
 Aceite concluído em 1º de setembro de 2026: a timeline passou a ter união discriminada para `MENSAGEM`, `NOTA_INTERNA`, `EVENTO_OPERACIONAL`, `FORMULARIO` e `SEPARADOR_ATENDIMENTO`, ordenada por ocorrência e `sequencia_evento` sem converter um tipo em outro. `NotaInterna` exige `ADICIONAR_NOTA_INTERNA` na fila e vínculo exato entre conversa e atendimento aberto. Ela persiste conteúdo protegido, autor, instante e visibilidade única `SOMENTE_EQUIPE`; evento e auditoria não recebem o texto. O PostgreSQL torna a nota imutável. O módulo não importa mensageria, adapter nem caixa de saída e a tabela não possui coluna de destino/estado de envio, impedindo que a nota saia para o cliente por esse caminho. Lint, tipos, 182 testes da API, 142 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002400_criar_timeline_nota_interna` terminou com código zero e `vyntra/api-staging:pr-040` ficou saudável com prontidão `PRONTO`. Em staging, uma nota permaneceu `SOMENTE_EQUIPE` e inalterada; conteúdo vazio, contexto conversa–atendimento cruzado e alteração posterior foram recusados, não havia coluna de saída, houve rollback e nenhum erro de nível 50.
+
+### PR 041 — mensagem e máquina de saída
+
+Aceite concluído em 1º de setembro de 2026: `Mensagem` passou a pertencer simultaneamente à conversa contínua, ao atendimento e à conta WhatsApp de origem, preservando conteúdo protegido, hash, remetente e chave idempotente do cliente. A criação de texto exige `ENVIAR_MENSAGEM`, responsabilidade humana atual e janela do canal aberta; grava `NA_FILA`, evento e item da caixa de saída na mesma transação sem expor texto nos eventos. A máquina permite somente `NA_FILA→ENVIANDO→ENVIADA→ENTREGUE→LIDA`, retorno temporário `ENVIANDO→NA_FILA`, falha definitiva e cancelamento antes do envio. O PostgreSQL replica as transições e torna a identidade/conteúdo imutáveis. Lint, tipos, 186 testes da API, 144 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901002500_criar_mensagem_maquina_saida` terminou com código zero e `vyntra/api-staging:pr-041` ficou saudável com prontidão `PRONTO`. Em staging, a cadeia chegou a `LIDA` na versão 5, o cancelamento chegou a `CANCELADA`, regressão e alteração de conteúdo foram recusadas, houve rollback e nenhum erro de nível 50.
 
 ## 7. Mensageria Meta
 
