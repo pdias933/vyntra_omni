@@ -78,7 +78,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 054 | CONCLUÍDA | `xhigh` |
 | 055 | CONCLUÍDA | `xhigh` |
 | 056 | CONCLUÍDA | `xhigh` |
-| 057 | EM ANDAMENTO | `high` |
+| 057 | CONCLUÍDA | `high` |
 | 058 | PENDENTE | `xhigh` |
 | 059 | PENDENTE | `xhigh` |
 | 060 | PENDENTE | `high` |
@@ -413,6 +413,10 @@ Aceite concluído em 1º de setembro de 2026: a web passou a acompanhar `GET /ap
 ### PR 056 — WebSocket mobile sem lacuna
 
 Aceite concluído em 1º de setembro de 2026: o mobile passou a acompanhar `/api/v1/sincronizacao/eventos-mobile?apos=<sequencia>` por WebSocket autenticado com access token, UUID do dispositivo e segredo de vínculo. O gateway autentica antes do upgrade, inicia a consulta PostgreSQL em modo buffer, captura a marca d’água, entrega backlog e eventos concorrentes em ordem e só então declara `PRONTO`. Cada `EVENTO` exige `CONFIRMAR`; a confirmação é cumulativa, monotônica e nunca pode superar a maior sequência enviada. Heartbeat usa ping/pong técnico. Cursor inválido, mensagem binária, ordem impossível, pressão de saída, excesso de confirmações pendentes ou falha de sincronização fecham a conexão para retomada pelo último evento aplicado. Lint, tipos, 235 testes da API, 161 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-056` ficou saudável com prontidão `PRONTO`. Em staging, as sequências `12` e `13` chegaram uma única vez como backlog e vivo, três confirmações foram aceitas, a retomada pelo cursor `12` entregou somente `13`, segredo incorreto recebeu `401`, migration encerrou com código zero, os dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
+
+### PR 057 — avisos mobile por push
+
+Aceite concluído em 1º de setembro de 2026: a projeção `PUSH` passou por um compositor de domínio que aceita somente os cinco avisos aprovados, sequência observada e UUIDs mínimos de navegação. Título e corpo pertencem a um catálogo genérico sem nome, conteúdo, CPF, fatura ou dado financeiro. A chave de agrupamento é derivada da conversa e, quando ela não existe, do atendimento; uma rajada substitui o aviso agrupado anterior. A porta de entrega usa resultados internos `ACEITO`, `DESTINO_INVALIDO` e `INDISPONIVEL`; termos do provedor e o simulador ficam nos adapters, e o simulador não é registrado na aplicação. No app, `expo-notifications` recebe somente uma allowlist estrita; aviso em primeiro plano solicita sincronização, enquanto toque ou abertura a frio sincroniza antes de navegar. Falha de sincronização impede a navegação, e push nunca grava SQLite, avança cursor, marca leitura ou habilita ação. Lint, tipos, 239 testes da API, 165 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-057` ficou saudável com prontidão `PRONTO`. Em staging, as sequências `57` e `58` da mesma conversa produziram um único aviso na sequência mais recente, campo adicional foi recusado, indisponibilidade permaneceu explícita, migration encerrou com código zero e nenhum erro de nível 50 foi emitido. Envio externo real permanece sem adapter registrado até existirem credenciais, destinos e configuração operacional aprovados; isso não é substituído pelo simulador.
 
 ## 7. Mensageria Meta
 

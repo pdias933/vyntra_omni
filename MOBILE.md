@@ -286,6 +286,8 @@ O app não depende de manter WebSocket. APNs/FCM avisa sobre:
 
 Rajadas do mesmo contato são agrupadas. Push contém mínimo possível e nunca CPF/fatura/dado financeiro. Tocar no push abre app, sincroniza e então navega.
 
+A PR 057 adiciona o adapter nativo `expo-notifications` com allowlist de `tipo`, `sequencia_observada`, chave de agrupamento e UUIDs mínimos de conversa/atendimento. Payload ausente, adicional ou incoerente é ignorado. Em primeiro plano, o aviso apenas solicita sincronização coalescida. Ao tocar ou abrir o app a frio, `CoordenadorAvisosMobile` aguarda a sincronização e só então navega; falha não abre uma tela baseada em estado antigo. O aviso nunca é aplicado diretamente no SQLite, não avança cursor, não marca mensagem lida e não executa ação. Respostas de abertura já processadas são deduplicadas e limpas do adapter nativo depois do sucesso.
+
 ## 9. Offline
 
 ### 9.1 O que funciona

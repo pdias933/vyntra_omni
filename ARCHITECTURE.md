@@ -451,6 +451,8 @@ A PR 056 materializa esse contrato em `/api/v1/sincronizacao/eventos-mobile?apos
 
 Push contém apenas identificadores mínimos e texto não sensível. Ele avisa; não altera SQLite como fonte definitiva, não marca leitura e não carrega CPF, fatura ou conteúdo privado. Ao abrir o app, a sincronização decide o estado.
 
+A PR 057 materializa esse limite com `CompositorAvisoMobile` e `PortaEntregaAvisoMobile`. O compositor aceita somente projeção `PUSH` autorizada, cinco tipos fechados, sequência observada e UUIDs de conversa/atendimento. Títulos e corpos são genéricos e definidos no servidor; chave de agrupamento é a conversa ou, sem ela, o atendimento. Resultado externo é normalizado para `ACEITO`, `DESTINO_INVALIDO` ou `INDISPONIVEL`. Termos de provedor ficam no adapter, e nenhum simulador é registrado em produção. No app, o adapter nativo Expo aplica allowlist ao payload; recebimento solicita sincronização e abertura, inclusive a frio, aguarda a sincronização antes de navegar. Push não escreve réplica, não avança cursor e não marca leitura. O adapter de envio real continua desligado até credenciais e destinos externos serem configurados de forma aprovada.
+
 ### 8.5 Estado técnico invisível na interface
 
 O estado saudável não exibe botão de atualizar, `Última atualização`, cursor, WebSocket, SSE, fila ou indicador de sincronização.
