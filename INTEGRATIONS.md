@@ -446,6 +446,14 @@ Autenticação máquina-a-máquina usa credencial própria por ambiente, escopo 
 
 O limite inicial é 60 requisições por minuto por credencial, com burst de 20. Finalidade pertence a allowlist transacional e consentimento/opt-out são verificados antes da fila. Endpoint e callback reais permanecem desligados até caracterizar capacidade do ERP e aprovar a política jurídica/DPO. Simuladores podem validar o contrato interno. Não construir lote, campanha ou criador de campanha na V1.
 
+### 7.1 Núcleo interno materializado
+
+A PR 051 materializa `AplicacaoIntegracao`, `ConsentimentoContatoCanal` e `DisparoTransacional`, sem publicar controller nem inventar DTO do MK. O segredo de alta entropia entra no PostgreSQL somente por SHA-256 e a autenticação usa comparação em tempo constante. Aplicação inativa falha fechada.
+
+O consentimento é único por contato, conta WhatsApp e finalidade `MENSAGEM_TRANSACIONAL`. O disparo referencia o consentimento usado, conserva apenas o hash da chave idempotente e a assinatura do comando, e cria uma `Mensagem` de máquina `MODELO_APROVADO` em `NA_FILA`, sem usuário remetente. Repetição compatível recupera o mesmo disparo; reuso divergente é recusado. O estado devolvido ao chamador é sempre projetado da máquina de `Mensagem`, sem uma segunda fonte de verdade.
+
+Constraints e trigger validam novamente aplicação ativa, consentimento vigente, contato, conta, direção, tipo e estado no instante do insert. O registro do disparo é imutável. A ativação externa continua bloqueada pelos portões de autenticação/callback do ERP e consentimento/opt-out jurídico; a base interna aprovada não autoriza tráfego real por si só.
+
 ## 8. Operações externas idempotentes
 
 ```text

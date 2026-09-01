@@ -22,6 +22,8 @@ Web e mobile nunca recebem credenciais da Meta, MK, storage ou banco e nunca cha
 
 Eventos internos e itens da caixa de saída persistem somente dados minimizados e sanitizados. Eles não carregam payload externo bruto, segredo ou autorização; projeção ao cliente continua sujeita à permissão atual e só ocorre após commit.
 
+Aplicações máquina-a-máquina usam um segredo aleatório de alta entropia por ambiente. `AplicacaoIntegracao` persiste somente SHA-256, compara em tempo constante e pode ser inativada. O segredo bruto não integra comando persistido, evento, auditoria ou log. Disparo transacional exige consentimento concedido no contato, conta e finalidade exatos; a validação ocorre no domínio e novamente no PostgreSQL antes de uma mensagem entrar em `NA_FILA`.
+
 ## 2. Ativos protegidos
 
 - conversas, mensagens, mídias, formulários e notas internas;

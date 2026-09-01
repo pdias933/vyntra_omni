@@ -72,7 +72,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 048 | CONCLUÍDA | `high` |
 | 049 | CONCLUÍDA | `xhigh` |
 | 050 | CONCLUÍDA | `xhigh` |
-| 051 | EM ANDAMENTO | `xhigh` |
+| 051 | CONCLUÍDA | `xhigh` |
 | 052 | PENDENTE | `xhigh` |
 | 053 | PENDENTE | `xhigh` |
 | 054 | PENDENTE | `xhigh` |
@@ -389,6 +389,10 @@ Aceite concluído em 1º de setembro de 2026: a composição de segunda via pass
 ### PR 050 — WhatsApp Flows e submissões
 
 Aceite concluído em 1º de setembro de 2026: formulários de identificação e cadastro comercial passaram a ser catalogados por conta, com definição protegida, hash, estado e versão. O adapter transforma a resposta externa em submissão idempotente sem conservar o token do Flow. O projetor da timeline aceita apenas campos declarados, mascara os sensíveis sem permissão e entrega um card estruturado `FORMULARIO`, `SOMENTE_EQUIPE`, com a ação `VER_FORMULARIO`; o JSON protegido não integra a projeção. Submissões são imutáveis no PostgreSQL e únicas por mensagem e referência do canal. Lint, tipos, 215 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901003200_criar_formularios_canal` terminou com código zero e `vyntra/api-staging:pr-050` ficou saudável com prontidão `PRONTO`. Em staging, uma submissão `INTERATIVA` de formulário ativo foi persistida, o replay inseriu zero linhas, a mutação foi recusada, nenhuma coluna bruta foi encontrada, houve rollback e nenhum erro de nível 50 foi emitido.
+
+### PR 051 — disparo transacional pelo ERP
+
+Aceite concluído em 1º de setembro de 2026: aplicações de integração passaram a autenticar com segredo de alta entropia persistido somente por SHA-256 e comparado em tempo constante. Cada disparo exige aplicação ativa, consentimento `MENSAGEM_TRANSACIONAL` concedido para o contato e conta exatos, modelo aprovado, mensagem de máquina sem usuário remetente e chave idempotente armazenada somente por hash. Repetição compatível devolve o mesmo disparo e comando divergente é recusado. A mensagem nasce `NA_FILA`, entra na timeline e segue a máquina já aprovada; o retorno lê `NA_FILA`, `ENVIADA`, `ENTREGUE`, `LIDA` ou `FALHOU` da própria mensagem. O PostgreSQL repete as validações no instante da inserção e torna o disparo imutável. Lint, tipos, 218 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901003300_criar_disparo_transacional` terminou com código zero e `vyntra/api-staging:pr-051` ficou saudável com prontidão `PRONTO`. Em staging, replay inseriu zero linhas, consentimento revogado e mutação foram recusados, o retorno chegou a `ENTREGUE`, não havia credencial bruta, houve rollback e nenhum erro de nível 50 foi emitido. Endpoint e callback reais permanecem desligados até cumprir os portões externos já documentados.
 
 ## 7. Mensageria Meta
 
