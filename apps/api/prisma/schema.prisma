@@ -160,6 +160,15 @@ enum EstadoEventoEntradaCanal {
   @@map("estado_evento_entrada_canal")
 }
 
+enum EstadoEventoMensagemCanal {
+  ENVIADA
+  ENTREGUE
+  LIDA
+  FALHOU
+
+  @@map("estado_evento_mensagem_canal")
+}
+
 enum PapelBase {
   ADMINISTRADOR
   SUPERVISOR
@@ -441,17 +450,17 @@ model RegistroAuditoria {
 }
 
 model EventoDominio {
-  id                         String                    @id @db.Uuid
-  sequenciaEvento            BigInt                    @unique @default(autoincrement()) @map("sequencia_evento")
-  tipo                       String                    @db.VarChar(100)
-  entidadeTipo               String                    @map("entidade_tipo") @db.VarChar(100)
-  entidadeId                 String                    @map("entidade_id") @db.Uuid
-  atendimentoId              String?                   @map("atendimento_id") @db.Uuid
-  conversaId                 String?                   @map("conversa_id") @db.Uuid
-  usuarioAtorId              String?                   @map("usuario_ator_id") @db.Uuid
+  id                         String                   @id @db.Uuid
+  sequenciaEvento            BigInt                   @unique @default(autoincrement()) @map("sequencia_evento")
+  tipo                       String                   @db.VarChar(100)
+  entidadeTipo               String                   @map("entidade_tipo") @db.VarChar(100)
+  entidadeId                 String                   @map("entidade_id") @db.Uuid
+  atendimentoId              String?                  @map("atendimento_id") @db.Uuid
+  conversaId                 String?                  @map("conversa_id") @db.Uuid
+  usuarioAtorId              String?                  @map("usuario_ator_id") @db.Uuid
   classificacaoDados         ClassificacaoDadosEvento @map("classificacao_dados")
-  dadosProtegidosMinimizados Json                      @map("dados_protegidos_minimizados")
-  criadoEm                   DateTime                  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  dadosProtegidosMinimizados Json                     @map("dados_protegidos_minimizados")
+  criadoEm                   DateTime                 @default(now()) @map("criado_em") @db.Timestamptz(6)
   itensCaixaSaida            ItemCaixaSaida[]
 
   @@index([criadoEm], map: "evento_dominio_criado_em_idx")
@@ -493,24 +502,24 @@ model RegistroIdempotencia {
 }
 
 model OperacaoRecuperavel {
-  id                         String                    @id @db.Uuid
-  registroIdempotenciaId     String                    @unique @map("registro_idempotencia_id") @db.Uuid
-  tipo                       String                    @db.VarChar(100)
-  entidadeTipo               String?                   @map("entidade_tipo") @db.VarChar(100)
-  entidadeId                 String?                   @map("entidade_id") @db.Uuid
-  estado                     EstadoOperacaoRecuperavel @default(PENDENTE)
-  tentativas                 Int                       @default(0)
-  versao                     Int                       @default(0)
-  concessaoTokenHash         String?                   @map("concessao_token_hash") @db.Char(64)
-  concessaoAte               DateTime?                 @map("concessao_ate") @db.Timestamptz(6)
-  proximaAcaoEm              DateTime?                 @default(now()) @map("proxima_acao_em") @db.Timestamptz(6)
-  codigoUltimoErro           String?                   @map("codigo_ultimo_erro") @db.VarChar(100)
-  resultadoProtegido         Json?                     @map("resultado_protegido")
-  criadoEm                   DateTime                  @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm               DateTime                  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  concluidoEm                DateTime?                 @map("concluido_em") @db.Timestamptz(6)
-  registroIdempotencia       RegistroIdempotencia      @relation(fields: [registroIdempotenciaId], references: [id], onDelete: Restrict)
-  historicoTentativas        TentativaOperacao[]
+  id                     String                    @id @db.Uuid
+  registroIdempotenciaId String                    @unique @map("registro_idempotencia_id") @db.Uuid
+  tipo                   String                    @db.VarChar(100)
+  entidadeTipo           String?                   @map("entidade_tipo") @db.VarChar(100)
+  entidadeId             String?                   @map("entidade_id") @db.Uuid
+  estado                 EstadoOperacaoRecuperavel @default(PENDENTE)
+  tentativas             Int                       @default(0)
+  versao                 Int                       @default(0)
+  concessaoTokenHash     String?                   @map("concessao_token_hash") @db.Char(64)
+  concessaoAte           DateTime?                 @map("concessao_ate") @db.Timestamptz(6)
+  proximaAcaoEm          DateTime?                 @default(now()) @map("proxima_acao_em") @db.Timestamptz(6)
+  codigoUltimoErro       String?                   @map("codigo_ultimo_erro") @db.VarChar(100)
+  resultadoProtegido     Json?                     @map("resultado_protegido")
+  criadoEm               DateTime                  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm           DateTime                  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  concluidoEm            DateTime?                 @map("concluido_em") @db.Timestamptz(6)
+  registroIdempotencia   RegistroIdempotencia      @relation(fields: [registroIdempotenciaId], references: [id], onDelete: Restrict)
+  historicoTentativas    TentativaOperacao[]
 
   @@index([estado, proximaAcaoEm, criadoEm], map: "operacao_recuperavel_pendente_idx")
   @@index([entidadeTipo, entidadeId, criadoEm], map: "operacao_recuperavel_entidade_idx")
@@ -536,31 +545,31 @@ model TentativaOperacao {
 }
 
 model Usuario {
-  id            String        @id @db.Uuid
-  nomeExibicao  String        @map("nome_exibicao") @db.VarChar(160)
-  estado        EstadoUsuario @default(ATIVO)
-  perfilId      String?       @map("perfil_id") @db.Uuid
-  inativadoEm   DateTime?     @map("inativado_em") @db.Timestamptz(6)
-  criadoEm      DateTime      @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm  DateTime      @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  perfil        PerfilAcesso? @relation(fields: [perfilId], references: [id], onDelete: Restrict)
-  acessosFila   AcessoUsuarioFila[]
-  credencialSenha CredencialSenha?
-  sessoesWeb    SessaoWeb[]
-  dispositivosMobile DispositivoMobile[]
-  sessoesMobile SessaoMobile[]
-  pareamentosQr PareamentoQr[]
-  liberacoesControlesRecurso LiberacaoControleRecursoUsuario[]
-  vinculosClienteVerificados VinculoCliente[] @relation("UsuarioVerificacaoVinculoCliente")
-  contextosAtendimentoAlterados ContextoAtendimento[] @relation("UsuarioAlteracaoContextoAtendimento")
-  atendimentosResponsaveis Atendimento[] @relation("UsuarioResponsavelAtendimento")
-  disponibilidade DisponibilidadeUsuario? @relation("UsuarioDisponibilidade")
-  disponibilidadesAlteradas DisponibilidadeUsuario[] @relation("UsuarioAlteracaoDisponibilidade")
-  historicosResponsabilidade HistoricoAtribuicao[] @relation("UsuarioResponsavelHistoricoAtribuicao")
-  historicosAtribuicaoExecutados HistoricoAtribuicao[] @relation("UsuarioExecutorHistoricoAtribuicao")
-  overridesCalendarioExecutados OverrideCalendario[]
-  notasInternasCriadas NotaInterna[]
-  mensagensEnviadas Mensagem[]
+  id                             String                            @id @db.Uuid
+  nomeExibicao                   String                            @map("nome_exibicao") @db.VarChar(160)
+  estado                         EstadoUsuario                     @default(ATIVO)
+  perfilId                       String?                           @map("perfil_id") @db.Uuid
+  inativadoEm                    DateTime?                         @map("inativado_em") @db.Timestamptz(6)
+  criadoEm                       DateTime                          @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm                   DateTime                          @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  perfil                         PerfilAcesso?                     @relation(fields: [perfilId], references: [id], onDelete: Restrict)
+  acessosFila                    AcessoUsuarioFila[]
+  credencialSenha                CredencialSenha?
+  sessoesWeb                     SessaoWeb[]
+  dispositivosMobile             DispositivoMobile[]
+  sessoesMobile                  SessaoMobile[]
+  pareamentosQr                  PareamentoQr[]
+  liberacoesControlesRecurso     LiberacaoControleRecursoUsuario[]
+  vinculosClienteVerificados     VinculoCliente[]                  @relation("UsuarioVerificacaoVinculoCliente")
+  contextosAtendimentoAlterados  ContextoAtendimento[]             @relation("UsuarioAlteracaoContextoAtendimento")
+  atendimentosResponsaveis       Atendimento[]                     @relation("UsuarioResponsavelAtendimento")
+  disponibilidade                DisponibilidadeUsuario?           @relation("UsuarioDisponibilidade")
+  disponibilidadesAlteradas      DisponibilidadeUsuario[]          @relation("UsuarioAlteracaoDisponibilidade")
+  historicosResponsabilidade     HistoricoAtribuicao[]             @relation("UsuarioResponsavelHistoricoAtribuicao")
+  historicosAtribuicaoExecutados HistoricoAtribuicao[]             @relation("UsuarioExecutorHistoricoAtribuicao")
+  overridesCalendarioExecutados  OverrideCalendario[]
+  notasInternasCriadas           NotaInterna[]
+  mensagensEnviadas              Mensagem[]
 
   @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
   @@index([perfilId], map: "usuario_perfil_idx")
@@ -582,21 +591,21 @@ model DisponibilidadeUsuario {
 }
 
 model DispositivoMobile {
-  id                         String                    @id @db.Uuid
-  usuarioId                  String                    @map("usuario_id") @db.Uuid
+  id                          String                  @id @db.Uuid
+  usuarioId                   String                  @map("usuario_id") @db.Uuid
   identificadorInstalacaoHash String                  @map("identificador_instalacao_hash") @db.Char(64)
-  segredoVinculoHash         String                    @map("segredo_vinculo_hash") @db.Char(64)
-  estado                     EstadoDispositivoMobile  @default(ATIVO)
-  plataforma                 PlataformaMobile
-  modeloSanitizado           String?                   @map("modelo_sanitizado") @db.VarChar(120)
-  versaoAplicativo           String                    @map("versao_aplicativo") @db.VarChar(40)
-  ultimoAcessoEm             DateTime                  @default(now()) @map("ultimo_acesso_em") @db.Timestamptz(6)
-  revogadoEm                 DateTime?                 @map("revogado_em") @db.Timestamptz(6)
-  motivoRevogacao            String?                   @map("motivo_revogacao") @db.VarChar(80)
-  criadoEm                   DateTime                  @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm               DateTime                  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  usuario                    Usuario                   @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
-  sessoes                    SessaoMobile[]
+  segredoVinculoHash          String                  @map("segredo_vinculo_hash") @db.Char(64)
+  estado                      EstadoDispositivoMobile @default(ATIVO)
+  plataforma                  PlataformaMobile
+  modeloSanitizado            String?                 @map("modelo_sanitizado") @db.VarChar(120)
+  versaoAplicativo            String                  @map("versao_aplicativo") @db.VarChar(40)
+  ultimoAcessoEm              DateTime                @default(now()) @map("ultimo_acesso_em") @db.Timestamptz(6)
+  revogadoEm                  DateTime?               @map("revogado_em") @db.Timestamptz(6)
+  motivoRevogacao             String?                 @map("motivo_revogacao") @db.VarChar(80)
+  criadoEm                    DateTime                @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm                DateTime                @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  usuario                     Usuario                 @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  sessoes                     SessaoMobile[]
 
   @@unique([id, usuarioId], map: "dispositivo_mobile_id_usuario_key")
   @@unique([usuarioId, identificadorInstalacaoHash], map: "dispositivo_mobile_usuario_instalacao_key")
@@ -605,24 +614,24 @@ model DispositivoMobile {
 }
 
 model SessaoMobile {
-  id                    String              @id @db.Uuid
-  usuarioId             String              @map("usuario_id") @db.Uuid
-  dispositivoId         String              @map("dispositivo_id") @db.Uuid
-  tokenAcessoHash       String              @unique @map("token_acesso_hash") @db.Char(64)
-  tokenRefreshHash      String              @unique @map("token_refresh_hash") @db.Char(64)
-  estado                EstadoSessaoMobile  @default(ATIVA)
-  versao                Int                 @default(0)
-  autenticadaEm         DateTime            @default(now()) @map("autenticada_em") @db.Timestamptz(6)
-  acessoExpiraEm        DateTime            @map("acesso_expira_em") @db.Timestamptz(6)
-  refreshExpiraEm       DateTime            @map("refresh_expira_em") @db.Timestamptz(6)
-  rotacionadaEm         DateTime?           @map("rotacionada_em") @db.Timestamptz(6)
-  revogadaEm            DateTime?           @map("revogada_em") @db.Timestamptz(6)
-  motivoRevogacao       String?             @map("motivo_revogacao") @db.VarChar(80)
-  criadoEm              DateTime            @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm          DateTime            @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  usuario               Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
-  dispositivo           DispositivoMobile   @relation(fields: [dispositivoId, usuarioId], references: [id, usuarioId], onDelete: Restrict)
-  tokensRefreshUsados   TokenRefreshMobileUsado[]
+  id                  String                    @id @db.Uuid
+  usuarioId           String                    @map("usuario_id") @db.Uuid
+  dispositivoId       String                    @map("dispositivo_id") @db.Uuid
+  tokenAcessoHash     String                    @unique @map("token_acesso_hash") @db.Char(64)
+  tokenRefreshHash    String                    @unique @map("token_refresh_hash") @db.Char(64)
+  estado              EstadoSessaoMobile        @default(ATIVA)
+  versao              Int                       @default(0)
+  autenticadaEm       DateTime                  @default(now()) @map("autenticada_em") @db.Timestamptz(6)
+  acessoExpiraEm      DateTime                  @map("acesso_expira_em") @db.Timestamptz(6)
+  refreshExpiraEm     DateTime                  @map("refresh_expira_em") @db.Timestamptz(6)
+  rotacionadaEm       DateTime?                 @map("rotacionada_em") @db.Timestamptz(6)
+  revogadaEm          DateTime?                 @map("revogada_em") @db.Timestamptz(6)
+  motivoRevogacao     String?                   @map("motivo_revogacao") @db.VarChar(80)
+  criadoEm            DateTime                  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm        DateTime                  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  usuario             Usuario                   @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  dispositivo         DispositivoMobile         @relation(fields: [dispositivoId, usuarioId], references: [id, usuarioId], onDelete: Restrict)
+  tokensRefreshUsados TokenRefreshMobileUsado[]
 
   @@index([usuarioId, estado, refreshExpiraEm], map: "sessao_mobile_usuario_estado_refresh_idx")
   @@index([dispositivoId, estado, refreshExpiraEm], map: "sessao_mobile_dispositivo_estado_refresh_idx")
@@ -630,22 +639,22 @@ model SessaoMobile {
 }
 
 model TokenRefreshMobileUsado {
-  tokenHash   String        @id @map("token_hash") @db.Char(64)
-  sessaoId    String        @map("sessao_id") @db.Uuid
-  usadoEm     DateTime      @default(now()) @map("usado_em") @db.Timestamptz(6)
-  sessao      SessaoMobile  @relation(fields: [sessaoId], references: [id], onDelete: Restrict)
+  tokenHash String       @id @map("token_hash") @db.Char(64)
+  sessaoId  String       @map("sessao_id") @db.Uuid
+  usadoEm   DateTime     @default(now()) @map("usado_em") @db.Timestamptz(6)
+  sessao    SessaoMobile @relation(fields: [sessaoId], references: [id], onDelete: Restrict)
 
   @@index([sessaoId, usadoEm], map: "token_refresh_mobile_usado_sessao_idx")
   @@map("token_refresh_mobile_usado")
 }
 
 model TentativaLoginMobile {
-  id                            String                          @id @db.Uuid
-  identificadorHash             String                          @map("identificador_hash") @db.Char(64)
-  enderecoIp                    String                          @map("endereco_ip") @db.Inet
-  identificadorInstalacaoHash   String                          @map("identificador_instalacao_hash") @db.Char(64)
-  resultado                     ResultadoTentativaLoginMobile
-  criadoEm                      DateTime                        @default(now()) @map("criado_em") @db.Timestamptz(6)
+  id                          String                        @id @db.Uuid
+  identificadorHash           String                        @map("identificador_hash") @db.Char(64)
+  enderecoIp                  String                        @map("endereco_ip") @db.Inet
+  identificadorInstalacaoHash String                        @map("identificador_instalacao_hash") @db.Char(64)
+  resultado                   ResultadoTentativaLoginMobile
+  criadoEm                    DateTime                      @default(now()) @map("criado_em") @db.Timestamptz(6)
 
   @@index([identificadorHash, enderecoIp, identificadorInstalacaoHash, criadoEm], map: "tentativa_login_mobile_identificador_ip_dispositivo_idx")
   @@index([enderecoIp, criadoEm], map: "tentativa_login_mobile_ip_idx")
@@ -653,39 +662,39 @@ model TentativaLoginMobile {
 }
 
 model CredencialSenha {
-  usuarioId              String                 @id @map("usuario_id") @db.Uuid
-  identificadorNormalizado String               @unique @map("identificador_normalizado") @db.VarChar(120)
-  senhaHash              String                 @map("senha_hash") @db.VarChar(255)
-  estado                 EstadoCredencialSenha  @default(ATIVA)
-  senhaAlteradaEm        DateTime               @default(now()) @map("senha_alterada_em") @db.Timestamptz(6)
-  revogadaEm             DateTime?              @map("revogada_em") @db.Timestamptz(6)
-  criadoEm               DateTime               @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm           DateTime               @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  usuario                Usuario                @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  usuarioId                String                @id @map("usuario_id") @db.Uuid
+  identificadorNormalizado String                @unique @map("identificador_normalizado") @db.VarChar(120)
+  senhaHash                String                @map("senha_hash") @db.VarChar(255)
+  estado                   EstadoCredencialSenha @default(ATIVA)
+  senhaAlteradaEm          DateTime              @default(now()) @map("senha_alterada_em") @db.Timestamptz(6)
+  revogadaEm               DateTime?             @map("revogada_em") @db.Timestamptz(6)
+  criadoEm                 DateTime              @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm             DateTime              @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  usuario                  Usuario               @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
 
   @@index([estado, identificadorNormalizado], map: "credencial_senha_estado_identificador_idx")
   @@map("credencial_senha")
 }
 
 model SessaoWeb {
-  id                 String           @id @db.Uuid
-  usuarioId          String           @map("usuario_id") @db.Uuid
-  tokenHash          String           @unique @map("token_hash") @db.Char(64)
-  csrfHash           String           @map("csrf_hash") @db.Char(64)
-  estado             EstadoSessaoWeb  @default(ATIVA)
-  versao             Int              @default(0)
-  enderecoIp         String           @map("endereco_ip") @db.Inet
-  agenteUsuarioHash  String           @map("agente_usuario_hash") @db.Char(64)
-  autenticadaEm      DateTime         @default(now()) @map("autenticada_em") @db.Timestamptz(6)
-  ultimaAtividadeEm  DateTime         @default(now()) @map("ultima_atividade_em") @db.Timestamptz(6)
-  expiraEm           DateTime         @map("expira_em") @db.Timestamptz(6)
-  rotacionadaEm      DateTime?        @map("rotacionada_em") @db.Timestamptz(6)
-  revogadaEm         DateTime?        @map("revogada_em") @db.Timestamptz(6)
-  motivoRevogacao    String?          @map("motivo_revogacao") @db.VarChar(80)
-  criadoEm           DateTime         @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm       DateTime         @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  usuario            Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
-  pareamentosQr       PareamentoQr[]
+  id                String          @id @db.Uuid
+  usuarioId         String          @map("usuario_id") @db.Uuid
+  tokenHash         String          @unique @map("token_hash") @db.Char(64)
+  csrfHash          String          @map("csrf_hash") @db.Char(64)
+  estado            EstadoSessaoWeb @default(ATIVA)
+  versao            Int             @default(0)
+  enderecoIp        String          @map("endereco_ip") @db.Inet
+  agenteUsuarioHash String          @map("agente_usuario_hash") @db.Char(64)
+  autenticadaEm     DateTime        @default(now()) @map("autenticada_em") @db.Timestamptz(6)
+  ultimaAtividadeEm DateTime        @default(now()) @map("ultima_atividade_em") @db.Timestamptz(6)
+  expiraEm          DateTime        @map("expira_em") @db.Timestamptz(6)
+  rotacionadaEm     DateTime?       @map("rotacionada_em") @db.Timestamptz(6)
+  revogadaEm        DateTime?       @map("revogada_em") @db.Timestamptz(6)
+  motivoRevogacao   String?         @map("motivo_revogacao") @db.VarChar(80)
+  criadoEm          DateTime        @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm      DateTime        @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  usuario           Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  pareamentosQr     PareamentoQr[]
 
   @@index([usuarioId, estado, expiraEm], map: "sessao_web_usuario_estado_expira_idx")
   @@index([estado, expiraEm], map: "sessao_web_estado_expira_idx")
@@ -693,28 +702,28 @@ model SessaoWeb {
 }
 
 model PareamentoQr {
-  id                           String               @id @db.Uuid
-  usuarioId                    String               @map("usuario_id") @db.Uuid
-  sessaoWebId                  String               @map("sessao_web_id") @db.Uuid
-  tokenQrHash                  String               @unique @map("token_qr_hash") @db.Char(64)
-  comprovanteResgateHash       String?              @unique @map("comprovante_resgate_hash") @db.Char(64)
-  estado                       EstadoPareamentoQr   @default(AGUARDANDO_RESGATE)
-  identificadorInstalacaoHash  String?              @map("identificador_instalacao_hash") @db.Char(64)
-  segredoVinculoHash           String?              @map("segredo_vinculo_hash") @db.Char(64)
-  plataforma                   PlataformaMobile?
-  modeloSanitizado             String?              @map("modelo_sanitizado") @db.VarChar(120)
-  versaoAplicativo             String?              @map("versao_aplicativo") @db.VarChar(40)
-  enderecoIpResgate            String?              @map("endereco_ip_resgate") @db.Inet
-  expiraEm                     DateTime             @map("expira_em") @db.Timestamptz(6)
-  resgatadoEm                  DateTime?            @map("resgatado_em") @db.Timestamptz(6)
-  confirmadoEm                 DateTime?            @map("confirmado_em") @db.Timestamptz(6)
-  concluidoEm                  DateTime?            @map("concluido_em") @db.Timestamptz(6)
-  finalizadoEm                 DateTime?            @map("finalizado_em") @db.Timestamptz(6)
-  motivoFinalizacao            String?              @map("motivo_finalizacao") @db.VarChar(80)
-  criadoEm                     DateTime             @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm                 DateTime             @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  usuario                      Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
-  sessaoWeb                    SessaoWeb            @relation(fields: [sessaoWebId], references: [id], onDelete: Restrict)
+  id                          String             @id @db.Uuid
+  usuarioId                   String             @map("usuario_id") @db.Uuid
+  sessaoWebId                 String             @map("sessao_web_id") @db.Uuid
+  tokenQrHash                 String             @unique @map("token_qr_hash") @db.Char(64)
+  comprovanteResgateHash      String?            @unique @map("comprovante_resgate_hash") @db.Char(64)
+  estado                      EstadoPareamentoQr @default(AGUARDANDO_RESGATE)
+  identificadorInstalacaoHash String?            @map("identificador_instalacao_hash") @db.Char(64)
+  segredoVinculoHash          String?            @map("segredo_vinculo_hash") @db.Char(64)
+  plataforma                  PlataformaMobile?
+  modeloSanitizado            String?            @map("modelo_sanitizado") @db.VarChar(120)
+  versaoAplicativo            String?            @map("versao_aplicativo") @db.VarChar(40)
+  enderecoIpResgate           String?            @map("endereco_ip_resgate") @db.Inet
+  expiraEm                    DateTime           @map("expira_em") @db.Timestamptz(6)
+  resgatadoEm                 DateTime?          @map("resgatado_em") @db.Timestamptz(6)
+  confirmadoEm                DateTime?          @map("confirmado_em") @db.Timestamptz(6)
+  concluidoEm                 DateTime?          @map("concluido_em") @db.Timestamptz(6)
+  finalizadoEm                DateTime?          @map("finalizado_em") @db.Timestamptz(6)
+  motivoFinalizacao           String?            @map("motivo_finalizacao") @db.VarChar(80)
+  criadoEm                    DateTime           @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm                DateTime           @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  usuario                     Usuario            @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  sessaoWeb                   SessaoWeb          @relation(fields: [sessaoWebId], references: [id], onDelete: Restrict)
 
   @@index([usuarioId, criadoEm], map: "pareamento_qr_usuario_criado_idx")
   @@index([sessaoWebId, estado, expiraEm], map: "pareamento_qr_sessao_estado_expira_idx")
@@ -723,11 +732,11 @@ model PareamentoQr {
 }
 
 model TentativaResgatePareamentoQr {
-  id                           String                       @id @db.Uuid
-  enderecoIp                   String                       @map("endereco_ip") @db.Inet
-  identificadorInstalacaoHash  String                       @map("identificador_instalacao_hash") @db.Char(64)
-  resultado                    ResultadoTentativaResgateQr
-  criadoEm                     DateTime                     @default(now()) @map("criado_em") @db.Timestamptz(6)
+  id                          String                      @id @db.Uuid
+  enderecoIp                  String                      @map("endereco_ip") @db.Inet
+  identificadorInstalacaoHash String                      @map("identificador_instalacao_hash") @db.Char(64)
+  resultado                   ResultadoTentativaResgateQr
+  criadoEm                    DateTime                    @default(now()) @map("criado_em") @db.Timestamptz(6)
 
   @@index([enderecoIp, criadoEm], map: "tentativa_resgate_qr_ip_criado_idx")
   @@index([identificadorInstalacaoHash, criadoEm], map: "tentativa_resgate_qr_dispositivo_criado_idx")
@@ -735,11 +744,11 @@ model TentativaResgatePareamentoQr {
 }
 
 model TentativaLoginWeb {
-  id                   String                         @id @db.Uuid
-  identificadorHash    String                         @map("identificador_hash") @db.Char(64)
-  enderecoIp           String                         @map("endereco_ip") @db.Inet
-  resultado            ResultadoTentativaLoginWeb
-  criadoEm             DateTime                       @default(now()) @map("criado_em") @db.Timestamptz(6)
+  id                String                     @id @db.Uuid
+  identificadorHash String                     @map("identificador_hash") @db.Char(64)
+  enderecoIp        String                     @map("endereco_ip") @db.Inet
+  resultado         ResultadoTentativaLoginWeb
+  criadoEm          DateTime                   @default(now()) @map("criado_em") @db.Timestamptz(6)
 
   @@index([identificadorHash, enderecoIp, criadoEm], map: "tentativa_login_web_identificador_ip_idx")
   @@index([enderecoIp, criadoEm], map: "tentativa_login_web_ip_idx")
@@ -747,14 +756,14 @@ model TentativaLoginWeb {
 }
 
 model PerfilAcesso {
-  id              String               @id @db.Uuid
-  nome            String               @db.VarChar(120)
-  nomeNormalizado String               @unique @map("nome_normalizado") @db.VarChar(120)
-  papelBase       PapelBase            @map("papel_base")
-  estado          EstadoPerfilAcesso   @default(ATIVO)
-  inativadoEm     DateTime?            @map("inativado_em") @db.Timestamptz(6)
-  criadoEm        DateTime             @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm    DateTime             @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  id              String             @id @db.Uuid
+  nome            String             @db.VarChar(120)
+  nomeNormalizado String             @unique @map("nome_normalizado") @db.VarChar(120)
+  papelBase       PapelBase          @map("papel_base")
+  estado          EstadoPerfilAcesso @default(ATIVO)
+  inativadoEm     DateTime?          @map("inativado_em") @db.Timestamptz(6)
+  criadoEm        DateTime           @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm    DateTime           @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   usuarios        Usuario[]
   permissoes      PermissaoPerfil[]
 
@@ -763,11 +772,11 @@ model PerfilAcesso {
 }
 
 model PermissaoPerfil {
-  perfilId  String                 @map("perfil_id") @db.Uuid
-  codigo    CodigoPermissao
-  efeito    EfeitoPermissaoPerfil
-  criadoEm  DateTime               @default(now()) @map("criado_em") @db.Timestamptz(6)
-  perfil    PerfilAcesso           @relation(fields: [perfilId], references: [id], onDelete: Restrict)
+  perfilId String                @map("perfil_id") @db.Uuid
+  codigo   CodigoPermissao
+  efeito   EfeitoPermissaoPerfil
+  criadoEm DateTime              @default(now()) @map("criado_em") @db.Timestamptz(6)
+  perfil   PerfilAcesso          @relation(fields: [perfilId], references: [id], onDelete: Restrict)
 
   @@id([perfilId, codigo])
   @@index([codigo, efeito], map: "permissao_perfil_codigo_efeito_idx")
@@ -775,33 +784,33 @@ model PermissaoPerfil {
 }
 
 model Fila {
-  id              String       @id @db.Uuid
-  nome            String       @db.VarChar(120)
-  nomeNormalizado String       @unique @map("nome_normalizado") @db.VarChar(120)
-  estado          EstadoFila   @default(ATIVA)
-  inativadaEm     DateTime?    @map("inativada_em") @db.Timestamptz(6)
-  criadoEm        DateTime     @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm    DateTime     @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  acessosUsuarios AcessoUsuarioFila[]
-  liberacoesControlesRecurso LiberacaoControleRecursoFila[]
-  atendimentosAtuais Atendimento[] @relation("FilaAtualAtendimento")
-  atendimentosFallbackReabertura Atendimento[] @relation("FilaFallbackReaberturaAtendimento")
-  historicosAtribuicao HistoricoAtribuicao[]
-  calendarioAtendimento CalendarioAtendimento? @relation("CalendarioFila")
-  politicaSla      PoliticaSla?
+  id                             String                         @id @db.Uuid
+  nome                           String                         @db.VarChar(120)
+  nomeNormalizado                String                         @unique @map("nome_normalizado") @db.VarChar(120)
+  estado                         EstadoFila                     @default(ATIVA)
+  inativadaEm                    DateTime?                      @map("inativada_em") @db.Timestamptz(6)
+  criadoEm                       DateTime                       @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm                   DateTime                       @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  acessosUsuarios                AcessoUsuarioFila[]
+  liberacoesControlesRecurso     LiberacaoControleRecursoFila[]
+  atendimentosAtuais             Atendimento[]                  @relation("FilaAtualAtendimento")
+  atendimentosFallbackReabertura Atendimento[]                  @relation("FilaFallbackReaberturaAtendimento")
+  historicosAtribuicao           HistoricoAtribuicao[]
+  calendarioAtendimento          CalendarioAtendimento?         @relation("CalendarioFila")
+  politicaSla                    PoliticaSla?
 
   @@index([estado, nome], map: "fila_estado_nome_idx")
   @@map("fila")
 }
 
 model AcessoUsuarioFila {
-  usuarioId  String            @map("usuario_id") @db.Uuid
-  filaId     String            @map("fila_id") @db.Uuid
-  estado     EstadoAcessoFila  @default(ATIVO)
-  criadoEm   DateTime          @default(now()) @map("criado_em") @db.Timestamptz(6)
-  revogadoEm DateTime?         @map("revogado_em") @db.Timestamptz(6)
-  usuario    Usuario           @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
-  fila       Fila              @relation(fields: [filaId], references: [id], onDelete: Restrict)
+  usuarioId  String           @map("usuario_id") @db.Uuid
+  filaId     String           @map("fila_id") @db.Uuid
+  estado     EstadoAcessoFila @default(ATIVO)
+  criadoEm   DateTime         @default(now()) @map("criado_em") @db.Timestamptz(6)
+  revogadoEm DateTime?        @map("revogado_em") @db.Timestamptz(6)
+  usuario    Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  fila       Fila             @relation(fields: [filaId], references: [id], onDelete: Restrict)
 
   @@id([usuarioId, filaId])
   @@index([filaId, estado, usuarioId], map: "acesso_usuario_fila_fila_estado_idx")
@@ -809,40 +818,41 @@ model AcessoUsuarioFila {
 }
 
 model ControleRecurso {
-  id                          String                         @id @db.Uuid
-  codigo                      String                         @unique @db.VarChar(100)
-  estado                      EstadoControleRecurso          @default(DESATIVADO)
-  desligadoEmergencialmente   Boolean                        @default(false) @map("desligado_emergencialmente")
-  liberarAdministradores      Boolean                        @default(false) @map("liberar_administradores")
-  percentualLiberacao         Int                            @default(0) @map("percentual_liberacao")
-  versao                      Int                            @default(0)
-  criadoEm                    DateTime                       @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm               DateTime                       @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  usuarios                    LiberacaoControleRecursoUsuario[]
-  filas                       LiberacaoControleRecursoFila[]
+  id                        String                            @id @db.Uuid
+  codigo                    String                            @unique @db.VarChar(100)
+  estado                    EstadoControleRecurso             @default(DESATIVADO)
+  desligadoEmergencialmente Boolean                           @default(false) @map("desligado_emergencialmente")
+  liberarAdministradores    Boolean                           @default(false) @map("liberar_administradores")
+  percentualLiberacao       Int                               @default(0) @map("percentual_liberacao")
+  versao                    Int                               @default(0)
+  criadoEm                  DateTime                          @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm              DateTime                          @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  usuarios                  LiberacaoControleRecursoUsuario[]
+  filas                     LiberacaoControleRecursoFila[]
 
   @@index([estado, desligadoEmergencialmente, codigo], map: "controle_recurso_estado_emergencia_codigo_idx")
   @@map("controle_recurso")
 }
 
 model ContaWhatsApp {
-  id                              String               @id @db.Uuid
-  nomeExibicao                    String               @map("nome_exibicao") @db.VarChar(100)
-  portfolioEmpresarialExternoId   String               @map("portfolio_empresarial_externo_id") @db.VarChar(256)
-  identificadorCanalExterno       String               @map("identificador_canal_externo") @db.VarChar(256)
-  telefoneExibicaoE164            String?              @unique(map: "conta_whatsapp_telefone_exibicao_e164_key") @map("telefone_exibicao_e164") @db.VarChar(16)
-  estado                          EstadoContaWhatsApp   @default(INATIVA)
-  versao                          Int                  @default(1)
-  criadoEm                        DateTime             @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm                    DateTime             @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  identidadesUltimaObservacao     IdentidadeWhatsApp[]
-  eventosAlteracaoIdentidade      EventoAlteracaoIdentidadeWhatsApp[]
-  participacoesConversa           ParticipacaoContaConversa[]
-  atendimentosOrigem              Atendimento[]
-  calendarioAtendimento           CalendarioAtendimento? @relation("CalendarioContaWhatsApp")
-  janelasAtendimentoCanal         JanelaAtendimentoCanal[]
-  mensagens                       Mensagem[]
-  eventosEntradaCanal             EventoEntradaCanal[]
+  id                            String                              @id @db.Uuid
+  nomeExibicao                  String                              @map("nome_exibicao") @db.VarChar(100)
+  portfolioEmpresarialExternoId String                              @map("portfolio_empresarial_externo_id") @db.VarChar(256)
+  identificadorCanalExterno     String                              @map("identificador_canal_externo") @db.VarChar(256)
+  telefoneExibicaoE164          String?                             @unique(map: "conta_whatsapp_telefone_exibicao_e164_key") @map("telefone_exibicao_e164") @db.VarChar(16)
+  estado                        EstadoContaWhatsApp                 @default(INATIVA)
+  versao                        Int                                 @default(1)
+  criadoEm                      DateTime                            @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm                  DateTime                            @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  identidadesUltimaObservacao   IdentidadeWhatsApp[]
+  eventosAlteracaoIdentidade    EventoAlteracaoIdentidadeWhatsApp[]
+  participacoesConversa         ParticipacaoContaConversa[]
+  atendimentosOrigem            Atendimento[]
+  calendarioAtendimento         CalendarioAtendimento?              @relation("CalendarioContaWhatsApp")
+  janelasAtendimentoCanal       JanelaAtendimentoCanal[]
+  mensagens                     Mensagem[]
+  eventosEntradaCanal           EventoEntradaCanal[]
+  eventosEstadoMensagem         EventoEstadoMensagem[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorCanalExterno], map: "conta_whatsapp_identidade_externa_key")
   @@index([estado, nomeExibicao, id], map: "conta_whatsapp_estado_nome_idx")
@@ -850,52 +860,52 @@ model ContaWhatsApp {
 }
 
 model Contato {
-  id                    String                @id @db.Uuid
-  nomeExibicao          String?               @map("nome_exibicao") @db.VarChar(200)
-  estado                EstadoContato         @default(NORMAL)
-  bloqueadoEm           DateTime?             @map("bloqueado_em") @db.Timestamptz(6)
-  bloqueadoAte          DateTime?             @map("bloqueado_ate") @db.Timestamptz(6)
-  motivoBloqueio        String?               @map("motivo_bloqueio") @db.VarChar(500)
-  ultimaInteracaoEm     DateTime?             @map("ultima_interacao_em") @db.Timestamptz(6)
-  criadoEm              DateTime              @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm          DateTime              @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  identidadesWhatsApp   IdentidadeWhatsApp[]
-  vinculosCliente       VinculoCliente[]
-  contextosAtendimento  ContextoAtendimento[]
-  conversa              Conversa?
+  id                      String                   @id @db.Uuid
+  nomeExibicao            String?                  @map("nome_exibicao") @db.VarChar(200)
+  estado                  EstadoContato            @default(NORMAL)
+  bloqueadoEm             DateTime?                @map("bloqueado_em") @db.Timestamptz(6)
+  bloqueadoAte            DateTime?                @map("bloqueado_ate") @db.Timestamptz(6)
+  motivoBloqueio          String?                  @map("motivo_bloqueio") @db.VarChar(500)
+  ultimaInteracaoEm       DateTime?                @map("ultima_interacao_em") @db.Timestamptz(6)
+  criadoEm                DateTime                 @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm            DateTime                 @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  identidadesWhatsApp     IdentidadeWhatsApp[]
+  vinculosCliente         VinculoCliente[]
+  contextosAtendimento    ContextoAtendimento[]
+  conversa                Conversa?
   janelasAtendimentoCanal JanelaAtendimentoCanal[]
-  mensagensRecebidas     Mensagem[]
+  mensagensRecebidas      Mensagem[]
 
   @@index([estado, ultimaInteracaoEm, id], map: "contato_estado_ultima_interacao_idx")
   @@map("contato")
 }
 
 model Conversa {
-  id                    String                       @id @db.Uuid
-  contatoId             String                       @unique(map: "conversa_contato_key") @map("contato_id") @db.Uuid
-  criadaEm              DateTime                     @default(now()) @map("criada_em") @db.Timestamptz(6)
-  atualizadaEm          DateTime                     @default(now()) @updatedAt @map("atualizada_em") @db.Timestamptz(6)
-  ultimaAtividadeEm     DateTime                     @map("ultima_atividade_em") @db.Timestamptz(6)
-  versao                Int                          @default(1)
-  contato               Contato                      @relation(fields: [contatoId], references: [id], onDelete: Restrict)
-  contasParticipantes   ParticipacaoContaConversa[]
-  atendimentos          Atendimento[]
-  notasInternas         NotaInterna[]
-  mensagens             Mensagem[]
+  id                  String                      @id @db.Uuid
+  contatoId           String                      @unique(map: "conversa_contato_key") @map("contato_id") @db.Uuid
+  criadaEm            DateTime                    @default(now()) @map("criada_em") @db.Timestamptz(6)
+  atualizadaEm        DateTime                    @default(now()) @updatedAt @map("atualizada_em") @db.Timestamptz(6)
+  ultimaAtividadeEm   DateTime                    @map("ultima_atividade_em") @db.Timestamptz(6)
+  versao              Int                         @default(1)
+  contato             Contato                     @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  contasParticipantes ParticipacaoContaConversa[]
+  atendimentos        Atendimento[]
+  notasInternas       NotaInterna[]
+  mensagens           Mensagem[]
 
   @@index([ultimaAtividadeEm, id], map: "conversa_ultima_atividade_idx")
   @@map("conversa")
 }
 
 model ParticipacaoContaConversa {
-  conversaId            String          @map("conversa_id") @db.Uuid
-  contaWhatsAppId        String          @map("conta_whatsapp_id") @db.Uuid
-  primeiraInteracaoEm   DateTime        @map("primeira_interacao_em") @db.Timestamptz(6)
-  ultimaInteracaoEm     DateTime        @map("ultima_interacao_em") @db.Timestamptz(6)
-  versao                Int             @default(1)
-  conversa              Conversa        @relation(fields: [conversaId], references: [id], onDelete: Restrict)
-  contaWhatsApp         ContaWhatsApp   @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
-  atendimentosOrigem    Atendimento[]
+  conversaId          String        @map("conversa_id") @db.Uuid
+  contaWhatsAppId     String        @map("conta_whatsapp_id") @db.Uuid
+  primeiraInteracaoEm DateTime      @map("primeira_interacao_em") @db.Timestamptz(6)
+  ultimaInteracaoEm   DateTime      @map("ultima_interacao_em") @db.Timestamptz(6)
+  versao              Int           @default(1)
+  conversa            Conversa      @relation(fields: [conversaId], references: [id], onDelete: Restrict)
+  contaWhatsApp       ContaWhatsApp @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  atendimentosOrigem  Atendimento[]
 
   @@id([conversaId, contaWhatsAppId])
   @@index([contaWhatsAppId, ultimaInteracaoEm, conversaId], map: "participacao_conta_conversa_conta_atividade_idx")
@@ -903,37 +913,37 @@ model ParticipacaoContaConversa {
 }
 
 model Atendimento {
-  id                              String                         @id @db.Uuid
-  conversaId                      String                         @map("conversa_id") @db.Uuid
-  contaWhatsAppOrigemId           String                         @map("conta_whatsapp_origem_id") @db.Uuid
-  estado                          EstadoAtendimento              @default(AGUARDANDO)
-  modo                            ModoAtendimento
-  motivoEspera                    MotivoEsperaAtendimento        @map("motivo_espera")
-  filaAtualId                     String?                        @map("fila_atual_id") @db.Uuid
-  usuarioResponsavelId            String?                        @map("usuario_responsavel_id") @db.Uuid
-  versaoEstado                    Int                            @default(1) @map("versao_estado")
-  versaoAtribuicao                Int                            @default(1) @map("versao_atribuicao")
-  iniciadoEm                      DateTime                       @map("iniciado_em") @db.Timestamptz(6)
-  atualizadoEm                    DateTime                       @map("atualizado_em") @db.Timestamptz(6)
-  encerradoEm                     DateTime?                      @map("encerrado_em") @db.Timestamptz(6)
-  encerradoPorTipo                OrigemEncerramentoAtendimento? @map("encerrado_por_tipo")
-  encerradoPorId                  String?                        @map("encerrado_por_id") @db.Uuid
-  motivoEncerramento              String?                        @map("motivo_encerramento") @db.VarChar(500)
-  podeReabrirAte                  DateTime?                      @map("pode_reabrir_ate") @db.Timestamptz(6)
-  filaFallbackReaberturaId        String?                        @map("fila_fallback_reabertura_id") @db.Uuid
-  finalizadoDefinitivamenteEm     DateTime?                      @map("finalizado_definitivamente_em") @db.Timestamptz(6)
-  conversa                        Conversa                       @relation(fields: [conversaId], references: [id], onDelete: Restrict)
-  contaWhatsAppOrigem             ContaWhatsApp                  @relation(fields: [contaWhatsAppOrigemId], references: [id], onDelete: Restrict)
-  participacaoOrigem              ParticipacaoContaConversa      @relation(fields: [conversaId, contaWhatsAppOrigemId], references: [conversaId, contaWhatsAppId], onDelete: Restrict)
-  filaAtual                       Fila?                           @relation("FilaAtualAtendimento", fields: [filaAtualId], references: [id], onDelete: Restrict)
-  usuarioResponsavel              Usuario?                        @relation("UsuarioResponsavelAtendimento", fields: [usuarioResponsavelId], references: [id], onDelete: Restrict)
-  filaFallbackReabertura          Fila?                           @relation("FilaFallbackReaberturaAtendimento", fields: [filaFallbackReaberturaId], references: [id], onDelete: Restrict)
-  contexto                        ContextoAtendimento?
-  protocoloErp                    ProtocoloErp?
-  historicosAtribuicao            HistoricoAtribuicao[]
-  relogiosSla                     RelogioSlaAtendimento[]
-  notasInternas                   NotaInterna[]
-  mensagens                       Mensagem[]
+  id                          String                         @id @db.Uuid
+  conversaId                  String                         @map("conversa_id") @db.Uuid
+  contaWhatsAppOrigemId       String                         @map("conta_whatsapp_origem_id") @db.Uuid
+  estado                      EstadoAtendimento              @default(AGUARDANDO)
+  modo                        ModoAtendimento
+  motivoEspera                MotivoEsperaAtendimento        @map("motivo_espera")
+  filaAtualId                 String?                        @map("fila_atual_id") @db.Uuid
+  usuarioResponsavelId        String?                        @map("usuario_responsavel_id") @db.Uuid
+  versaoEstado                Int                            @default(1) @map("versao_estado")
+  versaoAtribuicao            Int                            @default(1) @map("versao_atribuicao")
+  iniciadoEm                  DateTime                       @map("iniciado_em") @db.Timestamptz(6)
+  atualizadoEm                DateTime                       @map("atualizado_em") @db.Timestamptz(6)
+  encerradoEm                 DateTime?                      @map("encerrado_em") @db.Timestamptz(6)
+  encerradoPorTipo            OrigemEncerramentoAtendimento? @map("encerrado_por_tipo")
+  encerradoPorId              String?                        @map("encerrado_por_id") @db.Uuid
+  motivoEncerramento          String?                        @map("motivo_encerramento") @db.VarChar(500)
+  podeReabrirAte              DateTime?                      @map("pode_reabrir_ate") @db.Timestamptz(6)
+  filaFallbackReaberturaId    String?                        @map("fila_fallback_reabertura_id") @db.Uuid
+  finalizadoDefinitivamenteEm DateTime?                      @map("finalizado_definitivamente_em") @db.Timestamptz(6)
+  conversa                    Conversa                       @relation(fields: [conversaId], references: [id], onDelete: Restrict)
+  contaWhatsAppOrigem         ContaWhatsApp                  @relation(fields: [contaWhatsAppOrigemId], references: [id], onDelete: Restrict)
+  participacaoOrigem          ParticipacaoContaConversa      @relation(fields: [conversaId, contaWhatsAppOrigemId], references: [conversaId, contaWhatsAppId], onDelete: Restrict)
+  filaAtual                   Fila?                          @relation("FilaAtualAtendimento", fields: [filaAtualId], references: [id], onDelete: Restrict)
+  usuarioResponsavel          Usuario?                       @relation("UsuarioResponsavelAtendimento", fields: [usuarioResponsavelId], references: [id], onDelete: Restrict)
+  filaFallbackReabertura      Fila?                          @relation("FilaFallbackReaberturaAtendimento", fields: [filaFallbackReaberturaId], references: [id], onDelete: Restrict)
+  contexto                    ContextoAtendimento?
+  protocoloErp                ProtocoloErp?
+  historicosAtribuicao        HistoricoAtribuicao[]
+  relogiosSla                 RelogioSlaAtendimento[]
+  notasInternas               NotaInterna[]
+  mensagens                   Mensagem[]
 
   @@unique([id, conversaId], map: "atendimento_id_conversa_key")
   @@index([conversaId, iniciadoEm, id], map: "atendimento_conversa_inicio_idx")
@@ -944,18 +954,18 @@ model Atendimento {
 }
 
 model HistoricoAtribuicao {
-  id                       String                    @id @db.Uuid
-  atendimentoId            String                    @map("atendimento_id") @db.Uuid
-  filaId                   String?                   @map("fila_id") @db.Uuid
-  usuarioResponsavelId     String?                   @map("usuario_responsavel_id") @db.Uuid
-  tipo                     TipoHistoricoAtribuicao
-  iniciadoEm               DateTime                  @map("iniciado_em") @db.Timestamptz(6)
-  finalizadoEm             DateTime?                 @map("finalizado_em") @db.Timestamptz(6)
-  executadoPorUsuarioId    String?                   @map("executado_por_usuario_id") @db.Uuid
-  atendimento              Atendimento               @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
-  fila                     Fila?                     @relation(fields: [filaId], references: [id], onDelete: Restrict)
-  usuarioResponsavel       Usuario?                  @relation("UsuarioResponsavelHistoricoAtribuicao", fields: [usuarioResponsavelId], references: [id], onDelete: Restrict)
-  executadoPorUsuario      Usuario?                  @relation("UsuarioExecutorHistoricoAtribuicao", fields: [executadoPorUsuarioId], references: [id], onDelete: Restrict)
+  id                    String                  @id @db.Uuid
+  atendimentoId         String                  @map("atendimento_id") @db.Uuid
+  filaId                String?                 @map("fila_id") @db.Uuid
+  usuarioResponsavelId  String?                 @map("usuario_responsavel_id") @db.Uuid
+  tipo                  TipoHistoricoAtribuicao
+  iniciadoEm            DateTime                @map("iniciado_em") @db.Timestamptz(6)
+  finalizadoEm          DateTime?               @map("finalizado_em") @db.Timestamptz(6)
+  executadoPorUsuarioId String?                 @map("executado_por_usuario_id") @db.Uuid
+  atendimento           Atendimento             @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  fila                  Fila?                   @relation(fields: [filaId], references: [id], onDelete: Restrict)
+  usuarioResponsavel    Usuario?                @relation("UsuarioResponsavelHistoricoAtribuicao", fields: [usuarioResponsavelId], references: [id], onDelete: Restrict)
+  executadoPorUsuario   Usuario?                @relation("UsuarioExecutorHistoricoAtribuicao", fields: [executadoPorUsuarioId], references: [id], onDelete: Restrict)
 
   @@index([atendimentoId, iniciadoEm, id], map: "historico_atribuicao_atendimento_inicio_idx")
   @@index([filaId, iniciadoEm, finalizadoEm], map: "historico_atribuicao_fila_intervalo_idx")
@@ -964,33 +974,33 @@ model HistoricoAtribuicao {
 }
 
 model CalendarioAtendimento {
-  id                 String                    @id @db.Uuid
-  nome               String                    @db.VarChar(120)
-  fusoHorario        String                    @map("fuso_horario") @db.VarChar(100)
-  modo               ModoCalendarioAtendimento
-  contaWhatsAppId    String?                   @unique(map: "calendario_conta_whatsapp_key") @map("conta_whatsapp_id") @db.Uuid
-  filaId             String?                   @unique(map: "calendario_fila_key") @map("fila_id") @db.Uuid
-  versao             Int                       @default(1)
-  criadoEm           DateTime                  @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm       DateTime                  @map("atualizado_em") @db.Timestamptz(6)
-  contaWhatsApp      ContaWhatsApp?            @relation("CalendarioContaWhatsApp", fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
-  fila               Fila?                     @relation("CalendarioFila", fields: [filaId], references: [id], onDelete: Restrict)
-  periodosSemanais   PeriodoSemanalCalendario[]
-  feriados           FeriadoCalendario[]
-  excecoes           ExcecaoCalendario[]
-  overrides          OverrideCalendario[]
+  id               String                     @id @db.Uuid
+  nome             String                     @db.VarChar(120)
+  fusoHorario      String                     @map("fuso_horario") @db.VarChar(100)
+  modo             ModoCalendarioAtendimento
+  contaWhatsAppId  String?                    @unique(map: "calendario_conta_whatsapp_key") @map("conta_whatsapp_id") @db.Uuid
+  filaId           String?                    @unique(map: "calendario_fila_key") @map("fila_id") @db.Uuid
+  versao           Int                        @default(1)
+  criadoEm         DateTime                   @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm     DateTime                   @map("atualizado_em") @db.Timestamptz(6)
+  contaWhatsApp    ContaWhatsApp?             @relation("CalendarioContaWhatsApp", fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  fila             Fila?                      @relation("CalendarioFila", fields: [filaId], references: [id], onDelete: Restrict)
+  periodosSemanais PeriodoSemanalCalendario[]
+  feriados         FeriadoCalendario[]
+  excecoes         ExcecaoCalendario[]
+  overrides        OverrideCalendario[]
 
   @@index([modo, atualizadoEm, id], map: "calendario_atendimento_modo_idx")
   @@map("calendario_atendimento")
 }
 
 model PeriodoSemanalCalendario {
-  id                 String                 @id @db.Uuid
-  calendarioId       String                 @map("calendario_id") @db.Uuid
-  diaSemana           Int                    @map("dia_semana")
-  minutoInicio        Int                    @map("minuto_inicio")
-  minutoFim           Int                    @map("minuto_fim")
-  calendario          CalendarioAtendimento @relation(fields: [calendarioId], references: [id], onDelete: Restrict)
+  id           String                @id @db.Uuid
+  calendarioId String                @map("calendario_id") @db.Uuid
+  diaSemana    Int                   @map("dia_semana")
+  minutoInicio Int                   @map("minuto_inicio")
+  minutoFim    Int                   @map("minuto_fim")
+  calendario   CalendarioAtendimento @relation(fields: [calendarioId], references: [id], onDelete: Restrict)
 
   @@unique([calendarioId, diaSemana, minutoInicio, minutoFim], map: "periodo_semanal_calendario_intervalo_key")
   @@index([calendarioId, diaSemana, minutoInicio], map: "periodo_semanal_calendario_busca_idx")
@@ -998,86 +1008,86 @@ model PeriodoSemanalCalendario {
 }
 
 model FeriadoCalendario {
-  id                 String                 @id @db.Uuid
-  calendarioId       String                 @map("calendario_id") @db.Uuid
-  dataLocal          DateTime               @map("data_local") @db.Date
-  nome               String                 @db.VarChar(120)
-  calendario          CalendarioAtendimento @relation(fields: [calendarioId], references: [id], onDelete: Restrict)
+  id           String                @id @db.Uuid
+  calendarioId String                @map("calendario_id") @db.Uuid
+  dataLocal    DateTime              @map("data_local") @db.Date
+  nome         String                @db.VarChar(120)
+  calendario   CalendarioAtendimento @relation(fields: [calendarioId], references: [id], onDelete: Restrict)
 
   @@unique([calendarioId, dataLocal], map: "feriado_calendario_data_key")
   @@map("feriado_calendario")
 }
 
 model ExcecaoCalendario {
-  id                 String                 @id @db.Uuid
-  calendarioId       String                 @map("calendario_id") @db.Uuid
-  dataLocal          DateTime               @map("data_local") @db.Date
-  estado             EstadoOverrideCalendario
-  diaInteiro         Boolean                @default(false) @map("dia_inteiro")
-  calendario          CalendarioAtendimento @relation(fields: [calendarioId], references: [id], onDelete: Restrict)
-  periodos           PeriodoExcecaoCalendario[]
+  id           String                     @id @db.Uuid
+  calendarioId String                     @map("calendario_id") @db.Uuid
+  dataLocal    DateTime                   @map("data_local") @db.Date
+  estado       EstadoOverrideCalendario
+  diaInteiro   Boolean                    @default(false) @map("dia_inteiro")
+  calendario   CalendarioAtendimento      @relation(fields: [calendarioId], references: [id], onDelete: Restrict)
+  periodos     PeriodoExcecaoCalendario[]
 
   @@unique([calendarioId, dataLocal], map: "excecao_calendario_data_key")
   @@map("excecao_calendario")
 }
 
 model PeriodoExcecaoCalendario {
-  id                 String             @id @db.Uuid
-  excecaoId          String             @map("excecao_id") @db.Uuid
-  minutoInicio       Int                @map("minuto_inicio")
-  minutoFim          Int                @map("minuto_fim")
-  excecao            ExcecaoCalendario @relation(fields: [excecaoId], references: [id], onDelete: Restrict)
+  id           String            @id @db.Uuid
+  excecaoId    String            @map("excecao_id") @db.Uuid
+  minutoInicio Int               @map("minuto_inicio")
+  minutoFim    Int               @map("minuto_fim")
+  excecao      ExcecaoCalendario @relation(fields: [excecaoId], references: [id], onDelete: Restrict)
 
   @@unique([excecaoId, minutoInicio, minutoFim], map: "periodo_excecao_calendario_intervalo_key")
   @@map("periodo_excecao_calendario")
 }
 
 model OverrideCalendario {
-  id                    String                    @id @db.Uuid
-  calendarioId          String                    @map("calendario_id") @db.Uuid
+  id                    String                   @id @db.Uuid
+  calendarioId          String                   @map("calendario_id") @db.Uuid
   estado                EstadoOverrideCalendario
-  motivo                String                    @db.VarChar(500)
-  vigenteDe             DateTime                  @map("vigente_de") @db.Timestamptz(6)
-  vigenteAte            DateTime                  @map("vigente_ate") @db.Timestamptz(6)
-  executadoPorUsuarioId String                    @map("executado_por_usuario_id") @db.Uuid
-  criadoEm              DateTime                  @map("criado_em") @db.Timestamptz(6)
-  calendario            CalendarioAtendimento     @relation(fields: [calendarioId], references: [id], onDelete: Restrict)
-  executadoPorUsuario   Usuario                   @relation(fields: [executadoPorUsuarioId], references: [id], onDelete: Restrict)
+  motivo                String                   @db.VarChar(500)
+  vigenteDe             DateTime                 @map("vigente_de") @db.Timestamptz(6)
+  vigenteAte            DateTime                 @map("vigente_ate") @db.Timestamptz(6)
+  executadoPorUsuarioId String                   @map("executado_por_usuario_id") @db.Uuid
+  criadoEm              DateTime                 @map("criado_em") @db.Timestamptz(6)
+  calendario            CalendarioAtendimento    @relation(fields: [calendarioId], references: [id], onDelete: Restrict)
+  executadoPorUsuario   Usuario                  @relation(fields: [executadoPorUsuarioId], references: [id], onDelete: Restrict)
 
   @@index([calendarioId, vigenteDe, vigenteAte], map: "override_calendario_vigencia_idx")
   @@map("override_calendario")
 }
 
 model PoliticaSla {
-  id                              String                   @id @db.Uuid
-  filaId                          String                   @unique(map: "politica_sla_fila_key") @map("fila_id") @db.Uuid
-  alertaAtendenteAposMinutos      Int                      @map("alerta_atendente_apos_minutos")
-  alertaSupervisorAposMinutos     Int                      @map("alerta_supervisor_apos_minutos")
-  alertaAdministradorAposMinutos  Int                      @map("alerta_administrador_apos_minutos")
-  versao                          Int                      @default(1)
-  criadoEm                        DateTime                 @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm                    DateTime                 @map("atualizado_em") @db.Timestamptz(6)
-  fila                            Fila                     @relation(fields: [filaId], references: [id], onDelete: Restrict)
-  relogios                        RelogioSlaAtendimento[]
+  id                             String                  @id @db.Uuid
+  filaId                         String                  @unique(map: "politica_sla_fila_key") @map("fila_id") @db.Uuid
+  alertaAtendenteAposMinutos     Int                     @map("alerta_atendente_apos_minutos")
+  alertaSupervisorAposMinutos    Int                     @map("alerta_supervisor_apos_minutos")
+  alertaAdministradorAposMinutos Int                     @map("alerta_administrador_apos_minutos")
+  versao                         Int                     @default(1)
+  criadoEm                       DateTime                @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm                   DateTime                @map("atualizado_em") @db.Timestamptz(6)
+  fila                           Fila                    @relation(fields: [filaId], references: [id], onDelete: Restrict)
+  relogios                       RelogioSlaAtendimento[]
 
   @@index([atualizadoEm, id], map: "politica_sla_atualizado_idx")
   @@map("politica_sla")
 }
 
 model RelogioSlaAtendimento {
-  id                     String             @id @db.Uuid
-  atendimentoId          String             @map("atendimento_id") @db.Uuid
-  politicaSlaId          String             @map("politica_sla_id") @db.Uuid
-  numeroCiclo            Int                @map("numero_ciclo")
-  obrigacaoHumanaEm      DateTime           @map("obrigacao_humana_em") @db.Timestamptz(6)
-  alertaAtendenteEm      DateTime           @map("alerta_atendente_em") @db.Timestamptz(6)
-  alertaSupervisorEm     DateTime           @map("alerta_supervisor_em") @db.Timestamptz(6)
-  alertaAdministradorEm  DateTime           @map("alerta_administrador_em") @db.Timestamptz(6)
-  finalizadoEm           DateTime?          @map("finalizado_em") @db.Timestamptz(6)
-  versao                 Int                @default(1)
-  atendimento            Atendimento        @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
-  politicaSla            PoliticaSla        @relation(fields: [politicaSlaId], references: [id], onDelete: Restrict)
-  alertas                AlertaSla[]
+  id                    String      @id @db.Uuid
+  atendimentoId         String      @map("atendimento_id") @db.Uuid
+  politicaSlaId         String      @map("politica_sla_id") @db.Uuid
+  numeroCiclo           Int         @map("numero_ciclo")
+  obrigacaoHumanaEm     DateTime    @map("obrigacao_humana_em") @db.Timestamptz(6)
+  alertaAtendenteEm     DateTime    @map("alerta_atendente_em") @db.Timestamptz(6)
+  alertaSupervisorEm    DateTime    @map("alerta_supervisor_em") @db.Timestamptz(6)
+  alertaAdministradorEm DateTime    @map("alerta_administrador_em") @db.Timestamptz(6)
+  finalizadoEm          DateTime?   @map("finalizado_em") @db.Timestamptz(6)
+  versao                Int         @default(1)
+  atendimento           Atendimento @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  politicaSla           PoliticaSla @relation(fields: [politicaSlaId], references: [id], onDelete: Restrict)
+  alertas               AlertaSla[]
 
   @@unique([atendimentoId, numeroCiclo], map: "relogio_sla_atendimento_ciclo_key")
   @@index([finalizadoEm, alertaAtendenteEm, alertaSupervisorEm, alertaAdministradorEm], map: "relogio_sla_pendencias_idx")
@@ -1085,12 +1095,12 @@ model RelogioSlaAtendimento {
 }
 
 model AlertaSla {
-  id            String                 @id @db.Uuid
-  relogioSlaId  String                 @map("relogio_sla_id") @db.Uuid
-  nivel         NivelAlertaSla
-  previstoEm    DateTime               @map("previsto_em") @db.Timestamptz(6)
-  emitidoEm     DateTime               @map("emitido_em") @db.Timestamptz(6)
-  relogioSla    RelogioSlaAtendimento  @relation(fields: [relogioSlaId], references: [id], onDelete: Restrict)
+  id           String                @id @db.Uuid
+  relogioSlaId String                @map("relogio_sla_id") @db.Uuid
+  nivel        NivelAlertaSla
+  previstoEm   DateTime              @map("previsto_em") @db.Timestamptz(6)
+  emitidoEm    DateTime              @map("emitido_em") @db.Timestamptz(6)
+  relogioSla   RelogioSlaAtendimento @relation(fields: [relogioSlaId], references: [id], onDelete: Restrict)
 
   @@unique([relogioSlaId, nivel], map: "alerta_sla_relogio_nivel_key")
   @@index([nivel, emitidoEm, id], map: "alerta_sla_nivel_emitido_idx")
@@ -1098,17 +1108,17 @@ model AlertaSla {
 }
 
 model JanelaAtendimentoCanal {
-  id                       String                       @id @db.Uuid
-  contatoId                String                       @map("contato_id") @db.Uuid
-  contaWhatsAppId          String                       @map("conta_whatsapp_id") @db.Uuid
-  ultimaEntradaContatoEm   DateTime                     @map("ultima_entrada_contato_em") @db.Timestamptz(6)
-  expiraEm                 DateTime                     @map("expira_em") @db.Timestamptz(6)
-  versao                   Int                          @default(1)
-  criadaEm                 DateTime                     @map("criada_em") @db.Timestamptz(6)
-  atualizadaEm             DateTime                     @map("atualizada_em") @db.Timestamptz(6)
-  contato                  Contato                      @relation(fields: [contatoId], references: [id], onDelete: Restrict)
-  contaWhatsApp            ContaWhatsApp                @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
-  alertas                  AlertaJanelaCanal[]
+  id                     String              @id @db.Uuid
+  contatoId              String              @map("contato_id") @db.Uuid
+  contaWhatsAppId        String              @map("conta_whatsapp_id") @db.Uuid
+  ultimaEntradaContatoEm DateTime            @map("ultima_entrada_contato_em") @db.Timestamptz(6)
+  expiraEm               DateTime            @map("expira_em") @db.Timestamptz(6)
+  versao                 Int                 @default(1)
+  criadaEm               DateTime            @map("criada_em") @db.Timestamptz(6)
+  atualizadaEm           DateTime            @map("atualizada_em") @db.Timestamptz(6)
+  contato                Contato             @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  contaWhatsApp          ContaWhatsApp       @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  alertas                AlertaJanelaCanal[]
 
   @@unique([contatoId, contaWhatsAppId], map: "janela_canal_contato_conta_key")
   @@index([expiraEm, id], map: "janela_canal_expiracao_idx")
@@ -1116,13 +1126,13 @@ model JanelaAtendimentoCanal {
 }
 
 model AlertaJanelaCanal {
-  id                 String                     @id @db.Uuid
-  janelaCanalId      String                     @map("janela_canal_id") @db.Uuid
-  versaoJanela       Int                        @map("versao_janela")
-  marco              MarcoAlertaJanelaCanal
-  previstoEm         DateTime                   @map("previsto_em") @db.Timestamptz(6)
-  emitidoEm          DateTime                   @map("emitido_em") @db.Timestamptz(6)
-  janelaCanal        JanelaAtendimentoCanal     @relation(fields: [janelaCanalId], references: [id], onDelete: Restrict)
+  id            String                 @id @db.Uuid
+  janelaCanalId String                 @map("janela_canal_id") @db.Uuid
+  versaoJanela  Int                    @map("versao_janela")
+  marco         MarcoAlertaJanelaCanal
+  previstoEm    DateTime               @map("previsto_em") @db.Timestamptz(6)
+  emitidoEm     DateTime               @map("emitido_em") @db.Timestamptz(6)
+  janelaCanal   JanelaAtendimentoCanal @relation(fields: [janelaCanalId], references: [id], onDelete: Restrict)
 
   @@unique([janelaCanalId, versaoJanela, marco], map: "alerta_janela_canal_versao_marco_key")
   @@index([marco, emitidoEm, id], map: "alerta_janela_canal_marco_emitido_idx")
@@ -1130,16 +1140,16 @@ model AlertaJanelaCanal {
 }
 
 model NotaInterna {
-  id                 String                    @id @db.Uuid
-  conversaId         String                    @map("conversa_id") @db.Uuid
-  atendimentoId      String                    @map("atendimento_id") @db.Uuid
-  autorUsuarioId     String                    @map("autor_usuario_id") @db.Uuid
-  visibilidade       VisibilidadeNotaInterna   @default(SOMENTE_EQUIPE)
-  conteudoProtegido  Json                      @map("conteudo_protegido")
-  criadaEm           DateTime                  @map("criada_em") @db.Timestamptz(6)
-  conversa           Conversa                  @relation(fields: [conversaId], references: [id], onDelete: Restrict)
-  atendimento        Atendimento               @relation(fields: [atendimentoId, conversaId], references: [id, conversaId], onDelete: Restrict)
-  autorUsuario       Usuario                   @relation(fields: [autorUsuarioId], references: [id], onDelete: Restrict)
+  id                String                  @id @db.Uuid
+  conversaId        String                  @map("conversa_id") @db.Uuid
+  atendimentoId     String                  @map("atendimento_id") @db.Uuid
+  autorUsuarioId    String                  @map("autor_usuario_id") @db.Uuid
+  visibilidade      VisibilidadeNotaInterna @default(SOMENTE_EQUIPE)
+  conteudoProtegido Json                    @map("conteudo_protegido")
+  criadaEm          DateTime                @map("criada_em") @db.Timestamptz(6)
+  conversa          Conversa                @relation(fields: [conversaId], references: [id], onDelete: Restrict)
+  atendimento       Atendimento             @relation(fields: [atendimentoId, conversaId], references: [id, conversaId], onDelete: Restrict)
+  autorUsuario      Usuario                 @relation(fields: [autorUsuarioId], references: [id], onDelete: Restrict)
 
   @@index([conversaId, criadaEm, id], map: "nota_interna_conversa_criada_idx")
   @@index([atendimentoId, criadaEm, id], map: "nota_interna_atendimento_criada_idx")
@@ -1148,43 +1158,44 @@ model NotaInterna {
 }
 
 model Mensagem {
-  id                              String                  @id @db.Uuid
-  conversaId                      String                  @map("conversa_id") @db.Uuid
-  atendimentoId                   String                  @map("atendimento_id") @db.Uuid
-  contaWhatsAppId                 String                  @map("conta_whatsapp_id") @db.Uuid
-  direcao                         DirecaoMensagem
-  tipo                            TipoMensagem
-  estadoSaida                     EstadoSaidaMensagem?    @map("estado_saida")
-  conteudoProtegido               Json                    @map("conteudo_protegido")
-  conteudoHash                    String                  @map("conteudo_hash") @db.Char(64)
-  identificadorExternoMensagem   String?                 @map("identificador_externo_mensagem") @db.VarChar(256)
-  mensagemClienteId               String?                 @map("mensagem_cliente_id") @db.Uuid
-  respondeAMensagemId             String?                 @map("responde_a_mensagem_id") @db.Uuid
-  mensagemAlvoReacaoId            String?                 @map("mensagem_alvo_reacao_id") @db.Uuid
-  usuarioRemetenteId              String?                 @map("usuario_remetente_id") @db.Uuid
-  contatoRemetenteId              String?                 @map("contato_remetente_id") @db.Uuid
-  criadaDispositivoEm             DateTime?               @map("criada_dispositivo_em") @db.Timestamptz(6)
-  recebidaServidorEm              DateTime                @map("recebida_servidor_em") @db.Timestamptz(6)
-  proximaTentativaEm              DateTime?               @map("proxima_tentativa_em") @db.Timestamptz(6)
-  tentativasEnvio                 Int                     @default(0) @map("tentativas_envio")
-  enviadaEm                       DateTime?               @map("enviada_em") @db.Timestamptz(6)
-  entregueEm                      DateTime?               @map("entregue_em") @db.Timestamptz(6)
-  lidaEm                          DateTime?               @map("lida_em") @db.Timestamptz(6)
-  falhouEm                        DateTime?               @map("falhou_em") @db.Timestamptz(6)
-  canceladaEm                     DateTime?               @map("cancelada_em") @db.Timestamptz(6)
-  codigoFalha                     String?                 @map("codigo_falha") @db.VarChar(100)
-  versao                          Int                     @default(1)
-  conversa                        Conversa                @relation(fields: [conversaId], references: [id], onDelete: Restrict)
-  atendimento                     Atendimento             @relation(fields: [atendimentoId, conversaId], references: [id, conversaId], onDelete: Restrict)
-  contaWhatsApp                   ContaWhatsApp           @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
-  usuarioRemetente                Usuario?                @relation(fields: [usuarioRemetenteId], references: [id], onDelete: Restrict)
-  contatoRemetente                Contato?                @relation(fields: [contatoRemetenteId], references: [id], onDelete: Restrict)
-  respondeAMensagem               Mensagem?               @relation("RespostaMensagem", fields: [respondeAMensagemId], references: [id], onDelete: Restrict)
-  respostas                       Mensagem[]               @relation("RespostaMensagem")
-  mensagemAlvoReacao              Mensagem?               @relation("ReacaoMensagem", fields: [mensagemAlvoReacaoId], references: [id], onDelete: Restrict)
-  reacoes                         Mensagem[]               @relation("ReacaoMensagem")
-  midia                           MidiaMensagem?
-  eventoEntradaCanal              EventoEntradaCanal?
+  id                           String                 @id @db.Uuid
+  conversaId                   String                 @map("conversa_id") @db.Uuid
+  atendimentoId                String                 @map("atendimento_id") @db.Uuid
+  contaWhatsAppId              String                 @map("conta_whatsapp_id") @db.Uuid
+  direcao                      DirecaoMensagem
+  tipo                         TipoMensagem
+  estadoSaida                  EstadoSaidaMensagem?   @map("estado_saida")
+  conteudoProtegido            Json                   @map("conteudo_protegido")
+  conteudoHash                 String                 @map("conteudo_hash") @db.Char(64)
+  identificadorExternoMensagem String?                @map("identificador_externo_mensagem") @db.VarChar(256)
+  mensagemClienteId            String?                @map("mensagem_cliente_id") @db.Uuid
+  respondeAMensagemId          String?                @map("responde_a_mensagem_id") @db.Uuid
+  mensagemAlvoReacaoId         String?                @map("mensagem_alvo_reacao_id") @db.Uuid
+  usuarioRemetenteId           String?                @map("usuario_remetente_id") @db.Uuid
+  contatoRemetenteId           String?                @map("contato_remetente_id") @db.Uuid
+  criadaDispositivoEm          DateTime?              @map("criada_dispositivo_em") @db.Timestamptz(6)
+  recebidaServidorEm           DateTime               @map("recebida_servidor_em") @db.Timestamptz(6)
+  proximaTentativaEm           DateTime?              @map("proxima_tentativa_em") @db.Timestamptz(6)
+  tentativasEnvio              Int                    @default(0) @map("tentativas_envio")
+  enviadaEm                    DateTime?              @map("enviada_em") @db.Timestamptz(6)
+  entregueEm                   DateTime?              @map("entregue_em") @db.Timestamptz(6)
+  lidaEm                       DateTime?              @map("lida_em") @db.Timestamptz(6)
+  falhouEm                     DateTime?              @map("falhou_em") @db.Timestamptz(6)
+  canceladaEm                  DateTime?              @map("cancelada_em") @db.Timestamptz(6)
+  codigoFalha                  String?                @map("codigo_falha") @db.VarChar(100)
+  versao                       Int                    @default(1)
+  conversa                     Conversa               @relation(fields: [conversaId], references: [id], onDelete: Restrict)
+  atendimento                  Atendimento            @relation(fields: [atendimentoId, conversaId], references: [id, conversaId], onDelete: Restrict)
+  contaWhatsApp                ContaWhatsApp          @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  usuarioRemetente             Usuario?               @relation(fields: [usuarioRemetenteId], references: [id], onDelete: Restrict)
+  contatoRemetente             Contato?               @relation(fields: [contatoRemetenteId], references: [id], onDelete: Restrict)
+  respondeAMensagem            Mensagem?              @relation("RespostaMensagem", fields: [respondeAMensagemId], references: [id], onDelete: Restrict)
+  respostas                    Mensagem[]             @relation("RespostaMensagem")
+  mensagemAlvoReacao           Mensagem?              @relation("ReacaoMensagem", fields: [mensagemAlvoReacaoId], references: [id], onDelete: Restrict)
+  reacoes                      Mensagem[]             @relation("ReacaoMensagem")
+  midia                        MidiaMensagem?
+  eventoEntradaCanal           EventoEntradaCanal?
+  eventosEstado                EventoEstadoMensagem[]
 
   @@unique([contaWhatsAppId, identificadorExternoMensagem], map: "mensagem_conta_identificador_externo_key")
   @@unique([usuarioRemetenteId, mensagemClienteId], map: "mensagem_usuario_cliente_key")
@@ -1194,17 +1205,36 @@ model Mensagem {
   @@map("mensagem")
 }
 
+model EventoEstadoMensagem {
+  id                         String                    @id @db.Uuid
+  contaWhatsAppId            String                    @map("conta_whatsapp_id") @db.Uuid
+  mensagemId                 String                    @map("mensagem_id") @db.Uuid
+  identificadorEventoExterno String                    @map("identificador_evento_externo") @db.VarChar(256)
+  estado                     EstadoEventoMensagemCanal
+  codigoFalha                String?                   @map("codigo_falha") @db.VarChar(100)
+  ocorridoEm                 DateTime                  @map("ocorrido_em") @db.Timestamptz(6)
+  recebidoEm                 DateTime                  @map("recebido_em") @db.Timestamptz(6)
+  aplicado                   Boolean                   @default(false)
+  aplicadoEm                 DateTime?                 @map("aplicado_em") @db.Timestamptz(6)
+  contaWhatsApp              ContaWhatsApp             @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  mensagem                   Mensagem                  @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
+
+  @@unique([contaWhatsAppId, identificadorEventoExterno], map: "evento_estado_mensagem_conta_evento_key")
+  @@index([mensagemId, ocorridoEm, id], map: "evento_estado_mensagem_mensagem_ocorrido_idx")
+  @@map("evento_estado_mensagem")
+}
+
 model EventoEntradaCanal {
-  id                            String                   @id @db.Uuid
-  contaWhatsAppId               String                   @map("conta_whatsapp_id") @db.Uuid
-  identificadorEventoExterno    String                   @map("identificador_evento_externo") @db.VarChar(256)
-  corpoHash                     String                   @map("corpo_hash") @db.Char(64)
-  estado                        EstadoEventoEntradaCanal @default(RECEBIDO)
-  recebidoEm                    DateTime                 @map("recebido_em") @db.Timestamptz(6)
-  persistidoEm                  DateTime?                @map("persistido_em") @db.Timestamptz(6)
-  mensagemId                    String?                  @unique(map: "evento_entrada_canal_mensagem_key") @map("mensagem_id") @db.Uuid
-  contaWhatsApp                 ContaWhatsApp            @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
-  mensagem                      Mensagem?                @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
+  id                         String                   @id @db.Uuid
+  contaWhatsAppId            String                   @map("conta_whatsapp_id") @db.Uuid
+  identificadorEventoExterno String                   @map("identificador_evento_externo") @db.VarChar(256)
+  corpoHash                  String                   @map("corpo_hash") @db.Char(64)
+  estado                     EstadoEventoEntradaCanal @default(RECEBIDO)
+  recebidoEm                 DateTime                 @map("recebido_em") @db.Timestamptz(6)
+  persistidoEm               DateTime?                @map("persistido_em") @db.Timestamptz(6)
+  mensagemId                 String?                  @unique(map: "evento_entrada_canal_mensagem_key") @map("mensagem_id") @db.Uuid
+  contaWhatsApp              ContaWhatsApp            @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  mensagem                   Mensagem?                @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
 
   @@unique([contaWhatsAppId, identificadorEventoExterno], map: "evento_entrada_canal_conta_evento_key")
   @@index([estado, recebidoEm, id], map: "evento_entrada_canal_estado_recebido_idx")
@@ -1212,16 +1242,16 @@ model EventoEntradaCanal {
 }
 
 model MidiaMensagem {
-  mensagemId       String                 @id @map("mensagem_id") @db.Uuid
-  categoria        CategoriaMidiaMensagem
-  bucketPrivado    String                 @map("bucket_privado") @db.VarChar(100)
-  chaveObjeto      String                 @map("chave_objeto") @db.VarChar(500)
-  mimeDeclarado    String                 @map("mime_declarado") @db.VarChar(100)
-  mimeDetectado    String                 @map("mime_detectado") @db.VarChar(100)
-  tamanhoBytes     BigInt                 @map("tamanho_bytes")
-  conteudoHash     String                 @map("conteudo_hash") @db.Char(64)
-  armazenadaEm     DateTime               @map("armazenada_em") @db.Timestamptz(6)
-  mensagem         Mensagem               @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
+  mensagemId    String                 @id @map("mensagem_id") @db.Uuid
+  categoria     CategoriaMidiaMensagem
+  bucketPrivado String                 @map("bucket_privado") @db.VarChar(100)
+  chaveObjeto   String                 @map("chave_objeto") @db.VarChar(500)
+  mimeDeclarado String                 @map("mime_declarado") @db.VarChar(100)
+  mimeDetectado String                 @map("mime_detectado") @db.VarChar(100)
+  tamanhoBytes  BigInt                 @map("tamanho_bytes")
+  conteudoHash  String                 @map("conteudo_hash") @db.Char(64)
+  armazenadaEm  DateTime               @map("armazenada_em") @db.Timestamptz(6)
+  mensagem      Mensagem               @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
 
   @@unique([bucketPrivado, chaveObjeto], map: "midia_mensagem_bucket_chave_key")
   @@index([conteudoHash, tamanhoBytes], map: "midia_mensagem_hash_tamanho_idx")
@@ -1229,34 +1259,34 @@ model MidiaMensagem {
 }
 
 model ProtocoloErp {
-  atendimentoId     String             @id @map("atendimento_id") @db.Uuid
-  estado            EstadoProtocoloErp @default(PENDENTE)
-  protocoloOficial  String?            @unique(map: "protocolo_erp_oficial_key") @map("protocolo_oficial") @db.VarChar(256)
-  confirmadoEm      DateTime?          @map("confirmado_em") @db.Timestamptz(6)
-  versao            Int                @default(1)
-  criadoEm          DateTime           @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm      DateTime           @map("atualizado_em") @db.Timestamptz(6)
-  atendimento       Atendimento        @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  atendimentoId    String             @id @map("atendimento_id") @db.Uuid
+  estado           EstadoProtocoloErp @default(PENDENTE)
+  protocoloOficial String?            @unique(map: "protocolo_erp_oficial_key") @map("protocolo_oficial") @db.VarChar(256)
+  confirmadoEm     DateTime?          @map("confirmado_em") @db.Timestamptz(6)
+  versao           Int                @default(1)
+  criadoEm         DateTime           @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm     DateTime           @map("atualizado_em") @db.Timestamptz(6)
+  atendimento      Atendimento        @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
 
   @@index([estado, criadoEm, atendimentoId], map: "protocolo_erp_estado_criado_idx")
   @@map("protocolo_erp")
 }
 
 model IdentidadeWhatsApp {
-  id                               String          @id @db.Uuid
-  contatoId                        String          @map("contato_id") @db.Uuid
-  portfolioEmpresarialExternoId    String          @map("portfolio_empresarial_externo_id") @db.VarChar(256)
-  identificadorExternoEstavel      String          @map("identificador_externo_estavel") @db.VarChar(256)
-  nomeUsuario                      String?         @map("nome_usuario") @db.VarChar(100)
-  telefoneE164                     String?         @map("telefone_e164") @db.VarChar(16)
-  nomePerfil                       String?         @map("nome_perfil") @db.VarChar(200)
-  contaWhatsAppUltimaObservacaoId  String          @map("conta_whatsapp_ultima_observacao_id") @db.Uuid
-  criadaEm                         DateTime        @default(now()) @map("criada_em") @db.Timestamptz(6)
-  atualizadaEm                     DateTime        @default(now()) @updatedAt @map("atualizada_em") @db.Timestamptz(6)
-  contato                          Contato         @relation(fields: [contatoId], references: [id], onDelete: Restrict)
-  contaWhatsAppUltimaObservacao    ContaWhatsApp   @relation(fields: [contaWhatsAppUltimaObservacaoId], references: [id], onDelete: Restrict)
-  aliases                          AliasIdentidadeWhatsApp[]
-  eventosAlteracao                 EventoAlteracaoIdentidadeWhatsApp[]
+  id                              String                              @id @db.Uuid
+  contatoId                       String                              @map("contato_id") @db.Uuid
+  portfolioEmpresarialExternoId   String                              @map("portfolio_empresarial_externo_id") @db.VarChar(256)
+  identificadorExternoEstavel     String                              @map("identificador_externo_estavel") @db.VarChar(256)
+  nomeUsuario                     String?                             @map("nome_usuario") @db.VarChar(100)
+  telefoneE164                    String?                             @map("telefone_e164") @db.VarChar(16)
+  nomePerfil                      String?                             @map("nome_perfil") @db.VarChar(200)
+  contaWhatsAppUltimaObservacaoId String                              @map("conta_whatsapp_ultima_observacao_id") @db.Uuid
+  criadaEm                        DateTime                            @default(now()) @map("criada_em") @db.Timestamptz(6)
+  atualizadaEm                    DateTime                            @default(now()) @updatedAt @map("atualizada_em") @db.Timestamptz(6)
+  contato                         Contato                             @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  contaWhatsAppUltimaObservacao   ContaWhatsApp                       @relation(fields: [contaWhatsAppUltimaObservacaoId], references: [id], onDelete: Restrict)
+  aliases                         AliasIdentidadeWhatsApp[]
+  eventosAlteracao                EventoAlteracaoIdentidadeWhatsApp[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorExternoEstavel], map: "identidade_whatsapp_estavel_key")
   @@index([contatoId, criadaEm, id], map: "identidade_whatsapp_contato_idx")
@@ -1266,12 +1296,12 @@ model IdentidadeWhatsApp {
 }
 
 model AliasIdentidadeWhatsApp {
-  id                              String               @id @db.Uuid
-  identidadeWhatsAppId            String               @map("identidade_whatsapp_id") @db.Uuid
-  portfolioEmpresarialExternoId   String               @map("portfolio_empresarial_externo_id") @db.VarChar(256)
-  identificadorExternoAnterior    String               @map("identificador_externo_anterior") @db.VarChar(256)
-  substituidoEm                   DateTime             @map("substituido_em") @db.Timestamptz(6)
-  identidadeWhatsApp              IdentidadeWhatsApp   @relation(fields: [identidadeWhatsAppId], references: [id], onDelete: Restrict)
+  id                            String             @id @db.Uuid
+  identidadeWhatsAppId          String             @map("identidade_whatsapp_id") @db.Uuid
+  portfolioEmpresarialExternoId String             @map("portfolio_empresarial_externo_id") @db.VarChar(256)
+  identificadorExternoAnterior  String             @map("identificador_externo_anterior") @db.VarChar(256)
+  substituidoEm                 DateTime           @map("substituido_em") @db.Timestamptz(6)
+  identidadeWhatsApp            IdentidadeWhatsApp @relation(fields: [identidadeWhatsAppId], references: [id], onDelete: Restrict)
 
   @@unique([portfolioEmpresarialExternoId, identificadorExternoAnterior], map: "alias_identidade_whatsapp_anterior_key")
   @@index([identidadeWhatsAppId, substituidoEm, id], map: "alias_identidade_whatsapp_identidade_idx")
@@ -1279,16 +1309,16 @@ model AliasIdentidadeWhatsApp {
 }
 
 model EventoAlteracaoIdentidadeWhatsApp {
-  id                              String                              @id @db.Uuid
-  identidadeWhatsAppId            String                              @map("identidade_whatsapp_id") @db.Uuid
-  contaWhatsAppObservacaoId       String                              @map("conta_whatsapp_observacao_id") @db.Uuid
-  portfolioEmpresarialExternoId   String                              @map("portfolio_empresarial_externo_id") @db.VarChar(256)
-  identificadorExternoAnterior    String                              @map("identificador_externo_anterior") @db.VarChar(256)
-  identificadorExternoAtual       String                              @map("identificador_externo_atual") @db.VarChar(256)
-  resultado                       ResultadoAlteracaoIdentidadeWhatsApp
-  observadoEm                     DateTime                            @map("observado_em") @db.Timestamptz(6)
-  identidadeWhatsApp              IdentidadeWhatsApp                  @relation(fields: [identidadeWhatsAppId], references: [id], onDelete: Restrict)
-  contaWhatsAppObservacao         ContaWhatsApp                       @relation(fields: [contaWhatsAppObservacaoId], references: [id], onDelete: Restrict)
+  id                            String                               @id @db.Uuid
+  identidadeWhatsAppId          String                               @map("identidade_whatsapp_id") @db.Uuid
+  contaWhatsAppObservacaoId     String                               @map("conta_whatsapp_observacao_id") @db.Uuid
+  portfolioEmpresarialExternoId String                               @map("portfolio_empresarial_externo_id") @db.VarChar(256)
+  identificadorExternoAnterior  String                               @map("identificador_externo_anterior") @db.VarChar(256)
+  identificadorExternoAtual     String                               @map("identificador_externo_atual") @db.VarChar(256)
+  resultado                     ResultadoAlteracaoIdentidadeWhatsApp
+  observadoEm                   DateTime                             @map("observado_em") @db.Timestamptz(6)
+  identidadeWhatsApp            IdentidadeWhatsApp                   @relation(fields: [identidadeWhatsAppId], references: [id], onDelete: Restrict)
+  contaWhatsAppObservacao       ContaWhatsApp                        @relation(fields: [contaWhatsAppObservacaoId], references: [id], onDelete: Restrict)
 
   @@unique([portfolioEmpresarialExternoId, identificadorExternoAnterior, identificadorExternoAtual], map: "evento_alteracao_identidade_par_key")
   @@index([identidadeWhatsAppId, observadoEm, id], map: "evento_alteracao_identidade_identidade_idx")
@@ -1296,21 +1326,21 @@ model EventoAlteracaoIdentidadeWhatsApp {
 }
 
 model VinculoCliente {
-  id                         String             @id @db.Uuid
-  contatoId                  String             @map("contato_id") @db.Uuid
-  clienteExternoId           String             @map("cliente_externo_id") @db.VarChar(256)
-  tipo                       TipoVinculoCliente
-  preferencial               Boolean            @default(false)
-  metodoVerificacao          String             @map("metodo_verificacao") @db.VarChar(100)
-  verificadoEm               DateTime?          @map("verificado_em") @db.Timestamptz(6)
-  verificadoPorUsuarioId     String?            @map("verificado_por_usuario_id") @db.Uuid
-  criadoEm                   DateTime           @default(now()) @map("criado_em") @db.Timestamptz(6)
-  revogadoEm                 DateTime?          @map("revogado_em") @db.Timestamptz(6)
-  contato                    Contato            @relation(fields: [contatoId], references: [id], onDelete: Restrict)
-  verificadoPorUsuario       Usuario?           @relation("UsuarioVerificacaoVinculoCliente", fields: [verificadoPorUsuarioId], references: [id], onDelete: Restrict)
-  contratos                  VinculoContrato[]
-  contextosAtendimento       ContextoAtendimento[]
-  snapshotCliente            SnapshotCliente?
+  id                     String                @id @db.Uuid
+  contatoId              String                @map("contato_id") @db.Uuid
+  clienteExternoId       String                @map("cliente_externo_id") @db.VarChar(256)
+  tipo                   TipoVinculoCliente
+  preferencial           Boolean               @default(false)
+  metodoVerificacao      String                @map("metodo_verificacao") @db.VarChar(100)
+  verificadoEm           DateTime?             @map("verificado_em") @db.Timestamptz(6)
+  verificadoPorUsuarioId String?               @map("verificado_por_usuario_id") @db.Uuid
+  criadoEm               DateTime              @default(now()) @map("criado_em") @db.Timestamptz(6)
+  revogadoEm             DateTime?             @map("revogado_em") @db.Timestamptz(6)
+  contato                Contato               @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  verificadoPorUsuario   Usuario?              @relation("UsuarioVerificacaoVinculoCliente", fields: [verificadoPorUsuarioId], references: [id], onDelete: Restrict)
+  contratos              VinculoContrato[]
+  contextosAtendimento   ContextoAtendimento[]
+  snapshotCliente        SnapshotCliente?
 
   @@unique([id, contatoId], map: "vinculo_cliente_id_contato_key")
   @@index([contatoId, revogadoEm, preferencial, criadoEm], map: "vinculo_cliente_contato_estado_idx")
@@ -1319,29 +1349,29 @@ model VinculoCliente {
 }
 
 model SnapshotCliente {
-  id                         String                @id @db.Uuid
-  vinculoClienteId           String                @unique(map: "snapshot_cliente_vinculo_key") @map("vinculo_cliente_id") @db.Uuid
-  origem                     OrigemSnapshotCliente @default(INTEGRACAO_ERP)
-  dadosProtegidos            Json                  @map("dados_protegidos")
-  conteudoHash               String                @map("conteudo_hash") @db.Char(64)
-  capturadoEm                DateTime              @map("capturado_em") @db.Timestamptz(6)
-  persistidoEm               DateTime              @default(now()) @map("persistido_em") @db.Timestamptz(6)
-  atualizadoEm               DateTime              @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
-  versao                     Int                   @default(1)
-  vinculoCliente             VinculoCliente        @relation(fields: [vinculoClienteId], references: [id], onDelete: Restrict)
+  id               String                @id @db.Uuid
+  vinculoClienteId String                @unique(map: "snapshot_cliente_vinculo_key") @map("vinculo_cliente_id") @db.Uuid
+  origem           OrigemSnapshotCliente @default(INTEGRACAO_ERP)
+  dadosProtegidos  Json                  @map("dados_protegidos")
+  conteudoHash     String                @map("conteudo_hash") @db.Char(64)
+  capturadoEm      DateTime              @map("capturado_em") @db.Timestamptz(6)
+  persistidoEm     DateTime              @default(now()) @map("persistido_em") @db.Timestamptz(6)
+  atualizadoEm     DateTime              @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  versao           Int                   @default(1)
+  vinculoCliente   VinculoCliente        @relation(fields: [vinculoClienteId], references: [id], onDelete: Restrict)
 
   @@index([capturadoEm, vinculoClienteId], map: "snapshot_cliente_capturado_idx")
   @@map("snapshot_cliente")
 }
 
 model VinculoContrato {
-  id                         String                @id @db.Uuid
-  vinculoClienteId           String                @map("vinculo_cliente_id") @db.Uuid
-  contratoExternoId          String                @map("contrato_externo_id") @db.VarChar(256)
-  criadoEm                   DateTime              @default(now()) @map("criado_em") @db.Timestamptz(6)
-  revogadoEm                 DateTime?             @map("revogado_em") @db.Timestamptz(6)
-  vinculoCliente             VinculoCliente        @relation(fields: [vinculoClienteId], references: [id], onDelete: Restrict)
-  contextosAtendimento       ContextoAtendimento[]
+  id                   String                @id @db.Uuid
+  vinculoClienteId     String                @map("vinculo_cliente_id") @db.Uuid
+  contratoExternoId    String                @map("contrato_externo_id") @db.VarChar(256)
+  criadoEm             DateTime              @default(now()) @map("criado_em") @db.Timestamptz(6)
+  revogadoEm           DateTime?             @map("revogado_em") @db.Timestamptz(6)
+  vinculoCliente       VinculoCliente        @relation(fields: [vinculoClienteId], references: [id], onDelete: Restrict)
+  contextosAtendimento ContextoAtendimento[]
 
   @@unique([id, vinculoClienteId], map: "vinculo_contrato_id_vinculo_key")
   @@index([vinculoClienteId, revogadoEm, criadoEm], map: "vinculo_contrato_vinculo_estado_idx")
@@ -1349,21 +1379,21 @@ model VinculoContrato {
 }
 
 model ContextoAtendimento {
-  atendimentoId             String                      @id @map("atendimento_id") @db.Uuid
-  contatoId                 String                      @map("contato_id") @db.Uuid
-  vinculoClienteId          String                      @map("vinculo_cliente_id") @db.Uuid
-  vinculoContratoId         String?                     @map("vinculo_contrato_id") @db.Uuid
-  clienteExternoAtivoId     String                      @map("cliente_externo_ativo_id") @db.VarChar(256)
-  contratoExternoAtivoId    String?                     @map("contrato_externo_ativo_id") @db.VarChar(256)
-  origem                    OrigemContextoAtendimento   @map("origem_contexto")
-  versao                    Int                         @default(1)
-  alteradoEm                DateTime                    @map("alterado_em") @db.Timestamptz(6)
-  alteradoPorUsuarioId      String?                     @map("alterado_por_usuario_id") @db.Uuid
-  contato                   Contato                     @relation(fields: [contatoId], references: [id], onDelete: Restrict)
-  vinculoCliente            VinculoCliente              @relation(fields: [vinculoClienteId, contatoId], references: [id, contatoId], onDelete: Restrict)
-  vinculoContrato           VinculoContrato?            @relation(fields: [vinculoContratoId, vinculoClienteId], references: [id, vinculoClienteId], onDelete: Restrict)
-  alteradoPorUsuario        Usuario?                    @relation("UsuarioAlteracaoContextoAtendimento", fields: [alteradoPorUsuarioId], references: [id], onDelete: Restrict)
-  atendimento               Atendimento                 @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  atendimentoId          String                    @id @map("atendimento_id") @db.Uuid
+  contatoId              String                    @map("contato_id") @db.Uuid
+  vinculoClienteId       String                    @map("vinculo_cliente_id") @db.Uuid
+  vinculoContratoId      String?                   @map("vinculo_contrato_id") @db.Uuid
+  clienteExternoAtivoId  String                    @map("cliente_externo_ativo_id") @db.VarChar(256)
+  contratoExternoAtivoId String?                   @map("contrato_externo_ativo_id") @db.VarChar(256)
+  origem                 OrigemContextoAtendimento @map("origem_contexto")
+  versao                 Int                       @default(1)
+  alteradoEm             DateTime                  @map("alterado_em") @db.Timestamptz(6)
+  alteradoPorUsuarioId   String?                   @map("alterado_por_usuario_id") @db.Uuid
+  contato                Contato                   @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  vinculoCliente         VinculoCliente            @relation(fields: [vinculoClienteId, contatoId], references: [id, contatoId], onDelete: Restrict)
+  vinculoContrato        VinculoContrato?          @relation(fields: [vinculoContratoId, vinculoClienteId], references: [id, vinculoClienteId], onDelete: Restrict)
+  alteradoPorUsuario     Usuario?                  @relation("UsuarioAlteracaoContextoAtendimento", fields: [alteradoPorUsuarioId], references: [id], onDelete: Restrict)
+  atendimento            Atendimento               @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
 
   @@index([contatoId, alteradoEm, atendimentoId], map: "contexto_atendimento_contato_idx")
   @@index([vinculoClienteId, vinculoContratoId], map: "contexto_atendimento_vinculos_idx")
@@ -1371,11 +1401,11 @@ model ContextoAtendimento {
 }
 
 model LiberacaoControleRecursoUsuario {
-  controleRecursoId String           @map("controle_recurso_id") @db.Uuid
-  usuarioId         String           @map("usuario_id") @db.Uuid
-  criadoEm          DateTime         @default(now()) @map("criado_em") @db.Timestamptz(6)
-  controleRecurso   ControleRecurso  @relation(fields: [controleRecursoId], references: [id], onDelete: Restrict)
-  usuario           Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  controleRecursoId String          @map("controle_recurso_id") @db.Uuid
+  usuarioId         String          @map("usuario_id") @db.Uuid
+  criadoEm          DateTime        @default(now()) @map("criado_em") @db.Timestamptz(6)
+  controleRecurso   ControleRecurso @relation(fields: [controleRecursoId], references: [id], onDelete: Restrict)
+  usuario           Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
 
   @@id([controleRecursoId, usuarioId])
   @@index([usuarioId, controleRecursoId], map: "liberacao_controle_recurso_usuario_idx")
@@ -1383,11 +1413,11 @@ model LiberacaoControleRecursoUsuario {
 }
 
 model LiberacaoControleRecursoFila {
-  controleRecursoId String           @map("controle_recurso_id") @db.Uuid
-  filaId            String           @map("fila_id") @db.Uuid
-  criadoEm          DateTime         @default(now()) @map("criado_em") @db.Timestamptz(6)
-  controleRecurso   ControleRecurso  @relation(fields: [controleRecursoId], references: [id], onDelete: Restrict)
-  fila              Fila             @relation(fields: [filaId], references: [id], onDelete: Restrict)
+  controleRecursoId String          @map("controle_recurso_id") @db.Uuid
+  filaId            String          @map("fila_id") @db.Uuid
+  criadoEm          DateTime        @default(now()) @map("criado_em") @db.Timestamptz(6)
+  controleRecurso   ControleRecurso @relation(fields: [controleRecursoId], references: [id], onDelete: Restrict)
+  fila              Fila            @relation(fields: [filaId], references: [id], onDelete: Restrict)
 
   @@id([controleRecursoId, filaId])
   @@index([filaId, controleRecursoId], map: "liberacao_controle_recurso_fila_idx")
@@ -1395,13 +1425,13 @@ model LiberacaoControleRecursoFila {
 }
 
 model PoliticaVersaoMobile {
-  plataforma          PlataformaMobile @id
-  versaoMinima        String           @default("0.0.0") @map("versao_minima") @db.VarChar(40)
-  versaoRecomendada   String           @default("0.0.0") @map("versao_recomendada") @db.VarChar(40)
-  mensagem            String?          @db.VarChar(240)
-  urlLoja             String?          @map("url_loja") @db.VarChar(500)
-  versao              Int              @default(0)
-  atualizadoEm        DateTime         @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  plataforma        PlataformaMobile @id
+  versaoMinima      String           @default("0.0.0") @map("versao_minima") @db.VarChar(40)
+  versaoRecomendada String           @default("0.0.0") @map("versao_recomendada") @db.VarChar(40)
+  mensagem          String?          @db.VarChar(240)
+  urlLoja           String?          @map("url_loja") @db.VarChar(500)
+  versao            Int              @default(0)
+  atualizadoEm      DateTime         @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   @@map("politica_versao_mobile")
 }
