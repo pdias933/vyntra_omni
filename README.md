@@ -86,6 +86,8 @@ A porta `AdaptadorErp` separa consultas e escritas normalizadas. O simulador dis
 
 Alterações explícitas anterior→atual preservam contato por alias e evento auditável. Origem ausente, conflito ou ordem incerta mantém o identificador atual em contato separado, sem merge automático. O contrato e aceite estão em [docs/operacoes/PR-024.md](docs/operacoes/PR-024.md); não houve nova dependência, conforme [docs/dependencias/PR-024.md](docs/dependencias/PR-024.md).
 
+`VinculoCliente` e `VinculoContrato` preservam as associações possíveis do contato, enquanto `ContextoAtendimento` fixa somente a escolha operacional explícita e versionada. Troca humana exige autorização central, alvo ativo e auditoria na mesma transação; nenhum cliente/contrato é inferido pelo primeiro vínculo ou pelo preferencial. Modelo e operação estão em [docs/operacoes/PR-025.md](docs/operacoes/PR-025.md); não houve nova dependência, conforme [docs/dependencias/PR-025.md](docs/dependencias/PR-025.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local

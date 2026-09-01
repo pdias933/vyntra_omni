@@ -37,8 +37,3 @@ test('serviço bloqueia as duas chaves e separa caso incerto', async () => {
   assert.match(servico, /ServicoIdentidadeWhatsApp/);
   assert.ok(!/mesclar|merge/iu.test(servico));
 });
-
-test('prontidão exige a migration de alias mais recente', async () => {
-  const persistencia = await ler('apps/api/src/persistencia/servico-prisma.ts');
-  assert.match(persistencia, /20260831001300_criar_alias_alteracao_identidade/);
-});

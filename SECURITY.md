@@ -498,6 +498,8 @@ Controles de persistência obrigatórios:
 | Token da transcrição descoberto | Recurso desligado sem política jurídica; quando liberado, entropia alta, HMAC, conteúdo sanitizado, 72 h padrão/7 dias máximo e revogação. |
 | Enumeração de cliente | Rate limit e resposta sem confirmação excessiva. |
 
+Vínculo e contexto obedecem a uma defesa adicional contra associação indevida: atributos do WhatsApp não provam identidade ERP, resultado preferencial não vira escolha implícita e contrato precisa pertencer ao vínculo/contato por FK composta. A troca humana passa pelo serviço central com `ALTERAR_CONTEXTO_CLIENTE`, usa concorrência otimista e audita na mesma transação sem guardar identificador externo. A PR 025 não publica rota para criar vínculos; essa capacidade continua `default deny` até a revalidação aprovada do caso de uso.
+
 ## 15. Regras de código seguro
 
 - Não adicionar dependência sem necessidade, análise e justificativa.

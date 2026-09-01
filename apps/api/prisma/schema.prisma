@@ -242,6 +242,23 @@ enum ResultadoAlteracaoIdentidadeWhatsApp {
   @@map("resultado_alteracao_identidade_whatsapp")
 }
 
+enum TipoVinculoCliente {
+  VERIFICADO
+  MANUAL
+  TEMPORARIO
+
+  @@map("tipo_vinculo_cliente")
+}
+
+enum OrigemContextoAtendimento {
+  IDENTIFICACAO
+  USUARIO
+  FLUXO
+  SISTEMA
+
+  @@map("origem_contexto_atendimento")
+}
+
 model RegistroAuditoria {
   id                         String          @id @db.Uuid
   tipoEvento                 String          @map("tipo_evento") @db.VarChar(100)
@@ -381,6 +398,8 @@ model Usuario {
   sessoesMobile SessaoMobile[]
   pareamentosQr PareamentoQr[]
   liberacoesControlesRecurso LiberacaoControleRecursoUsuario[]
+  vinculosClienteVerificados VinculoCliente[] @relation("UsuarioVerificacaoVinculoCliente")
+  contextosAtendimentoAlterados ContextoAtendimento[] @relation("UsuarioAlteracaoContextoAtendimento")
 
   @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
   @@index([perfilId], map: "usuario_perfil_idx")
@@ -655,6 +674,8 @@ model Contato {
   criadoEm              DateTime              @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm          DateTime              @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   identidadesWhatsApp   IdentidadeWhatsApp[]
+  vinculosCliente       VinculoCliente[]
+  contextosAtendimento  ContextoAtendimento[]
 
   @@index([estado, ultimaInteracaoEm, id], map: "contato_estado_ultima_interacao_idx")
   @@map("contato")
@@ -711,6 +732,63 @@ model EventoAlteracaoIdentidadeWhatsApp {
   @@unique([portfolioEmpresarialExternoId, identificadorExternoAnterior, identificadorExternoAtual], map: "evento_alteracao_identidade_par_key")
   @@index([identidadeWhatsAppId, observadoEm, id], map: "evento_alteracao_identidade_identidade_idx")
   @@map("evento_alteracao_identidade_whatsapp")
+}
+
+model VinculoCliente {
+  id                         String             @id @db.Uuid
+  contatoId                  String             @map("contato_id") @db.Uuid
+  clienteExternoId           String             @map("cliente_externo_id") @db.VarChar(256)
+  tipo                       TipoVinculoCliente
+  preferencial               Boolean            @default(false)
+  metodoVerificacao          String             @map("metodo_verificacao") @db.VarChar(100)
+  verificadoEm               DateTime?          @map("verificado_em") @db.Timestamptz(6)
+  verificadoPorUsuarioId     String?            @map("verificado_por_usuario_id") @db.Uuid
+  criadoEm                   DateTime           @default(now()) @map("criado_em") @db.Timestamptz(6)
+  revogadoEm                 DateTime?          @map("revogado_em") @db.Timestamptz(6)
+  contato                    Contato            @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  verificadoPorUsuario       Usuario?           @relation("UsuarioVerificacaoVinculoCliente", fields: [verificadoPorUsuarioId], references: [id], onDelete: Restrict)
+  contratos                  VinculoContrato[]
+  contextosAtendimento       ContextoAtendimento[]
+
+  @@unique([id, contatoId], map: "vinculo_cliente_id_contato_key")
+  @@index([contatoId, revogadoEm, preferencial, criadoEm], map: "vinculo_cliente_contato_estado_idx")
+  @@index([clienteExternoId, revogadoEm, contatoId], map: "vinculo_cliente_cliente_idx")
+  @@map("vinculo_cliente")
+}
+
+model VinculoContrato {
+  id                         String                @id @db.Uuid
+  vinculoClienteId           String                @map("vinculo_cliente_id") @db.Uuid
+  contratoExternoId          String                @map("contrato_externo_id") @db.VarChar(256)
+  criadoEm                   DateTime              @default(now()) @map("criado_em") @db.Timestamptz(6)
+  revogadoEm                 DateTime?             @map("revogado_em") @db.Timestamptz(6)
+  vinculoCliente             VinculoCliente        @relation(fields: [vinculoClienteId], references: [id], onDelete: Restrict)
+  contextosAtendimento       ContextoAtendimento[]
+
+  @@unique([id, vinculoClienteId], map: "vinculo_contrato_id_vinculo_key")
+  @@index([vinculoClienteId, revogadoEm, criadoEm], map: "vinculo_contrato_vinculo_estado_idx")
+  @@map("vinculo_contrato")
+}
+
+model ContextoAtendimento {
+  atendimentoId             String                      @id @map("atendimento_id") @db.Uuid
+  contatoId                 String                      @map("contato_id") @db.Uuid
+  vinculoClienteId          String                      @map("vinculo_cliente_id") @db.Uuid
+  vinculoContratoId         String?                     @map("vinculo_contrato_id") @db.Uuid
+  clienteExternoAtivoId     String                      @map("cliente_externo_ativo_id") @db.VarChar(256)
+  contratoExternoAtivoId    String?                     @map("contrato_externo_ativo_id") @db.VarChar(256)
+  origem                    OrigemContextoAtendimento   @map("origem_contexto")
+  versao                    Int                         @default(1)
+  alteradoEm                DateTime                    @map("alterado_em") @db.Timestamptz(6)
+  alteradoPorUsuarioId      String?                     @map("alterado_por_usuario_id") @db.Uuid
+  contato                   Contato                     @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  vinculoCliente            VinculoCliente              @relation(fields: [vinculoClienteId, contatoId], references: [id, contatoId], onDelete: Restrict)
+  vinculoContrato           VinculoContrato?            @relation(fields: [vinculoContratoId, vinculoClienteId], references: [id, vinculoClienteId], onDelete: Restrict)
+  alteradoPorUsuario        Usuario?                    @relation("UsuarioAlteracaoContextoAtendimento", fields: [alteradoPorUsuarioId], references: [id], onDelete: Restrict)
+
+  @@index([contatoId, alteradoEm, atendimentoId], map: "contexto_atendimento_contato_idx")
+  @@index([vinculoClienteId, vinculoContratoId], map: "contexto_atendimento_vinculos_idx")
+  @@map("contexto_atendimento")
 }
 
 model LiberacaoControleRecursoUsuario {

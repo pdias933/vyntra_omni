@@ -329,6 +329,8 @@ Scripts de instalação de dependências são default deny por `strictDepBuilds`
 
 Não invente comando alternativo silenciosamente; atualize scripts/documentação se a ferramenta mudar.
 
+Vínculo de cliente não é contexto de atendimento. Preserve múltiplos `VinculoCliente`/`VinculoContrato`, exija uma seleção explícita e versionada por atendimento e nunca escolha pelo primeiro resultado, telefone, username ou preferência. Troca exige autorização central e auditoria; criação/revalidação de vínculo permanece fechada até o caso de uso aprovado.
+
 ## 14. Documentação e decisões
 
 Atualize no mesmo PR quando mudar:

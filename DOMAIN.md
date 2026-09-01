@@ -196,6 +196,22 @@ A PR 023 materializa `Contato` e `IdentidadeWhatsApp`. O serviço recebe do adap
 
 A PR 024 acrescenta `AliasIdentidadeWhatsApp` e `EventoAlteracaoIdentidadeWhatsApp`. Somente um par explícito anterior→atual de conta ativa pode substituir o identificador corrente. A alteração preserva `IdentidadeWhatsApp`, `Contato` e todo vínculo/timeline futuro; o valor anterior passa a resolver pelo alias. Repetição do mesmo par é idempotente. Se o anterior não existe, aponta apenas para alias antigo incompatível ou o atual já pertence a outro contato, o resultado é `SEPARADA_INCERTA`: o identificador atual permanece ou nasce em contato separado, sem merge automático.
 
+### 4.4 Vínculos e contexto do atendimento
+
+`VinculoCliente` registra uma associação persistente possível entre o contato e uma identidade de cliente do ERP; um contato pode possuir vários. `VinculoContrato` pertence exatamente a um vínculo de cliente e também admite múltiplos contratos ativos. Preferência ajuda a interface, mas nunca seleciona silenciosamente o alvo de uma ação.
+
+`ContextoAtendimento` é a escolha operacional congelada para um atendimento: contato, vínculo de cliente, vínculo de contrato opcional, origem, versão e ator da última troca. Cliente/contrato externos ativos são materializados junto do contexto para preservar o que foi usado, mas não substituem os vínculos validados. A integridade composta impede combinar contrato de outro cliente ou vínculo de outro contato.
+
+Regras obrigatórias:
+
+- vínculo persistente não é criado por observação WhatsApp, telefone, username ou primeiro resultado de busca;
+- criação/revalidação de vínculo permanece fechada até o caso de uso autorizado correspondente;
+- inicialização interna exige vínculo ativo e origem explícita `IDENTIFICACAO`, `FLUXO` ou `SISTEMA`;
+- troca humana exige `ALTERAR_CONTEXTO_CLIENTE`, sessão válida, alvo ativo e versão esperada;
+- conflito de versão não produz troca nem auditoria de sucesso;
+- auditoria registra IDs internos e presença de contrato, nunca os identificadores externos do ERP;
+- antes da PR 028, `atendimento_id` é um UUID reservado sem rota pública; a PR 028 acrescenta a FK restritiva ao criar `Atendimento`.
+
 ### 4.4 `VinculoCliente`
 
 ```text

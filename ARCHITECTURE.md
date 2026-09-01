@@ -583,6 +583,8 @@ Na PR 020, `AdaptadorErp` separa consultas e escritas e devolve somente modelos 
 
 Na PR 021, `AdaptadorSessaoAcesso` é uma porta independente de `AdaptadorErp`, com leitura, desconexão e reconciliação próprias. O simulador nasce `DESATIVADO`, preserva apenas estados explicitamente fornecidos e recusa desconectar `DESCONHECIDA`. A migration semeia `SESSAO_ACESSO` desativado e sem alvos; nenhuma rota ou provider real é registrado. A integração real permanece condicional ao PR 068.
 
+Na PR 025, o módulo `contextos-cliente` separa vínculos persistentes da seleção usada por um atendimento. O repositório recebe a transação do caso de uso, valida o alvo por chaves compostas e executa troca por versão esperada. O serviço central de autorização verifica a permissão e o recurso antes da mutação; a auditoria participa da mesma transação. Não há controller de vínculo/contexto nem consulta ao MK nesta etapa. `contexto_atendimento.atendimento_id` fica reservado até a tabela `Atendimento` da PR 028, quando uma migration aditiva deve acrescentar a FK sem reescrever esta migration aplicada.
+
 ## 14. Observabilidade
 
 Quatro sinais distintos:
