@@ -41,6 +41,11 @@ test('PostgreSQL é autoridade e módulo não publica escrita ou usa Redis', asy
   const codigo = arquivos.join('\n');
   assert.match(codigo, /ModuloSnapshotsCliente/);
   assert.match(codigo, /pg_advisory_xact_lock/);
+  assert.doesNotMatch(
+    arquivos[1],
+    /snapshot\\u0000/,
+    'chave textual do advisory lock não pode conter byte nulo',
+  );
   assert.ok(!/Redis|Controller/.test(codigo));
 });
 

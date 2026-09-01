@@ -18,7 +18,7 @@ export class RepositorioSnapshotsClientePrisma
     transacao: TransacaoPrisma,
   ): Promise<void> {
     await transacao.$executeRaw(
-      Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`snapshot\u0000${vinculoClienteId}`}, 0))`,
+      Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`snapshot:${vinculoClienteId}`}, 0))`,
     );
   }
 
