@@ -69,6 +69,13 @@ enum EstadoUsuario {
   @@map("estado_usuario")
 }
 
+enum EstadoDisponibilidadeUsuario {
+  DISPONIVEL
+  INDISPONIVEL
+
+  @@map("estado_disponibilidade_usuario")
+}
+
 enum PapelBase {
   ADMINISTRADOR
   SUPERVISOR
@@ -126,6 +133,8 @@ enum CodigoPermissao {
   ADMINISTRAR_FILAS
   ADMINISTRAR_INTEGRACOES
   ADMINISTRAR_RELEASES
+  ALTERAR_DISPONIBILIDADE_PROPRIA
+  ALTERAR_DISPONIBILIDADE_USUARIO
 
   @@map("codigo_permissao")
 }
@@ -448,10 +457,26 @@ model Usuario {
   vinculosClienteVerificados VinculoCliente[] @relation("UsuarioVerificacaoVinculoCliente")
   contextosAtendimentoAlterados ContextoAtendimento[] @relation("UsuarioAlteracaoContextoAtendimento")
   atendimentosResponsaveis Atendimento[] @relation("UsuarioResponsavelAtendimento")
+  disponibilidade DisponibilidadeUsuario? @relation("UsuarioDisponibilidade")
+  disponibilidadesAlteradas DisponibilidadeUsuario[] @relation("UsuarioAlteracaoDisponibilidade")
 
   @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
   @@index([perfilId], map: "usuario_perfil_idx")
   @@map("usuario")
+}
+
+model DisponibilidadeUsuario {
+  usuarioId            String                       @id @map("usuario_id") @db.Uuid
+  estado               EstadoDisponibilidadeUsuario @default(INDISPONIVEL)
+  alteradoEm           DateTime                     @map("alterado_em") @db.Timestamptz(6)
+  alteradoPorUsuarioId String                       @map("alterado_por_usuario_id") @db.Uuid
+  versao               Int                          @default(1)
+  usuario              Usuario                      @relation("UsuarioDisponibilidade", fields: [usuarioId], references: [id], onDelete: Restrict)
+  alteradoPorUsuario   Usuario                      @relation("UsuarioAlteracaoDisponibilidade", fields: [alteradoPorUsuarioId], references: [id], onDelete: Restrict)
+
+  @@index([estado, alteradoEm, usuarioId], map: "disponibilidade_usuario_estado_idx")
+  @@index([alteradoPorUsuarioId, alteradoEm], map: "disponibilidade_usuario_alterador_idx")
+  @@map("disponibilidade_usuario")
 }
 
 model DispositivoMobile {
