@@ -205,6 +205,14 @@ export type EntradaAtualizacaoPoliticaVersaoMobileDto = {
     versao_esperada: number;
 };
 
+export type LoteSincronizacaoDto = {
+    eventos: Array<{
+        [key: string]: unknown;
+    }>;
+    sequencia_final: string;
+    tem_mais: boolean;
+};
+
 export type ObterInformacoesApiData = {
     body?: never;
     path?: never;
@@ -694,3 +702,23 @@ export type AtualizarPoliticaVersaoMobileResponses = {
 };
 
 export type AtualizarPoliticaVersaoMobileResponse = AtualizarPoliticaVersaoMobileResponses[keyof AtualizarPoliticaVersaoMobileResponses];
+
+export type SincronizarIncrementalData = {
+    body?: never;
+    headers?: {
+        'x-segredo-dispositivo'?: string;
+        'x-dispositivo-id'?: string;
+    };
+    path?: never;
+    query?: {
+        limite?: string;
+        apos?: unknown;
+    };
+    url: '/api/v1/sincronizacao';
+};
+
+export type SincronizarIncrementalResponses = {
+    200: LoteSincronizacaoDto;
+};
+
+export type SincronizarIncrementalResponse = SincronizarIncrementalResponses[keyof SincronizarIncrementalResponses];

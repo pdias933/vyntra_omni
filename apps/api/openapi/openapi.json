@@ -1124,6 +1124,70 @@
           "configuracao"
         ]
       }
+    },
+    "/api/v1/sincronizacao": {
+      "get": {
+        "operationId": "sincronizarIncremental",
+        "parameters": [
+          {
+            "name": "limite",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "100",
+              "type": "string"
+            }
+          },
+          {
+            "name": "apos",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "0"
+            }
+          },
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoteSincronizacaoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          },
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Lista eventos autorizados depois do cursor aplicado",
+        "tags": [
+          "sincronizacao"
+        ]
+      }
     }
   },
   "info": {
@@ -1945,6 +2009,29 @@
           "versao_minima",
           "versao_recomendada",
           "versao_esperada"
+        ]
+      },
+      "LoteSincronizacaoDto": {
+        "type": "object",
+        "properties": {
+          "eventos": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "sequencia_final": {
+            "type": "string",
+            "example": "123"
+          },
+          "tem_mais": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "eventos",
+          "sequencia_final",
+          "tem_mais"
         ]
       }
     }

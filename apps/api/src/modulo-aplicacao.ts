@@ -27,6 +27,7 @@ import { ServicoProntidao } from './saude/servico-prontidao.js';
 import { ModuloReleases } from './releases/modulo-releases.js';
 import { ModuloSnapshotsCliente } from './snapshots-cliente/modulo-snapshots-cliente.js';
 import { ModuloSla } from './sla/modulo-sla.js';
+import { ModuloSincronizacao } from './sincronizacao/modulo-sincronizacao.js';
 
 @Module({
   controllers: [
@@ -56,6 +57,7 @@ import { ModuloSla } from './sla/modulo-sla.js';
     ModuloProtocolosErp,
     ModuloReleases,
     ModuloSnapshotsCliente,
+    ModuloSincronizacao,
     ModuloSla,
   ],
   providers: [ServicoInformacoesApi, ServicoProntidao],
