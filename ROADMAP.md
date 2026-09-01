@@ -95,7 +95,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 071 | CONCLUÍDA | `xhigh` |
 | 072 | CONCLUÍDA | `xhigh` |
 | 073 | CONCLUÍDA | `xhigh` |
-| 074 | EM ANDAMENTO | `high` |
+| 074 | CONCLUÍDA | `high` |
 | 075 | PENDENTE | `xhigh` |
 | 076 | PENDENTE | `high` |
 | 077 | PENDENTE | `xhigh` |
@@ -469,6 +469,10 @@ Aceite concluído em 1º de setembro de 2026: `ExecucaoFluxo` passou a fixar ate
 ### PR 073 — agendamento e recuperação
 
 Aceite concluído em 1º de setembro de 2026: esperas por instante passaram a persistir `retomar_em` somente em `AGUARDANDO_SISTEMA`, com instante futuro, revisão esperada e auditoria transacional. A migration reforça a constraint e o trigger contra retomada prematura. O worker sem HTTP, Redis ou storage consulta lotes vencidos no PostgreSQL com `FOR UPDATE SKIP LOCKED`; ele nunca mantém temporizador longo por atendimento nem outra autoridade de job. Lint, tipos, 331 testes da API, 196 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901011500_agendamento_execucoes_fluxo` terminou com código zero; `vyntra/api-staging:pr-073` e duas instâncias de `vyntra/worker-fluxos-staging:pr-073` ficaram saudáveis. Em staging, uma retomada prematura foi recusada pelo banco, o worker foi reiniciado antes do vencimento e duas instâncias concorreram durante a perda total do Redis: houve exatamente uma transição auditada para `EXECUTANDO`, revisão 3 e limpeza de `retomar_em`. A prontidão degradou enquanto a dependência geral estava parada e voltou a `PRONTO` após a recuperação; não houve erro de ciclo nos workers nem erro de nível 50 depois da normalização. O registro sintético identificado de aceite foi preservado por ser histórico imutável.
+
+### PR 074 — nós de mensagem e lista
+
+Aceite concluído em 1º de setembro de 2026: o executor passou a interpretar `INICIO`, `FIM`, `ENVIAR_MENSAGEM` e `ENVIAR_BOTOES_OU_LISTA` sempre pela versão fixada na execução. Mensagens automáticas nascem sem usuário remetente por `ServicoMensagensSaida`, com autoridade BOT e janela do canal revalidadas; texto cria `SUCESSO` e lista usa fallback textual enumerado explícito enquanto a capacidade estruturada não está comprovada. Mensagem `NA_FILA`, evento, caixa de saída, passo sanitizado e avanço de revisão compartilham a transação. Duas instâncias selecionam uma execução por transação com `FOR UPDATE SKIP LOCKED`; definição fixa inconsistente termina somente a execução afetada como `FALHOU/DEFINICAO_FLUXO_INVALIDA`, sem envenenar a fila. Lint, tipos, 339 testes da API, 197 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901012000_nos_mensagem_lista` terminou com código zero; `vyntra/api-staging:pr-074` e duas instâncias de `vyntra/worker-fluxos-staging:pr-074` ficaram saudáveis. Em staging, a execução conservou a V1 arquivada mesmo com o ponteiro na V2, concluiu quatro passos e criou exatamente duas mensagens sem usuário, dois eventos e dois itens de saída; a lista percorreu `FALLBACK`, e passos/eventos/auditoria não continham texto nem opções. O cenário sem autoridade terminou por `FALHA_DEFINITIVA/AUTORIDADE_AUTOMACAO_PERDIDA` com zero mensagem; o trigger recusou reescrita de passo terminal. Uma execução inconsistente anterior foi isolada e finalizada com código controlado. Com o Redis totalmente parado, duas instâncias concluíram outra execução uma única vez, a prontidão degradou para `503` e voltou a `PRONTO` após a recuperação; não houve erro de ciclo depois da correção. Os registros sintéticos identificados foram preservados por formarem histórico imutável.
 
 ## 7. Mensageria Meta
 
