@@ -7,22 +7,29 @@ import { parse } from 'yaml';
 const conteudoCompose = await readFile('compose.staging.yaml', 'utf8');
 const compose = parse(conteudoCompose);
 const configuracaoStorage = await readFile('infra/staging/garage.toml', 'utf8');
+const configuracaoBorda = await readFile('infra/staging/Caddyfile.borda', 'utf8');
+const configuracaoWeb = await readFile('infra/staging/Caddyfile.web', 'utf8');
+const dockerfileWeb = await readFile('apps/web/Dockerfile', 'utf8');
 const codigoStaging = await readFile('scripts/ambiente-staging.mjs', 'utf8');
 const codigoVerificacaoS3 = await readFile(
   'scripts/verificar-storage-s3.mjs',
   'utf8',
 );
 
-test('declara somente a pilha mínima e persistente de staging', () => {
+test('declara a pilha persistente de staging com publicação web separada', () => {
   assert.deepEqual(Object.keys(compose.services).sort(), [
     'api',
     'migrar',
     'postgres',
+    'proxy',
     'redis',
     'storage',
+    'web',
     'worker_fluxos',
   ]);
   assert.deepEqual(Object.keys(compose.volumes).sort(), [
+    'certificados_proxy_staging',
+    'configuracao_proxy_staging',
     'dados_postgresql_staging',
     'dados_redis_staging',
     'dados_storage_staging',
@@ -73,7 +80,7 @@ test('mantém banco, Redis e storage inacessíveis pelo host', () => {
   assert.equal(compose.networks.rede_storage_staging.internal, true);
   assert.equal(compose.networks.rede_publicada_staging.internal, false);
 
-  for (const nome of ['postgres', 'redis', 'storage']) {
+  for (const nome of ['postgres', 'redis', 'storage', 'web', 'worker_fluxos']) {
     assert.equal(compose.services[nome].ports, undefined, nome);
   }
 
@@ -93,6 +100,13 @@ test('mantém banco, Redis e storage inacessíveis pelo host', () => {
     'rede_dados_staging',
   ]);
   assert.equal(compose.services.worker_fluxos.ports, undefined);
+  assert.deepEqual(compose.services.web.networks, ['rede_publicada_staging']);
+  assert.deepEqual(compose.services.proxy.networks, ['rede_publicada_staging']);
+  assert.deepEqual(compose.services.proxy.ports, [
+    { name: 'web-http', published: '80', protocol: 'tcp', target: 80 },
+    { name: 'web-https', published: '443', protocol: 'tcp', target: 443 },
+    { name: 'web-http3', published: '443', protocol: 'udp', target: 443 },
+  ]);
 });
 
 test('separa todos os segredos e não aceita credencial de produção', () => {
@@ -127,7 +141,7 @@ test('separa todos os segredos e não aceita credencial de produção', () => {
   );
   assert.match(codigoStaging, /DADOS_PERMITIDOS=sinteticos_ou_sanitizados/);
   assert.match(codigoStaging, /CHAVE_STORAGE_EXISTE_SEM_SEGREDO_LOCAL/);
-  assert.match(codigoStaging, /vyntra\/api-staging:pr-027/);
+  assert.match(codigoStaging, /vyntra\/api-staging:pr-096a/);
   assert.match(codigoStaging, /no-new-privileges:true/);
   assert.match(codigoVerificacaoS3, /AWS4-HMAC-SHA256/);
   assert.ok(!codigoVerificacaoS3.includes('console.log(identificador'));
@@ -139,7 +153,7 @@ test('entrega à API apenas contratos por arquivo e contexto explícito', () => 
 
   assert.equal(compose.services.api.user, '1000:0');
   assert.equal(ambiente.AMBIENTE_APLICACAO, 'staging');
-  assert.equal(ambiente.ORIGENS_WEB_PERMITIDAS, 'https://staging.vyntra.local');
+  assert.equal(ambiente.ORIGENS_WEB_PERMITIDAS, 'https://omni.up100.com.br');
   assert.equal(ambiente.DADOS_PERMITIDOS, 'sinteticos_ou_sanitizados');
   assert.equal(ambiente.NODE_ENV, 'production');
   assert.equal(ambiente.BANCO_URL_FILE, '/run/secrets/url_postgresql');
@@ -168,7 +182,7 @@ test('entrega à API apenas contratos por arquivo e contexto explícito', () => 
 });
 
 test('ordena startup por saúde e limita privilégios e logs', () => {
-  for (const nome of ['api', 'postgres', 'redis', 'storage']) {
+  for (const nome of ['api', 'postgres', 'proxy', 'redis', 'storage', 'web']) {
     const servico = compose.services[nome];
     assert.ok(servico.healthcheck.test.length >= 2, nome);
     assert.ok(servico.security_opt.includes('no-new-privileges:true'), nome);
@@ -207,4 +221,32 @@ test('ordena startup por saúde e limita privilégios e logs', () => {
     'service_completed_successfully',
   );
   assert.equal(compose.services.worker_fluxos.pull_policy, 'build');
+  assert.equal(compose.services.proxy.depends_on.api.condition, 'service_healthy');
+  assert.equal(compose.services.proxy.depends_on.web.condition, 'service_healthy');
+  assert.equal(compose.services.proxy.pull_policy, 'build');
+  assert.equal(compose.services.web.pull_policy, 'build');
+  assert.equal(compose.services.proxy.user, '1000:1000');
+  assert.equal(compose.services.web.user, '1000:1000');
+  assert.equal(compose.services.proxy.read_only, true);
+  assert.equal(compose.services.web.read_only, true);
+  assert.deepEqual(compose.services.proxy.cap_drop, ['ALL']);
+  assert.deepEqual(compose.services.web.cap_drop, ['ALL']);
+});
+
+test('publica SPA e API na mesma origem com HTTPS e cabeçalhos defensivos', () => {
+  assert.match(dockerfileWeb, /caddy:2\.11\.4-alpine@sha256:[0-9a-f]{64}/);
+  assert.match(dockerfileWeb, /pnpm --filter '@vyntra\/web\.\.\.' install --frozen-lockfile/);
+  assert.match(dockerfileWeb, /USER 1000:1000/g);
+  assert.match(configuracaoWeb, /http:\/\/:8080/);
+  assert.match(configuracaoWeb, /try_files \{path\} \/index\.html/);
+  assert.match(configuracaoWeb, /max-age=31536000, immutable/);
+  assert.match(configuracaoBorda, /^omni\.up100\.com\.br \{$/m);
+  assert.match(configuracaoBorda, /handle \/api\/\*/);
+  assert.match(configuracaoBorda, /reverse_proxy api:3000/);
+  assert.match(configuracaoBorda, /reverse_proxy web:8080/);
+  assert.match(configuracaoBorda, /Strict-Transport-Security/);
+  assert.match(configuracaoBorda, /Content-Security-Policy/);
+  assert.match(configuracaoBorda, /X-Content-Type-Options "nosniff"/);
+  assert.match(codigoStaging, /https:\/\/omni\.up100\.com\.br/);
+  assert.match(codigoStaging, /worker_fluxos=2/);
 });

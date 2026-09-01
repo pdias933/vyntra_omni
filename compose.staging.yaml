@@ -123,7 +123,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: migracao
-    image: vyntra/migracoes-staging:pr-055
+    image: vyntra/migracoes-staging:pr-096a
     pull_policy: build
     restart: "no"
     init: true
@@ -152,7 +152,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/api-staging:pr-055
+    image: vyntra/api-staging:pr-096a
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -172,7 +172,7 @@ services:
       DADOS_PERMITIDOS: sinteticos_ou_sanitizados
       ENDERECO_HTTP: 0.0.0.0
       NODE_ENV: production
-      ORIGENS_WEB_PERMITIDAS: https://staging.vyntra.local
+      ORIGENS_WEB_PERMITIDAS: https://omni.up100.com.br
       PORTA_HTTP: "3000"
       REDIS_URL_FILE: /run/secrets/url_redis
       STORAGE_BUCKET: vyntra-staging-midias
@@ -222,7 +222,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/worker-fluxos-staging:pr-055
+    image: vyntra/worker-fluxos-staging:pr-096a
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -253,6 +253,91 @@ services:
       - /tmp:uid=1000,gid=1000,mode=0700
     networks:
       - rede_dados_staging
+    logging: *registro-staging
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: conteudo
+    image: vyntra/web-staging:pr-096a
+    pull_policy: build
+    restart: *reinicio-staging
+    init: true
+    user: "1000:1000"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /config:uid=1000,gid=1000,mode=0700
+      - /data:uid=1000,gid=1000,mode=0700
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --quiet
+        - --spider
+        - http://127.0.0.1:8080/
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    networks:
+      - rede_publicada_staging
+    logging: *registro-staging
+
+  proxy:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: borda
+    image: vyntra/proxy-staging:pr-096a
+    pull_policy: build
+    restart: *reinicio-staging
+    init: true
+    user: "1000:1000"
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - name: web-http
+        target: 80
+        published: "80"
+        protocol: tcp
+      - name: web-https
+        target: 443
+        published: "443"
+        protocol: tcp
+      - name: web-http3
+        target: 443
+        published: "443"
+        protocol: udp
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --quiet
+        - --spider
+        - --header=Host: omni.up100.com.br
+        - http://127.0.0.1/
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
+    volumes:
+      - certificados_proxy_staging:/data
+      - configuracao_proxy_staging:/config
+    networks:
+      - rede_publicada_staging
     logging: *registro-staging
 
 configs:
@@ -291,6 +376,8 @@ secrets:
     file: ./.segredos/staging/url-redis
 
 volumes:
+  certificados_proxy_staging:
+  configuracao_proxy_staging:
   dados_postgresql_staging:
   dados_redis_staging:
   dados_storage_staging:

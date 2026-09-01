@@ -45,7 +45,7 @@ Staging nunca lê ou escreve banco de produção e não reutiliza credencial de 
 
 A migration `20260831001100_criar_conta_whatsapp` é aditiva e cria somente o cadastro inativo das origens empresariais. Promover essa imagem não configura nem ativa Meta, não cria conta padrão e não introduz credencial no banco. Rollback da aplicação preserva a tabela e sua origem histórica para compatibilidade com versões posteriores.
 
-A implementação mínima usa `compose.staging.yaml`, projeto fixo `vyntra-staging` e comandos `pnpm staging:*`. Seus nomes de banco, usuário Redis, bucket, redes, volumes e diretório de segredos são exclusivos. Somente a API publica porta, em `127.0.0.1:3100`; PostgreSQL, Redis, S3 e administração do storage permanecem nas redes internas.
+A implementação usa `compose.staging.yaml`, projeto fixo `vyntra-staging` e comandos `pnpm staging:*`. Seus nomes de banco, usuário Redis, bucket, redes, volumes e diretório de segredos são exclusivos. O proxy publica somente HTTP/HTTPS em `80/443`, o console e a API compartilham `https://omni.up100.com.br`, e a API preserva o acesso operacional em `127.0.0.1:3100`. PostgreSQL, Redis, S3, administração do storage, web estático e workers não publicam portas próprias.
 
 O storage de staging é Garage S3 mantido e fixado por versão/digest, não o MinIO comunitário legado do desenvolvimento. Ele roda em nó único porque esta PR utiliza uma única VM e somente dados descartáveis de staging. Isso não oferece redundância e é proibido em produção. Metadados, blocos e snapshots usam volumes separados; o bucket é privado, sem website, e a chave da aplicação não recebe permissão de proprietário.
 
@@ -58,6 +58,8 @@ pnpm staging:estado
 ```
 
 O marcador local `DADOS_PERMITIDOS=sinteticos_ou_sanitizados` é obrigatório e indivisível com o conjunto de segredos. A confirmação de subida é uma guarda contra erro operacional; não autoriza importar produção. Não existe comando de importação, restauração ou reset automático no wrapper. Detalhes estão no [runbook da PR 005](docs/operacoes/PR-005.md).
+
+A entrega intermediária PR 096A adiciona a imagem imutável do console, a borda Caddy não privilegiada e o TLS público automático. O volume de certificados não é cache e deve ser preservado entre recriações. A origem permitida da sessão web é exatamente `https://omni.up100.com.br`; aliases e acesso direto por IP não são origens de autenticação válidas. O smoke confere HTML, API pela mesma origem, certificado confiável, redirecionamento e cabeçalhos defensivos. Detalhes e reversão estão no [runbook da PR 096A](docs/operacoes/PR-096A.md).
 
 ### Produção
 

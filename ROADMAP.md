@@ -139,6 +139,14 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 115 | PENDENTE | `high` |
 | 116 | PENDENTE | `xhigh` |
 
+### Entregas intermediárias
+
+| PR | Estado | Effort |
+|---:|---|---|
+| 096A | EM ANDAMENTO | `high` |
+
+`096A` foi inserida sem renumerar o lote mobile aprovado. Seu único objetivo é publicar com segurança o console web já concluído; PR097–PR107 permanecem pausadas até novo direcionamento.
+
 ## 2. Portão zero
 
 ### PR 001 — ADRs e matriz de decisões
@@ -638,6 +646,10 @@ Aceite concluído em 1º de setembro de 2026: o editor desktop permite alternar 
 ### PR 096 — saúde, reprocessamento e releases
 
 Aceite concluído em 1º de setembro de 2026: `Saúde e releases` observa automaticamente API, PostgreSQL, Redis e Object Storage, separa ausência de configuração de indisponibilidade e resume operações recuperáveis e caixa de saída sem payload, entidade de negócio ou identificador externo. Diagnóstico exige `ADMINISTRAR_INTEGRACOES` dentro da mesma leitura consistente dos dados. `Reprocessar agora` exige sessão+origem+CSRF e revisão esperada; apenas antecipa `proxima_acao_em`, sem chamar integração ou trocar estado, portanto resultado incerto continua no caminho obrigatório de reconciliação. Estado terminal não reabre e a antecipação é auditada na mesma transação. A página também administra controles de recurso, desligamento emergencial e políticas iOS/Android pelos serviços `ADMINISTRAR_RELEASES` existentes, sempre com preview e confirmação; controle novo nasce desativado. O web usa somente o SDK OpenAPI gerado e atualiza saúde silenciosamente. Não houve migration. Lint, tipos, 426 testes da API e 239 testes de arquitetura foram aprovados. A imagem cumulativa `pr-096` também foi aceita em staging com migração concluída, API saudável, dois workers ativos, PostgreSQL, Redis e Object Storage saudáveis, contratos OpenAPI presentes e proteção 401 sem sessão. Effort `xhigh` foi mantido pela recuperação sem efeito duplicado e pelo impacto da atualização obrigatória.
+
+### PR 096A — publicação segura do console web em staging
+
+Em andamento: empacotar o frontend já concluído em imagem imutável, servir a SPA em rede privada e publicar `https://omni.up100.com.br` por uma borda TLS separada. API, SSE e WebSocket compartilham a mesma origem; banco, Redis, storage e web não ganham portas próprias. O aceite exige certificado público, HTTP→HTTPS, cabeçalhos defensivos, login carregável, API pública saudável, duas instâncias de worker e smoke completo. Não há migration. Effort recomendado `high`, devido à borda pública, PKI e preservação do isolamento de staging.
 
 ## 12. Mobile
 

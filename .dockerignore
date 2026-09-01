@@ -18,13 +18,35 @@
 !apps/api/src
 !apps/api/src/**/*.ts
 
+!apps/web
+!apps/web/Dockerfile
+!apps/web/package.json
+!apps/web/index.html
+!apps/web/tsconfig.app.json
+!apps/web/tsconfig.json
+!apps/web/tsconfig.node.json
+!apps/web/vite.config.ts
+!apps/web/src
+!apps/web/src/**/*.ts
+!apps/web/src/**/*.tsx
+
 !packages
+!packages/api-client
+!packages/api-client/package.json
+!packages/api-client/tsconfig.json
+!packages/api-client/src
+!packages/api-client/src/**/*.ts
 !packages/eslint-config
 !packages/eslint-config/package.json
 !packages/typescript-config
 !packages/typescript-config/package.json
 !packages/typescript-config/base.json
 !packages/typescript-config/nest.json
+
+!infra
+!infra/staging
+!infra/staging/Caddyfile.web
+!infra/staging/Caddyfile.borda
 
 **/.env
 **/.env.*

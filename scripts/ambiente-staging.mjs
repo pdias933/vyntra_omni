@@ -23,6 +23,7 @@ const caminhoVerificadorStorage = join(
 const nomeProjeto = 'vyntra-staging';
 const nomeChaveStorage = 'vyntra-staging-aplicacao';
 const nomeBucketStorage = 'vyntra-staging-midias';
+const origemWebStaging = 'https://omni.up100.com.br';
 const confirmacaoObrigatoria = 'STAGING_ISOLADO_SEM_DADOS_DE_PRODUCAO';
 
 function gerarValorAleatorio() {
@@ -476,7 +477,7 @@ function executarVerificacaoS3(modo = 'gravar-e-ler') {
       `type=bind,source=${segredoChave},target=/run/secrets/chave_storage_secreta,readonly`,
       '--entrypoint',
       'node',
-      'vyntra/api-staging:pr-027',
+      'vyntra/api-staging:pr-096a',
       '/verificar-storage-s3.mjs',
       modo,
     ],
@@ -621,6 +622,58 @@ async function executarSmoke() {
   if (resposta.status !== 200) {
     throw new Error(`API_STAGING_STATUS_INESPERADO:${resposta.status}`);
   }
+
+  let respostaWeb;
+  let ultimaFalha;
+  for (let tentativa = 1; tentativa <= 12; tentativa += 1) {
+    try {
+      respostaWeb = await fetch(origemWebStaging, {
+        signal: AbortSignal.timeout(5_000),
+      });
+      if (respostaWeb.status === 200) break;
+      ultimaFalha = new Error(`WEB_STAGING_STATUS_INESPERADO:${respostaWeb.status}`);
+    } catch (erro) {
+      ultimaFalha = erro;
+    }
+    await new Promise((resolver) => setTimeout(resolver, 2_500));
+  }
+
+  if (respostaWeb?.status !== 200) {
+    throw ultimaFalha ?? new Error('WEB_STAGING_INDISPONIVEL');
+  }
+
+  const html = await respostaWeb.text();
+  if (!html.includes('<div id="root"></div>')) {
+    throw new Error('WEB_STAGING_CONTEUDO_INESPERADO');
+  }
+  if (
+    respostaWeb.headers.get('strict-transport-security') === null ||
+    respostaWeb.headers.get('content-security-policy') === null ||
+    respostaWeb.headers.get('x-content-type-options') !== 'nosniff'
+  ) {
+    throw new Error('WEB_STAGING_CABECALHOS_INCOMPLETOS');
+  }
+
+  const respostaApiPublica = await fetch(
+    `${origemWebStaging}/api/v1/saude/pronto`,
+    { signal: AbortSignal.timeout(5_000) },
+  );
+  if (respostaApiPublica.status !== 200) {
+    throw new Error(
+      `API_PUBLICA_STAGING_STATUS_INESPERADO:${respostaApiPublica.status}`,
+    );
+  }
+
+  const redirecionamento = await fetch(origemWebStaging.replace('https:', 'http:'), {
+    redirect: 'manual',
+    signal: AbortSignal.timeout(5_000),
+  });
+  if (
+    redirecionamento.status !== 308 ||
+    !redirecionamento.headers.get('location')?.startsWith(origemWebStaging)
+  ) {
+    throw new Error('WEB_STAGING_REDIRECIONAMENTO_HTTPS_INVALIDO');
+  }
 }
 
 async function executarComando(comando) {
@@ -650,7 +703,18 @@ async function executarComando(comando) {
         'storage',
       ]);
       await inicializarStorage();
-      executarDockerCompose(['up', '--build', '--detach', '--wait', 'api']);
+      executarDockerCompose([
+        'up',
+        '--build',
+        '--detach',
+        '--wait',
+        '--scale',
+        'worker_fluxos=2',
+        'api',
+        'worker_fluxos',
+        'web',
+        'proxy',
+      ]);
       await executarSmoke();
       console.log('Staging isolado saudável; somente dados sintéticos ou sanitizados.');
       break;

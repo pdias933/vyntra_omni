@@ -110,7 +110,7 @@ API, endpoint S3 e console MinIO ficam disponíveis somente em `127.0.0.1`. Post
 
 ### Staging isolado
 
-O staging possui composição, projeto Docker, redes, volumes e segredos próprios. PostgreSQL, Redis e Garage S3 não publicam portas no host; a API mínima fica somente em `127.0.0.1:3100`. O comando de subida exige confirmação explícita de que o ambiente contém apenas dados sintéticos ou sanitizados.
+O staging possui composição, projeto Docker, redes, volumes e segredos próprios. PostgreSQL, Redis e Garage S3 não publicam portas no host; a API administrativa continua disponível somente em `127.0.0.1:3100`. O console e a API pública compartilham `https://omni.up100.com.br`, com redirecionamento HTTP→HTTPS e certificado renovado automaticamente. O comando de subida exige confirmação explícita de que o ambiente contém apenas dados sintéticos ou sanitizados.
 
 ```text
 pnpm staging:preparar
@@ -120,7 +120,7 @@ pnpm staging:smoke
 pnpm staging:estado
 ```
 
-Segredos são arquivos ignorados em `.segredos/staging/`; valores nunca entram em Compose, Git, imagem, log ou parâmetro de processo. O storage cria uma chave exclusiva com leitura/escrita somente no bucket privado `vyntra-staging-midias`, sem permissão de proprietário. Topologia, implantação, recuperação e limites estão em [docs/operacoes/PR-005.md](docs/operacoes/PR-005.md); seleção e risco do storage estão em [docs/dependencias/PR-005.md](docs/dependencias/PR-005.md).
+Segredos são arquivos ignorados em `.segredos/staging/`; valores nunca entram em Compose, Git, imagem, log ou parâmetro de processo. O storage cria uma chave exclusiva com leitura/escrita somente no bucket privado `vyntra-staging-midias`, sem permissão de proprietário. O TLS público persiste em volume exclusivo da borda e não depende de chave versionada. Topologia, implantação, recuperação e limites estão em [docs/operacoes/PR-005.md](docs/operacoes/PR-005.md) e [docs/operacoes/PR-096A.md](docs/operacoes/PR-096A.md); seleção e risco das imagens estão em [docs/dependencias/PR-005.md](docs/dependencias/PR-005.md) e [docs/dependencias/PR-096A.md](docs/dependencias/PR-096A.md).
 
 ## Princípios congelados
 
