@@ -55,7 +55,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 031 | CONCLUÍDA | `medium` |
 | 032 | CONCLUÍDA | `high` |
 | 033 | CONCLUÍDA | `xhigh` |
-| 034 | EM ANDAMENTO | `high` |
+| 034 | CONCLUÍDA | `high` |
 | 035 | PENDENTE | `xhigh` |
 | 036 | PENDENTE | `xhigh` |
 | 037 | PENDENTE | `high` |
@@ -321,6 +321,10 @@ Aceite concluído em 1º de setembro de 2026: `HistoricoAtribuicao` passou a mat
 ### PR 033 — resgate atômico
 
 Aceite concluído em 1º de setembro de 2026: o resgate passou a exigir cumulativamente `VISUALIZAR_FILA` e `RESGATAR_ATENDIMENTO` no escopo da fila. A escrita condicional compara estado `AGUARDANDO`, modo `FILA_HUMANA`, fila esperada, responsável nulo e `versao_atribuicao`; somente o vencedor muda para `EM_ATENDIMENTO/HUMANO`, incrementa as versões e registra histórico, evento e auditoria na mesma transação. O perdedor recebe conflito com o responsável vencedor e não produz efeitos derivados. Lint, tipos, 154 testes da API, 128 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve nova migration; `vyntra/api-staging:pr-033` ficou saudável com prontidão `PRONTO`. Em staging, dois candidatos produziram uma única alteração, a segunda comparação afetou zero registros, a versão avançou de 7 para 8, restou um único histórico aberto, a transação sintética foi revertida e não houve erro de nível 50.
+
+### PR 034 — transferência para fila
+
+Aceite concluído em 1º de setembro de 2026: `TRANSFERIR_FILA` passou a ser comando explícito da máquina de atendimento. A operação exige `TRANSFERIR_ATENDIMENTO` tanto na fila de origem quanto na de destino, compara origem e versão atomicamente e resulta em `AGUARDANDO/FILA_HUMANA`, motivo `AGUARDANDO_HUMANO`, fila destino e responsável nulo, incrementando as duas versões. Somente campos de estado/atribuição são escritos; conversa/timeline, conta de origem, protocolo, contexto e demais relações permanecem. Histórico `TRANSFERENCIA_FILA`, evento e auditoria compartilham a transação. Lint, tipos, 158 testes da API, 130 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve nova migration; `vyntra/api-staging:pr-034` ficou saudável com prontidão `PRONTO`. Em staging, a versão avançou de 5 para 6, responsável foi limpo, destino/histórico foram trocados e timeline, origem e protocolo permaneceram, com rollback sintético e nenhum erro de nível 50.
 
 ## 7. Mensageria Meta
 
