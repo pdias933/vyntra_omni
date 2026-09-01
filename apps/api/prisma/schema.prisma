@@ -106,6 +106,12 @@ enum MarcoAlertaJanelaCanal {
   @@map("marco_alerta_janela_canal")
 }
 
+enum VisibilidadeNotaInterna {
+  SOMENTE_EQUIPE
+
+  @@map("visibilidade_nota_interna")
+}
+
 enum PapelBase {
   ADMINISTRADOR
   SUPERVISOR
@@ -504,6 +510,7 @@ model Usuario {
   historicosResponsabilidade HistoricoAtribuicao[] @relation("UsuarioResponsavelHistoricoAtribuicao")
   historicosAtribuicaoExecutados HistoricoAtribuicao[] @relation("UsuarioExecutorHistoricoAtribuicao")
   overridesCalendarioExecutados OverrideCalendario[]
+  notasInternasCriadas NotaInterna[]
 
   @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
   @@index([perfilId], map: "usuario_perfil_idx")
@@ -820,6 +827,7 @@ model Conversa {
   contato               Contato                      @relation(fields: [contatoId], references: [id], onDelete: Restrict)
   contasParticipantes   ParticipacaoContaConversa[]
   atendimentos          Atendimento[]
+  notasInternas         NotaInterna[]
 
   @@index([ultimaAtividadeEm, id], map: "conversa_ultima_atividade_idx")
   @@map("conversa")
@@ -870,7 +878,9 @@ model Atendimento {
   protocoloErp                    ProtocoloErp?
   historicosAtribuicao            HistoricoAtribuicao[]
   relogiosSla                     RelogioSlaAtendimento[]
+  notasInternas                   NotaInterna[]
 
+  @@unique([id, conversaId], map: "atendimento_id_conversa_key")
   @@index([conversaId, iniciadoEm, id], map: "atendimento_conversa_inicio_idx")
   @@index([contaWhatsAppOrigemId, estado, iniciadoEm], map: "atendimento_origem_estado_idx")
   @@index([filaAtualId, estado, atualizadoEm], map: "atendimento_fila_estado_idx")
@@ -1062,6 +1072,24 @@ model AlertaJanelaCanal {
   @@unique([janelaCanalId, versaoJanela, marco], map: "alerta_janela_canal_versao_marco_key")
   @@index([marco, emitidoEm, id], map: "alerta_janela_canal_marco_emitido_idx")
   @@map("alerta_janela_canal")
+}
+
+model NotaInterna {
+  id                 String                    @id @db.Uuid
+  conversaId         String                    @map("conversa_id") @db.Uuid
+  atendimentoId      String                    @map("atendimento_id") @db.Uuid
+  autorUsuarioId     String                    @map("autor_usuario_id") @db.Uuid
+  visibilidade       VisibilidadeNotaInterna   @default(SOMENTE_EQUIPE)
+  conteudoProtegido  Json                      @map("conteudo_protegido")
+  criadaEm           DateTime                  @map("criada_em") @db.Timestamptz(6)
+  conversa           Conversa                  @relation(fields: [conversaId], references: [id], onDelete: Restrict)
+  atendimento        Atendimento               @relation(fields: [atendimentoId, conversaId], references: [id, conversaId], onDelete: Restrict)
+  autorUsuario       Usuario                   @relation(fields: [autorUsuarioId], references: [id], onDelete: Restrict)
+
+  @@index([conversaId, criadaEm, id], map: "nota_interna_conversa_criada_idx")
+  @@index([atendimentoId, criadaEm, id], map: "nota_interna_atendimento_criada_idx")
+  @@index([autorUsuarioId, criadaEm, id], map: "nota_interna_autor_criada_idx")
+  @@map("nota_interna")
 }
 
 model ProtocoloErp {
