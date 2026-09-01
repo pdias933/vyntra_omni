@@ -32,13 +32,15 @@ const alvo = {
 
 function criarCenario(sobrescritas = {}) {
   const chamadas = { alteracoes: [], auditoria: [], autorizacao: [], criacoes: [], ordem: [] };
-  const contextoAtual = sobrescritas.contextoAtual ?? {
-    ...alvo,
-    alteradoEm: agora,
-    atendimentoId: ids.atendimento,
-    origem: 'IDENTIFICACAO',
-    versao: 1,
-  };
+  const contextoAtual = Object.hasOwn(sobrescritas, 'contextoAtual')
+    ? sobrescritas.contextoAtual
+    : {
+        ...alvo,
+        alteradoEm: agora,
+        atendimentoId: ids.atendimento,
+        origem: 'IDENTIFICACAO',
+        versao: 1,
+      };
   const repositorio = {
     alterar: async (...argumentos) => {
       chamadas.ordem.push('ALTERAR');
@@ -50,11 +52,21 @@ function criarCenario(sobrescritas = {}) {
       chamadas.criacoes.push(argumentos);
       return sobrescritas.criado ?? true;
     },
+    obterAlvoAutomatizavel: async () => {
+      chamadas.ordem.push('OBTER_ALVO_AUTOMATIZAVEL');
+      return sobrescritas.alvoAutomatizavel === null
+        ? undefined
+        : (sobrescritas.alvoAutomatizavel ?? alvo);
+    },
     obterAlvoAtivo: async () => {
       chamadas.ordem.push('OBTER_ALVO');
       return sobrescritas.alvo === null ? undefined : alvo;
     },
     obterContexto: async () => contextoAtual,
+    obterContatoDoAtendimento: async () =>
+      sobrescritas.contatoAtendimento === null
+        ? undefined
+        : (sobrescritas.contatoAtendimento ?? ids.contato),
   };
   const autorizacao = {
     autorizar: async (pedido, verificar, transacao) => {
@@ -190,4 +202,127 @@ test('entrada inválida e alvo inicial ausente falham antes de persistir', async
     ),
     ErroAlvoContextoIndisponivel,
   );
+});
+
+test('identificação do fluxo exige contexto explícito e vínculo automatizável exato', async () => {
+  const identificado = criarCenario();
+  assert.equal(
+    await identificado.servico.identificarParaFluxo(
+      ids.atendimento,
+      identificado.transacao,
+    ),
+    true,
+  );
+
+  const semContexto = criarCenario({ contextoAtual: undefined });
+  assert.equal(
+    await semContexto.servico.identificarParaFluxo(
+      ids.atendimento,
+      semContexto.transacao,
+    ),
+    false,
+  );
+  const inseguro = criarCenario({ alvoAutomatizavel: null });
+  assert.equal(
+    await inseguro.servico.identificarParaFluxo(
+      ids.atendimento,
+      inseguro.transacao,
+    ),
+    false,
+  );
+});
+
+test('fluxo seleciona cliente exato sem contrato e audita somente referências internas', async () => {
+  const alvoCliente = {
+    clienteExternoId: alvo.clienteExternoId,
+    contatoId: alvo.contatoId,
+    vinculoClienteId: alvo.vinculoClienteId,
+  };
+  const cenario = criarCenario({
+    alvoAutomatizavel: alvoCliente,
+    contextoAtual: undefined,
+  });
+  assert.equal(
+    await cenario.servico.selecionarClientePorFluxo(
+      {
+        atendimentoId: ids.atendimento,
+        fluxoId: randomUUID(),
+        versaoFluxoId: randomUUID(),
+        vinculoClienteId: ids.cliente,
+      },
+      cenario.transacao,
+      () => agora,
+    ),
+    true,
+  );
+  assert.equal(cenario.chamadas.criacoes.length, 1);
+  assert.equal(cenario.chamadas.criacoes[0][0].origem, 'FLUXO');
+  assert.equal(cenario.chamadas.criacoes[0][0].vinculoContratoId, undefined);
+  assert.equal(cenario.chamadas.auditoria[0][0].origem, 'FLUXO');
+  const auditado = JSON.stringify(cenario.chamadas.auditoria[0][0]);
+  assert.equal(auditado.includes(alvo.clienteExternoId), false);
+  assert.equal(auditado.includes(alvo.contratoExternoId), false);
+});
+
+test('fluxo seleciona contrato do cliente atual e repetição é idempotente', async () => {
+  const cenario = criarCenario({
+    contextoAtual: {
+      clienteExternoId: alvo.clienteExternoId,
+      contatoId: alvo.contatoId,
+      alteradoEm: agora,
+      atendimentoId: ids.atendimento,
+      origem: 'FLUXO',
+      versao: 1,
+      vinculoClienteId: alvo.vinculoClienteId,
+    },
+  });
+  const entrada = {
+    atendimentoId: ids.atendimento,
+    fluxoId: randomUUID(),
+    versaoFluxoId: randomUUID(),
+    vinculoContratoId: ids.contrato,
+  };
+  assert.equal(
+    await cenario.servico.selecionarContratoPorFluxo(
+      entrada,
+      cenario.transacao,
+      () => agora,
+    ),
+    true,
+  );
+  assert.equal(cenario.chamadas.alteracoes.length, 1);
+  assert.equal(cenario.chamadas.alteracoes[0][0].vinculoContratoId, ids.contrato);
+
+  const repetido = criarCenario();
+  assert.equal(
+    await repetido.servico.selecionarContratoPorFluxo(
+      entrada,
+      repetido.transacao,
+      () => agora,
+    ),
+    true,
+  );
+  assert.equal(repetido.chamadas.alteracoes.length, 0);
+  assert.equal(repetido.chamadas.auditoria.length, 0);
+});
+
+test('fluxo não seleciona vínculo ausente, revogado ou sem prova automatizável', async () => {
+  const cenario = criarCenario({
+    alvoAutomatizavel: null,
+    contextoAtual: undefined,
+  });
+  assert.equal(
+    await cenario.servico.selecionarClientePorFluxo(
+      {
+        atendimentoId: ids.atendimento,
+        fluxoId: randomUUID(),
+        versaoFluxoId: randomUUID(),
+        vinculoClienteId: ids.cliente,
+      },
+      cenario.transacao,
+    ),
+    false,
+  );
+  assert.equal(cenario.chamadas.criacoes.length, 0);
+  assert.equal(cenario.chamadas.auditoria.length, 0);
 });

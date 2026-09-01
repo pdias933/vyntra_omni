@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { ModuloAuditoria } from '../auditoria/modulo-auditoria.js';
 import { ModuloCalendarios } from '../calendarios/modulo-calendarios.js';
+import { ModuloContextosCliente } from '../contextos-cliente/modulo-contextos-cliente.js';
 import { ModuloFluxos } from '../fluxos/modulo-fluxos.js';
 import { ModuloMensagens } from '../mensagens/modulo-mensagens.js';
 import { ModuloPersistencia } from '../persistencia/modulo-persistencia.js';
@@ -22,6 +23,7 @@ import { ServicoRecuperacaoExecucoesFluxo } from './servico-recuperacao-execucoe
   imports: [
     ModuloAuditoria,
     ModuloCalendarios,
+    ModuloContextosCliente,
     ModuloFluxos,
     ModuloMensagens,
     ModuloPersistencia,

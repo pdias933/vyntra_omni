@@ -108,6 +108,34 @@ test('espera por resposta e calendário preservam autoridade no domínio', async
   );
 });
 
+test('identidade e seleção usam contexto explícito sem escolher vínculo implicitamente', async () => {
+  const [executor, validador, servico, repositorio, modulo] = await Promise.all([
+    ler('apps/api/src/execucoes-fluxo/servico-executor-nos-fluxo.ts'),
+    ler('apps/api/src/fluxos/validador-publicacao-fluxo.ts'),
+    ler('apps/api/src/contextos-cliente/servico-contextos-cliente.ts'),
+    ler('apps/api/src/contextos-cliente/repositorio-contextos-cliente-prisma.ts'),
+    ler('apps/api/src/execucoes-fluxo/modulo-execucoes-fluxo.ts'),
+  ]);
+  assert.match(executor, /ServicoContextosCliente/);
+  assert.match(executor, /'IDENTIFICAR_CONTATO'/);
+  assert.match(executor, /'SELECIONAR_CLIENTE'/);
+  assert.match(executor, /'SELECIONAR_CONTRATO'/);
+  assert.match(executor, /'SOLICITAR_DADOS_CONTATO'/);
+  assert.match(validador, /variavel\?\.tipo !== 'UUID'/);
+  assert.match(validador, /!variavel\.sensivel/);
+  assert.match(servico, /obterContatoDoAtendimento/);
+  assert.match(servico, /obterAlvoAutomatizavel/);
+  assert.match(servico, /origem: 'FLUXO'/);
+  assert.match(repositorio, /verificadoEm: \{ not: null \}/);
+  assert.match(repositorio, /tipo: 'VERIFICADO'/);
+  assert.match(repositorio, /tipo: 'MANUAL'/);
+  assert.doesNotMatch(
+    `${executor}\n${servico}\n${repositorio}`,
+    /preferencial: true|nomeUsuario|telefoneE164|localizarClientes|AdaptadorErp|AdaptadorMk/,
+  );
+  assert.match(modulo, /ModuloContextosCliente/);
+});
+
 test('nós de mensagem usam domínio, passos sanitizados e saídas nominais', async () => {
   const [schema, migration, executor, mensagens, repositorioMensagens, processo] = await Promise.all([
     ler('apps/api/prisma/schema.prisma'),

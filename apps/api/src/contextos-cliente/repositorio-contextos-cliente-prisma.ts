@@ -11,6 +11,17 @@ import type { RepositorioContextosCliente } from './repositorio-contextos-client
 export class RepositorioContextosClientePrisma
   implements RepositorioContextosCliente
 {
+  public async obterContatoDoAtendimento(
+    atendimentoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<string | undefined> {
+    const atendimento = await transacao.atendimento.findUnique({
+      select: { conversa: { select: { contatoId: true } } },
+      where: { id: atendimentoId },
+    });
+    return atendimento?.conversa.contatoId;
+  }
+
   public async obterAlvoAtivo(
     contatoId: string,
     vinculoClienteId: string,
@@ -20,6 +31,51 @@ export class RepositorioContextosClientePrisma
     const vinculo = await transacao.vinculoCliente.findFirst({
       select: { clienteExternoId: true, contatoId: true, id: true },
       where: { contatoId, id: vinculoClienteId, revogadoEm: null },
+    });
+    if (vinculo === null) return undefined;
+    if (vinculoContratoId === undefined) {
+      return {
+        clienteExternoId: vinculo.clienteExternoId,
+        contatoId: vinculo.contatoId,
+        vinculoClienteId: vinculo.id,
+      };
+    }
+    const contrato = await transacao.vinculoContrato.findFirst({
+      select: { contratoExternoId: true, id: true },
+      where: {
+        id: vinculoContratoId,
+        revogadoEm: null,
+        vinculoClienteId: vinculo.id,
+      },
+    });
+    if (contrato === null) return undefined;
+    return {
+      clienteExternoId: vinculo.clienteExternoId,
+      contatoId: vinculo.contatoId,
+      contratoExternoId: contrato.contratoExternoId,
+      vinculoClienteId: vinculo.id,
+      vinculoContratoId: contrato.id,
+    };
+  }
+
+  public async obterAlvoAutomatizavel(
+    contatoId: string,
+    vinculoClienteId: string,
+    vinculoContratoId: string | undefined,
+    transacao: TransacaoPrisma,
+  ): Promise<AlvoContextoAtendimento | undefined> {
+    const vinculo = await transacao.vinculoCliente.findFirst({
+      select: { clienteExternoId: true, contatoId: true, id: true },
+      where: {
+        contatoId,
+        id: vinculoClienteId,
+        revogadoEm: null,
+        verificadoEm: { not: null },
+        OR: [
+          { tipo: 'VERIFICADO' },
+          { tipo: 'MANUAL', verificadoPorUsuarioId: { not: null } },
+        ],
+      },
     });
     if (vinculo === null) return undefined;
     if (vinculoContratoId === undefined) {

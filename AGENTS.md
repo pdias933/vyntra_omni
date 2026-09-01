@@ -206,6 +206,9 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - Todo subciclo atravessa limite persistido, e a saída `FALHA` do nó limitado deixa o ciclo.
 - Publicar configuração não concede capacidade nova.
 - Simulador não chama produção externa nem altera dados reais.
+- Identificação do fluxo confirma contexto explícito; nunca escolha primeiro vínculo, preferencial, telefone ou username.
+- Seleção de cliente/contrato usa UUID interno sensível e serviço de domínio; não crie ou revalide vínculo no executor.
+- Vínculo temporário não é automatizável sem validade/revalidação formal, e seleção nunca substitui a política de risco da ação seguinte.
 
 ## 10. Mobile e sincronização
 

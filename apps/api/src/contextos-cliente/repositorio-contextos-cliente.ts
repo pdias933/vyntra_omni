@@ -9,7 +9,19 @@ export const REPOSITORIO_CONTEXTOS_CLIENTE = Symbol(
 );
 
 export interface RepositorioContextosCliente {
+  obterContatoDoAtendimento(
+    atendimentoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<string | undefined>;
+
   obterAlvoAtivo(
+    contatoId: string,
+    vinculoClienteId: string,
+    vinculoContratoId: string | undefined,
+    transacao: TransacaoPrisma,
+  ): Promise<AlvoContextoAtendimento | undefined>;
+
+  obterAlvoAutomatizavel(
     contatoId: string,
     vinculoClienteId: string,
     vinculoContratoId: string | undefined,

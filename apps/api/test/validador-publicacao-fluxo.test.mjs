@@ -600,6 +600,111 @@ test('condição recusa coerção, expressão, operador incompatível e segredo 
   );
 });
 
+test('nós de identidade exigem configuração fechada e seleção UUID sensível explícita', () => {
+  const selecao = (tipo) =>
+    definicaoBasica({
+      conexoes: [
+        conexao('inicio', 'SUCESSO', 'selecionar'),
+        conexao('selecionar', 'SELECIONADO', 'fim'),
+        conexao('selecionar', 'NAO_SELECIONADO', 'fim'),
+        conexao('selecionar', 'FALHA', 'fim'),
+      ],
+      nos: [
+        no('inicio', 'INICIO'),
+        no('selecionar', tipo, {
+          parametros: { variavel: 'vinculoEscolhido' },
+          variaveisEntrada: ['vinculoEscolhido'],
+        }),
+        no('fim', 'FIM'),
+      ],
+      variaveis: [
+        {
+          disponivelNaEntrada: true,
+          nome: 'vinculoEscolhido',
+          sensivel: true,
+          tipo: 'UUID',
+        },
+      ],
+    });
+  for (const tipo of ['SELECIONAR_CLIENTE', 'SELECIONAR_CONTRATO']) {
+    assert.equal(
+      new ValidadorPublicacaoFluxo().validar(
+        selecao(tipo),
+        contexto({ capacidadesHabilitadas: [tipo] }),
+      ).valido,
+      true,
+    );
+  }
+
+  const insegura = selecao('SELECIONAR_CLIENTE');
+  insegura.variaveis[0].sensivel = false;
+  insegura.variaveis[0].tipo = 'TEXTO';
+  assert.ok(
+    codigos(
+      new ValidadorPublicacaoFluxo().validar(
+        insegura,
+        contexto({ capacidadesHabilitadas: ['SELECIONAR_CLIENTE'] }),
+      ),
+    ).includes('CONFIGURACAO_SELECAO_CONTEXTO_INVALIDA'),
+  );
+});
+
+test('identificação e pedido de dados não aceitam variáveis, referências ou payload livre', () => {
+  const casos = [
+    {
+      no: no('identificar', 'IDENTIFICAR_CONTATO'),
+      saidas: ['IDENTIFICADO', 'NAO_IDENTIFICADO', 'FALHA'],
+      tipo: 'IDENTIFICAR_CONTATO',
+    },
+    {
+      no: no('solicitar', 'SOLICITAR_DADOS_CONTATO', {
+        parametros: { textoFallback: 'Compartilhe seus dados pelo canal seguro.' },
+      }),
+      saidas: ['ENVIADO', 'FALLBACK', 'FALHA'],
+      tipo: 'SOLICITAR_DADOS_CONTATO',
+    },
+  ];
+  for (const caso of casos) {
+    const definicao = definicaoBasica({
+      conexoes: [
+        conexao('inicio', 'SUCESSO', caso.no.id),
+        ...caso.saidas.map((saida) => conexao(caso.no.id, saida, 'fim')),
+      ],
+      nos: [no('inicio', 'INICIO'), caso.no, no('fim', 'FIM')],
+    });
+    assert.equal(
+      new ValidadorPublicacaoFluxo().validar(
+        definicao,
+        contexto({ capacidadesHabilitadas: [caso.tipo] }),
+      ).valido,
+      true,
+    );
+  }
+
+  const livre = definicaoBasica({
+    conexoes: [
+      conexao('inicio', 'SUCESSO', 'identificar'),
+      conexao('identificar', 'IDENTIFICADO', 'fim'),
+      conexao('identificar', 'NAO_IDENTIFICADO', 'fim'),
+      conexao('identificar', 'FALHA', 'fim'),
+    ],
+    nos: [
+      no('inicio', 'INICIO'),
+      no('identificar', 'IDENTIFICAR_CONTATO', {
+        parametros: { telefone: '+5511999999999' },
+      }),
+      no('fim', 'FIM'),
+    ],
+  });
+  assert.equal(
+    new ValidadorPublicacaoFluxo().validar(
+      livre,
+      contexto({ capacidadesHabilitadas: ['IDENTIFICAR_CONTATO'] }),
+    ).valido,
+    false,
+  );
+});
+
 function criarCenario(definicao = definicaoBasica()) {
   const chamadas = { auditoria: [], autorizacao: [], marcacoes: [] };
   const fluxo = {

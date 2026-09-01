@@ -620,3 +620,21 @@ ausente ou inválido → FALHA
 ```
 
 O nó não consulta adapter, rede ou relógio do cliente. Uma versão publicada conserva apenas o ID do calendário; a política temporal continua administrável no agregado próprio.
+
+## 25. Nós de identidade, cliente e contrato da PR 077
+
+`IDENTIFICAR_CONTATO` possui parâmetros, referências e variáveis vazios. Ele confirma o contexto explícito do atendimento e segue `IDENTIFICADO`, `NAO_IDENTIFICADO` ou `FALHA`; não localiza candidatos nem escolhe vínculo.
+
+`SELECIONAR_CLIENTE` e `SELECIONAR_CONTRATO` usam o contrato fechado:
+
+```text
+parametros: { variavel: nomeDaVariavel }
+variaveisEntrada: [nomeDaVariavel]
+tipo da variável: UUID
+sensivel: true
+saídas: SELECIONADO | NAO_SELECIONADO | FALHA
+```
+
+A variável precisa estar disponível em todos os caminhos e representa a escolha estruturada, não telefone, documento ou ID externo do ERP. Cliente é validado contra o contato e limpa contrato anterior; contrato exige o cliente atual e pertencimento ao mesmo vínculo. A matriz automatizável aceita vínculo `VERIFICADO` com instante de verificação ou `MANUAL` também atribuído a usuário verificador. Vínculo temporário, revogado, divergente ou seleção ausente segue caminho não selecionado. O executor nunca usa primeiro/preferencial e nunca cria vínculo.
+
+`SOLICITAR_DADOS_CONTATO` aceita somente `textoFallback` e nenhuma variável/referência. A saída oficial `ENVIADO` permanece reservada para uma capacidade comprovada. Na implementação atual, o texto passa pelo serviço de mensagens e segue `FALLBACK` em sucesso; falha do pipeline segue `FALHA`. Configurar o nó não habilita recurso Meta inexistente.

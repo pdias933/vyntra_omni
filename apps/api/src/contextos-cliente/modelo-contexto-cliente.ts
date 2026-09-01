@@ -35,3 +35,20 @@ export interface EntradaAlteracaoContextoAtendimento {
   readonly vinculoContratoId?: string;
   readonly versaoEsperada: number;
 }
+
+export interface AtorFluxoContextoAtendimento {
+  readonly fluxoId: string;
+  readonly versaoFluxoId: string;
+}
+
+export interface EntradaSelecaoClientePorFluxo
+  extends AtorFluxoContextoAtendimento {
+  readonly atendimentoId: string;
+  readonly vinculoClienteId: string;
+}
+
+export interface EntradaSelecaoContratoPorFluxo
+  extends AtorFluxoContextoAtendimento {
+  readonly atendimentoId: string;
+  readonly vinculoContratoId: string;
+}

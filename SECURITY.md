@@ -399,6 +399,8 @@ O contexto usado para validar publicação é fornecido exclusivamente pelo back
 
 Agendamento aceita somente `Date` válido, instante futuro e execução `EXECUTANDO` na revisão esperada. O banco limita `retomar_em` a `AGUARDANDO_SISTEMA` e recusa retomada prematura. Workers não recebem payload, segredo ou contexto em fila externa: consultam apenas registros vencidos no PostgreSQL, sob bloqueio de linha sem espera e transição condicional. Redis apagado, job duplicado ou dois workers não ampliam autoridade nem repetem a retomada. Log de falha usa somente código canônico e auditoria não inclui contexto protegido.
 
+Nós de identidade da PR 077 nunca buscam ou criam vínculo por telefone, username, preferência ou primeiro resultado. Seleção exige UUID interno sensível recebido de forma estruturada, pertencimento exato ao contato e vínculo não revogado com prova automatizável. A política aceita `VERIFICADO` com instante de verificação ou `MANUAL` com instante e usuário verificador; `TEMPORARIO` falha fechado até possuir validade/revalidação formal. Contrato precisa pertencer ao cliente já selecionado. O fluxo não cria, verifica, revoga nem torna vínculo preferencial. Passo, log e auditoria não carregam UUID escolhido do contexto, dado pessoal nem identificador ERP externo. Essa seleção não substitui revalidação e ERP em tempo real exigidos por ações de maior risco.
+
 Exemplo de desbloqueio:
 
 ```text

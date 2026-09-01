@@ -851,3 +851,11 @@ Desde a PR 076, `retomar_em` pode existir em `AGUARDANDO_SISTEMA` ou `AGUARDANDO
 `AGUARDAR/RESPOSTA` persiste o timeout e fica `AGUARDANDO_RESPOSTA`. A entrada válida marca a resposta e retoma antecipadamente na mesma transação; a máquina e o trigger recusam `RETOMAR` prematuro sem essa evidência. Ao vencer sem resposta, o worker retoma pelo mesmo mecanismo PostgreSQL e o nó segue `TIMEOUT`. `AGUARDAR/ATE_INSTANTE` usa `AGUARDANDO_SISTEMA` e segue `CONCLUIDO` ao vencer. O primeiro processamento termina seu passo como `AGENDADO`; a retomada cria novo passo na nova revisão e só então avança o grafo.
 
 `HORARIO_ATENDIMENTO` não possui parâmetros nem variáveis e referencia exatamente um `Calendario` ativo. `ABERTO` segue `DENTRO_HORARIO`; `FECHADO` segue `FORA_HORARIO`; calendário ausente ou inválido segue `FALHA` com código canônico. Fuso, períodos, feriados, exceções e overrides continuam pertencendo ao agregado `Calendario`, não à versão do fluxo.
+
+## 20. Identidade e contexto no Motor de Fluxos
+
+Desde a PR 077, `IDENTIFICAR_CONTATO` confirma somente um `ContextoAtendimento` explícito cujo vínculo ainda pertence ao contato do atendimento e continua automatizável. Ausência de contexto, vínculo revogado, alvo divergente ou prova insuficiente resulta em `NAO_IDENTIFICADO`; nenhum candidato é escolhido.
+
+A matriz conservadora permite ao fluxo selecionar somente vínculo `VERIFICADO` com `verificado_em`, ou `MANUAL` com `verificado_em` e usuário verificador. `TEMPORARIO` permanece fora da automação enquanto não existir validade/revalidação modelada. Isso limita seleção de contexto; não amplia autorização para ações de risco médio ou alto, que continuam aplicando a própria política e dado em tempo real.
+
+`SELECIONAR_CLIENTE` recebe exatamente um `vinculo_cliente_id` escolhido em variável `UUID` sensível e limpa qualquer contrato anterior. `SELECIONAR_CONTRATO` exige contexto de cliente e recebe um `vinculo_contrato_id` ativo pertencente ao mesmo vínculo. A seleção cria ou incrementa a versão do contexto com origem `FLUXO`; repetição do mesmo alvo é idempotente. Auditoria conserva apenas UUIDs internos, fluxo e versão. Nome, documento, telefone, username e identificadores externos não entram no passo nem na auditoria.

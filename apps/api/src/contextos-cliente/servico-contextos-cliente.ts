@@ -14,6 +14,8 @@ import type {
   ContextoAtendimentoPersistido,
   EntradaAlteracaoContextoAtendimento,
   EntradaInicializacaoContextoAtendimento,
+  EntradaSelecaoClientePorFluxo,
+  EntradaSelecaoContratoPorFluxo,
 } from './modelo-contexto-cliente.js';
 import {
   REPOSITORIO_CONTEXTOS_CLIENTE,
@@ -137,6 +139,166 @@ export class ServicoContextosCliente {
       transacao,
     );
     return contexto;
+  }
+
+  public async identificarParaFluxo(
+    atendimentoId: unknown,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    if (
+      typeof atendimentoId !== 'string' ||
+      !IDENTIFICADOR_UUID.test(atendimentoId)
+    ) {
+      throw new ErroContextoAtendimentoInvalido();
+    }
+    const contatoId = await this.repositorio.obterContatoDoAtendimento(
+      atendimentoId,
+      transacao,
+    );
+    const contexto = await this.repositorio.obterContexto(
+      atendimentoId,
+      transacao,
+    );
+    if (contatoId === undefined || contexto?.contatoId !== contatoId) {
+      return false;
+    }
+    const alvo = await this.repositorio.obterAlvoAutomatizavel(
+      contatoId,
+      contexto.vinculoClienteId,
+      contexto.vinculoContratoId,
+      transacao,
+    );
+    return alvo !== undefined && this.mesmoAlvo(contexto, alvo);
+  }
+
+  public async selecionarClientePorFluxo(
+    entrada: EntradaSelecaoClientePorFluxo,
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<boolean> {
+    this.validarSelecaoFluxo(entrada, entrada.vinculoClienteId);
+    const contatoId = await this.repositorio.obterContatoDoAtendimento(
+      entrada.atendimentoId,
+      transacao,
+    );
+    if (contatoId === undefined) return false;
+    const alvo = await this.repositorio.obterAlvoAutomatizavel(
+      contatoId,
+      entrada.vinculoClienteId,
+      undefined,
+      transacao,
+    );
+    if (alvo === undefined) return false;
+    return this.aplicarSelecaoFluxo(entrada, alvo, transacao, relogio);
+  }
+
+  public async selecionarContratoPorFluxo(
+    entrada: EntradaSelecaoContratoPorFluxo,
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<boolean> {
+    this.validarSelecaoFluxo(entrada, entrada.vinculoContratoId);
+    const contatoId = await this.repositorio.obterContatoDoAtendimento(
+      entrada.atendimentoId,
+      transacao,
+    );
+    const atual = await this.repositorio.obterContexto(
+      entrada.atendimentoId,
+      transacao,
+    );
+    if (contatoId === undefined || atual?.contatoId !== contatoId) {
+      return false;
+    }
+    const alvo = await this.repositorio.obterAlvoAutomatizavel(
+      contatoId,
+      atual.vinculoClienteId,
+      entrada.vinculoContratoId,
+      transacao,
+    );
+    if (alvo === undefined) return false;
+    return this.aplicarSelecaoFluxo(entrada, alvo, transacao, relogio, atual);
+  }
+
+  private async aplicarSelecaoFluxo(
+    ator: {
+      readonly atendimentoId: string;
+      readonly fluxoId: string;
+      readonly versaoFluxoId: string;
+    },
+    alvo: AlvoContextoAtendimento,
+    transacao: TransacaoPrisma,
+    relogio: () => Date,
+    contextoLido?: ContextoAtendimentoPersistido,
+  ): Promise<boolean> {
+    const atual =
+      contextoLido ??
+      (await this.repositorio.obterContexto(ator.atendimentoId, transacao));
+    if (atual !== undefined && atual.contatoId !== alvo.contatoId) return false;
+    if (atual !== undefined && this.mesmoAlvo(atual, alvo)) return true;
+    const contexto = this.criarContexto(
+      ator.atendimentoId,
+      alvo,
+      'FLUXO',
+      (atual?.versao ?? 0) + 1,
+      relogio,
+    );
+    const persistiu =
+      atual === undefined
+        ? await this.repositorio.criar(contexto, transacao)
+        : await this.repositorio.alterar(contexto, atual.versao, transacao);
+    if (!persistiu) throw new ErroConflitoVersaoContexto();
+    await this.auditoria.registrar(
+      {
+        acao: 'SELECIONAR_CONTEXTO_POR_FLUXO',
+        atendimentoId: contexto.atendimentoId,
+        contatoId: contexto.contatoId,
+        ...(atual === undefined
+          ? {}
+          : { dadosAnteriores: this.resumoAuditoria(atual) }),
+        dadosNovos: this.resumoAuditoria(contexto),
+        entidadeId: contexto.atendimentoId,
+        entidadeTipo: 'CONTEXTO_ATENDIMENTO',
+        fluxoId: ator.fluxoId,
+        origem: 'FLUXO',
+        tipoEvento: 'CONTEXTO_ATENDIMENTO_SELECIONADO_POR_FLUXO',
+        versaoFluxoId: ator.versaoFluxoId,
+      },
+      transacao,
+    );
+    return true;
+  }
+
+  private mesmoAlvo(
+    esquerda: AlvoContextoAtendimento,
+    direita: AlvoContextoAtendimento,
+  ): boolean {
+    return (
+      esquerda.contatoId === direita.contatoId &&
+      esquerda.vinculoClienteId === direita.vinculoClienteId &&
+      esquerda.vinculoContratoId === direita.vinculoContratoId &&
+      esquerda.clienteExternoId === direita.clienteExternoId &&
+      esquerda.contratoExternoId === direita.contratoExternoId
+    );
+  }
+
+  private validarSelecaoFluxo(
+    ator: {
+      readonly atendimentoId: string;
+      readonly fluxoId: string;
+      readonly versaoFluxoId: string;
+    },
+    vinculoId: string,
+  ): void {
+    if (
+      !this.uuidsValidos([
+        ator.atendimentoId,
+        ator.fluxoId,
+        ator.versaoFluxoId,
+        vinculoId,
+      ])
+    ) {
+      throw new ErroContextoAtendimentoInvalido();
+    }
   }
 
   private async obterAlvo(

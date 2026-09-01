@@ -7,6 +7,7 @@ import {
   ErroCalendarioInvalido,
 } from '../calendarios/erros-calendario.js';
 import { ServicoCalendarios } from '../calendarios/servico-calendarios.js';
+import { ServicoContextosCliente } from '../contextos-cliente/servico-contextos-cliente.js';
 import type {
   ConexaoDefinicaoFluxo,
   DefinicaoFluxoV1,
@@ -60,7 +61,11 @@ const TIPOS_SUPORTADOS = new Set([
   'ENVIAR_MENSAGEM',
   'FIM',
   'HORARIO_ATENDIMENTO',
+  'IDENTIFICAR_CONTATO',
   'INICIO',
+  'SELECIONAR_CLIENTE',
+  'SELECIONAR_CONTRATO',
+  'SOLICITAR_DADOS_CONTATO',
 ]);
 
 interface ResultadoExecucaoNo {
@@ -87,6 +92,8 @@ export class ServicoExecutorNosFluxo {
     private readonly catalogo: ServicoCatalogoFluxos,
     @Inject(ServicoCalendarios)
     private readonly calendarios: ServicoCalendarios,
+    @Inject(ServicoContextosCliente)
+    private readonly contextosCliente: ServicoContextosCliente,
     @Inject(ServicoMensagensSaida)
     private readonly mensagens: ServicoMensagensSaida,
     @Inject(ServicoExecucoesFluxo)
@@ -321,7 +328,140 @@ export class ServicoExecutorNosFluxo {
         relogio,
       );
     }
+    if (
+      no.tipo === 'IDENTIFICAR_CONTATO' ||
+      no.tipo === 'SELECIONAR_CLIENTE' ||
+      no.tipo === 'SELECIONAR_CONTRATO' ||
+      no.tipo === 'SOLICITAR_DADOS_CONTATO'
+    ) {
+      return this.executarIdentidade(
+        no,
+        definicao,
+        execucao,
+        iteracao.contexto,
+        transacao,
+        relogio,
+      );
+    }
     throw new ErroExecucaoFluxoInvalida();
+  }
+
+  private async executarIdentidade(
+    no: NoDefinicaoFluxo,
+    definicao: DefinicaoFluxoV1,
+    execucao: ExecucaoFluxoPersistida,
+    contexto: ObjetoJsonProtegido,
+    transacao: TransacaoPrisma,
+    relogio: () => Date,
+  ): Promise<ResultadoExecucaoNo> {
+    if (no.tipo === 'IDENTIFICAR_CONTATO') {
+      if (
+        !this.temExatamenteChaves(no.parametros, []) ||
+        no.referencias.length !== 0 ||
+        no.variaveisEntrada.length !== 0 ||
+        no.variaveisSaida.length !== 0
+      ) {
+        return {
+          codigo: 'CONFIGURACAO_IDENTIDADE_INVALIDA',
+          contextoProtegido: contexto,
+          resultado: 'FALHA',
+        };
+      }
+      return {
+        contextoProtegido: contexto,
+        resultado: (await this.contextosCliente.identificarParaFluxo(
+          execucao.atendimentoId,
+          transacao,
+        ))
+          ? 'IDENTIFICADO'
+          : 'NAO_IDENTIFICADO',
+      };
+    }
+    if (no.tipo === 'SOLICITAR_DADOS_CONTATO') {
+      const textoFallback = Reflect.get(no.parametros, 'textoFallback');
+      if (
+        !this.temExatamenteChaves(no.parametros, ['textoFallback']) ||
+        typeof textoFallback !== 'string' ||
+        no.referencias.length !== 0 ||
+        no.variaveisEntrada.length !== 0 ||
+        no.variaveisSaida.length !== 0
+      ) {
+        return {
+          codigo: 'CONFIGURACAO_IDENTIDADE_INVALIDA',
+          contextoProtegido: contexto,
+          resultado: 'FALHA',
+        };
+      }
+      const resultado = await this.mensagens.criarAutomatica(
+        {
+          atendimentoId: execucao.atendimentoId,
+          execucaoFluxoId: execucao.id,
+          revisaoExecucao: execucao.revisao,
+          texto: textoFallback,
+          tipo: 'TEXTO',
+        },
+        transacao,
+        relogio,
+      );
+      if (!('codigo' in resultado)) {
+        return {
+          contextoProtegido: contexto,
+          ...(resultado.mensagem === undefined
+            ? {}
+            : { mensagem: resultado.mensagem }),
+          resultado: 'FALLBACK',
+        };
+      }
+      return {
+        codigo: resultado.codigo,
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    const variavel = this.obterVariavelDoNo(no, definicao, 'ENTRADA');
+    if (
+      variavel?.tipo !== 'UUID' ||
+      !variavel.sensivel ||
+      no.referencias.length !== 0
+    ) {
+      return {
+        codigo: 'CONFIGURACAO_SELECAO_CONTEXTO_INVALIDA',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    const vinculoId = lerValorVariavelExecucao(
+      contexto,
+      variavel.nome,
+      variavel.tipo,
+    );
+    if (typeof vinculoId !== 'string') {
+      return {
+        contextoProtegido: contexto,
+        resultado: 'NAO_SELECIONADO',
+      };
+    }
+    const ator = {
+      atendimentoId: execucao.atendimentoId,
+      fluxoId: execucao.fluxoId,
+      versaoFluxoId: execucao.versaoFluxoId,
+    };
+    const selecionado =
+      no.tipo === 'SELECIONAR_CLIENTE'
+        ? await this.contextosCliente.selecionarClientePorFluxo(
+            { ...ator, vinculoClienteId: vinculoId },
+            transacao,
+            relogio,
+          )
+        : await this.contextosCliente.selecionarContratoPorFluxo(
+            { ...ator, vinculoContratoId: vinculoId },
+            transacao,
+            relogio,
+          );
+    return {
+      contextoProtegido: contexto,
+      resultado: selecionado ? 'SELECIONADO' : 'NAO_SELECIONADO',
+    };
   }
 
   private executarEspera(
@@ -693,7 +833,12 @@ export class ServicoExecutorNosFluxo {
     | 'CONCLUIDO'
     | 'TIMEOUT'
     | 'DENTRO_HORARIO'
-    | 'FORA_HORARIO' {
+    | 'FORA_HORARIO'
+    | 'IDENTIFICADO'
+    | 'NAO_IDENTIFICADO'
+    | 'ENVIADO'
+    | 'SELECIONADO'
+    | 'NAO_SELECIONADO' {
     const permitidas = (() => {
       if (no.tipo === 'ENVIAR_BOTOES_OU_LISTA') {
         return new Set([
@@ -718,6 +863,18 @@ export class ServicoExecutorNosFluxo {
       if (no.tipo === 'HORARIO_ATENDIMENTO') {
         return new Set(['DENTRO_HORARIO', 'FORA_HORARIO', 'FALHA']);
       }
+      if (no.tipo === 'IDENTIFICAR_CONTATO') {
+        return new Set(['IDENTIFICADO', 'NAO_IDENTIFICADO', 'FALHA']);
+      }
+      if (no.tipo === 'SOLICITAR_DADOS_CONTATO') {
+        return new Set(['ENVIADO', 'FALLBACK', 'FALHA']);
+      }
+      if (
+        no.tipo === 'SELECIONAR_CLIENTE' ||
+        no.tipo === 'SELECIONAR_CONTRATO'
+      ) {
+        return new Set(['SELECIONADO', 'NAO_SELECIONADO', 'FALHA']);
+      }
       return new Set(['SUCESSO']);
     })();
     if (!permitidas.has(resultado)) throw new ErroExecucaoFluxoInvalida();
@@ -730,7 +887,12 @@ export class ServicoExecutorNosFluxo {
       | 'CONCLUIDO'
       | 'TIMEOUT'
       | 'DENTRO_HORARIO'
-      | 'FORA_HORARIO';
+      | 'FORA_HORARIO'
+      | 'IDENTIFICADO'
+      | 'NAO_IDENTIFICADO'
+      | 'ENVIADO'
+      | 'SELECIONADO'
+      | 'NAO_SELECIONADO';
   }
 
   private obterDestino(

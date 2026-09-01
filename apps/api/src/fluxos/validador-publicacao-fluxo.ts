@@ -381,6 +381,22 @@ export class ValidadorPublicacaoFluxo {
     if (tipo === 'HORARIO_ATENDIMENTO') {
       return this.temExatamenteChaves(parametros, []);
     }
+    if (tipo === 'IDENTIFICAR_CONTATO') {
+      return this.temExatamenteChaves(parametros, []);
+    }
+    if (tipo === 'SOLICITAR_DADOS_CONTATO') {
+      return (
+        this.temExatamenteChaves(parametros, ['textoFallback']) &&
+        this.textoValido(parametros.textoFallback, 4_096)
+      );
+    }
+    if (tipo === 'SELECIONAR_CLIENTE' || tipo === 'SELECIONAR_CONTRATO') {
+      return (
+        this.temExatamenteChaves(parametros, ['variavel']) &&
+        typeof parametros.variavel === 'string' &&
+        IDENTIFICADOR.test(parametros.variavel)
+      );
+    }
     if (tipo === 'INICIO' || tipo === 'FIM') {
       return this.temExatamenteChaves(parametros, []);
     }
@@ -646,6 +662,7 @@ export class ValidadorPublicacaoFluxo {
     for (const no of definicao.nos) {
       this.validarNoDeVariavel(no, variaveis, problemas);
       this.validarNoEsperaOuCalendario(no, problemas);
+      this.validarNoIdentidade(no, variaveis, problemas);
       for (const nome of [...no.variaveisEntrada, ...no.variaveisSaida]) {
         if (!variaveis.has(nome)) {
           this.adicionar(problemas, {
@@ -793,6 +810,52 @@ export class ValidadorPublicacaoFluxo {
     if (!configuracaoValida) {
       this.adicionar(problemas, {
         codigo: 'CONFIGURACAO_VARIAVEL_INVALIDA',
+        noId: no.id,
+        ...(typeof nome === 'string' ? { variavel: nome } : {}),
+      });
+    }
+  }
+
+  private validarNoIdentidade(
+    no: NoDefinicaoFluxo,
+    variaveis: ReadonlyMap<string, VariavelDefinicaoFluxo>,
+    problemas: ProblemaValidacaoFluxo[],
+  ): void {
+    if (
+      no.tipo === 'IDENTIFICAR_CONTATO' ||
+      no.tipo === 'SOLICITAR_DADOS_CONTATO'
+    ) {
+      if (
+        no.referencias.length !== 0 ||
+        no.variaveisEntrada.length !== 0 ||
+        no.variaveisSaida.length !== 0
+      ) {
+        this.adicionar(problemas, {
+          codigo: 'CONFIGURACAO_IDENTIDADE_INVALIDA',
+          noId: no.id,
+        });
+      }
+      return;
+    }
+    if (
+      no.tipo !== 'SELECIONAR_CLIENTE' &&
+      no.tipo !== 'SELECIONAR_CONTRATO'
+    ) {
+      return;
+    }
+    const nome = Reflect.get(no.parametros, 'variavel');
+    const variavel = typeof nome === 'string' ? variaveis.get(nome) : undefined;
+    if (
+      typeof nome !== 'string' ||
+      no.referencias.length !== 0 ||
+      no.variaveisEntrada.length !== 1 ||
+      no.variaveisEntrada[0] !== nome ||
+      no.variaveisSaida.length !== 0 ||
+      variavel?.tipo !== 'UUID' ||
+      !variavel.sensivel
+    ) {
+      this.adicionar(problemas, {
+        codigo: 'CONFIGURACAO_SELECAO_CONTEXTO_INVALIDA',
         noId: no.id,
         ...(typeof nome === 'string' ? { variavel: nome } : {}),
       });

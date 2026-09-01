@@ -409,7 +409,10 @@ function criarExecutor({
   erroCalendario,
   no,
   resultadoCalendario = { estado: 'ABERTO' },
+  resultadoIdentificacao = true,
   resultadoMensagem,
+  resultadoSelecaoCliente = true,
+  resultadoSelecaoContrato = true,
   variaveis = [],
 }) {
   const chamadas = {
@@ -417,6 +420,7 @@ function criarExecutor({
     agendamentos: [],
     calendarios: [],
     catalogo: [],
+    contextos: [],
     mensagens: [],
     passosFinalizados: [],
     passosIniciados: [],
@@ -432,6 +436,10 @@ function criarExecutor({
     ENVIAR_MENSAGEM: ['SUCESSO', 'FALHA_TEMPORARIA', 'FALHA_DEFINITIVA'],
     INICIO: ['SUCESSO'],
     HORARIO_ATENDIMENTO: ['DENTRO_HORARIO', 'FORA_HORARIO', 'FALHA'],
+    IDENTIFICAR_CONTATO: ['IDENTIFICADO', 'NAO_IDENTIFICADO', 'FALHA'],
+    SOLICITAR_DADOS_CONTATO: ['ENVIADO', 'FALLBACK', 'FALHA'],
+    SELECIONAR_CLIENTE: ['SELECIONADO', 'NAO_SELECIONADO', 'FALHA'],
+    SELECIONAR_CONTRATO: ['SELECIONADO', 'NAO_SELECIONADO', 'FALHA'],
   }[no.tipo] ?? [];
   const definicao = {
     conexoes: saidas.map((saida) => ({ destinoNoId: 'fim', origemNoId: no.id, saida })),
@@ -471,6 +479,20 @@ function criarExecutor({
       return resultadoMensagem;
     },
   };
+  const contextosCliente = {
+    identificarParaFluxo: async (...argumentos) => {
+      chamadas.contextos.push(['IDENTIFICAR', ...argumentos]);
+      return resultadoIdentificacao;
+    },
+    selecionarClientePorFluxo: async (...argumentos) => {
+      chamadas.contextos.push(['CLIENTE', ...argumentos]);
+      return resultadoSelecaoCliente;
+    },
+    selecionarContratoPorFluxo: async (...argumentos) => {
+      chamadas.contextos.push(['CONTRATO', ...argumentos]);
+      return resultadoSelecaoContrato;
+    },
+  };
   const calendarios = {
     avaliar: async (...argumentos) => {
       chamadas.calendarios.push(argumentos);
@@ -493,6 +515,7 @@ function criarExecutor({
       repositorioPassos,
       catalogo,
       calendarios,
+      contextosCliente,
       mensagens,
       execucoes,
       prisma,
@@ -702,6 +725,130 @@ test('lista e falhas seguem saídas nominais sem chamar adapter', async () => {
     falha.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
     'FALHA_DEFINITIVA',
   );
+});
+
+test('identidade usa somente contexto explícito e não expõe seleção no passo', async () => {
+  const identificado = criarExecutor({
+    no: {
+      id: 'identificar',
+      parametros: {},
+      referencias: [],
+      tipo: 'IDENTIFICAR_CONTATO',
+      variaveisEntrada: [],
+      variaveisSaida: [],
+    },
+  });
+  await identificado.executor.executarCiclo(1, () => depois(10));
+  assert.equal(identificado.chamadas.contextos[0][0], 'IDENTIFICAR');
+  assert.equal(identificado.chamadas.contextos[0][1], ids.atendimento);
+  assert.equal(
+    identificado.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
+    'IDENTIFICADO',
+  );
+
+  const ausente = criarExecutor({
+    no: {
+      id: 'identificar',
+      parametros: {},
+      referencias: [],
+      tipo: 'IDENTIFICAR_CONTATO',
+      variaveisEntrada: [],
+      variaveisSaida: [],
+    },
+    resultadoIdentificacao: false,
+  });
+  await ausente.executor.executarCiclo(1, () => depois(10));
+  assert.equal(
+    ausente.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
+    'NAO_IDENTIFICADO',
+  );
+});
+
+test('seleção de cliente e contrato exige UUID sensível recebido na entrada', async () => {
+  const vinculoId = randomUUID();
+  for (const [tipo, chamada] of [
+    ['SELECIONAR_CLIENTE', 'CLIENTE'],
+    ['SELECIONAR_CONTRATO', 'CONTRATO'],
+  ]) {
+    const cenario = criarExecutor({
+      contextoProtegido: { variaveisFluxo: { selecao: vinculoId } },
+      no: {
+        id: 'selecionar',
+        parametros: { variavel: 'selecao' },
+        referencias: [],
+        tipo,
+        variaveisEntrada: ['selecao'],
+        variaveisSaida: [],
+      },
+      variaveis: [
+        {
+          disponivelNaEntrada: true,
+          nome: 'selecao',
+          sensivel: true,
+          tipo: 'UUID',
+        },
+      ],
+    });
+    await cenario.executor.executarCiclo(1, () => depois(10));
+    assert.equal(cenario.chamadas.contextos[0][0], chamada);
+    assert.equal(
+      cenario.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
+      'SELECIONADO',
+    );
+    assert.equal(
+      JSON.stringify(cenario.chamadas.passosFinalizados).includes(vinculoId),
+      false,
+    );
+  }
+});
+
+test('seleção ausente não escolhe primeiro vínculo e pedido usa fallback oficial seguro', async () => {
+  const selecao = criarExecutor({
+    no: {
+      id: 'selecionar',
+      parametros: { variavel: 'selecao' },
+      referencias: [],
+      tipo: 'SELECIONAR_CLIENTE',
+      variaveisEntrada: ['selecao'],
+      variaveisSaida: [],
+    },
+    variaveis: [
+      {
+        disponivelNaEntrada: true,
+        nome: 'selecao',
+        sensivel: true,
+        tipo: 'UUID',
+      },
+    ],
+  });
+  await selecao.executor.executarCiclo(1, () => depois(10));
+  assert.equal(selecao.chamadas.contextos.length, 0);
+  assert.equal(
+    selecao.chamadas.passosFinalizados[0].saidaSanitizada.resultado,
+    'NAO_SELECIONADO',
+  );
+
+  const mensagemId = randomUUID();
+  const pedido = criarExecutor({
+    no: {
+      id: 'solicitar',
+      parametros: { textoFallback: 'Compartilhe seus dados pelo canal seguro.' },
+      referencias: [],
+      tipo: 'SOLICITAR_DADOS_CONTATO',
+      variaveisEntrada: [],
+      variaveisSaida: [],
+    },
+    resultadoMensagem: {
+      mensagem: { id: mensagemId },
+      resultado: 'SUCESSO',
+    },
+  });
+  await pedido.executor.executarCiclo(1, () => depois(10));
+  assert.equal(pedido.chamadas.mensagens[0][0].tipo, 'TEXTO');
+  assert.deepEqual(pedido.chamadas.passosFinalizados[0].saidaSanitizada, {
+    mensagemId,
+    resultado: 'FALLBACK',
+  });
 });
 
 test('definição de variável grava literal tipado somente no contexto protegido', async () => {
@@ -918,6 +1065,11 @@ test('definição inválida falha isolada e não envenena a próxima execução'
     repositorioPassos,
     catalogo,
     { avaliar: async () => assert.fail('calendário inesperado') },
+    {
+      identificarParaFluxo: async () => assert.fail('contexto inesperado'),
+      selecionarClientePorFluxo: async () => assert.fail('contexto inesperado'),
+      selecionarContratoPorFluxo: async () => assert.fail('contexto inesperado'),
+    },
     { criarAutomatica: async () => assert.fail('mensagem inesperada') },
     execucoes,
     prisma,

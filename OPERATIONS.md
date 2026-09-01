@@ -583,3 +583,11 @@ Monitorar quantidade e idade de `AGUARDANDO_RESPOSTA`/`AGUARDANDO_SISTEMA` venci
 No aceite, usar dois workers, calendários reais aberto/fechado e fluxos sintéticos para resposta, timeout e instante. Reiniciar ambos antes do prazo e confirmar reconstrução pelo PostgreSQL, um único vencedor, um passo por revisão e ausência de payload em passo/auditoria. Também testar que o banco recusa retomada antecipada sem marca e que a prontidão exige a migration nova.
 
 Não alterar marca, prazo, estado, nó ou revisão por SQL para liberar atendimento. Corrigir calendário por seu serviço administrativo ou publicar nova versão do fluxo. Rollback preserva a migration e todas as esperas; antes de usar worker PR 075, comprovar que nenhuma execução não terminal está em nó da PR 076, pois a imagem anterior não interpreta esses contratos.
+
+## 24. Operação dos nós de identidade e contexto da PR 077
+
+Não há migration nova; a marca obrigatória permanece `20260901012500_espera_resposta_fluxo`. Implantar API e todos os `worker_fluxos` com a imagem PR 077 antes de publicar `IDENTIFICAR_CONTATO`, `SOLICITAR_DADOS_CONTATO`, `SELECIONAR_CLIENTE` ou `SELECIONAR_CONTRATO`.
+
+Monitorar `CONFIGURACAO_IDENTIDADE_INVALIDA`, `CONFIGURACAO_SELECAO_CONTEXTO_INVALIDA`, crescimento de `NAO_IDENTIFICADO`/`NAO_SELECIONADO`, conflitos de versão de contexto e volume de `FALLBACK`. Resultado não selecionado é caminho de negócio; contexto divergente, auditoria ausente após mutação ou escolha de vínculo temporário é incidente. O aceite usa múltiplos vínculos reais, incluindo um revogado/temporário, comprova seleção exata e idempotente, contrato pertencente ao cliente, nenhuma escolha por ordem/preferência e nenhum UUID/dado pessoal em passo ou auditoria.
+
+Não inserir ou trocar `contexto_atendimento` por SQL e não promover vínculo para contornar a matriz. Corrigir o vínculo pelo caso de uso autorizado ou encaminhar ao humano. Rollback preserva contextos e auditoria; antes de usar worker PR 076, comprovar que nenhuma execução não terminal aponta para nós da PR 077.
