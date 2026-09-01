@@ -51,6 +51,11 @@ export type ComandoTransicaoAtendimento =
   | { readonly tipo: 'RETORNAR_FILA'; readonly filaId: string }
   | { readonly tipo: 'TRANSFERIR_FILA'; readonly filaId: string }
   | {
+      readonly tipo: 'TRANSFERIR_USUARIO';
+      readonly filaId: string;
+      readonly usuarioId: string;
+    }
+  | {
       readonly tipo: 'ALTERAR_MOTIVO_ESPERA';
       readonly motivo: MotivoEsperaAtendimento;
     }

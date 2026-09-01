@@ -27,3 +27,10 @@ export class ErroConflitoTransferenciaAtendimento extends Error {
     this.name = 'ErroConflitoTransferenciaAtendimento';
   }
 }
+
+export class ErroDestinatarioTransferenciaIndisponivel extends Error {
+  public constructor() {
+    super('DESTINATARIO_TRANSFERENCIA_INDISPONIVEL');
+    this.name = 'ErroDestinatarioTransferenciaIndisponivel';
+  }
+}

@@ -13,6 +13,7 @@ import type {
   CodigoPermissaoAutorizacao,
   ContextoUsuarioAutorizacao,
   EntradaAutorizacao,
+  EntradaAutorizacaoUsuario,
   VerificadorRecursoAutorizavel,
 } from './modelo-autorizacao.js';
 import { CODIGOS_PERMISSAO } from './modelo-autorizacao.js';
@@ -70,6 +71,31 @@ export class ServicoAutorizacao {
     return autorizacao;
   }
 
+  public async autorizarUsuario(
+    entrada: EntradaAutorizacaoUsuario,
+    transacao?: TransacaoPrisma,
+  ): Promise<void> {
+    if (
+      !IDENTIFICADOR_UUID.test(entrada.usuarioId) ||
+      !CODIGOS_PERMISSAO_VALIDOS.has(entrada.permissao) ||
+      (entrada.filaId !== undefined &&
+        !IDENTIFICADOR_UUID.test(entrada.filaId))
+    ) {
+      throw new Error('ENTRADA_AUTORIZACAO_INVALIDA');
+    }
+    const contexto = await this.repositorio.obterContexto(
+      entrada.usuarioId,
+      entrada.filaId,
+      transacao,
+    );
+    if (
+      !this.usuarioPodeExecutar(contexto, entrada.permissao) ||
+      !this.escopoFilaPermitido(contexto, entrada)
+    ) {
+      throw new ErroPermissaoNegada();
+    }
+  }
+
   private usuarioPodeExecutar(
     contexto: ContextoUsuarioAutorizacao | undefined,
     permissao: CodigoPermissaoAutorizacao,
@@ -98,7 +124,7 @@ export class ServicoAutorizacao {
 
   private escopoFilaPermitido(
     contexto: ContextoUsuarioAutorizacao,
-    entrada: EntradaAutorizacao,
+    entrada: Pick<EntradaAutorizacao, 'filaId' | 'permissao'>,
   ): boolean {
     if (!PERMISSOES_COM_ESCOPO_FILA.has(entrada.permissao)) {
       return true;

@@ -22,4 +22,16 @@ export interface RepositorioAtribuicoesAtendimento {
     versaoAtribuicaoEsperada: number,
     transacao: TransacaoPrisma,
   ): Promise<boolean>;
+  destinatarioEstaDisponivel(
+    usuarioId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+  transferirParaUsuarioCondicional(
+    proximo: AtendimentoPersistido,
+    filaOrigemEsperadaId: string,
+    filaDestinoId: string,
+    destinatarioId: string,
+    versaoAtribuicaoEsperada: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
 }

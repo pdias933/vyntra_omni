@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import type { AtendimentoPersistido } from '../atendimentos/modelo-atendimento.js';
+import { Prisma } from '../gerado/prisma/client.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type { RepositorioAtribuicoesAtendimento } from './repositorio-atribuicoes-atendimento.js';
 
@@ -60,6 +61,18 @@ export class RepositorioAtribuicoesAtendimentoPrisma
     };
   }
 
+  public async destinatarioEstaDisponivel(
+    usuarioId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    return (
+      (await transacao.disponibilidadeUsuario.findFirst({
+        select: { usuarioId: true },
+        where: { estado: 'DISPONIVEL', usuarioId },
+      })) !== null
+    );
+  }
+
   public async resgatarCondicional(
     proximo: AtendimentoPersistido,
     filaEsperadaId: string,
@@ -113,5 +126,42 @@ export class RepositorioAtribuicoesAtendimentoPrisma
       },
     });
     return resultado.count === 1;
+  }
+
+  public async transferirParaUsuarioCondicional(
+    proximo: AtendimentoPersistido,
+    filaOrigemEsperadaId: string,
+    filaDestinoId: string,
+    destinatarioId: string,
+    versaoAtribuicaoEsperada: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const quantidade = await transacao.$executeRaw(
+      Prisma.sql`
+        UPDATE "atendimento"
+        SET
+          "estado" = 'EM_ATENDIMENTO'::"estado_atendimento",
+          "modo" = 'HUMANO'::"modo_atendimento",
+          "motivo_espera" = 'NENHUM'::"motivo_espera_atendimento",
+          "fila_atual_id" = ${filaDestinoId}::uuid,
+          "usuario_responsavel_id" = ${destinatarioId}::uuid,
+          "versao_estado" = ${proximo.versaoEstado},
+          "versao_atribuicao" = ${proximo.versaoAtribuicao},
+          "atualizado_em" = ${proximo.atualizadoEm}
+        WHERE "id" = ${proximo.id}::uuid
+          AND "estado" IN (
+            'AGUARDANDO'::"estado_atendimento",
+            'EM_ATENDIMENTO'::"estado_atendimento"
+          )
+          AND "fila_atual_id" = ${filaOrigemEsperadaId}::uuid
+          AND "versao_atribuicao" = ${versaoAtribuicaoEsperada}
+          AND EXISTS (
+            SELECT 1 FROM "disponibilidade_usuario" d
+            WHERE d."usuario_id" = ${destinatarioId}::uuid
+              AND d."estado" = 'DISPONIVEL'::"estado_disponibilidade_usuario"
+          )
+      `,
+    );
+    return quantidade === 1;
   }
 }

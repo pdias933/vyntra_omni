@@ -65,6 +65,12 @@ export interface EntradaAutorizacao {
   readonly recurso: RecursoAutorizavel;
 }
 
+export interface EntradaAutorizacaoUsuario {
+  readonly usuarioId: string;
+  readonly permissao: CodigoPermissaoAutorizacao;
+  readonly filaId?: string;
+}
+
 export interface AjustePermissaoAutorizacao {
   readonly codigo: CodigoPermissaoAutorizacao;
   readonly efeito: EfeitoPermissaoAutorizacao;

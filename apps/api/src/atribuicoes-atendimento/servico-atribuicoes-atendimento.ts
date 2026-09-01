@@ -12,6 +12,7 @@ import {
   ErroAtendimentoAtribuicaoAusente,
   ErroConflitoResgateAtendimento,
   ErroConflitoTransferenciaAtendimento,
+  ErroDestinatarioTransferenciaIndisponivel,
   ErroEntradaAtribuicaoAtendimentoInvalida,
 } from './erros-atribuicoes-atendimento.js';
 import {
@@ -252,6 +253,147 @@ export class ServicoAtribuicoesAtendimento {
         origem: 'USUARIO',
         sessaoId: sessao.sessaoId,
         tipoEvento: 'ATENDIMENTO_TRANSFERIDO_PARA_FILA',
+        usuarioId: sessao.usuarioId,
+      },
+      transacao,
+    );
+    return proximo;
+  }
+
+  public async transferirParaUsuario(
+    sessao: ContextoSessaoAutorizacao,
+    atendimentoId: string,
+    filaDestinoId: string,
+    destinatarioId: string,
+    versaoAtribuicaoEsperada: number,
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<AtendimentoPersistido> {
+    this.validarEntrada(atendimentoId, filaDestinoId, versaoAtribuicaoEsperada);
+    if (!UUID.test(destinatarioId)) {
+      throw new ErroEntradaAtribuicaoAtendimentoInvalida();
+    }
+    const atual = await this.repositorio.obter(atendimentoId, transacao);
+    if (atual === undefined || atual.filaAtualId === undefined) {
+      throw new ErroAtendimentoAtribuicaoAusente();
+    }
+    if (
+      !['AGUARDANDO', 'EM_ATENDIMENTO'].includes(atual.estado) ||
+      atual.versaoAtribuicao !== versaoAtribuicaoEsperada ||
+      (atual.filaAtualId === filaDestinoId &&
+        atual.usuarioResponsavelId === destinatarioId)
+    ) {
+      throw new ErroConflitoTransferenciaAtendimento();
+    }
+    const filaOrigemId = atual.filaAtualId;
+    await this.autorizarTransferencia(
+      sessao,
+      atendimentoId,
+      filaOrigemId,
+      true,
+      transacao,
+    );
+    await this.autorizarTransferencia(
+      sessao,
+      atendimentoId,
+      filaDestinoId,
+      false,
+      transacao,
+    );
+    await this.autorizacao.autorizarUsuario(
+      {
+        filaId: filaDestinoId,
+        permissao: 'RECEBER_TRANSFERENCIA',
+        usuarioId: destinatarioId,
+      },
+      transacao,
+    );
+    if (
+      !(await this.repositorio.destinatarioEstaDisponivel(
+        destinatarioId,
+        transacao,
+      ))
+    ) {
+      throw new ErroDestinatarioTransferenciaIndisponivel();
+    }
+    const agora = relogio();
+    const proximo = this.maquina.transitar(
+      atual,
+      {
+        filaId: filaDestinoId,
+        tipo: 'TRANSFERIR_USUARIO',
+        usuarioId: destinatarioId,
+      },
+      agora,
+    );
+    const alterou = await this.repositorio.transferirParaUsuarioCondicional(
+      proximo,
+      filaOrigemId,
+      filaDestinoId,
+      destinatarioId,
+      versaoAtribuicaoEsperada,
+      transacao,
+    );
+    if (!alterou) {
+      if (
+        !(await this.repositorio.destinatarioEstaDisponivel(
+          destinatarioId,
+          transacao,
+        ))
+      ) {
+        throw new ErroDestinatarioTransferenciaIndisponivel();
+      }
+      throw new ErroConflitoTransferenciaAtendimento();
+    }
+    await this.historico.substituir(
+      atendimentoId,
+      {
+        executadoPorUsuarioId: sessao.usuarioId,
+        filaId: filaDestinoId,
+        tipo: 'TRANSFERENCIA_USUARIO',
+        usuarioResponsavelId: destinatarioId,
+      },
+      transacao,
+      () => agora,
+    );
+    await this.eventos.acrescentar(
+      {
+        atendimentoId,
+        classificacaoDados: 'OPERACIONAL',
+        conversaId: proximo.conversaId,
+        dados: {
+          destinatarioId,
+          filaDestinoId,
+          filaOrigemId,
+          versaoAtribuicao: proximo.versaoAtribuicao,
+        },
+        entidadeId: atendimentoId,
+        entidadeTipo: 'ATENDIMENTO',
+        tipo: 'ATENDIMENTO_TRANSFERIDO_PARA_USUARIO',
+        usuarioAtorId: sessao.usuarioId,
+      },
+      transacao,
+    );
+    await this.auditoria.registrar(
+      {
+        acao: 'TRANSFERIR_ATENDIMENTO',
+        atendimentoId,
+        dadosAnteriores: {
+          filaId: filaOrigemId,
+          usuarioResponsavelId: atual.usuarioResponsavelId ?? null,
+          versaoAtribuicao: atual.versaoAtribuicao,
+        },
+        dadosNovos: {
+          filaId: filaDestinoId,
+          usuarioResponsavelId: destinatarioId,
+          versaoAtribuicao: proximo.versaoAtribuicao,
+        },
+        entidadeId: atendimentoId,
+        entidadeTipo: 'ATENDIMENTO',
+        filaId: filaDestinoId,
+        origem: 'USUARIO',
+        sessaoId: sessao.sessaoId,
+        tipoEvento: 'ATENDIMENTO_TRANSFERIDO_PARA_USUARIO',
         usuarioId: sessao.usuarioId,
       },
       transacao,
