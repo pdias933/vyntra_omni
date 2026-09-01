@@ -76,7 +76,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 052 | CONCLUÍDA | `xhigh` |
 | 053 | CONCLUÍDA | `xhigh` |
 | 054 | CONCLUÍDA | `xhigh` |
-| 055 | EM ANDAMENTO | `xhigh` |
+| 055 | CONCLUÍDA | `xhigh` |
 | 056 | PENDENTE | `xhigh` |
 | 057 | PENDENTE | `high` |
 | 058 | PENDENTE | `xhigh` |
@@ -405,6 +405,10 @@ Aceite concluído em 1º de setembro de 2026: web e mobile passaram a recuperar 
 ### PR 054 — ressincronização completa consistente
 
 Aceite concluído em 1º de setembro de 2026: `GET /api/v1/sincronizacao/completa` passou a reconstruir a réplica autorizada em transação PostgreSQL `REPEATABLE READ` e somente-leitura. A primeira leitura captura `sequencia_base`; filas, permissões efetivas, atendimentos abertos/reabríveis, até 200 conversas recentes e 200 mensagens/notas por conversa, controles de recurso e políticas de versão observam exatamente o mesmo snapshot lógico. Fila, conversa, mensagem e nota são filtradas no banco pela autorização vigente antes da projeção. O planejador mobile substitui réplica e cursor na mesma transação SQLite e preserva rascunhos e comandos pendentes. Lint, tipos, 228 testes da API, 155 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-054` ficou saudável com prontidão `PRONTO`. Em staging, somente uma das duas filas sintéticas apareceu, a conversa negada não vazou, uma alteração concorrente permaneceu invisível na leitura antiga e seu evento posterior foi recuperado pelo incremental; migration encerrou com código zero, os dados de aceite foram removidos e nenhum erro de nível 50 foi emitido.
+
+### PR 055 — SSE web sem lacuna
+
+Aceite concluído em 1º de setembro de 2026: a web passou a acompanhar `GET /api/v1/sincronizacao/eventos` por SSE autenticado exclusivamente pelo cookie de sessão. O coordenador inicia a consulta ao PostgreSQL em modo buffer antes de capturar a marca d’água, envia o backlog autorizado até o limite, drena eventos posteriores ordenados e sem duplicidade e então entra ao vivo. `Last-Event-ID` é a `sequencia_evento` realmente aplicada; heartbeat não altera disponibilidade. `Cache-Control: no-cache, no-transform` e `X-Accel-Buffering: no` impedem buffering indevido. Buffer excessivo ou falha fecha o stream para reconexão recuperável. Lint, tipos, 231 testes da API, 158 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-055` ficou saudável com prontidão `PRONTO`. Em staging, o endpoint retornou `text/event-stream`, entregou backlog e evento ao vivo uma única vez, retomou somente o segundo pelo primeiro ID, migration encerrou com código zero, os dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 

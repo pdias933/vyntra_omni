@@ -430,6 +430,8 @@ O handoff para o modo ao vivo também é sem lacuna:
 
 Se o buffer/distribuidor falhar, a conexão fecha e o navegador reconecta pelo último ID realmente aplicado; “consultar backlog e depois assinar” é proibido.
 
+A PR 055 materializa esse handoff em `GET /api/v1/sincronizacao/eventos`. A conexão usa somente cookie web e trata `Last-Event-ID` como sequência aplicada. Uma assinatura baseada na fonte autoritativa PostgreSQL começa em modo buffer antes da marca d’água; backlog e buffer passam pelo mesmo serviço incremental e pelo projetor autorizado. Heartbeats não carregam ID e não mudam disponibilidade. O stream publica `X-Accel-Buffering: no`; falha, ordem inválida ou mais de mil projeções no buffer encerram a resposta para que o navegador retome do último evento que de fato recebeu.
+
 ### 8.3 WebSocket mobile sem lacuna
 
 O protocolo precisa fechar a corrida entre sync e realtime:
