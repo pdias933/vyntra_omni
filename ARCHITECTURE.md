@@ -445,6 +445,8 @@ O protocolo precisa fechar a corrida entre sync e realtime:
 
 Assim, evento criado entre os passos 2 e 4 é recuperado no passo 5. “Abrir WebSocket e esperar o próximo” sem backfill é proibido.
 
+A PR 056 materializa esse contrato em `/api/v1/sincronizacao/eventos-mobile?apos=<sequencia>`. O upgrade só ocorre depois de validar access token, UUID do dispositivo e segredo de vínculo pelo serviço de autenticação mobile; cookie web não é aceito. A assinatura PostgreSQL começa bufferizada antes da marca d’água, entrega projeções `MOBILE` autorizadas e envia `PRONTO` somente depois do handoff. O envelope `EVENTO` carrega `sequencia_evento`, e o app responde `CONFIRMAR` apenas depois da aplicação idempotente local. Confirmações são cumulativas e monotônicas. Ping/pong detecta conexão morta; pressão de saída, buffer ou confirmações pendentes excessivas fecham o canal para retomada pelo último cursor aplicado. Redis não participa de autenticação, autorização, ordem ou recuperação.
+
 ### 8.4 Push
 
 Push contém apenas identificadores mínimos e texto não sensível. Ele avisa; não altera SQLite como fonte definitiva, não marca leitura e não carrega CPF, fatura ou conteúdo privado. Ao abrir o app, a sincronização decide o estado.

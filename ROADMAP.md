@@ -77,7 +77,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 053 | CONCLUÍDA | `xhigh` |
 | 054 | CONCLUÍDA | `xhigh` |
 | 055 | CONCLUÍDA | `xhigh` |
-| 056 | EM ANDAMENTO | `xhigh` |
+| 056 | CONCLUÍDA | `xhigh` |
 | 057 | PENDENTE | `high` |
 | 058 | PENDENTE | `xhigh` |
 | 059 | PENDENTE | `xhigh` |
@@ -409,6 +409,10 @@ Aceite concluído em 1º de setembro de 2026: `GET /api/v1/sincronizacao/complet
 ### PR 055 — SSE web sem lacuna
 
 Aceite concluído em 1º de setembro de 2026: a web passou a acompanhar `GET /api/v1/sincronizacao/eventos` por SSE autenticado exclusivamente pelo cookie de sessão. O coordenador inicia a consulta ao PostgreSQL em modo buffer antes de capturar a marca d’água, envia o backlog autorizado até o limite, drena eventos posteriores ordenados e sem duplicidade e então entra ao vivo. `Last-Event-ID` é a `sequencia_evento` realmente aplicada; heartbeat não altera disponibilidade. `Cache-Control: no-cache, no-transform` e `X-Accel-Buffering: no` impedem buffering indevido. Buffer excessivo ou falha fecha o stream para reconexão recuperável. Lint, tipos, 231 testes da API, 158 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-055` ficou saudável com prontidão `PRONTO`. Em staging, o endpoint retornou `text/event-stream`, entregou backlog e evento ao vivo uma única vez, retomou somente o segundo pelo primeiro ID, migration encerrou com código zero, os dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
+
+### PR 056 — WebSocket mobile sem lacuna
+
+Aceite concluído em 1º de setembro de 2026: o mobile passou a acompanhar `/api/v1/sincronizacao/eventos-mobile?apos=<sequencia>` por WebSocket autenticado com access token, UUID do dispositivo e segredo de vínculo. O gateway autentica antes do upgrade, inicia a consulta PostgreSQL em modo buffer, captura a marca d’água, entrega backlog e eventos concorrentes em ordem e só então declara `PRONTO`. Cada `EVENTO` exige `CONFIRMAR`; a confirmação é cumulativa, monotônica e nunca pode superar a maior sequência enviada. Heartbeat usa ping/pong técnico. Cursor inválido, mensagem binária, ordem impossível, pressão de saída, excesso de confirmações pendentes ou falha de sincronização fecham a conexão para retomada pelo último evento aplicado. Lint, tipos, 235 testes da API, 161 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-056` ficou saudável com prontidão `PRONTO`. Em staging, as sequências `12` e `13` chegaram uma única vez como backlog e vivo, três confirmações foram aceitas, a retomada pelo cursor `12` entregou somente `13`, segredo incorreto recebeu `401`, migration encerrou com código zero, os dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
