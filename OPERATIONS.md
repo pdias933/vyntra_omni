@@ -629,3 +629,11 @@ A migration obrigatória passa a `20260901013000_espera_atendente_fluxo`. Ela am
 Monitorar esperas por atendente vencidas, `TRANSFERENCIA_PARA_FILA_NEGADA`, `CONTEXTO_ESPERA_ATENDENTE_INVALIDO`, `RETOMADA_ESPERA_ATENDENTE_INVALIDA`, `ENCERRAMENTO_POR_FLUXO_NEGADO`, histórico de fila aberto sem atendimento correspondente e divergência de imagem entre workers. Timeout é saída de negócio; backlog vencido, duas atribuições abertas ou execução ativa depois de assunção/encerramento são incidentes.
 
 No aceite, comprovar transferência para fila ativa, timeout recuperado após reinício, concorrência de dois workers, suspensão após resgate humano e encerramento com fallback congelado. Passos e logs não podem conter motivo, usuário fabricado ou dado de cliente. Não alterar fila, histórico, marcador, `retomar_em`, estado ou revisão por SQL. Rollback preserva atribuições e encerramentos; antes de usar worker PR 081, comprovar que nenhuma execução não terminal depende desses nós.
+
+## 30. Operação da corrida resgate × envio automático da PR 083
+
+A migration obrigatória passa a `20260901013500_corrida_resgate_envio_automatico`. Antes de acrescentar a origem às mensagens novas, ela cancela automáticas legadas `NA_FILA`. Se encontrar uma automática legada `ENVIANDO`, a implantação para: reconciliar o resultado externo antes de prosseguir. Nunca alterar esse estado por suposição.
+
+Implantar API e futuro despachante de mensageria com a mesma versão. Monitorar duração e timeout do canal, espera do lock `autoridade-saida`, cancelamentos por resgate, `ENVIANDO` antigo e divergência entre execução/atribuição. O limite do transporte é oito segundos dentro de uma transação de dez; o cliente HTTP real precisa honrar o sinal de cancelamento. No aceite, provar as duas ordens: resgate primeiro cancela sem chamada; aceite primeiro termina `ENVIADA` e só depois permite o resgate. Também confirmar que falha temporária volta a `NA_FILA` e é cancelada pelo resgate, sem conteúdo em evento, auditoria ou log.
+
+Rollback preserva as colunas e mensagens terminais. Antes de usar imagem PR 082, parar o consumidor de saída e comprovar que não existe automática da PR 083 em `NA_FILA` ou `ENVIANDO`; a imagem anterior não conhece a coordenação persistida.

@@ -893,3 +893,9 @@ A execução exige `confirmacaoExplicita: true`, refaz a elegibilidade em tempo 
 `AGUARDAR_ATENDENTE` conserva a fila referenciada e persiste timeout em `retomar_em`, estado `AGUARDANDO_ATENDENTE` e marcador protegido do nó. Resgate humano confirmado faz a execução terminar em `SUSPENSA_POR_ATENDIMENTO_HUMANO`; vencimento reconstruído pelo PostgreSQL segue `TIMEOUT`. Fila, estado ou execução divergente seguem `FALHA`, sem reparar contexto implicitamente.
 
 `ENCERRAR_ATENDIMENTO` exige motivo fechado e fila ativa de fallback. Sob a mesma autoridade BOT, aplica a máquina de atendimento para `ENCERRADO_REABRIVEL`, congela o fallback e a tolerância de 30 minutos e conclui a execução. Uma nova entrada válida pode reabrir na fila congelada, mas nunca retoma a execução terminal. Motivo fica no atendimento protegido e não entra em passo, evento, log ou auditoria.
+
+## 26. Autoridade de saída automática
+
+Mensagem automática é identificada pela execução de origem e pela `versao_atribuicao` observada quando nasceu. Ela só pode iniciar envio em `NA_FILA` se o atendimento ainda estiver `AGUARDANDO/BOT/PROCESSANDO_BOT`, sem responsável, na mesma versão de atribuição, e se a execução de origem não estiver cancelada, falha ou suspensa por atendimento humano.
+
+Criação, despacho e mudança de autoridade serializam pelo atendimento. Sob esse lock, `NA_FILA → ENVIANDO` precede a chamada ao canal e o resultado volta a um estado persistente antes do commit. Resgate confirmado cancela todas as automáticas ainda `NA_FILA`; mensagem já aceita pelo canal permanece `ENVIADA`. Depois do commit humano, uma criação ou tentativa atrasada relê a autoridade, falha fechada e não chama o canal. Mensagens humanas e disparos transacionais não recebem origem de execução e conservam suas próprias regras.

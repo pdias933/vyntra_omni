@@ -468,3 +468,7 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - Transferência automática usa o serviço de atribuição, autoridade BOT e ator `FLUXO`; nunca invente usuário/sessão nem escreva fila, histórico, evento ou auditoria diretamente no executor.
 - Espera humana persiste `AGUARDANDO_ATENDENTE`, marcador e `retomar_em`; resgate suspende a execução e timeout avança o grafo. Redis e timers em memória não são autoridade.
 - Encerramento por fluxo exige motivo fechado e fila de fallback ativa, aplica a máquina de atendimento e conclui a execução. Reabertura nunca retoma a execução antiga; motivo não entra em passo/log/auditoria.
+- Mensagem automática deve persistir execução de origem e `versao_atribuicao` observada. Não a despache como saída anônima sem origem.
+- Criação automática, despacho e qualquer mudança de atribuição compartilham o lock textual `autoridade-saida:<atendimento_id>`; não troque a chave nem use byte nulo.
+- Despacho automático revalida autoridade sob o lock, mantém `ENVIANDO` e resultado na mesma transação limitada e passa `AbortSignal` ao canal. Provider que ignore o cancelamento não pode ser registrado.
+- Resgate cancela somente automáticas `NA_FILA` no mesmo commit; não alcance mensagem humana ou disparo transacional. Aceite do canal anterior ao commit permanece enviado, e nenhum aceite posterior é permitido.

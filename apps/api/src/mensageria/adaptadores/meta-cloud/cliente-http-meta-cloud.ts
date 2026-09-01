@@ -8,6 +8,7 @@ export interface ClienteHttpMetaCloud {
     caminho: string,
     tokenAcesso: string,
     corpo: Readonly<Record<string, unknown>>,
+    sinal?: AbortSignal,
   ): Promise<RespostaHttpMetaCloud>;
 }
 

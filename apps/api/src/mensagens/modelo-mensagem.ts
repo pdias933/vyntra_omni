@@ -38,12 +38,20 @@ export interface MensagemSaidaPersistida {
   readonly canceladaEm: Date | undefined;
   readonly codigoFalha: string | undefined;
   readonly versao: number;
+  readonly execucaoFluxoOrigemId?: string | undefined;
+  readonly versaoAtribuicaoOrigem?: number | undefined;
 }
 
 export interface ContextoSaidaMensagemAutomatica {
   readonly contatoId: string;
   readonly contaWhatsAppId: string;
   readonly conversaId: string;
+  readonly versaoAtribuicao: number;
+}
+
+export interface MensagemAutomaticaParaDespacho {
+  readonly autoridadeValida: boolean;
+  readonly mensagem: MensagemSaidaPersistida;
 }
 
 export interface OpcaoMensagemAutomatica {

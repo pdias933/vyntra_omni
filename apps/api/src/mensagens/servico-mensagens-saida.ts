@@ -209,6 +209,10 @@ export class ServicoMensagensSaida {
         resultado: 'FALHA_DEFINITIVA',
       };
     }
+    await this.repositorio.bloquearAutoridadeSaida(
+      entrada.atendimentoId as string,
+      transacao,
+    );
     const contexto = await this.repositorio.obterContextoSaidaAutomatica(
       entrada.execucaoFluxoId as string,
       entrada.atendimentoId as string,
@@ -283,6 +287,8 @@ export class ServicoMensagensSaida {
       tipo: 'TEXTO',
       usuarioRemetenteId: undefined,
       versao: 1,
+      execucaoFluxoOrigemId: entrada.execucaoFluxoId as string,
+      versaoAtribuicaoOrigem: contexto.versaoAtribuicao,
     };
     await this.repositorio.acrescentar(mensagem, transacao);
     const evento = await this.eventos.acrescentar(

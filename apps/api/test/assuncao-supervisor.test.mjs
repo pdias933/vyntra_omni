@@ -41,6 +41,7 @@ function cenario(opcoes = {}) {
   let atual = { ...base };
   const chamadas = { auditoria: [], autorizacao: [], eventos: [], historico: [] };
   const repositorio = {
+    bloquearAutoridadeSaida: async () => {},
     assumirCondicional: async (proximo, fila, responsavel, versao) => {
       if (
         opcoes.conflito ||

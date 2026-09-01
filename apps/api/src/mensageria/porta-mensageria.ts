@@ -7,8 +7,15 @@ import type {
 
 export const CANAL_MENSAGERIA = Symbol('CANAL_MENSAGERIA');
 
+export interface ControleEnvioMensageria {
+  readonly sinal: AbortSignal;
+}
+
 export interface CanalMensageria {
-  enviar(comando: ComandoEnvioMensagem): Promise<ResultadoEnvioMensagem>;
+  enviar(
+    comando: ComandoEnvioMensagem,
+    controle?: ControleEnvioMensageria,
+  ): Promise<ResultadoEnvioMensagem>;
 }
 
 export interface ConsumidorEventosMensageria {

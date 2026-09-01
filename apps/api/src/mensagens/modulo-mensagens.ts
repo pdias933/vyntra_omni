@@ -9,10 +9,15 @@ import { RepositorioMensagensPrisma } from './repositorio-mensagens-prisma.js';
 import { REPOSITORIO_ESTADOS_MENSAGEM } from './repositorio-estados-mensagem.js';
 import { RepositorioEstadosMensagemPrisma } from './repositorio-estados-mensagem-prisma.js';
 import { ServicoEstadosMensagem } from './servico-estados-mensagem.js';
+import { ServicoDespachoMensagemAutomatica } from './servico-despacho-mensagem-automatica.js';
 import { ServicoMensagensSaida } from './servico-mensagens-saida.js';
 
 @Module({
-  exports: [ServicoEstadosMensagem, ServicoMensagensSaida],
+  exports: [
+    ServicoDespachoMensagemAutomatica,
+    ServicoEstadosMensagem,
+    ServicoMensagensSaida,
+  ],
   imports: [
     ModuloAutorizacao,
     ModuloEventos,
@@ -22,6 +27,7 @@ import { ServicoMensagensSaida } from './servico-mensagens-saida.js';
   providers: [
     RepositorioMensagensPrisma,
     RepositorioEstadosMensagemPrisma,
+    ServicoDespachoMensagemAutomatica,
     ServicoEstadosMensagem,
     ServicoMensagensSaida,
     {

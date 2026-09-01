@@ -729,3 +729,9 @@ saidas: ENCERRADO | FALHA
 Publicação e runtime exigem que `TRANSFERIDO` aponte diretamente para `AGUARDAR_ATENDENTE` da mesma fila. A transferência só confirma se atendimento e execução ainda conservarem a autoridade BOT exata; fila, atribuição, histórico, evento e auditoria mudam no mesmo commit. Não existe usuário técnico.
 
 A espera usa estado persistido `AGUARDANDO_ATENDENTE`, marcador protegido e `retomar_em`; o worker reconstrói timeout pelo PostgreSQL. Resgate humano suspende terminalmente a execução, enquanto o timeout avança pelo grafo. Encerramento aplica a máquina de atendimento, congela a fila de fallback e encerra a execução no próprio nó; o caminho `ENCERRADO` existe no contrato publicado, mas não executa outro efeito após a conclusão terminal.
+
+## 31. Corrida entre resgate e envio automático da PR 083
+
+Cada mensagem automática conserva a execução e a versão de atribuição que autorizaram sua criação. Criar a mensagem, iniciar o despacho e assumir/transferir/resgatar o atendimento compartilham o lock `autoridade-saida` do atendimento. O despachante revalida o registro sob o lock e só então percorre `NA_FILA → ENVIANDO`; a chamada ao canal recebe limite de oito segundos e sinal de cancelamento, e termina em `ENVIADA`, `NA_FILA` ou `FALHOU` antes de liberar o lock.
+
+O resgate que chega durante a requisição aguarda a resolução. Ao vencer o lock, muda a autoridade, incrementa `versao_atribuicao` e cancela no mesmo commit todas as mensagens automáticas ainda `NA_FILA`. Um aceite confirmado antes desse commit permanece no histórico; qualquer despacho iniciado depois vê a autoridade divergente e não chama o canal. Mensagem automática legada `NA_FILA` é cancelada na migration; legado `ENVIANDO` bloqueia a implantação e exige reconciliação explícita.

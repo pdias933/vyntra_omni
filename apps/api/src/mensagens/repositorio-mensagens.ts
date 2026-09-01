@@ -2,12 +2,17 @@ import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type {
   ContextoSaidaMensagemAutomatica,
   ContextoSaidaMensagem,
+  MensagemAutomaticaParaDespacho,
   MensagemSaidaPersistida,
 } from './modelo-mensagem.js';
 
 export const REPOSITORIO_MENSAGENS = Symbol('REPOSITORIO_MENSAGENS');
 
 export interface RepositorioMensagens {
+  bloquearAutoridadeSaida(
+    atendimentoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<void>;
   bloquearIdempotencia(
     usuarioId: string,
     mensagemClienteId: string,
@@ -32,6 +37,16 @@ export interface RepositorioMensagens {
     revisaoExecucao: number,
     transacao: TransacaoPrisma,
   ): Promise<ContextoSaidaMensagemAutomatica | undefined>;
+  obterAutomaticaParaDespacho(
+    mensagemId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<MensagemAutomaticaParaDespacho | undefined>;
+  atualizarAutomaticaCondicional(
+    mensagem: MensagemSaidaPersistida,
+    estadoEsperado: MensagemSaidaPersistida['estadoSaida'],
+    versaoEsperada: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
   acrescentar(
     mensagem: MensagemSaidaPersistida,
     transacao: TransacaoPrisma,

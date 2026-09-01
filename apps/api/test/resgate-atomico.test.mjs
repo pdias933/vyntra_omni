@@ -48,6 +48,8 @@ function cenario() {
     historico: [],
   };
   const repositorio = {
+    bloquearAutoridadeSaida: async () => {},
+    cancelarMensagensAutomaticasNaFila: async () => 2,
     obter: async () => ({ ...atual }),
     resgatarCondicional: async (proximo, filaEsperada, versaoEsperada) => {
       if (
@@ -125,6 +127,10 @@ test('dois resgates concorrentes produzem exatamente um vencedor', async () => {
   assert.equal(x.chamadas.historico.length, 1);
   assert.equal(x.chamadas.eventos.length, 1);
   assert.equal(x.chamadas.auditoria.length, 1);
+  assert.equal(
+    x.chamadas.eventos[0][0].dados.mensagensAutomaticasCanceladas,
+    2,
+  );
 });
 
 test('resgate exige visualização e capacidade de resgatar na fila esperada', async () => {

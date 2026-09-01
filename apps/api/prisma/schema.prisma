@@ -718,7 +718,7 @@ model Fluxo {
   versoes             VersaoFluxo[]              @relation("FluxoVersoes")
   versaoPublicada     VersaoFluxo?               @relation("FluxoVersaoPublicada", fields: [versaoPublicadaId, id], references: [id, fluxoId], onDelete: Restrict)
   historicoPublicacao HistoricoPublicacaoFluxo[]
-  execucoes           ExecucaoFluxo[]             @relation("FluxoExecucoes")
+  execucoes           ExecucaoFluxo[]            @relation("FluxoExecucoes")
 
   @@unique([versaoPublicadaId, id], map: "fluxo_versao_publicada_id_id_key")
   @@index([ativo, tipo, nome, id], map: "fluxo_ativo_tipo_nome_idx")
@@ -745,7 +745,7 @@ model VersaoFluxo {
   publicadaPor             Usuario?                   @relation("UsuarioPublicacaoVersaoFluxo", fields: [publicadaPorUsuarioId], references: [id], onDelete: Restrict)
   historicoComoAnterior    HistoricoPublicacaoFluxo[] @relation("VersaoAnteriorHistoricoPublicacao")
   historicoComoNova        HistoricoPublicacaoFluxo[] @relation("VersaoNovaHistoricoPublicacao")
-  execucoes                 ExecucaoFluxo[]             @relation("VersaoFluxoExecucoes")
+  execucoes                ExecucaoFluxo[]            @relation("VersaoFluxoExecucoes")
 
   @@unique([fluxoId, numeroVersao], map: "versao_fluxo_numero_key")
   @@unique([id, fluxoId], map: "versao_fluxo_id_fluxo_key")
@@ -773,23 +773,24 @@ model HistoricoPublicacaoFluxo {
 }
 
 model ExecucaoFluxo {
-  id                 String              @id @db.Uuid
-  atendimentoId      String              @map("atendimento_id") @db.Uuid
-  fluxoId            String              @map("fluxo_id") @db.Uuid
-  versaoFluxoId      String              @map("versao_fluxo_id") @db.Uuid
-  estado             EstadoExecucaoFluxo @default(EXECUTANDO)
-  noAtualId          String              @map("no_atual_id") @db.VarChar(64)
-  contextoProtegido  Json                @map("contexto_protegido")
-  retomarEm          DateTime?           @map("retomar_em") @db.Timestamptz(6)
-  revisao            Int                 @default(1)
-  codigoFinalizacao  String?             @map("codigo_finalizacao") @db.VarChar(100)
-  iniciadaEm         DateTime            @map("iniciada_em") @db.Timestamptz(6)
-  atualizadaEm       DateTime            @map("atualizada_em") @db.Timestamptz(6)
-  finalizadaEm       DateTime?           @map("finalizada_em") @db.Timestamptz(6)
-  atendimento        Atendimento         @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
-  fluxo              Fluxo               @relation("FluxoExecucoes", fields: [fluxoId], references: [id], onDelete: Restrict)
-  versaoFluxo        VersaoFluxo         @relation("VersaoFluxoExecucoes", fields: [versaoFluxoId, fluxoId], references: [id, fluxoId], onDelete: Restrict)
-  passos             PassoExecucaoFluxo[]
+  id                   String               @id @db.Uuid
+  atendimentoId        String               @map("atendimento_id") @db.Uuid
+  fluxoId              String               @map("fluxo_id") @db.Uuid
+  versaoFluxoId        String               @map("versao_fluxo_id") @db.Uuid
+  estado               EstadoExecucaoFluxo  @default(EXECUTANDO)
+  noAtualId            String               @map("no_atual_id") @db.VarChar(64)
+  contextoProtegido    Json                 @map("contexto_protegido")
+  retomarEm            DateTime?            @map("retomar_em") @db.Timestamptz(6)
+  revisao              Int                  @default(1)
+  codigoFinalizacao    String?              @map("codigo_finalizacao") @db.VarChar(100)
+  iniciadaEm           DateTime             @map("iniciada_em") @db.Timestamptz(6)
+  atualizadaEm         DateTime             @map("atualizada_em") @db.Timestamptz(6)
+  finalizadaEm         DateTime?            @map("finalizada_em") @db.Timestamptz(6)
+  atendimento          Atendimento          @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  fluxo                Fluxo                @relation("FluxoExecucoes", fields: [fluxoId], references: [id], onDelete: Restrict)
+  versaoFluxo          VersaoFluxo          @relation("VersaoFluxoExecucoes", fields: [versaoFluxoId, fluxoId], references: [id, fluxoId], onDelete: Restrict)
+  passos               PassoExecucaoFluxo[]
+  mensagensAutomaticas Mensagem[]
 
   @@index([atendimentoId, iniciadaEm, id], map: "execucao_fluxo_atendimento_inicio_idx")
   @@index([estado, retomarEm, atualizadaEm, id], map: "execucao_fluxo_recuperacao_idx")
@@ -798,18 +799,18 @@ model ExecucaoFluxo {
 }
 
 model PassoExecucaoFluxo {
-  id                 String                    @id @db.Uuid
-  execucaoFluxoId    String                    @map("execucao_fluxo_id") @db.Uuid
-  revisaoExecucao    Int                       @map("revisao_execucao")
-  noId               String                    @map("no_id") @db.VarChar(64)
-  tipoNo             String                    @map("tipo_no") @db.VarChar(64)
-  estado             EstadoPassoExecucaoFluxo  @default(INICIADO)
-  entradaSanitizada  Json                      @map("entrada_sanitizada")
-  saidaSanitizada    Json?                     @map("saida_sanitizada")
-  codigoErro         String?                   @map("codigo_erro") @db.VarChar(100)
-  iniciadoEm         DateTime                  @map("iniciado_em") @db.Timestamptz(6)
-  finalizadoEm       DateTime?                 @map("finalizado_em") @db.Timestamptz(6)
-  execucaoFluxo      ExecucaoFluxo             @relation(fields: [execucaoFluxoId], references: [id], onDelete: Restrict)
+  id                String                   @id @db.Uuid
+  execucaoFluxoId   String                   @map("execucao_fluxo_id") @db.Uuid
+  revisaoExecucao   Int                      @map("revisao_execucao")
+  noId              String                   @map("no_id") @db.VarChar(64)
+  tipoNo            String                   @map("tipo_no") @db.VarChar(64)
+  estado            EstadoPassoExecucaoFluxo @default(INICIADO)
+  entradaSanitizada Json                     @map("entrada_sanitizada")
+  saidaSanitizada   Json?                    @map("saida_sanitizada")
+  codigoErro        String?                  @map("codigo_erro") @db.VarChar(100)
+  iniciadoEm        DateTime                 @map("iniciado_em") @db.Timestamptz(6)
+  finalizadoEm      DateTime?                @map("finalizado_em") @db.Timestamptz(6)
+  execucaoFluxo     ExecucaoFluxo            @relation(fields: [execucaoFluxoId], references: [id], onDelete: Restrict)
 
   @@unique([execucaoFluxoId, revisaoExecucao], map: "passo_execucao_fluxo_revisao_key")
   @@index([execucaoFluxoId, iniciadoEm, id], map: "passo_execucao_fluxo_execucao_inicio_idx")
@@ -1438,6 +1439,8 @@ model Mensagem {
   canceladaEm                  DateTime?                 @map("cancelada_em") @db.Timestamptz(6)
   codigoFalha                  String?                   @map("codigo_falha") @db.VarChar(100)
   versao                       Int                       @default(1)
+  execucaoFluxoOrigemId        String?                   @map("execucao_fluxo_origem_id") @db.Uuid
+  versaoAtribuicaoOrigem       Int?                      @map("versao_atribuicao_origem")
   conversa                     Conversa                  @relation(fields: [conversaId], references: [id], onDelete: Restrict)
   atendimento                  Atendimento               @relation(fields: [atendimentoId, conversaId], references: [id, conversaId], onDelete: Restrict)
   contaWhatsApp                ContaWhatsApp             @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
@@ -1452,12 +1455,14 @@ model Mensagem {
   eventosEstado                EventoEstadoMensagem[]
   submissaoFormulario          SubmissaoFormularioCanal?
   disparoTransacional          DisparoTransacional?
+  execucaoFluxoOrigem          ExecucaoFluxo?            @relation(fields: [execucaoFluxoOrigemId], references: [id], onDelete: Restrict)
 
   @@unique([contaWhatsAppId, identificadorExternoMensagem], map: "mensagem_conta_identificador_externo_key")
   @@unique([usuarioRemetenteId, mensagemClienteId], map: "mensagem_usuario_cliente_key")
   @@index([conversaId, recebidaServidorEm, id], map: "mensagem_conversa_recebida_idx")
   @@index([atendimentoId, recebidaServidorEm, id], map: "mensagem_atendimento_recebida_idx")
   @@index([estadoSaida, proximaTentativaEm, recebidaServidorEm], map: "mensagem_saida_pendente_idx")
+  @@index([execucaoFluxoOrigemId, estadoSaida, recebidaServidorEm], map: "mensagem_execucao_fluxo_estado_idx")
   @@map("mensagem")
 }
 

@@ -41,6 +41,7 @@ function cenario(opcoes = {}) {
   const chamadas = { auditoria: [], autorizacao: [], destinatario: [], eventos: [], historico: [] };
   let consultasDisponibilidade = 0;
   const repositorio = {
+    bloquearAutoridadeSaida: async () => {},
     destinatarioEstaDisponivel: async () => {
       consultasDisponibilidade += 1;
       return opcoes.disponibilidadeDepois === false && consultasDisponibilidade > 1

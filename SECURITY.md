@@ -647,3 +647,14 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - encerramento exige fila de fallback ativa, congela a reabertura e torna a execução terminal; nova mensagem não retoma automação antiga;
 - motivo de encerramento permanece no registro protegido do atendimento e não entra em passo, evento, auditoria ou log;
 - estado, fila ou autoridade divergente falham fechados e não são corrigidos por escolha implícita ou SQL operacional.
+
+## 24. Controles da corrida resgate × envio automático da PR 083
+
+- mensagem automática persiste execução de origem e versão de atribuição; ausência desses campos impede o caminho automático coordenado;
+- criação, despacho e mutação de atribuição usam a mesma chave advisory textual por atendimento, sem byte nulo;
+- o despachante só sai de `NA_FILA` depois de reler modo, responsável, execução e versão sob o lock;
+- `ENVIANDO`, chamada ao canal e resultado ficam na mesma transação limitada; o transporte recebe `AbortSignal` e deve interromper a requisição no prazo;
+- resgate cancela automáticas `NA_FILA` no mesmo commit da autoridade humana; mensagem humana e disparo transacional não são alcançados;
+- aceite anterior ao commit humano permanece `ENVIADA`; depois do commit, criação, início e aceite novos são recusados;
+- migration cancela legado automático ainda `NA_FILA` e para com erro se encontrar legado `ENVIANDO`, que exige reconciliação;
+- evento e auditoria registram somente a quantidade cancelada, nunca conteúdo, destino ou credencial.

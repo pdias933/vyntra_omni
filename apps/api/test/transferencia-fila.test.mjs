@@ -45,6 +45,7 @@ function cenario(opcoes = {}) {
   let atual = { ...base };
   const chamadas = { auditoria: [], autorizacao: [], eventos: [], historico: [] };
   const repositorio = {
+    bloquearAutoridadeSaida: async () => {},
     obter: async () => ({ ...atual }),
     transferirParaFilaCondicional: async (proximo, filaOrigem, versao) => {
       if (

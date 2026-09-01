@@ -2,7 +2,10 @@ import type {
   ComandoEnvioMensagem,
   ResultadoEnvioMensagem,
 } from '../../modelo-mensageria.js';
-import type { CanalMensageria } from '../../porta-mensageria.js';
+import type {
+  CanalMensageria,
+  ControleEnvioMensageria,
+} from '../../porta-mensageria.js';
 import {
   ErroTransporteMetaCloud,
   type ClienteHttpMetaCloud,
@@ -40,6 +43,7 @@ export class AdaptadorSaidaMetaCloud implements CanalMensageria {
 
   public async enviar(
     comando: ComandoEnvioMensagem,
+    controle?: ControleEnvioMensageria,
   ): Promise<ResultadoEnvioMensagem> {
     if (
       !UUID.test(comando.comandoId) ||
@@ -84,10 +88,14 @@ export class AdaptadorSaidaMetaCloud implements CanalMensageria {
             ? {}
             : { context: { message_id: comando.respostaAoIdentificadorExterno } }),
         },
+        controle?.sinal,
       );
       return this.normalizarResposta(resposta.status, resposta.corpo);
     } catch (erro) {
-      if (erro instanceof ErroTransporteMetaCloud) {
+      if (
+        erro instanceof ErroTransporteMetaCloud ||
+        controle?.sinal.aborted === true
+      ) {
         return this.falhaTemporaria();
       }
       throw erro;

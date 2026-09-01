@@ -335,3 +335,48 @@ test('roteamento humano e encerramento preservam máquinas, fila ativa e autorid
   assert.doesNotMatch(atribuicoes, /MkSolutions|MetaCloud|https?:\/\//);
   assert.doesNotMatch(`${repositorio}\n${historico}\n${filas}`, /\\u0000/);
 });
+
+test('resgate e despacho automático compartilham autoridade serializada', async () => {
+  const [
+    migration,
+    criacao,
+    despacho,
+    repositorioMensagens,
+    atribuicoes,
+    repositorioAtribuicoes,
+    portaCanal,
+  ] = await Promise.all([
+    ler(
+      'apps/api/prisma/migrations/20260901013500_corrida_resgate_envio_automatico/migration.sql',
+    ),
+    ler('apps/api/src/mensagens/servico-mensagens-saida.ts'),
+    ler(
+      'apps/api/src/mensagens/servico-despacho-mensagem-automatica.ts',
+    ),
+    ler('apps/api/src/mensagens/repositorio-mensagens-prisma.ts'),
+    ler(
+      'apps/api/src/atribuicoes-atendimento/servico-atribuicoes-atendimento.ts',
+    ),
+    ler(
+      'apps/api/src/atribuicoes-atendimento/repositorio-atribuicoes-atendimento-prisma.ts',
+    ),
+    ler('apps/api/src/mensageria/porta-mensageria.ts'),
+  ]);
+  assert.match(migration, /execucao_fluxo_origem_id/);
+  assert.match(migration, /versao_atribuicao_origem/);
+  assert.match(migration, /MENSAGEM_AUTOMATICA_LEGADA_EM_ENVIO_REQUER_RECONCILIACAO/);
+  assert.match(criacao, /bloquearAutoridadeSaida/);
+  assert.match(criacao, /versaoAtribuicaoOrigem/);
+  assert.match(despacho, /estadoSaida !== 'NA_FILA'/);
+  assert.match(despacho, /Promise\.race/);
+  assert.match(despacho, /AbortController/);
+  assert.match(atribuicoes, /cancelarMensagensAutomaticasNaFila/);
+  assert.match(atribuicoes, /mensagensAutomaticasCanceladas/);
+  assert.match(portaCanal, /AbortSignal/);
+  assert.match(repositorioMensagens, /autoridade-saida:/);
+  assert.match(repositorioAtribuicoes, /autoridade-saida:/);
+  assert.doesNotMatch(
+    `${repositorioMensagens}\n${repositorioAtribuicoes}`,
+    /\\u0000/,
+  );
+});

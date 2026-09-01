@@ -303,6 +303,10 @@ export class ServicoAtribuicoesAtendimento {
       filaEsperadaId,
       transacao,
     );
+    await this.repositorio.bloquearAutoridadeSaida(
+      atendimentoId,
+      transacao,
+    );
     const atual = await this.repositorio.obter(atendimentoId, transacao);
     if (atual === undefined) throw new ErroAtendimentoAtribuicaoAusente();
     if (
@@ -336,6 +340,12 @@ export class ServicoAtribuicoesAtendimento {
         vencedor?.usuarioResponsavelId,
       );
     }
+    const mensagensAutomaticasCanceladas =
+      await this.repositorio.cancelarMensagensAutomaticasNaFila(
+        atendimentoId,
+        agora,
+        transacao,
+      );
     await this.historico.substituir(
       atendimentoId,
       {
@@ -354,6 +364,7 @@ export class ServicoAtribuicoesAtendimento {
         conversaId: proximo.conversaId,
         dados: {
           filaId: filaEsperadaId,
+          mensagensAutomaticasCanceladas,
           usuarioResponsavelId: sessao.usuarioId,
           versaoAtribuicao: proximo.versaoAtribuicao,
         },
@@ -375,6 +386,7 @@ export class ServicoAtribuicoesAtendimento {
         },
         dadosNovos: {
           estado: proximo.estado,
+          mensagensAutomaticasCanceladas,
           usuarioResponsavelId: proximo.usuarioResponsavelId,
           versaoAtribuicao: proximo.versaoAtribuicao,
         },
@@ -400,6 +412,10 @@ export class ServicoAtribuicoesAtendimento {
     relogio: () => Date = () => new Date(),
   ): Promise<AtendimentoPersistido> {
     this.validarEntrada(atendimentoId, filaDestinoId, versaoAtribuicaoEsperada);
+    await this.repositorio.bloquearAutoridadeSaida(
+      atendimentoId,
+      transacao,
+    );
     const atual = await this.repositorio.obter(atendimentoId, transacao);
     if (atual === undefined || atual.filaAtualId === undefined) {
       throw new ErroAtendimentoAtribuicaoAusente();
@@ -509,6 +525,10 @@ export class ServicoAtribuicoesAtendimento {
     if (!UUID.test(destinatarioId)) {
       throw new ErroEntradaAtribuicaoAtendimentoInvalida();
     }
+    await this.repositorio.bloquearAutoridadeSaida(
+      atendimentoId,
+      transacao,
+    );
     const atual = await this.repositorio.obter(atendimentoId, transacao);
     if (atual === undefined || atual.filaAtualId === undefined) {
       throw new ErroAtendimentoAtribuicaoAusente();
@@ -651,6 +671,10 @@ export class ServicoAtribuicoesAtendimento {
     ) {
       throw new ErroEntradaAtribuicaoAtendimentoInvalida();
     }
+    await this.repositorio.bloquearAutoridadeSaida(
+      atendimentoId,
+      transacao,
+    );
     const atual = await this.repositorio.obter(atendimentoId, transacao);
     if (atual === undefined || atual.filaAtualId === undefined) {
       throw new ErroAtendimentoAtribuicaoAusente();

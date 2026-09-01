@@ -5,12 +5,20 @@ import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type {
   ContextoSaidaMensagemAutomatica,
   ContextoSaidaMensagem,
+  MensagemAutomaticaParaDespacho,
   MensagemSaidaPersistida,
 } from './modelo-mensagem.js';
 import type { RepositorioMensagens } from './repositorio-mensagens.js';
 
 @Injectable()
 export class RepositorioMensagensPrisma implements RepositorioMensagens {
+  public async bloquearAutoridadeSaida(
+    atendimentoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<void> {
+    await transacao.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`autoridade-saida:${atendimentoId}`}, 0))`;
+  }
+
   public async bloquearIdempotencia(
     usuarioId: string,
     mensagemClienteId: string,
@@ -78,6 +86,7 @@ export class RepositorioMensagensPrisma implements RepositorioMensagens {
             contaWhatsAppOrigemId: true,
             conversa: { select: { contatoId: true } },
             conversaId: true,
+            versaoAtribuicao: true,
           },
         },
       },
@@ -101,7 +110,84 @@ export class RepositorioMensagensPrisma implements RepositorioMensagens {
       contaWhatsAppId: execucao.atendimento.contaWhatsAppOrigemId,
       contatoId: execucao.atendimento.conversa.contatoId,
       conversaId: execucao.atendimento.conversaId,
+      versaoAtribuicao: execucao.atendimento.versaoAtribuicao,
     };
+  }
+
+  public async obterAutomaticaParaDespacho(
+    mensagemId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<MensagemAutomaticaParaDespacho | undefined> {
+    const registro = await transacao.mensagem.findUnique({
+      include: {
+        atendimento: {
+          select: {
+            estado: true,
+            modo: true,
+            motivoEspera: true,
+            usuarioResponsavelId: true,
+            versaoAtribuicao: true,
+          },
+        },
+        execucaoFluxoOrigem: {
+          select: { atendimentoId: true, estado: true },
+        },
+      },
+      where: { id: mensagemId },
+    });
+    if (
+      registro === null ||
+      registro.execucaoFluxoOrigemId === null ||
+      registro.versaoAtribuicaoOrigem === null ||
+      registro.direcao !== 'SAIDA' ||
+      registro.usuarioRemetenteId !== null
+    ) {
+      return undefined;
+    }
+    const { atendimento, execucaoFluxoOrigem, ...mensagem } = registro;
+    const autoridadeValida =
+      atendimento.estado === 'AGUARDANDO' &&
+      atendimento.modo === 'BOT' &&
+      atendimento.motivoEspera === 'PROCESSANDO_BOT' &&
+      atendimento.usuarioResponsavelId === null &&
+      atendimento.versaoAtribuicao === registro.versaoAtribuicaoOrigem &&
+      execucaoFluxoOrigem?.atendimentoId === registro.atendimentoId &&
+      !['CANCELADA', 'FALHOU', 'SUSPENSA_POR_ATENDIMENTO_HUMANO'].includes(
+        execucaoFluxoOrigem.estado,
+      );
+    return {
+      autoridadeValida,
+      mensagem: mensagem as unknown as MensagemSaidaPersistida,
+    };
+  }
+
+  public async atualizarAutomaticaCondicional(
+    mensagem: MensagemSaidaPersistida,
+    estadoEsperado: MensagemSaidaPersistida['estadoSaida'],
+    versaoEsperada: number,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const resultado = await transacao.mensagem.updateMany({
+      data: {
+        canceladaEm: mensagem.canceladaEm ?? null,
+        codigoFalha: mensagem.codigoFalha ?? null,
+        enviadaEm: mensagem.enviadaEm ?? null,
+        estadoSaida: mensagem.estadoSaida,
+        falhouEm: mensagem.falhouEm ?? null,
+        identificadorExternoMensagem:
+          mensagem.identificadorExternoMensagem ?? null,
+        proximaTentativaEm: mensagem.proximaTentativaEm ?? null,
+        tentativasEnvio: mensagem.tentativasEnvio,
+        versao: mensagem.versao,
+      },
+      where: {
+        estadoSaida: estadoEsperado,
+        execucaoFluxoOrigemId: { not: null },
+        id: mensagem.id,
+        versao: versaoEsperada,
+      },
+    });
+    return resultado.count === 1;
   }
 
   public async acrescentar(

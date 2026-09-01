@@ -84,6 +84,7 @@ function criarServico(sobrescritas = {}) {
   const estado = { caixa: [], eventos: [], mensagens: [] };
   const repositorio = {
     acrescentar: async (mensagem) => estado.mensagens.push(mensagem),
+    bloquearAutoridadeSaida: async () => {},
     bloquearIdempotencia: async () => {},
     obterContextoSaida: async () => ({
       contaWhatsAppId: ids.conta,
@@ -98,6 +99,7 @@ function criarServico(sobrescritas = {}) {
             contaWhatsAppId: ids.conta,
             contatoId: ids.contato,
             conversaId: ids.conversa,
+            versaoAtribuicao: 7,
           },
     obterPorIdempotencia: async (_usuarioId, mensagemClienteId) =>
       estado.mensagens.find((mensagem) => mensagem.mensagemClienteId === mensagemClienteId),
@@ -146,6 +148,8 @@ test('automação cria texto sem usuário remetente e conserva conteúdo fora do
   assert.equal(resultado.resultado, 'SUCESSO');
   assert.equal(resultado.mensagem.usuarioRemetenteId, undefined);
   assert.equal(resultado.mensagem.estadoSaida, 'NA_FILA');
+  assert.equal(resultado.mensagem.versaoAtribuicaoOrigem, 7);
+  assert.ok(resultado.mensagem.execucaoFluxoOrigemId);
   assert.equal(estado.mensagens.length, 1);
   assert.equal(estado.caixa.length, 1);
   assert.equal(JSON.stringify(estado.eventos).includes('Mensagem do fluxo'), false);

@@ -6,11 +6,20 @@ export const REPOSITORIO_ATRIBUICOES_ATENDIMENTO = Symbol(
 );
 
 export interface RepositorioAtribuicoesAtendimento {
+  bloquearAutoridadeSaida(
+    atendimentoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<void>;
   bloquearParaFluxo(
     atendimentoId: string,
     filaId: string,
     transacao: TransacaoPrisma,
   ): Promise<void>;
+  cancelarMensagensAutomaticasNaFila(
+    atendimentoId: string,
+    canceladaEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<number>;
   filaEstaAtiva(
     filaId: string,
     transacao: TransacaoPrisma,

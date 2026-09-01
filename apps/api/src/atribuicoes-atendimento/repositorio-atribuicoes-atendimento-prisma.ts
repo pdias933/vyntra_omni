@@ -9,17 +9,48 @@ import type { RepositorioAtribuicoesAtendimento } from './repositorio-atribuicoe
 export class RepositorioAtribuicoesAtendimentoPrisma
   implements RepositorioAtribuicoesAtendimento
 {
+  public async bloquearAutoridadeSaida(
+    atendimentoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<void> {
+    await transacao.$executeRaw(
+      Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`autoridade-saida:${atendimentoId}`}, 0))`,
+    );
+  }
+
   public async bloquearParaFluxo(
     atendimentoId: string,
     filaId: string,
     transacao: TransacaoPrisma,
   ): Promise<void> {
+    await this.bloquearAutoridadeSaida(atendimentoId, transacao);
     await transacao.$executeRaw(
       Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`historico-atribuicao:${atendimentoId}`}, 0))`,
     );
     await transacao.$executeRaw(
       Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`fila:${filaId}`}, 0))`,
     );
+  }
+
+  public async cancelarMensagensAutomaticasNaFila(
+    atendimentoId: string,
+    canceladaEm: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<number> {
+    const resultado = await transacao.mensagem.updateMany({
+      data: {
+        canceladaEm,
+        estadoSaida: 'CANCELADA',
+        proximaTentativaEm: null,
+        versao: { increment: 1 },
+      },
+      where: {
+        atendimentoId,
+        estadoSaida: 'NA_FILA',
+        execucaoFluxoOrigemId: { not: null },
+      },
+    });
+    return resultado.count;
   }
 
   public async filaEstaAtiva(
