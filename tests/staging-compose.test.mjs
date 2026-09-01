@@ -242,6 +242,8 @@ test('publica SPA e API na mesma origem com HTTPS e cabeçalhos defensivos', () 
   assert.match(dockerfileWeb, /caddy:2\.11\.4-alpine@sha256:[0-9a-f]{64}/);
   assert.match(dockerfileWeb, /pnpm --filter '@vyntra\/web\.\.\.' install --frozen-lockfile/);
   assert.match(dockerfileWeb, /USER 1000:1000/g);
+  assert.match(dockerfileWeb, /caddy-sem-capacidade/g);
+  assert.match(dockerfileWeb, /ENTRYPOINT \["\/usr\/local\/bin\/caddy-sem-capacidade"\]/g);
   assert.match(configuracaoWeb, /http:\/\/:8080/);
   assert.match(configuracaoWeb, /try_files \{path\} \/index\.html/);
   assert.match(configuracaoWeb, /max-age=31536000, immutable/);

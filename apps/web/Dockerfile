@@ -40,18 +40,28 @@ FROM ${IMAGEM_CADDY} AS conteudo
 COPY infra/staging/Caddyfile.web /etc/caddy/Caddyfile
 COPY --from=construtor --chown=1000:1000 /codigo/apps/web/dist /srv
 
-RUN chown -R 1000:1000 /config /data /etc/caddy /srv
+RUN cp /usr/bin/caddy /usr/local/bin/caddy-sem-capacidade \
+    && chown -R 1000:1000 /config /data /etc/caddy /srv \
+    && chown 1000:1000 /usr/local/bin/caddy-sem-capacidade
 
 USER 1000:1000
 
 EXPOSE 8080
 
+ENTRYPOINT ["/usr/local/bin/caddy-sem-capacidade"]
+CMD ["run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+
 FROM ${IMAGEM_CADDY} AS borda
 
 COPY infra/staging/Caddyfile.borda /etc/caddy/Caddyfile
 
-RUN chown -R 1000:1000 /config /data /etc/caddy
+RUN cp /usr/bin/caddy /usr/local/bin/caddy-sem-capacidade \
+    && chown -R 1000:1000 /config /data /etc/caddy \
+    && chown 1000:1000 /usr/local/bin/caddy-sem-capacidade
 
 USER 1000:1000
 
 EXPOSE 80 443 443/udp
+
+ENTRYPOINT ["/usr/local/bin/caddy-sem-capacidade"]
+CMD ["run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
