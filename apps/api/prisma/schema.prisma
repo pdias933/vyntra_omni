@@ -144,6 +144,26 @@ enum EstadoSaidaMensagem {
   @@map("estado_saida_mensagem")
 }
 
+enum EstadoAplicacaoIntegracao {
+  ATIVA
+  INATIVA
+
+  @@map("estado_aplicacao_integracao")
+}
+
+enum FinalidadeConsentimentoCanal {
+  MENSAGEM_TRANSACIONAL
+
+  @@map("finalidade_consentimento_canal")
+}
+
+enum EstadoConsentimentoCanal {
+  CONCEDIDO
+  REVOGADO
+
+  @@map("estado_consentimento_canal")
+}
+
 enum CategoriaMidiaMensagem {
   IMAGEM
   AUDIO
@@ -879,6 +899,7 @@ model ContaWhatsApp {
   modelosMensagem               ModeloMensagemCanal[]
   composicoesSegundaVia         ComposicaoSegundaVia[]
   formulariosCanal              FormularioCanal[]
+  consentimentosCanal           ConsentimentoContatoCanal[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorCanalExterno], map: "conta_whatsapp_identidade_externa_key")
   @@index([estado, nomeExibicao, id], map: "conta_whatsapp_estado_nome_idx")
@@ -903,6 +924,7 @@ model Contato {
   mensagensRecebidas      Mensagem[]
   composicoesSegundaVia   ComposicaoSegundaVia[]
   submissoesFormulario    SubmissaoFormularioCanal[]
+  consentimentosCanal     ConsentimentoContatoCanal[]
 
   @@index([estado, ultimaInteracaoEm, id], map: "contato_estado_ultima_interacao_idx")
   @@map("contato")
@@ -1225,6 +1247,7 @@ model Mensagem {
   eventoEntradaCanal           EventoEntradaCanal?
   eventosEstado                EventoEstadoMensagem[]
   submissaoFormulario          SubmissaoFormularioCanal?
+  disparoTransacional          DisparoTransacional?
 
   @@unique([contaWhatsAppId, identificadorExternoMensagem], map: "mensagem_conta_identificador_externo_key")
   @@unique([usuarioRemetenteId, mensagemClienteId], map: "mensagem_usuario_cliente_key")
@@ -1366,6 +1389,56 @@ model SubmissaoFormularioCanal {
   @@unique([formularioId, referenciaCanal], map: "submissao_formulario_canal_formulario_referencia_key")
   @@index([contatoId, recebidaEm, id], map: "submissao_formulario_canal_contato_recebida_idx")
   @@map("submissao_formulario_canal")
+}
+
+model AplicacaoIntegracao {
+  id            String                     @id @db.Uuid
+  nome          String                     @unique @db.VarChar(100)
+  segredoHash   String                     @map("segredo_hash") @db.Char(64)
+  estado        EstadoAplicacaoIntegracao  @default(ATIVA)
+  criadoEm      DateTime                   @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm  DateTime                   @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  disparos      DisparoTransacional[]
+
+  @@index([estado, nome, id], map: "aplicacao_integracao_estado_nome_idx")
+  @@map("aplicacao_integracao")
+}
+
+model ConsentimentoContatoCanal {
+  id                String                        @id @db.Uuid
+  contatoId         String                        @map("contato_id") @db.Uuid
+  contaWhatsAppId   String                        @map("conta_whatsapp_id") @db.Uuid
+  finalidade        FinalidadeConsentimentoCanal
+  estado            EstadoConsentimentoCanal
+  origem            String                        @db.VarChar(100)
+  concedidoEm       DateTime                      @map("concedido_em") @db.Timestamptz(6)
+  revogadoEm        DateTime?                     @map("revogado_em") @db.Timestamptz(6)
+  versao            Int                           @default(1)
+  atualizadoEm      DateTime                      @map("atualizado_em") @db.Timestamptz(6)
+  contato           Contato                       @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  contaWhatsApp     ContaWhatsApp                 @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  disparos          DisparoTransacional[]
+
+  @@unique([contatoId, contaWhatsAppId, finalidade], map: "consentimento_contato_canal_escopo_key")
+  @@index([contaWhatsAppId, estado, finalidade, atualizadoEm], map: "consentimento_contato_canal_estado_idx")
+  @@map("consentimento_contato_canal")
+}
+
+model DisparoTransacional {
+  id                       String                      @id @db.Uuid
+  aplicacaoIntegracaoId    String                      @map("aplicacao_integracao_id") @db.Uuid
+  consentimentoId          String                      @map("consentimento_id") @db.Uuid
+  mensagemId               String                      @unique(map: "disparo_transacional_mensagem_key") @map("mensagem_id") @db.Uuid
+  idempotenciaHash         String                      @map("chave_idempotencia_hash") @db.Char(64)
+  assinaturaComandoHash    String                      @map("assinatura_comando_hash") @db.Char(64)
+  criadoEm                 DateTime                    @map("criado_em") @db.Timestamptz(6)
+  aplicacaoIntegracao      AplicacaoIntegracao         @relation(fields: [aplicacaoIntegracaoId], references: [id], onDelete: Restrict)
+  consentimento            ConsentimentoContatoCanal   @relation(fields: [consentimentoId], references: [id], onDelete: Restrict)
+  mensagem                 Mensagem                    @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
+
+  @@unique([aplicacaoIntegracaoId, idempotenciaHash], map: "disparo_transacional_aplicacao_idempotencia_key")
+  @@index([consentimentoId, criadoEm, id], map: "disparo_transacional_consentimento_criado_idx")
+  @@map("disparo_transacional")
 }
 
 model ProtocoloErp {
