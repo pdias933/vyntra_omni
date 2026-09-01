@@ -402,6 +402,12 @@ O contrato faz parte da V1. A implementação real é condicional a uma fonte co
 
 `desconectarSessao` é escrita sensível. O caso de uso exige sessão válida, permissão `DESCONECTAR_SESSAO_ACESSO`, contexto de cliente/contrato autorizado, confirmação explícita, `OperacaoIntegracao` idempotente e auditoria. A UI e o Motor de Fluxos nunca chamam essa porta diretamente.
 
+### 6.1 Contrato e simulador desligado
+
+A PR 021 materializa `AdaptadorSessaoAcesso` com `listarSessoes`, `consultarSessao`, `desconectarSessao` e `reconciliarDesconexao`. Leituras bem-sucedidas informam `TEMPO_REAL` e instante de obtenção; fonte ausente, recurso desligado e indisponibilidade são resultados distintos. Desconexão de estado `DESCONHECIDA` é negada, e resposta perdida permanece incerta até reconciliação.
+
+`AdaptadorSessaoAcessoSimulado` exige que cada fixture declare `ATIVA`, `INATIVA` ou `DESCONHECIDA`; ele nunca deriva estado de contrato/conexão. O simulador nasce `DESATIVADO`, não é provider da aplicação e sua memória não substitui controle de recurso, autorização, auditoria ou idempotência PostgreSQL. A migration cria `SESSAO_ACESSO` desativado, sem administradores, usuários, filas ou percentual liberado. Nenhuma fonte PPPoE/AAA real foi escolhida.
+
 ## 7. Disparos transacionais vindos do ERP
 
 O ERP é dono da regra/configuração do disparo; o omnichannel é gateway.

@@ -179,6 +179,7 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - `AdaptadorMkSolutions` implementa `AdaptadorErp`; nome MK não aparece no domínio.
 - `AccessSessionAdapter`/`AdaptadorSessaoAcesso` é separado do ERP.
 - Não afirmar sessão `ATIVA` a partir de conexão apenas cadastrada no ERP.
+- A porta de sessão de acesso nasce sob `SESSAO_ACESSO=DESATIVADO`; simulador e presença de fixture nunca habilitam o recurso nem substituem uma fonte confiável.
 - Não implementar provedor PPPoE até existir fonte confiável aprovada.
 
 ## 9. Motor de Fluxos

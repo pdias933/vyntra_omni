@@ -576,6 +576,8 @@ Na PR 019, a porta de mensageria é código puro e não registra integração re
 
 Na PR 020, `AdaptadorErp` separa consultas e escritas e devolve somente modelos internos normalizados. Seu simulador contratual diferencia indisponibilidade anterior à escrita, quando não há efeito externo, de resposta perdida após possível criação. A segunda situação retorna `RESULTADO_INCERTO` e só pode avançar por reconciliação. O simulador não é provider da aplicação; `OperacaoIntegracao`, caixa de saída e protocolo persistente continuam pertencendo aos PRs de domínio.
 
+Na PR 021, `AdaptadorSessaoAcesso` é uma porta independente de `AdaptadorErp`, com leitura, desconexão e reconciliação próprias. O simulador nasce `DESATIVADO`, preserva apenas estados explicitamente fornecidos e recusa desconectar `DESCONHECIDA`. A migration semeia `SESSAO_ACESSO` desativado e sem alvos; nenhuma rota ou provider real é registrado. A integração real permanece condicional ao PR 068.
+
 ## 14. Observabilidade
 
 Quatro sinais distintos:

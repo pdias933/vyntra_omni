@@ -377,6 +377,8 @@ A PR 019 não possui migration e mantém como marca obrigatória `20260831000900
 
 A PR 020 também não possui migration e mantém a mesma marca obrigatória. O simulador ERP pode ser exercitado dentro da imagem, mas não possui endpoint, credencial ou registro no módulo da aplicação; promover a imagem não habilita MK. `RESULTADO_INCERTO` em produção exige operação persistente e reconciliação — reiniciar, reprogramar cenário ou repetir manualmente não é procedimento válido.
 
+A PR 021 aplica `20260831001000_criar_controle_sessao_acesso_desativado`, que semeia `SESSAO_ACESSO` em `DESATIVADO`, sem alvo ou percentual. O simulador não possui endpoint, credencial nem registro na aplicação. `NAO_CONFIGURADO` ou `DESATIVADO` não degrada a saúde geral; `INDISPONIVEL` só deve alertar quando uma fonte real previamente habilitada existir. Promover a imagem não habilita consulta nem desconexão.
+
 ### Recuperação de operações
 
 Um processo periódico recupera concessões vencidas em lotes pequenos. Ele encerra a tentativa como `RESULTADO_INCERTO`, limpa a concessão e agenda reconciliação imediata. O operador pode observar tipo, estado, idade, quantidade de tentativas e código normalizado; token, payload bruto e dado sensível não aparecem em log ou painel.

@@ -587,6 +587,8 @@ SNAPSHOT
 
 `SNAPSHOT` pode sustentar identificação, nome, documento mascarado, vínculos, contratos conhecidos, plano, velocidade e endereços. Fatura atual, Pix, financeiro atual, desbloqueio, protocolo, OS e qualquer escrita exigem `TEMPO_REAL`.
 
+Sessão de acesso usa porta própria e estados `ATIVA`, `INATIVA` ou `DESCONHECIDA`. Conexão cadastrada, contrato ativo ou presença em snapshot nunca promove o estado para `ATIVA`. `NAO_CONFIGURADO` e `DESATIVADO` são disponibilidade do recurso/fonte, não estados da sessão. Desconexão só pode atingir sessão explicitamente `ATIVA`; resposta perdida vira `RESULTADO_INCERTO` e exige reconciliação.
+
 ## 13. Eventos e sincronização
 
 ```text
