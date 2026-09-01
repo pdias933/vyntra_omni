@@ -736,3 +736,11 @@ O web consome exclusivamente o SDK gerado da OpenAPI. `@xyflow/react` 12.11.6, M
 A PR 085 adiciona `SimuladorFluxos` como função de aplicação pura: entrada fechada, cenário controlado e resultado determinístico. Ele depende apenas do modelo canônico interpretado pelo validador e não importa repositório, Prisma, Redis, serviço de mensagens, serviço ERP, provider externo, relógio de execução ou executor do Motor. Por isso uma simulação não pode se transformar acidentalmente em runtime por configuração de injeção.
 
 O endpoint `POST /administracao/fluxos/simular` apenas valida sessão web, origem, CSRF e `TESTAR_FLUXO`, interpreta a definição e chama o simulador. A resposta contém contexto sintético, prévia canônica e passos sanitizados. Não há transação de domínio, escrita no banco, evento, auditoria com payload da definição nem chamada de rede. A interface usa o SDK OpenAPI gerado e pode enviar a definição local ainda não salva sem alterar rascunho, versão publicada ou execução existente.
+
+### 13.14 Mídia e relações na conversa web
+
+Na PR 090, `ServicoMensagensSaida` continua sendo a única fronteira de criação. O controller multipart não decide categoria: `ServicoMidias` detecta assinatura, compara MIME, aplica teto, calcula hash e grava metadados ligados à mensagem. `AdaptadorArmazenamentoS3` é o único componente que conhece endpoint, credenciais e comandos S3; usa bucket privado e chave opaca, sem URL pública ou assinada no domínio.
+
+O download é deliberadamente intermediado. `ServicoComposerWeb` lê somente contexto e metadados, autoriza a fila atual em leitura consistente e depois recupera o binário; tamanho e hash são conferidos antes da resposta `private, no-store`. O web consome as rotas exclusivamente pelo SDK OpenAPI gerado e cria URL `blob:` apenas em memória para player/visualizador.
+
+Citação e reação conservam relações internas reais. A timeline projeta uma citação somente quando o alvo também está no escopo autorizado. Na ausência de capacidade externa caracterizada, a resposta citada usa fallback textual e a reação é terminal interna, sem item de caixa de saída. Assim, a interface pode oferecer a interação sem declarar entrega inexistente ao cliente.

@@ -8,6 +8,7 @@ import { ServicoCaixaSaida } from '../eventos/servico-caixa-saida.js';
 import { ServicoEventoDominio } from '../eventos/servico-evento-dominio.js';
 import { ErroTextoLivreForaJanela } from '../janela-canal/erros-janela-canal.js';
 import { ServicoJanelaCanal } from '../janela-canal/servico-janela-canal.js';
+import { ServicoMidias } from '../midias/servico-midias.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import {
   ErroIdempotenciaMensagemDivergente,
@@ -22,12 +23,15 @@ import {
   REPOSITORIO_MENSAGENS,
   type RepositorioMensagens,
 } from './repositorio-mensagens.js';
+import { PlanejadorRelacoesMensagem } from './relacoes-mensagem.js';
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 @Injectable()
 export class ServicoMensagensSaida {
+  private readonly relacoes = new PlanejadorRelacoesMensagem();
+
   public constructor(
     @Inject(REPOSITORIO_MENSAGENS)
     private readonly repositorio: RepositorioMensagens,
@@ -39,6 +43,8 @@ export class ServicoMensagensSaida {
     private readonly eventos: ServicoEventoDominio,
     @Inject(ServicoCaixaSaida)
     private readonly caixaSaida: ServicoCaixaSaida,
+    @Inject(ServicoMidias)
+    private readonly midias: ServicoMidias,
   ) {}
 
   public async criarTexto(
@@ -50,6 +56,7 @@ export class ServicoMensagensSaida {
       readonly criadaDispositivoEm?: Date;
       readonly filaId: string;
       readonly mensagemClienteId: string;
+      readonly respondeAMensagemId?: string;
       readonly texto: string;
     },
     transacao: TransacaoPrisma,
@@ -58,7 +65,7 @@ export class ServicoMensagensSaida {
     const texto = this.validarEntrada(entrada);
     const agora = relogio();
     if (!Number.isFinite(agora.getTime())) throw new ErroMensagemInvalida();
-    const conteudoHash = createHash('sha256').update(texto, 'utf8').digest('hex');
+    const conteudoHash = createHash('sha256').update(`${texto}\u0000${entrada.respondeAMensagemId ?? ''}`, 'utf8').digest('hex');
     await this.repositorio.bloquearIdempotencia(
       sessao.usuarioId,
       entrada.mensagemClienteId,
@@ -107,6 +114,23 @@ export class ServicoMensagensSaida {
       transacao,
     );
     if (contexto === undefined) throw new ErroMensagemInvalida();
+    let textoSaida = texto;
+    if (entrada.respondeAMensagemId !== undefined) {
+      const alvo = await this.repositorio.obterAlvoRelacao(
+        entrada.respondeAMensagemId,
+        entrada.conversaId,
+        entrada.contaWhatsAppId,
+        transacao,
+      );
+      if (alvo === undefined) throw new ErroMensagemInvalida();
+      const plano = this.relacoes.planejarResposta(
+        { contaWhatsAppId: entrada.contaWhatsAppId, conversaId: entrada.conversaId },
+        alvo,
+        { previaUrl: false, reacaoNativa: false, respostaNativa: false },
+      );
+      textoSaida = plano.modoCanal === 'FALLBACK_TEXTO' ? `> ${plano.previaProtegida}\n\n${texto}` : texto;
+      if (textoSaida.length > 4_096) throw new ErroMensagemInvalida();
+    }
     await this.janela.autorizarSaida(
       contexto.contatoId,
       contexto.contaWhatsAppId,
@@ -121,7 +145,7 @@ export class ServicoMensagensSaida {
       contatoRemetenteId: undefined,
       contaWhatsAppId: entrada.contaWhatsAppId,
       conteudoHash,
-      conteudoProtegido: { texto },
+      conteudoProtegido: { texto: textoSaida },
       conversaId: entrada.conversaId,
       criadaDispositivoEm: entrada.criadaDispositivoEm,
       direcao: 'SAIDA',
@@ -134,6 +158,7 @@ export class ServicoMensagensSaida {
       lidaEm: undefined,
       mensagemClienteId: entrada.mensagemClienteId,
       proximaTentativaEm: agora,
+      respondeAMensagemId: entrada.respondeAMensagemId,
       recebidaServidorEm: agora,
       tentativasEnvio: 0,
       tipo: 'TEXTO',
@@ -445,6 +470,169 @@ export class ServicoMensagensSaida {
     return mensagem;
   }
 
+  public async criarMidia(
+    sessao: ContextoSessaoAutorizacao,
+    entrada: {
+      readonly atendimentoId: string;
+      readonly contaWhatsAppId: string;
+      readonly conteudo: Uint8Array;
+      readonly conversaId: string;
+      readonly filaId: string;
+      readonly mensagemClienteId: string;
+      readonly mime: string;
+      readonly nomeArquivo?: string;
+    },
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<MensagemSaidaPersistida> {
+    if (![
+      entrada.atendimentoId,
+      entrada.contaWhatsAppId,
+      entrada.conversaId,
+      entrada.filaId,
+      entrada.mensagemClienteId,
+    ].every((id) => UUID.test(id))) throw new ErroMensagemInvalida();
+    const validada = this.midias.validar(entrada.conteudo, entrada.mime);
+    const nomeArquivo = entrada.nomeArquivo?.trim();
+    if (nomeArquivo !== undefined && (nomeArquivo.length < 1 || nomeArquivo.length > 180 || /[\\/]/u.test(nomeArquivo) || nomeArquivo.includes(String.fromCodePoint(0)))) throw new ErroMensagemInvalida();
+    const agora = relogio();
+    if (!Number.isFinite(agora.getTime())) throw new ErroMensagemInvalida();
+    await this.repositorio.bloquearIdempotencia(sessao.usuarioId, entrada.mensagemClienteId, transacao);
+    const existente = await this.repositorio.obterPorIdempotencia(sessao.usuarioId, entrada.mensagemClienteId, transacao);
+    if (existente !== undefined) {
+      if (existente.conversaId !== entrada.conversaId || existente.atendimentoId !== entrada.atendimentoId || existente.conteudoHash !== validada.conteudoHash) throw new ErroIdempotenciaMensagemDivergente();
+      return existente;
+    }
+    const contexto = await this.autorizarContextoHumano(sessao, entrada, transacao);
+    await this.janela.autorizarSaida(contexto.contatoId, contexto.contaWhatsAppId, 'TEXTO_LIVRE', transacao, relogio);
+    const mensagem: MensagemSaidaPersistida = {
+      atendimentoId: entrada.atendimentoId,
+      canceladaEm: undefined,
+      codigoFalha: undefined,
+      contatoRemetenteId: undefined,
+      contaWhatsAppId: entrada.contaWhatsAppId,
+      conteudoHash: validada.conteudoHash,
+      conteudoProtegido: { ...(nomeArquivo === undefined ? {} : { nomeArquivo }) },
+      conversaId: entrada.conversaId,
+      criadaDispositivoEm: undefined,
+      direcao: 'SAIDA',
+      entregueEm: undefined,
+      enviadaEm: undefined,
+      estadoSaida: 'NA_FILA',
+      falhouEm: undefined,
+      id: randomUUID(),
+      identificadorExternoMensagem: undefined,
+      lidaEm: undefined,
+      mensagemClienteId: entrada.mensagemClienteId,
+      proximaTentativaEm: agora,
+      recebidaServidorEm: agora,
+      tentativasEnvio: 0,
+      tipo: validada.categoria,
+      usuarioRemetenteId: sessao.usuarioId,
+      versao: 1,
+    };
+    await this.repositorio.acrescentar(mensagem, transacao);
+    await this.midias.guardar(mensagem.id, entrada.conteudo, entrada.mime, transacao, relogio);
+    const evento = await this.eventos.acrescentar(
+      { atendimentoId: mensagem.atendimentoId, classificacaoDados: 'OPERACIONAL', conversaId: mensagem.conversaId, dados: { estado: 'NA_FILA', tipo: mensagem.tipo }, entidadeId: mensagem.id, entidadeTipo: 'MENSAGEM', tipo: 'MENSAGEM_SAIDA_CRIADA', usuarioAtorId: sessao.usuarioId },
+      transacao,
+    );
+    await this.caixaSaida.acrescentar({ dados: { mensagemId: mensagem.id }, destino: 'MENSAGERIA', tipo: 'ENVIAR_MENSAGEM' }, evento, transacao);
+    return mensagem;
+  }
+
+  public async criarReacao(
+    sessao: ContextoSessaoAutorizacao,
+    entrada: {
+      readonly atendimentoId: string;
+      readonly contaWhatsAppId: string;
+      readonly conversaId: string;
+      readonly emoji: string;
+      readonly filaId: string;
+      readonly mensagemAlvoId: string;
+      readonly mensagemClienteId: string;
+    },
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<MensagemSaidaPersistida> {
+    if (![
+      entrada.atendimentoId,
+      entrada.contaWhatsAppId,
+      entrada.conversaId,
+      entrada.filaId,
+      entrada.mensagemAlvoId,
+      entrada.mensagemClienteId,
+    ].every((id) => UUID.test(id)) || !['👍', '❤️', '😂', '😮', '😢', '🙏'].includes(entrada.emoji)) throw new ErroMensagemInvalida();
+    const agora = relogio();
+    if (!Number.isFinite(agora.getTime())) throw new ErroMensagemInvalida();
+    const conteudoHash = createHash('sha256').update(`${entrada.mensagemAlvoId}\u0000${entrada.emoji}`, 'utf8').digest('hex');
+    await this.repositorio.bloquearIdempotencia(sessao.usuarioId, entrada.mensagemClienteId, transacao);
+    const existente = await this.repositorio.obterPorIdempotencia(sessao.usuarioId, entrada.mensagemClienteId, transacao);
+    if (existente !== undefined) {
+      if (existente.conteudoHash !== conteudoHash) throw new ErroIdempotenciaMensagemDivergente();
+      return existente;
+    }
+    await this.autorizarContextoHumano(sessao, entrada, transacao);
+    const alvo = await this.repositorio.obterAlvoRelacao(entrada.mensagemAlvoId, entrada.conversaId, entrada.contaWhatsAppId, transacao);
+    if (alvo === undefined) throw new ErroMensagemInvalida();
+    const plano = this.relacoes.planejarReacao(
+      { contaWhatsAppId: entrada.contaWhatsAppId, conversaId: entrada.conversaId },
+      alvo,
+      { previaUrl: false, reacaoNativa: false, respostaNativa: false },
+    );
+    const mensagem: MensagemSaidaPersistida = {
+      atendimentoId: entrada.atendimentoId,
+      canceladaEm: agora,
+      codigoFalha: undefined,
+      contatoRemetenteId: undefined,
+      contaWhatsAppId: entrada.contaWhatsAppId,
+      conteudoHash,
+      conteudoProtegido: { emoji: entrada.emoji, modoCanal: plano.modoCanal },
+      conversaId: entrada.conversaId,
+      criadaDispositivoEm: undefined,
+      direcao: 'SAIDA',
+      entregueEm: undefined,
+      enviadaEm: undefined,
+      estadoSaida: 'CANCELADA',
+      falhouEm: undefined,
+      id: randomUUID(),
+      identificadorExternoMensagem: undefined,
+      lidaEm: undefined,
+      mensagemAlvoReacaoId: entrada.mensagemAlvoId,
+      mensagemClienteId: entrada.mensagemClienteId,
+      proximaTentativaEm: undefined,
+      recebidaServidorEm: agora,
+      tentativasEnvio: 0,
+      tipo: 'REACAO',
+      usuarioRemetenteId: sessao.usuarioId,
+      versao: 1,
+    };
+    await this.repositorio.acrescentar(mensagem, transacao);
+    await this.eventos.acrescentar(
+      { atendimentoId: mensagem.atendimentoId, classificacaoDados: 'OPERACIONAL', conversaId: mensagem.conversaId, dados: { modoCanal: plano.modoCanal }, entidadeId: mensagem.id, entidadeTipo: 'MENSAGEM', tipo: 'REACAO_INTERNA_CRIADA', usuarioAtorId: sessao.usuarioId },
+      transacao,
+    );
+    return mensagem;
+  }
+
+  private async autorizarContextoHumano(
+    sessao: ContextoSessaoAutorizacao,
+    entrada: { readonly atendimentoId: string; readonly contaWhatsAppId: string; readonly conversaId: string; readonly filaId: string },
+    transacao: TransacaoPrisma,
+  ) {
+    let contexto: Awaited<ReturnType<RepositorioMensagens['obterContextoSaida']>> | undefined;
+    await this.autorizacao.autorizar(
+      { filaId: entrada.filaId, permissao: 'ENVIAR_MENSAGEM', recurso: { id: entrada.atendimentoId, tipo: 'ATENDIMENTO' }, sessao },
+      async () => {
+        contexto = await this.repositorio.obterContextoSaida(entrada.conversaId, entrada.atendimentoId, entrada.contaWhatsAppId, entrada.filaId, sessao.usuarioId, transacao);
+        return { acessivel: contexto !== undefined, estadoPermiteAcao: contexto?.permiteEnvio === true };
+      },
+      transacao,
+    );
+    if (contexto === undefined) throw new ErroMensagemInvalida();
+    return contexto;
+  }
+
   private validarEntrada(entrada: {
     readonly atendimentoId: string;
     readonly contaWhatsAppId: string;
@@ -452,6 +640,7 @@ export class ServicoMensagensSaida {
     readonly criadaDispositivoEm?: Date;
     readonly filaId: string;
     readonly mensagemClienteId: string;
+    readonly respondeAMensagemId?: string;
     readonly texto: unknown;
   }): string {
     if (
@@ -464,6 +653,7 @@ export class ServicoMensagensSaida {
       ].every((id) => UUID.test(id)) ||
       typeof entrada.texto !== 'string' ||
       entrada.texto.includes('\u0000') ||
+      (entrada.respondeAMensagemId !== undefined && !UUID.test(entrada.respondeAMensagemId)) ||
       (entrada.criadaDispositivoEm !== undefined &&
         !Number.isFinite(entrada.criadaDispositivoEm.getTime()))
     ) {

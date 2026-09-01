@@ -7,11 +7,12 @@ import { ControladorConsoleWeb } from './controlador-console-web.js';
 import { ServicoListaAtendimentosWeb } from './servico-lista-atendimentos-web.js';
 import { ServicoTimelineWeb } from './servico-timeline-web.js';
 import { ModuloMensagens } from '../mensagens/modulo-mensagens.js';
+import { ModuloMidias } from '../midias/modulo-midias.js';
 import { ServicoComposerWeb } from './servico-composer-web.js';
 
 @Module({
   controllers: [ControladorConsoleWeb],
-  imports: [ModuloAutenticacao, ModuloAutorizacao, ModuloMensagens, ModuloPersistencia],
+  imports: [ModuloAutenticacao, ModuloAutorizacao, ModuloMensagens, ModuloMidias, ModuloPersistencia],
   providers: [ServicoComposerWeb, ServicoListaAtendimentosWeb, ServicoTimelineWeb],
 })
 export class ModuloConsoleWeb {}

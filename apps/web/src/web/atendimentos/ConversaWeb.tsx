@@ -1,21 +1,26 @@
 import {
   confirmarLeituraTimelineWeb,
+  baixarMidiaWeb,
+  enviarMidiaWeb,
   enviarModeloAprovadoWeb,
   enviarTextoWeb,
   listarModelosAprovadosWeb,
   listarRespostasRapidasWeb,
   marcarTimelineWebNaoLida,
   obterTimelineWeb,
+  reagirMensagemWeb,
   type ItemTimelineWebDto,
   type ModeloAprovadoWebDto,
   type RespostaRapidaWebDto,
   type ResumoAtendimentoWebDto,
 } from '@vyntra/api-client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ChangeEvent } from 'react';
 
 import { obterCsrf } from '../seguranca-web';
 
 interface Marcador { readonly marcadaNaoLida: boolean; readonly ultimaMensagemLidaId?: string; readonly versao: number }
+type EmojiReacao = '👍' | '❤️' | '😂' | '😮' | '😢' | '🙏';
 
 function marcadorSeguro(valor: Readonly<Record<string, unknown>>): Marcador {
   const versao = Reflect.get(valor, 'versao');
@@ -44,6 +49,7 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
   const [cursor, definirCursor] = useState<string>();
   const [marcador, definirMarcador] = useState<Marcador>({ marcadaNaoLida: false, versao: 0 });
   const [estado, definirEstado] = useState<'CARREGANDO' | 'ERRO' | 'PRONTO'>('CARREGANDO');
+  const [respondendo, definirRespondendo] = useState<ItemTimelineWebDto>();
   const leituraEmVoo = useRef<string | undefined>(undefined);
   const finalTimeline = useRef<HTMLDivElement>(null);
 
@@ -107,6 +113,16 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
     definirMarcador({ ...marcador, marcadaNaoLida: true, versao: resposta.data.versao });
   }
 
+  async function reagir(mensagemId: string, emoji: EmojiReacao) {
+    await reagirMensagemWeb({
+      body: { emoji, mensagem_alvo_id: mensagemId, mensagem_cliente_id: crypto.randomUUID() },
+      headers: { 'x-csrf-token': obterCsrf() },
+      path: { atendimentoId: atendimento.atendimento_id },
+      throwOnError: true,
+    });
+    await carregar(true);
+  }
+
   return (
     <section className="conversa-web">
       <header className="conversa-web__cabecalho">
@@ -123,16 +139,22 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
         {estado === 'CARREGANDO' && <div className="skeleton-timeline" />}
         {estado === 'ERRO' && <div className="timeline-erro"><strong>Conversa indisponível</strong><small>A recuperação acontece automaticamente.</small></div>}
         {estado === 'PRONTO' && itens.map((item, indice) => (
-          <ItemTimeline item={item} key={item.id} mostrarData={indice === 0 || dataSeparador(itens[indice - 1]?.ocorrido_em ?? '') !== dataSeparador(item.ocorrido_em)} />
+          <ItemTimeline
+            aoReagir={(emoji) => void reagir(item.id, emoji)}
+            aoResponder={() => definirRespondendo(item)}
+            item={item}
+            key={item.id}
+            mostrarData={indice === 0 || dataSeparador(itens[indice - 1]?.ocorrido_em ?? '') !== dataSeparador(item.ocorrido_em)}
+          />
         ))}
         <div ref={finalTimeline} />
       </div>
-      <ComposerWeb atendimento={atendimento} aoEnviar={() => carregar(true)} />
+      <ComposerWeb atendimento={atendimento} aoCancelarResposta={() => definirRespondendo(undefined)} aoEnviar={() => carregar(true)} respondendo={respondendo} />
     </section>
   );
 }
 
-function ComposerWeb({ atendimento, aoEnviar }: { readonly atendimento: ResumoAtendimentoWebDto; readonly aoEnviar: () => Promise<void> }) {
+function ComposerWeb({ atendimento, aoCancelarResposta, aoEnviar, respondendo }: { readonly atendimento: ResumoAtendimentoWebDto; readonly aoCancelarResposta: () => void; readonly aoEnviar: () => Promise<void>; readonly respondendo: ItemTimelineWebDto | undefined }) {
   const [texto, definirTexto] = useState('');
   const [respostas, definirRespostas] = useState<readonly RespostaRapidaWebDto[]>([]);
   const [modelos, definirModelos] = useState<readonly ModeloAprovadoWebDto[]>([]);
@@ -141,6 +163,7 @@ function ComposerWeb({ atendimento, aoEnviar }: { readonly atendimento: ResumoAt
   const [painelModelo, definirPainelModelo] = useState(false);
   const [ocupado, definirOcupado] = useState(false);
   const [erro, definirErro] = useState<string>();
+  const arquivoRef = useRef<HTMLInputElement>(null);
   const janelaFechada = atendimento.janela_expira_em === undefined || new Date(atendimento.janela_expira_em) <= new Date();
 
   useEffect(() => {
@@ -170,12 +193,16 @@ function ComposerWeb({ atendimento, aoEnviar }: { readonly atendimento: ResumoAt
     definirOcupado(true); definirErro(undefined);
     try {
       await enviarTextoWeb({
-        body: { mensagem_cliente_id: crypto.randomUUID(), texto: normalizado },
+        body: {
+          mensagem_cliente_id: crypto.randomUUID(),
+          ...(respondendo === undefined ? {} : { responde_a_mensagem_id: respondendo.id }),
+          texto: normalizado,
+        },
         headers: { 'x-csrf-token': obterCsrf() },
         path: { atendimentoId: atendimento.atendimento_id },
         throwOnError: true,
       });
-      definirTexto(''); definirRespostas([]); await aoEnviar();
+      definirTexto(''); definirRespostas([]); aoCancelarResposta(); await aoEnviar();
     } catch (falha) {
       definirErro(codigoFalha(falha) === 'JANELA_META_EXPIRADA' ? 'A janela encerrou. Escolha uma mensagem aprovada.' : 'Não foi possível enviar. O texto foi preservado.');
     } finally { definirOcupado(false); }
@@ -196,6 +223,23 @@ function ComposerWeb({ atendimento, aoEnviar }: { readonly atendimento: ResumoAt
     finally { definirOcupado(false); }
   }
 
+  async function anexar(evento: ChangeEvent<HTMLInputElement>) {
+    const arquivo = evento.target.files?.[0];
+    evento.target.value = '';
+    if (arquivo === undefined || ocupado) return;
+    definirOcupado(true); definirErro(undefined);
+    try {
+      await enviarMidiaWeb({
+        body: { arquivo, mensagem_cliente_id: crypto.randomUUID() },
+        headers: { 'x-csrf-token': obterCsrf() },
+        path: { atendimentoId: atendimento.atendimento_id },
+        throwOnError: true,
+      });
+      await aoEnviar();
+    } catch { definirErro('O arquivo não pôde ser enviado. Confira formato e tamanho.'); }
+    finally { definirOcupado(false); }
+  }
+
   return <footer className="composer-web">
     {texto.startsWith('/') && respostas.length > 0 && <div className="sugestoes-respostas" role="listbox">
       {respostas.map((resposta) => <button key={resposta.id} onClick={() => { definirTexto(resposta.texto); definirRespostas([]); }} role="option" type="button"><strong>/{resposta.atalho}</strong><span>{resposta.titulo}</span><small>{resposta.texto}</small></button>)}
@@ -205,7 +249,9 @@ function ComposerWeb({ atendimento, aoEnviar }: { readonly atendimento: ResumoAt
       {modelo === undefined ? <div className="lista-modelos">{modelos.length === 0 ? <small>Nenhuma mensagem disponível.</small> : modelos.map((item) => <button key={item.id} onClick={() => { definirModelo(item); definirParametros(Array.from({ length: item.quantidade_parametros }, () => '')); }} type="button"><strong>{item.nome.replaceAll('_', ' ')}</strong><small>{item.idioma} · {item.quantidade_parametros} campos</small></button>)}</div> : <div className="parametros-modelo"><button onClick={() => definirModelo(undefined)} type="button">← Voltar</button><strong>{modelo.nome.replaceAll('_', ' ')}</strong>{parametros.map((valor, indice) => <label key={indice}>Campo {indice + 1}<input maxLength={1000} onChange={(evento) => definirParametros((atuais) => atuais.map((atual, posicao) => posicao === indice ? evento.target.value : atual))} value={valor} /></label>)}<button className="botao--enviar-modelo" disabled={ocupado} onClick={() => void enviarModelo()} type="button">Enviar mensagem aprovada</button></div>}
     </div>}
     {erro !== undefined && <div className="erro-composer" role="alert">{erro}</div>}
-    <button aria-label="Anexar" type="button">＋</button>
+    {respondendo !== undefined && <div className="resposta-em-composicao"><span>Respondendo</span><strong>{respondendo.texto ?? rotuloMidia(respondendo.mensagem_tipo)}</strong><button aria-label="Cancelar resposta" onClick={aoCancelarResposta} type="button">×</button></div>}
+    <input accept="image/jpeg,image/png,image/webp,audio/mpeg,audio/ogg,video/mp4,application/pdf" hidden onChange={(evento) => void anexar(evento)} ref={arquivoRef} type="file" />
+    <button aria-label="Anexar" disabled={janelaFechada || ocupado} onClick={() => arquivoRef.current?.click()} type="button">＋</button>
     <div className="campo-composer">
       <textarea
         aria-label="Mensagem"
@@ -234,7 +280,7 @@ function codigoFalha(erro: unknown): string | undefined {
   return typeof codigo === 'string' ? codigo : undefined;
 }
 
-function ItemTimeline({ item, mostrarData }: { readonly item: ItemTimelineWebDto; readonly mostrarData: boolean }) {
+function ItemTimeline({ aoReagir, aoResponder, item, mostrarData }: { readonly aoReagir: (emoji: EmojiReacao) => void; readonly aoResponder: () => void; readonly item: ItemTimelineWebDto; readonly mostrarData: boolean }) {
   if (item.tipo === 'SEPARADOR_ATENDIMENTO') {
     return <div className="separador-atendimento"><span>{item.rotulo}</span><small>{item.conta_whatsapp_nome} · {dataSeparador(item.ocorrido_em)}</small></div>;
   }
@@ -246,13 +292,35 @@ function ItemTimeline({ item, mostrarData }: { readonly item: ItemTimelineWebDto
   }
   return <>
     {mostrarData && <div className="separador-data">{dataSeparador(item.ocorrido_em)}</div>}
-    <article className={`bolha-mensagem bolha-mensagem--${item.direcao === 'SAIDA' ? 'saida' : 'entrada'}`}>
+    <article className={`bolha-mensagem bolha-mensagem--${item.direcao === 'SAIDA' ? 'saida' : 'entrada'}`} id={`mensagem-${item.id}`}>
+      {item.responde_a_mensagem_id !== undefined && <button className="citacao-mensagem" onClick={() => document.getElementById(`mensagem-${item.responde_a_mensagem_id}`)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' })} type="button"><span>Resposta</span>{item.citacao_texto}</button>}
       {item.tipo === 'FORMULARIO' && <strong className="formulario-recebido">Informações recebidas</strong>}
-      <p>{item.texto ?? (item.tipo === 'FORMULARIO' ? item.rotulo : rotuloMidia(item.mensagem_tipo))}</p>
+      {item.mensagem_tipo !== undefined && ['IMAGEM', 'AUDIO', 'VIDEO', 'PDF'].includes(item.mensagem_tipo)
+        ? <MidiaMensagemWeb item={item} />
+        : <p>{item.texto ?? (item.tipo === 'FORMULARIO' ? item.rotulo : rotuloMidia(item.mensagem_tipo))}</p>}
       {item.tipo === 'FORMULARIO' && <button type="button">Ver formulário</button>}
       <small>{item.conta_whatsapp_nome} · {hora(item.ocorrido_em)} {item.direcao === 'SAIDA' && `· ${estadoMensagem(item.estado_mensagem)}`}</small>
+      {item.reacoes !== undefined && item.reacoes.length > 0 && <div className="reacoes-mensagem">{item.reacoes.map((reacao, indice) => <span key={`${reacao.emoji}-${indice}`} title={reacao.somente_interna ? 'Somente equipe' : undefined}>{reacao.emoji}{reacao.somente_interna && <i>equipe</i>}</span>)}</div>}
+      <div className="acoes-mensagem"><button onClick={aoResponder} type="button">Responder</button>{(['👍', '❤️', '😂', '😮', '😢', '🙏'] as const).map((emoji) => <button aria-label={`Reagir com ${emoji}`} key={emoji} onClick={() => aoReagir(emoji)} type="button">{emoji}</button>)}</div>
     </article>
   </>;
+}
+
+function MidiaMensagemWeb({ item }: { readonly item: ItemTimelineWebDto }) {
+  const [endereco, definirEndereco] = useState<string>();
+  const [erro, definirErro] = useState(false);
+  useEffect(() => () => { if (endereco !== undefined) URL.revokeObjectURL(endereco); }, [endereco]);
+  async function abrir() {
+    if (endereco !== undefined) return;
+    try {
+      const resposta = await baixarMidiaWeb({ path: { mensagemId: item.id }, throwOnError: true });
+      definirEndereco(URL.createObjectURL(resposta.data));
+    } catch { definirErro(true); }
+  }
+  if (erro) return <p className="midia-indisponivel">Mídia indisponível</p>;
+  if (item.mensagem_tipo === 'AUDIO' && endereco !== undefined) return <audio controls preload="metadata" src={endereco} />;
+  if (endereco !== undefined) return <div className="visualizador-midia"><button aria-label="Fechar mídia" onClick={() => definirEndereco(undefined)} type="button">×</button>{item.mensagem_tipo === 'IMAGEM' && <img alt="Mídia da conversa" src={endereco} />}{item.mensagem_tipo === 'VIDEO' && <video controls src={endereco} />}{item.mensagem_tipo === 'PDF' && <iframe src={endereco} title="Documento PDF" />}</div>;
+  return <button className="abrir-midia" onClick={() => void abrir()} type="button"><strong>{rotuloMidia(item.mensagem_tipo)}</strong><span>Abrir com segurança</span></button>;
 }
 
 function rotuloMidia(tipo?: string): string {

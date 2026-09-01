@@ -111,7 +111,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 087 | CONCLUÍDA | `high` |
 | 088 | CONCLUÍDA | `high` |
 | 089 | CONCLUÍDA | `high` |
-| 090 | PENDENTE | `high` |
+| 090 | CONCLUÍDA | `high` |
 | 091 | PENDENTE | `xhigh` |
 | 092 | PENDENTE | `xhigh` |
 | 093 | PENDENTE | `xhigh` |
@@ -610,6 +610,10 @@ Aceite concluído em 1º de setembro de 2026: a web recebeu timeline desktop pag
 ### PR 089 — área de composição e respostas rápidas
 
 Aceite concluído em 1º de setembro de 2026: o composer web envia texto e mensagens aprovadas exclusivamente pelo domínio de saída, com responsável/fila/modo, catálogo, janela e idempotência revalidados no backend. `/` pesquisa até 20 respostas rápidas autorizadas e apenas preenche o texto; o envio permanece uma ação nova. Quando a janela Meta encerra, texto livre é bloqueado antes do efeito e a interface oferece mensagens aprovadas com parâmetros explícitos. Falha preserva o rascunho, e conteúdo troca o botão contextual por envio. A migration aditiva `20260901015000_resposta_rapida_web` criou catálogo protegido com atalho canônico, autoria e versão; a prontidão avançou. Lint, tipos, 414 testes da API, 223 testes de arquitetura, build web/API/iOS/Android e contratos foram aprovados. Effort `high` foi confirmado pelo limite transacional entre autorização, janela e fila de saída.
+
+### PR 090 — mídia, resposta citada e reação
+
+Aceite concluído em 1º de setembro de 2026: imagem, áudio, vídeo e PDF passam por upload autenticado, validação de assinatura/MIME/tamanho, hash e bucket S3 privado com chave opaca. O download é intermediado pela API, reautoriza `VISUALIZAR_FILA`, revalida tamanho/hash e responde `private, no-store`, sem expor endpoint ou credencial do storage. A timeline projeta resposta citada somente quando o alvo também é autorizado, navega até a original e respeita `Reduzir Movimento`; player de áudio e visualizadores de imagem, vídeo e PDF usam URL `blob:` temporária. Citação preserva a relação interna e usa fallback textual enquanto a capacidade externa não está caracterizada. Reação segue allowlist e, pela mesma razão, permanece `Somente equipe`, terminal e sem caixa de saída. O web usa somente o SDK OpenAPI gerado. Não houve migration; `20260901015000_resposta_rapida_web` permanece como marca mais recente. Lint, tipos, 415 testes da API e 226 testes de arquitetura foram aprovados. Effort `high` foi confirmado pela autorização por objeto, integridade binária e fallback sem efeito externo aparente.
 
 ## 12. Mobile
 

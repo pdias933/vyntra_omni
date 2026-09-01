@@ -62,7 +62,7 @@ Controller escondendo botão, filtro na UI ou `if` local não substitui esses se
 - máximo de dois dispositivos móveis por usuário;
 - terceiro dispositivo revoga automaticamente o mais antigo e informa o usuário;
 - revogação por troca de senha, suspeita, aparelho perdido ou ação administrativa;
-- sessão revogada deixa de sincronizar, abrir WebSocket ou emitir novas URLs de mídia. Uma URL S3 já assinada pode permanecer válida até seu TTL curto; revogação imediata exigiria download intermediado por token introspectável/revogável.
+- sessão revogada deixa de sincronizar, abrir WebSocket ou baixar mídia. Na PR 090, o download é intermediado pela API e reautoriza a fila a cada solicitação; nenhuma URL S3 é emitida ao cliente.
 - acesso ao cache sem rede exige autorização offline assinada com validade máxima de 4 horas, vinculada a instalação, usuário, dispositivo, sessão, versão de permissões e escopos; revogação conhecida invalida imediatamente e aparelho totalmente offline bloqueia o cache ao expirar.
 
 A PR 015 materializa a sessão mobile separada da web. Access e refresh tokens têm 256 bits aleatórios; o PostgreSQL recebe somente SHA-256. O access token vale 15 minutos e permanece apenas na memória do app. O refresh token tem limite absoluto de 30 dias, é guardado com o segredo de vínculo em Keychain/Keystore e rotaciona a cada renovação. Cada requisição autenticada apresenta access token, UUID do dispositivo e segredo da instalação; estado do usuário, dispositivo e sessão são revalidados no servidor. Refresh já utilizado é prova de replay: a sessão inteira é revogada e o fato auditado. A trilha de força bruta persiste somente hashes do identificador e da instalação, IP, resultado e instante; senha, tokens e segredo de vínculo nunca entram em log ou auditoria.
@@ -305,9 +305,11 @@ Prazos de histórico, mídia, auditoria e backup e suas bases legais dependem de
 - tetos internos iniciais: imagem 8 MB, áudio 16 MB, vídeo 32 MB e PDF 20 MB;
 - limite efetivo é o menor entre teto interno e capacidade validada do provedor; excesso vira placeholder seguro sem download irrestrito;
 - bucket privado e criptografado;
-- download após autorização, por URL assinada curta;
+- download intermediado pela API após autorização atual, com `private, no-store` e sem URL do storage no cliente;
 - hash e metadados no PostgreSQL;
 - conteúdo nunca é renderizado como HTML executável.
+
+A implementação web da PR 090 lê metadados em transação consistente, autoriza `VISUALIZAR_FILA` e somente então busca o objeto por chave opaca. Tamanho e SHA-256 são revalidados antes da resposta. Nome recebido é normalizado para o cabeçalho, e arquivos ficam restritos à allowlist reconhecida por assinatura. Upload é mutação protegida por sessão, origem, CSRF, `ENVIAR_MENSAGEM`, responsabilidade atual e janela do canal. Relações de citação e reação precisam apontar para mensagem da mesma conversa e conta; capacidade externa ausente não é convertida em envio aparente.
 
 ### 8.2 Link de transcrição
 

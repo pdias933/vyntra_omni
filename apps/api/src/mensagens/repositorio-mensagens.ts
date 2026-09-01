@@ -5,6 +5,7 @@ import type {
   MensagemAutomaticaParaDespacho,
   MensagemSaidaPersistida,
 } from './modelo-mensagem.js';
+import type { AlvoRelacaoMensagem } from './relacoes-mensagem.js';
 
 export const REPOSITORIO_MENSAGENS = Symbol('REPOSITORIO_MENSAGENS');
 
@@ -43,6 +44,12 @@ export interface RepositorioMensagens {
     quantidadeParametros: number,
     transacao: TransacaoPrisma,
   ): Promise<boolean>;
+  obterAlvoRelacao(
+    mensagemId: string,
+    conversaId: string,
+    contaWhatsAppId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<AlvoRelacaoMensagem | undefined>;
   obterAutomaticaParaDespacho(
     mensagemId: string,
     transacao: TransacaoPrisma,

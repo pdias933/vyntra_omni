@@ -1069,6 +1069,165 @@
         ]
       }
     },
+    "/api/v1/web/atendimentos/{atendimentoId}/mensagens/midia": {
+      "post": {
+        "operationId": "enviarMidiaWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "arquivo",
+                  "mensagem_cliente_id"
+                ],
+                "properties": {
+                  "arquivo": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "mensagem_cliente_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MensagemCriadaWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Valida e enfileira mídia em storage privado",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
+    "/api/v1/web/atendimentos/{atendimentoId}/mensagens/reacao": {
+      "post": {
+        "operationId": "reagirMensagemWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaReacaoWebDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MensagemCriadaWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Registra reação com fallback conforme capacidade do canal",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
+    "/api/v1/web/midias/{mensagemId}/conteudo": {
+      "get": {
+        "operationId": "baixarMidiaWeb",
+        "parameters": [
+          {
+            "name": "mensagemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Entrega mídia privada após autorização atual",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
     "/api/v1/web/atendimentos/{atendimentoId}/mensagens/modelo": {
       "post": {
         "operationId": "enviarModeloAprovadoWeb",
@@ -2761,6 +2920,10 @@
           "texto": {
             "type": "string",
             "maxLength": 4096
+          },
+          "responde_a_mensagem_id": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "required": [
@@ -2787,6 +2950,35 @@
           "id",
           "estado",
           "recebida_servidor_em"
+        ]
+      },
+      "EntradaReacaoWebDto": {
+        "type": "object",
+        "properties": {
+          "mensagem_cliente_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mensagem_alvo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "emoji": {
+            "type": "string",
+            "enum": [
+              "👍",
+              "❤️",
+              "😂",
+              "😮",
+              "😢",
+              "🙏"
+            ]
+          }
+        },
+        "required": [
+          "mensagem_cliente_id",
+          "mensagem_alvo_id",
+          "emoji"
         ]
       },
       "EntradaEnvioModeloWebDto": {
@@ -2862,6 +3054,27 @@
           },
           "somente_equipe": {
             "type": "boolean"
+          },
+          "responde_a_mensagem_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "citacao_texto": {
+            "type": "string"
+          },
+          "reacoes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "emoji": {
+                  "type": "string"
+                },
+                "somente_interna": {
+                  "type": "boolean"
+                }
+              }
+            }
           }
         },
         "required": [

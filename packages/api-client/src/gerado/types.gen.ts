@@ -173,12 +173,19 @@ export type ModeloAprovadoWebDto = {
 export type EntradaEnvioTextoWebDto = {
     mensagem_cliente_id: string;
     texto: string;
+    responde_a_mensagem_id?: string;
 };
 
 export type MensagemCriadaWebDto = {
     id: string;
     estado: string;
     recebida_servidor_em: string;
+};
+
+export type EntradaReacaoWebDto = {
+    mensagem_cliente_id: string;
+    mensagem_alvo_id: string;
+    emoji: '👍' | '❤️' | '😂' | '😮' | '😢' | '🙏';
 };
 
 export type EntradaEnvioModeloWebDto = {
@@ -199,6 +206,12 @@ export type ItemTimelineWebDto = {
     texto?: string;
     rotulo?: string;
     somente_equipe?: boolean;
+    responde_a_mensagem_id?: string;
+    citacao_texto?: string;
+    reacoes?: Array<{
+        emoji?: string;
+        somente_interna?: boolean;
+    }>;
 };
 
 export type PaginaTimelineWebDto = {
@@ -923,6 +936,60 @@ export type EnviarTextoWebResponses = {
 };
 
 export type EnviarTextoWebResponse = EnviarTextoWebResponses[keyof EnviarTextoWebResponses];
+
+export type EnviarMidiaWebData = {
+    body: {
+        arquivo: Blob | File;
+        mensagem_cliente_id: string;
+    };
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/mensagens/midia';
+};
+
+export type EnviarMidiaWebResponses = {
+    200: MensagemCriadaWebDto;
+};
+
+export type EnviarMidiaWebResponse = EnviarMidiaWebResponses[keyof EnviarMidiaWebResponses];
+
+export type ReagirMensagemWebData = {
+    body: EntradaReacaoWebDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/mensagens/reacao';
+};
+
+export type ReagirMensagemWebResponses = {
+    200: MensagemCriadaWebDto;
+};
+
+export type ReagirMensagemWebResponse = ReagirMensagemWebResponses[keyof ReagirMensagemWebResponses];
+
+export type BaixarMidiaWebData = {
+    body?: never;
+    path: {
+        mensagemId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/midias/{mensagemId}/conteudo';
+};
+
+export type BaixarMidiaWebResponses = {
+    200: Blob | File;
+};
+
+export type BaixarMidiaWebResponse = BaixarMidiaWebResponses[keyof BaixarMidiaWebResponses];
 
 export type EnviarModeloAprovadoWebData = {
     body: EntradaEnvioModeloWebDto;

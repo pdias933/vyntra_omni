@@ -1,10 +1,10 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
 
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import { ErroMidiaInvalida } from './erros-midia.js';
-import type { MidiaMensagemPersistida } from './modelo-midia.js';
+import type { MidiaMensagemPersistida, MidiaValidada } from './modelo-midia.js';
 import { PORTA_ARMAZENAMENTO_PRIVADO, type PortaArmazenamentoPrivado } from './porta-armazenamento-privado.js';
 import { REPOSITORIO_MIDIAS, type RepositorioMidias } from './repositorio-midias.js';
 import { ValidadorMidia } from './validador-midia.js';
@@ -19,6 +19,10 @@ export class ServicoMidias {
     @Inject(PORTA_ARMAZENAMENTO_PRIVADO) private readonly armazenamento: PortaArmazenamentoPrivado,
     @Inject(REPOSITORIO_MIDIAS) private readonly repositorio: RepositorioMidias,
   ) {}
+
+  public validar(conteudo: Uint8Array, mimeDeclarado: string): MidiaValidada {
+    return this.validador.validar(conteudo, mimeDeclarado);
+  }
 
   public async guardar(
     mensagemId: string,
@@ -48,5 +52,16 @@ export class ServicoMidias {
     };
     await this.repositorio.acrescentar(midia, transacao);
     return midia;
+  }
+
+  public async obter(
+    referencia: Pick<MidiaMensagemPersistida, 'chaveObjeto' | 'conteudoHash' | 'tamanhoBytes'>,
+  ): Promise<Uint8Array> {
+    const conteudo = await this.armazenamento.obter(referencia.chaveObjeto);
+    const hash = createHash('sha256').update(conteudo).digest('hex');
+    if (conteudo.byteLength !== referencia.tamanhoBytes || hash !== referencia.conteudoHash) {
+      throw new ErroMidiaInvalida('MIDIA_ARMAZENADA_DIVERGENTE');
+    }
+    return conteudo;
   }
 }

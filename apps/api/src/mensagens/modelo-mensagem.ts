@@ -19,7 +19,7 @@ export interface MensagemSaidaPersistida {
   readonly atendimentoId: string;
   readonly contaWhatsAppId: string;
   readonly direcao: 'SAIDA';
-  readonly tipo: 'TEXTO' | 'INTERATIVA' | 'MODELO_APROVADO';
+  readonly tipo: 'AUDIO' | 'IMAGEM' | 'INTERATIVA' | 'MODELO_APROVADO' | 'PDF' | 'REACAO' | 'TEXTO' | 'VIDEO';
   readonly estadoSaida: EstadoSaidaMensagemDominio;
   readonly conteudoProtegido: ObjetoJsonProtegido;
   readonly conteudoHash: string;
@@ -40,6 +40,8 @@ export interface MensagemSaidaPersistida {
   readonly versao: number;
   readonly execucaoFluxoOrigemId?: string | undefined;
   readonly versaoAtribuicaoOrigem?: number | undefined;
+  readonly respondeAMensagemId?: string | undefined;
+  readonly mensagemAlvoReacaoId?: string | undefined;
 }
 
 export interface ContextoSaidaMensagemAutomatica {

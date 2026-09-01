@@ -77,11 +77,13 @@ export class ServicoTimelineWeb {
             estadoSaida: true,
             id: true,
             recebidaServidorEm: true,
+            reacoes: { select: { atendimentoId: true, conteudoProtegido: true } },
+            respondeAMensagem: { select: { atendimentoId: true, conteudoProtegido: true, id: true, tipo: true } },
             submissaoFormulario: { select: { formulario: { select: { nome: true } } } },
             tipo: true,
           },
           take: LIMITE + 1,
-          where: { atendimentoId: { in: idsAtendimentos }, conversaId: contexto.conversaId, ...condicaoCursor },
+          where: { atendimentoId: { in: idsAtendimentos }, conversaId: contexto.conversaId, tipo: { not: 'REACAO' }, ...condicaoCursor },
         }),
         transacao.notaInterna.findMany({
           orderBy: [{ criadaEm: 'desc' }, { id: 'desc' }],
@@ -126,6 +128,17 @@ export class ServicoTimelineWeb {
       for (const mensagem of mensagens) {
         const conteudo = this.objeto(mensagem.conteudoProtegido);
         const formulario = mensagem.submissaoFormulario?.formulario.nome;
+        const alvoResposta = mensagem.respondeAMensagem !== null && idsAtendimentos.includes(mensagem.respondeAMensagem.atendimentoId)
+          ? mensagem.respondeAMensagem
+          : undefined;
+        const conteudoCitacao = alvoResposta === undefined ? {} : this.objeto(alvoResposta.conteudoProtegido);
+        const reacoes = mensagem.reacoes.flatMap((reacao) => {
+          if (!idsAtendimentos.includes(reacao.atendimentoId)) return [];
+          const dados = this.objeto(reacao.conteudoProtegido);
+          return typeof dados.emoji === 'string'
+            ? [{ emoji: dados.emoji, somenteInterna: dados.modoCanal === 'SOMENTE_INTERNO' }]
+            : [];
+        });
         itens.push({
           atendimentoId: mensagem.atendimentoId,
           contaWhatsAppNome: mensagem.contaWhatsApp.nomeExibicao,
@@ -136,6 +149,11 @@ export class ServicoTimelineWeb {
           ocorridoEm: mensagem.recebidaServidorEm,
           ...(formulario === undefined ? {} : { rotulo: formulario }),
           ...(typeof conteudo.texto === 'string' ? { texto: conteudo.texto.slice(0, 8_000) } : {}),
+          ...(alvoResposta === undefined ? {} : {
+            citacaoTexto: typeof conteudoCitacao.texto === 'string' ? conteudoCitacao.texto.slice(0, 120) : alvoResposta.tipo.toLocaleLowerCase('pt-BR'),
+            respondeAMensagemId: alvoResposta.id,
+          }),
+          ...(reacoes.length === 0 ? {} : { reacoes }),
           tipo: formulario === undefined ? 'MENSAGEM' : 'FORMULARIO',
         });
       }

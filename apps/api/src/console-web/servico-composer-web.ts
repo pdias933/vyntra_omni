@@ -5,9 +5,10 @@ import type { ContextoSessaoAutorizacao } from '../autorizacao/modelo-autorizaca
 import { ServicoAutorizacao } from '../autorizacao/servico-autorizacao.js';
 import type { Prisma } from '../gerado/prisma/client.js';
 import { ServicoMensagensSaida } from '../mensagens/servico-mensagens-saida.js';
+import { ServicoMidias } from '../midias/servico-midias.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
-import type { MensagemCriadaWeb, ModeloAprovadoWeb, RespostaRapidaWeb } from './modelo-console-web.js';
+import type { ConteudoMidiaWeb, MensagemCriadaWeb, ModeloAprovadoWeb, RespostaRapidaWeb } from './modelo-console-web.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
@@ -17,6 +18,7 @@ export class ServicoComposerWeb {
     @Inject(ServicoPrisma) private readonly prisma: ServicoPrisma,
     @Inject(ServicoAutorizacao) private readonly autorizacao: ServicoAutorizacao,
     @Inject(ServicoMensagensSaida) private readonly mensagens: ServicoMensagensSaida,
+    @Inject(ServicoMidias) private readonly midias: ServicoMidias,
   ) {}
 
   public async listarRespostasRapidas(
@@ -72,7 +74,7 @@ export class ServicoComposerWeb {
   public async enviarTexto(
     sessao: ContextoSessaoAutorizacao,
     atendimentoId: string,
-    entrada: { readonly mensagemClienteId: string; readonly texto: string },
+    entrada: { readonly mensagemClienteId: string; readonly respondeAMensagemId?: string; readonly texto: string },
     transacao: TransacaoPrisma,
   ): Promise<MensagemCriadaWeb> {
     const contexto = await this.obterContexto(atendimentoId, transacao);
@@ -82,9 +84,83 @@ export class ServicoComposerWeb {
       conversaId: contexto.conversaId,
       filaId: contexto.filaId,
       mensagemClienteId: entrada.mensagemClienteId,
+      ...(entrada.respondeAMensagemId === undefined ? {} : { respondeAMensagemId: entrada.respondeAMensagemId }),
       texto: entrada.texto,
     }, transacao);
     return { estado: mensagem.estadoSaida, id: mensagem.id, recebidaServidorEm: mensagem.recebidaServidorEm };
+  }
+
+  public async enviarMidia(
+    sessao: ContextoSessaoAutorizacao,
+    atendimentoId: string,
+    entrada: { readonly conteudo: Uint8Array; readonly mensagemClienteId: string; readonly mime: string; readonly nomeArquivo?: string },
+    transacao: TransacaoPrisma,
+  ): Promise<MensagemCriadaWeb> {
+    const contexto = await this.obterContexto(atendimentoId, transacao);
+    const mensagem = await this.mensagens.criarMidia(sessao, {
+      atendimentoId,
+      contaWhatsAppId: contexto.contaWhatsAppId,
+      conteudo: entrada.conteudo,
+      conversaId: contexto.conversaId,
+      filaId: contexto.filaId,
+      mensagemClienteId: entrada.mensagemClienteId,
+      mime: entrada.mime,
+      ...(entrada.nomeArquivo === undefined ? {} : { nomeArquivo: entrada.nomeArquivo }),
+    }, transacao);
+    return { estado: mensagem.estadoSaida, id: mensagem.id, recebidaServidorEm: mensagem.recebidaServidorEm };
+  }
+
+  public async reagir(
+    sessao: ContextoSessaoAutorizacao,
+    atendimentoId: string,
+    entrada: { readonly emoji: string; readonly mensagemAlvoId: string; readonly mensagemClienteId: string },
+    transacao: TransacaoPrisma,
+  ): Promise<MensagemCriadaWeb> {
+    const contexto = await this.obterContexto(atendimentoId, transacao);
+    const mensagem = await this.mensagens.criarReacao(sessao, {
+      atendimentoId,
+      contaWhatsAppId: contexto.contaWhatsAppId,
+      conversaId: contexto.conversaId,
+      emoji: entrada.emoji,
+      filaId: contexto.filaId,
+      mensagemAlvoId: entrada.mensagemAlvoId,
+      mensagemClienteId: entrada.mensagemClienteId,
+    }, transacao);
+    return { estado: mensagem.estadoSaida, id: mensagem.id, recebidaServidorEm: mensagem.recebidaServidorEm };
+  }
+
+  public async baixarMidia(sessao: ContextoSessaoAutorizacao, mensagemId: string): Promise<ConteudoMidiaWeb> {
+    if (!UUID.test(mensagemId)) throw new ErroPermissaoNegada();
+    const referencia = await this.prisma.executarLeituraConsistente(async (transacao) => {
+      const mensagem = await transacao.mensagem.findUnique({
+        select: {
+          atendimento: { select: { filaAtualId: true } },
+          conteudoProtegido: true,
+          midia: { select: { chaveObjeto: true, conteudoHash: true, mimeDetectado: true, tamanhoBytes: true } },
+        },
+        where: { id: mensagemId },
+      });
+      if (mensagem?.atendimento.filaAtualId === null || mensagem === null || mensagem.midia === null) throw new ErroPermissaoNegada();
+      await this.autorizacao.autorizar(
+        { filaId: mensagem.atendimento.filaAtualId, permissao: 'VISUALIZAR_FILA', recurso: { id: mensagemId, tipo: 'MENSAGEM' }, sessao },
+        async () => ({ acessivel: true, estadoPermiteAcao: true }),
+        transacao,
+      );
+      const conteudo = this.objeto(mensagem.conteudoProtegido);
+      const nomeArquivo = typeof conteudo.nomeArquivo === 'string' ? conteudo.nomeArquivo : `midia-${mensagemId}`;
+      return {
+        chaveObjeto: mensagem.midia.chaveObjeto,
+        conteudoHash: mensagem.midia.conteudoHash,
+        mime: mensagem.midia.mimeDetectado,
+        nomeArquivo: nomeArquivo.replace(/[^\p{L}\p{N}._ -]/gu, '_').slice(0, 180),
+        tamanhoBytes: Number(mensagem.midia.tamanhoBytes),
+      };
+    });
+    return {
+      bytes: await this.midias.obter(referencia),
+      mime: referencia.mime,
+      nomeArquivo: referencia.nomeArquivo,
+    };
   }
 
   public async enviarModelo(

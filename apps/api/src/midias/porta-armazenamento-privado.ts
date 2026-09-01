@@ -8,4 +8,5 @@ export interface PortaArmazenamentoPrivado {
     conteudo: Uint8Array,
     mime: string,
   ): Promise<ReferenciaArmazenamentoPrivado>;
+  obter(chaveObjeto: string): Promise<Uint8Array>;
 }

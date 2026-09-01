@@ -41,6 +41,7 @@ test('serviço usa chave opaca em bucket privado e persiste somente metadados ve
       estado.armazenadas.push({ chaveObjeto, conteudo, mime });
       return { bucketPrivado: 'vyntra-staging-midias', chaveObjeto };
     },
+    obter: async () => Uint8Array.from(arquivos.at(-1)[2]),
   };
   const repositorio = {
     acrescentar: async (midia) => estado.persistidas.push(midia),
@@ -61,18 +62,28 @@ test('serviço usa chave opaca em bucket privado e persiste somente metadados ve
   assert.equal('url' in midia, false);
   assert.equal(estado.armazenadas.length, 1);
   assert.equal(estado.persistidas.length, 1);
+  assert.deepEqual(await servico.obter({ chaveObjeto: midia.chaveObjeto, conteudoHash: midia.conteudoHash, mime: midia.mimeDetectado, tamanhoBytes: midia.tamanhoBytes }), pdf);
 });
 
 test('serviço falha fechado quando mensagem não aceita a categoria ou storage devolve URL', async () => {
   const pdf = Uint8Array.from(arquivos.at(-1)[2]);
   const negado = new ServicoMidias(
-    { guardar: async () => assert.fail('não deve armazenar') },
+    { guardar: async () => assert.fail('não deve armazenar'), obter: async () => assert.fail('não deve ler') },
     { acrescentar: async () => {}, mensagemAceitaMidia: async () => false },
   );
   await assert.rejects(negado.guardar(randomUUID(), pdf, 'application/pdf', {}), ErroMidiaInvalida);
   const publico = new ServicoMidias(
-    { guardar: async (chaveObjeto) => ({ bucketPrivado: 'https://publico', chaveObjeto }) },
+    { guardar: async (chaveObjeto) => ({ bucketPrivado: 'https://publico', chaveObjeto }), obter: async () => pdf },
     { acrescentar: async () => {}, mensagemAceitaMidia: async () => true },
   );
   await assert.rejects(publico.guardar(randomUUID(), pdf, 'application/pdf', {}), ErroMidiaInvalida);
+});
+
+test('leitura privada falha fechada quando conteúdo armazenado foi alterado', async () => {
+  const pdf = Uint8Array.from(arquivos.at(-1)[2]);
+  const servico = new ServicoMidias(
+    { guardar: async (chaveObjeto) => ({ bucketPrivado: 'privado', chaveObjeto }), obter: async () => Uint8Array.from([...pdf, 0]) },
+    { acrescentar: async () => {}, mensagemAceitaMidia: async () => true },
+  );
+  await assert.rejects(servico.obter({ chaveObjeto: 'midias/aa/id', conteudoHash: '0'.repeat(64), mime: 'application/pdf', tamanhoBytes: pdf.byteLength }), ErroMidiaInvalida);
 });

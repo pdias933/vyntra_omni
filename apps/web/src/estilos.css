@@ -263,11 +263,29 @@ a {
 .separador-atendimento { display: grid; width: max-content; max-width: 80%; justify-items: center; margin: 18px auto; padding: 8px 13px; border-radius: 10px; color: #637068; background: rgba(255,255,255,.72); font-size: 10px; text-align: center; }
 .separador-atendimento span { display: block; width: auto; height: auto; margin: 0; border: 0; color: #4e5d54; background: none; box-shadow: none; font-size: 10px; }
 .separador-atendimento small { margin-top: 3px; font-size: 8px; }
-.bolha-mensagem { width: fit-content; min-width: 130px; max-width: min(72%,560px); margin: 5px 0; padding: 9px 11px 7px; border: 1px solid #dfe5e1; border-radius: 5px 14px 14px 14px; background: #fff; box-shadow: 0 2px 6px rgba(23,38,29,.05); }
+.bolha-mensagem { position: relative; width: fit-content; min-width: 130px; max-width: min(72%,560px); margin: 5px 0; padding: 9px 11px 7px; border: 1px solid #dfe5e1; border-radius: 5px 14px 14px 14px; background: #fff; box-shadow: 0 2px 6px rgba(23,38,29,.05); }
+.bolha-mensagem:hover .acoes-mensagem, .bolha-mensagem:focus-within .acoes-mensagem { opacity: 1; transform: translateY(0); pointer-events: auto; }
 .bolha-mensagem--saida { margin-left: auto; border-color: #cde8d6; border-radius: 14px 5px 14px 14px; background: #dcf8e6; }
 .bolha-mensagem p { margin: 0; color: #26332b; font-size: 12px; line-height: 1.45; white-space: pre-wrap; }
 .bolha-mensagem small { display: block; margin-top: 5px; color: #75827a; font-size: 8px; text-align: right; }
 .bolha-mensagem button { margin-top: 9px; padding: 6px 9px; border: 1px solid #bee3cc; border-radius: 7px; color: #137542; background: white; cursor: pointer; font-size: 9px; font-weight: 750; }
+.bolha-mensagem .citacao-mensagem { display: grid; width: 100%; margin: 0 0 7px; padding: 6px 8px; overflow: hidden; border: 0; border-left: 3px solid #35a865; border-radius: 5px; color: #5b675f; background: rgba(20,130,70,.08); font-size: 9px; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.citacao-mensagem span { display: block; width: auto; height: auto; margin: 0 0 2px; border: 0; color: #168049; background: transparent; box-shadow: none; font-size: 8px; font-weight: 800; }
+.acoes-mensagem { position: absolute; display: flex; gap: 3px; margin-top: 9px; padding: 4px; border: 1px solid #dce4df; border-radius: 9px; opacity: 0; background: white; box-shadow: 0 8px 22px rgba(24,38,29,.12); pointer-events: none; transform: translateY(-3px); transition: opacity 120ms ease, transform 120ms ease; }
+.acoes-mensagem button { min-width: 26px; margin: 0; padding: 4px 5px; border: 0; background: transparent; }
+.acoes-mensagem button:first-child { color: #4d5e54; font-size: 8px; }
+.reacoes-mensagem { display: flex; gap: 3px; margin: 5px 0 -13px; }
+.reacoes-mensagem span { display: flex; width: auto; height: 22px; align-items: center; gap: 3px; margin: 0; padding: 0 6px; border: 1px solid #dce5df; border-radius: 999px; color: #37443c; background: white; box-shadow: 0 2px 7px rgba(25,38,30,.08); font-size: 11px; }
+.reacoes-mensagem i { color: #8a6d1a; font-size: 6px; font-style: normal; font-weight: 800; text-transform: uppercase; }
+.abrir-midia { display: grid; min-width: 190px; gap: 3px; margin: 0 0 4px !important; padding: 11px !important; border: 1px solid #d9e3dd !important; background: rgba(255,255,255,.7) !important; text-align: left; }
+.abrir-midia strong { color: #26342c; font-size: 10px; }
+.abrir-midia span { display: block; width: auto; height: auto; margin: 0; border: 0; color: #19804a; background: transparent; box-shadow: none; font-size: 8px; }
+.bolha-mensagem audio { width: min(320px,55vw); height: 34px; }
+.midia-indisponivel { color: #9a4936 !important; }
+.visualizador-midia { position: fixed; z-index: 50; inset: 18px; display: grid; place-items: center; padding: 34px; border-radius: 18px; background: rgba(12,18,15,.92); backdrop-filter: blur(14px); }
+.visualizador-midia > button { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; margin: 0; border: 1px solid rgba(255,255,255,.18); border-radius: 50%; color: white; background: rgba(255,255,255,.08); font-size: 16px; }
+.visualizador-midia img, .visualizador-midia video { max-width: 92%; max-height: 88%; border-radius: 10px; }
+.visualizador-midia iframe { width: min(920px,92%); height: 88%; border: 0; border-radius: 10px; background: white; }
 .formulario-recebido { display: block; margin-bottom: 5px; color: #147441; font-size: 10px; }
 .bloco-nota-interna { position: relative; width: min(72%,560px); margin: 10px auto; padding: 11px 13px; border: 1px solid #efd99e; border-left: 4px solid #d9a623; border-radius: 10px; color: #5f511f; background: #fff9e8; }
 .bloco-nota-interna span { display: block; width: auto; height: auto; margin: 0; border: 0; color: #8a6c14; background: none; box-shadow: none; font-size: 8px; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
@@ -307,6 +325,10 @@ a {
 .parametros-modelo input { height: 34px; padding: 0 9px; border: 1px solid #dce4df; border-radius: 8px; outline: 0; }
 .parametros-modelo .botao--enviar-modelo { height: 36px; border: 0; border-radius: 9px; color: white; background: #158e4d; cursor: pointer; font-size: 10px; font-weight: 750; }
 .erro-composer { position: absolute; right: 20px; bottom: 62px; left: 68px; padding: 8px 10px; border: 1px solid #efc7bb; border-radius: 9px; color: #94432e; background: #fff4f0; box-shadow: 0 8px 22px rgba(70,35,24,.1); font-size: 9px; }
+.resposta-em-composicao { position: absolute; right: 20px; bottom: 62px; left: 68px; display: grid; min-width: 0; padding: 8px 38px 8px 11px; border: 1px solid #cde3d5; border-left: 4px solid #28a25c; border-radius: 9px; background: #f3faf5; box-shadow: 0 8px 22px rgba(28,65,42,.09); }
+.resposta-em-composicao span { width: auto; height: auto; margin: 0; border: 0; color: #178048; background: transparent; box-shadow: none; font-size: 8px; font-weight: 800; }
+.resposta-em-composicao strong { overflow: hidden; margin-top: 2px; color: #536158; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.resposta-em-composicao button { position: absolute; top: 8px; right: 9px; border: 0; color: #607067; background: transparent; cursor: pointer; }
 .skeleton-timeline { height: 70%; border-radius: 18px; background: linear-gradient(100deg,#e5ebe7 30%,#f2f5f3 45%,#e5ebe7 60%); background-size: 300% 100%; animation: skeleton-lista 1.2s ease infinite; }
 .timeline-erro { display: grid; height: 100%; place-content: center; justify-items: center; color: #8c4a39; }
 .timeline-erro small { margin-top: 5px; color: #79847d; }

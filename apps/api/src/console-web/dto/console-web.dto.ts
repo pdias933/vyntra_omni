@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ArrayMaxSize, IsArray, IsInt, IsString, IsUUID, Length, MaxLength, Min } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsIn, IsInt, IsOptional, IsString, IsUUID, Length, MaxLength, Min } from 'class-validator';
 import {
   FILTROS_ATENDIMENTOS_WEB,
   type FiltroAtendimentosWeb,
@@ -75,6 +75,10 @@ export class ItemTimelineWebDto {
   @ApiProperty({ required: false }) public readonly texto?: string;
   @ApiProperty({ required: false }) public readonly rotulo?: string;
   @ApiProperty({ required: false }) public readonly somente_equipe?: boolean;
+  @ApiProperty({ format: 'uuid', required: false }) public readonly responde_a_mensagem_id?: string;
+  @ApiProperty({ required: false }) public readonly citacao_texto?: string;
+  @ApiProperty({ required: false, type: 'array', items: { type: 'object', properties: { emoji: { type: 'string' }, somente_interna: { type: 'boolean' } } } })
+  public readonly reacoes?: readonly { readonly emoji: string; readonly somente_interna: boolean }[];
 
   public constructor(item: ItemTimelineWeb) {
     this.id = item.id;
@@ -88,6 +92,9 @@ export class ItemTimelineWebDto {
     if (item.texto !== undefined) this.texto = item.texto;
     if (item.rotulo !== undefined) this.rotulo = item.rotulo;
     if (item.somenteEquipe !== undefined) this.somente_equipe = item.somenteEquipe;
+    if (item.respondeAMensagemId !== undefined) this.responde_a_mensagem_id = item.respondeAMensagemId;
+    if (item.citacaoTexto !== undefined) this.citacao_texto = item.citacaoTexto;
+    if (item.reacoes !== undefined) this.reacoes = item.reacoes.map((reacao) => ({ emoji: reacao.emoji, somente_interna: reacao.somenteInterna }));
   }
 }
 
@@ -153,6 +160,15 @@ export class ModeloAprovadoWebDto {
 export class EntradaEnvioTextoWebDto {
   @ApiProperty({ format: 'uuid' }) @IsUUID() public readonly mensagem_cliente_id!: string;
   @ApiProperty({ maxLength: 4096 }) @IsString() @Length(1, 4096) public readonly texto!: string;
+  @ApiProperty({ format: 'uuid', required: false }) @IsOptional() @IsUUID() public readonly responde_a_mensagem_id?: string;
+}
+
+export class EntradaReacaoWebDto {
+  @ApiProperty({ format: 'uuid' }) @IsUUID() public readonly mensagem_cliente_id!: string;
+  @ApiProperty({ format: 'uuid' }) @IsUUID() public readonly mensagem_alvo_id!: string;
+  @ApiProperty({ enum: ['👍', '❤️', '😂', '😮', '😢', '🙏'] })
+  @IsIn(['👍', '❤️', '😂', '😮', '😢', '🙏'])
+  public readonly emoji!: string;
 }
 
 export class EntradaEnvioModeloWebDto {

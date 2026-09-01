@@ -170,6 +170,8 @@ A timeline web mantém a lista e a conversa lado a lado, sem transformar o deskt
 
 O composer web da PR 089 preserva a regra do produto: `/` abre respostas rápidas pesquisáveis, escolher uma resposta apenas preenche o texto e o botão de ação vira envio quando existe conteúdo. Com a janela Meta encerrada, texto livre fica indisponível antes do comando e a interface oferece mensagens aprovadas, com preenchimento explícito de parâmetros. Falha não apaga o rascunho. Catálogos vazios ou indisponíveis são estados claros, nunca suporte inventado.
 
+A PR 090 acrescenta anexos, resposta citada e reação sem poluir a conversa. Imagem, áudio, vídeo e PDF passam pelo backend, por validação binária e por storage privado; abrir a mídia exige autorização atual e não revela credencial ou endereço do storage. A citação preserva o vínculo interno e navega até a original. Quando a capacidade externa não está comprovada, resposta usa fallback textual explícito e reação permanece marcada como `Somente equipe`, sem fingir que chegou ao cliente. Player, visualizador e transições respeitam `Reduzir Movimento`.
+
 ### 4.7 Aplicativo iOS/Android
 
 - Aplicativo real em React Native + Expo Prebuild, com um código-base para as duas plataformas.

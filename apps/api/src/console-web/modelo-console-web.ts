@@ -47,6 +47,9 @@ export interface ItemTimelineWeb {
   readonly texto?: string;
   readonly rotulo?: string;
   readonly somenteEquipe?: boolean;
+  readonly respondeAMensagemId?: string;
+  readonly citacaoTexto?: string;
+  readonly reacoes?: readonly { readonly emoji: string; readonly somenteInterna: boolean }[];
 }
 
 export interface MarcadorLeituraWeb {
@@ -79,4 +82,10 @@ export interface MensagemCriadaWeb {
   readonly estado: string;
   readonly id: string;
   readonly recebidaServidorEm: Date;
+}
+
+export interface ConteudoMidiaWeb {
+  readonly bytes: Uint8Array;
+  readonly mime: string;
+  readonly nomeArquivo: string;
 }

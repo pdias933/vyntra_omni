@@ -130,6 +130,37 @@ export class RepositorioMensagensPrisma implements RepositorioMensagens {
     }) === 1;
   }
 
+  public async obterAlvoRelacao(
+    mensagemId: string,
+    conversaId: string,
+    contaWhatsAppId: string,
+    transacao: TransacaoPrisma,
+  ) {
+    const mensagem = await transacao.mensagem.findFirst({
+      select: {
+        conteudoProtegido: true,
+        conversaId: true,
+        contaWhatsAppId: true,
+        id: true,
+        identificadorExternoMensagem: true,
+        tipo: true,
+      },
+      where: { contaWhatsAppId, conversaId, id: mensagemId },
+    });
+    if (mensagem === null) return undefined;
+    const conteudo = typeof mensagem.conteudoProtegido === 'object' && mensagem.conteudoProtegido !== null && !Array.isArray(mensagem.conteudoProtegido)
+      ? mensagem.conteudoProtegido as Record<string, unknown>
+      : {};
+    const texto = typeof conteudo.texto === 'string' ? conteudo.texto : mensagem.tipo.toLocaleLowerCase('pt-BR');
+    return {
+      conversaId: mensagem.conversaId,
+      contaWhatsAppId: mensagem.contaWhatsAppId,
+      id: mensagem.id,
+      ...(mensagem.identificadorExternoMensagem === null ? {} : { identificadorExternoMensagem: mensagem.identificadorExternoMensagem }),
+      resumoProtegido: texto,
+    };
+  }
+
   public async obterAutomaticaParaDespacho(
     mensagemId: string,
     transacao: TransacaoPrisma,

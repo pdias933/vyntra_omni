@@ -32,7 +32,7 @@ function cenarioTimeline() {
       findMany: async (entrada) => {
         assert.equal(autorizouAtendimento, true);
         consultasConteudo.push(entrada);
-        return [{ atendimentoId: ids.atendimento, contaWhatsApp: { nomeExibicao: 'Suporte' }, conteudoProtegido: { texto: 'Olá' }, direcao: 'ENTRADA', estadoSaida: null, id: ids.mensagem, recebidaServidorEm: new Date('2026-09-01T10:01:00Z'), submissaoFormulario: null, tipo: 'TEXTO' }];
+        return [{ atendimentoId: ids.atendimento, contaWhatsApp: { nomeExibicao: 'Suporte' }, conteudoProtegido: { texto: 'Olá' }, direcao: 'ENTRADA', estadoSaida: null, id: ids.mensagem, reacoes: [], recebidaServidorEm: new Date('2026-09-01T10:01:00Z'), respondeAMensagem: null, submissaoFormulario: null, tipo: 'TEXTO' }];
       },
     },
     notaInterna: { findMany: async (entrada) => { consultasConteudo.push(entrada); return []; } },
