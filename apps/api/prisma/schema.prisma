@@ -180,6 +180,17 @@ enum OrigemEncerramentoAtendimento {
   @@map("origem_encerramento_atendimento")
 }
 
+enum TipoHistoricoAtribuicao {
+  ENTRADA_FILA
+  RESGATE
+  TRANSFERENCIA_FILA
+  TRANSFERENCIA_USUARIO
+  ASSUNCAO_SUPERVISOR
+  REABERTURA
+
+  @@map("tipo_historico_atribuicao")
+}
+
 enum EstadoProtocoloErp {
   PENDENTE
   OFICIAL
@@ -459,6 +470,8 @@ model Usuario {
   atendimentosResponsaveis Atendimento[] @relation("UsuarioResponsavelAtendimento")
   disponibilidade DisponibilidadeUsuario? @relation("UsuarioDisponibilidade")
   disponibilidadesAlteradas DisponibilidadeUsuario[] @relation("UsuarioAlteracaoDisponibilidade")
+  historicosResponsabilidade HistoricoAtribuicao[] @relation("UsuarioResponsavelHistoricoAtribuicao")
+  historicosAtribuicaoExecutados HistoricoAtribuicao[] @relation("UsuarioExecutorHistoricoAtribuicao")
 
   @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
   @@index([perfilId], map: "usuario_perfil_idx")
@@ -684,6 +697,7 @@ model Fila {
   liberacoesControlesRecurso LiberacaoControleRecursoFila[]
   atendimentosAtuais Atendimento[] @relation("FilaAtualAtendimento")
   atendimentosFallbackReabertura Atendimento[] @relation("FilaFallbackReaberturaAtendimento")
+  historicosAtribuicao HistoricoAtribuicao[]
 
   @@index([estado, nome], map: "fila_estado_nome_idx")
   @@map("fila")
@@ -817,12 +831,33 @@ model Atendimento {
   filaFallbackReabertura          Fila?                           @relation("FilaFallbackReaberturaAtendimento", fields: [filaFallbackReaberturaId], references: [id], onDelete: Restrict)
   contexto                        ContextoAtendimento?
   protocoloErp                    ProtocoloErp?
+  historicosAtribuicao            HistoricoAtribuicao[]
 
   @@index([conversaId, iniciadoEm, id], map: "atendimento_conversa_inicio_idx")
   @@index([contaWhatsAppOrigemId, estado, iniciadoEm], map: "atendimento_origem_estado_idx")
   @@index([filaAtualId, estado, atualizadoEm], map: "atendimento_fila_estado_idx")
   @@index([usuarioResponsavelId, estado, atualizadoEm], map: "atendimento_responsavel_estado_idx")
   @@map("atendimento")
+}
+
+model HistoricoAtribuicao {
+  id                       String                    @id @db.Uuid
+  atendimentoId            String                    @map("atendimento_id") @db.Uuid
+  filaId                   String?                   @map("fila_id") @db.Uuid
+  usuarioResponsavelId     String?                   @map("usuario_responsavel_id") @db.Uuid
+  tipo                     TipoHistoricoAtribuicao
+  iniciadoEm               DateTime                  @map("iniciado_em") @db.Timestamptz(6)
+  finalizadoEm             DateTime?                 @map("finalizado_em") @db.Timestamptz(6)
+  executadoPorUsuarioId    String?                   @map("executado_por_usuario_id") @db.Uuid
+  atendimento              Atendimento               @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  fila                     Fila?                     @relation(fields: [filaId], references: [id], onDelete: Restrict)
+  usuarioResponsavel       Usuario?                  @relation("UsuarioResponsavelHistoricoAtribuicao", fields: [usuarioResponsavelId], references: [id], onDelete: Restrict)
+  executadoPorUsuario      Usuario?                  @relation("UsuarioExecutorHistoricoAtribuicao", fields: [executadoPorUsuarioId], references: [id], onDelete: Restrict)
+
+  @@index([atendimentoId, iniciadoEm, id], map: "historico_atribuicao_atendimento_inicio_idx")
+  @@index([filaId, iniciadoEm, finalizadoEm], map: "historico_atribuicao_fila_intervalo_idx")
+  @@index([usuarioResponsavelId, iniciadoEm, finalizadoEm], map: "historico_atribuicao_responsavel_intervalo_idx")
+  @@map("historico_atribuicao")
 }
 
 model ProtocoloErp {
