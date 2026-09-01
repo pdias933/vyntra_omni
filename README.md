@@ -80,6 +80,8 @@ A porta `AdaptadorErp` separa consultas e escritas normalizadas. O simulador dis
 
 `AdaptadorSessaoAcesso` permanece separado do ERP e não infere sessão ativa por conexão cadastrada. Seu simulador nasce desligado, e a migration semeia `SESSAO_ACESSO` desativado até existir fonte confiável. Contrato e aceite estão em [docs/operacoes/PR-021.md](docs/operacoes/PR-021.md); não houve nova dependência, conforme [docs/dependencias/PR-021.md](docs/dependencias/PR-021.md).
 
+`ContaWhatsApp` materializa cada origem empresarial com UUID interno estável e permite múltiplas contas na instalação. Todo cadastro nasce inativo e não possui token, segredo ou certificado; credenciais futuras permanecem no adaptador/cofre. Modelo, operação e aceite estão em [docs/operacoes/PR-022.md](docs/operacoes/PR-022.md); não houve nova dependência, conforme [docs/dependencias/PR-022.md](docs/dependencias/PR-022.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local

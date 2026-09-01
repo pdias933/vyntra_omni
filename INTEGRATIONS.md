@@ -45,6 +45,8 @@ Limites de payload nunca excedem o teto interno aprovado. Para mídia, vale o me
 
 Capacidade prevista não é prova de habilitação na conta. A versão da API, payloads e recursos comerciais devem ser verificados antes do adapter final.
 
+Cada origem empresarial é identificada no domínio por `conta_whatsapp_id` UUID. Nome, telefone de exibição e identificadores externos são metadados da conta, não credenciais. Tokens, segredos, certificados e demais materiais de autenticação permanecem no cofre/configuração privada do `AdaptadorMetaCloud`, associados ao UUID interno e separados por ambiente. O cadastro nasce inativo e não habilita tráfego externo; ativação e teste real pertencem às PRs do adaptador.
+
 ### 2.2 Identidade
 
 O adapter recebe termos externos e os converte:

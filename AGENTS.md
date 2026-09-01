@@ -98,6 +98,8 @@ Não propague DTOs/nomenclatura Meta ou MK para domínio, UI ou Motor de Fluxos.
 ## 5. Invariantes inegociáveis
 
 - Uma instalação representa uma empresa.
+- Uma instalação pode possuir várias `ContaWhatsApp`; use sempre seu UUID interno estável como origem. Conta nasce `INATIVA`, não é singleton e não é excluída quando possui histórico.
+- Token, segredo, certificado e credencial de canal pertencem somente ao adaptador/cofre. Nunca os adicione a `ContaWhatsApp`, DTO interno, evento, auditoria, log, web ou mobile.
 - Um contato possui uma timeline contínua na instalação.
 - Mensagem e atendimento preservam conta WhatsApp de origem.
 - Protocolo exibido é oficial do ERP; indisponibilidade gera protocolo pendente, não número local parecido.

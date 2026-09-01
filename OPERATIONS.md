@@ -43,6 +43,8 @@ A imagem comunitária do MinIO disponível para múltiplas arquiteturas é legad
 
 Staging nunca lê ou escreve banco de produção e não reutiliza credencial de produção.
 
+A migration `20260831001100_criar_conta_whatsapp` é aditiva e cria somente o cadastro inativo das origens empresariais. Promover essa imagem não configura nem ativa Meta, não cria conta padrão e não introduz credencial no banco. Rollback da aplicação preserva a tabela e sua origem histórica para compatibilidade com versões posteriores.
+
 A implementação mínima usa `compose.staging.yaml`, projeto fixo `vyntra-staging` e comandos `pnpm staging:*`. Seus nomes de banco, usuário Redis, bucket, redes, volumes e diretório de segredos são exclusivos. Somente a API publica porta, em `127.0.0.1:3100`; PostgreSQL, Redis, S3 e administração do storage permanecem nas redes internas.
 
 O storage de staging é Garage S3 mantido e fixado por versão/digest, não o MinIO comunitário legado do desenvolvimento. Ele roda em nó único porque esta PR utiliza uma única VM e somente dados descartáveis de staging. Isso não oferece redundância e é proibido em produção. Metadados, blocos e snapshots usam volumes separados; o bucket é privado, sem website, e a chave da aplicação não recebe permissão de proprietário.

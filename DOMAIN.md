@@ -124,7 +124,28 @@ O verificador do recurso retorna apenas `acessivel` e `estadoPermiteAcao`. Recur
 
 ## 4. Identidade, contato e cliente ERP
 
-### 4.1 `Contato`
+### 4.1 `ContaWhatsApp`
+
+`ContaWhatsApp` representa uma origem empresarial estável dentro da instalação, sem carregar credencial do provedor:
+
+```text
+ContaWhatsApp
+id: UUID
+nome_exibicao
+portfolio_empresarial_externo_id
+identificador_canal_externo
+telefone_exibicao_e164?
+estado: ATIVA | INATIVA
+versao
+criado_em
+atualizado_em
+```
+
+O UUID interno é a referência usada por mensagens, atendimentos, janela do canal, eventos e configuração de integração. Uma instalação pode possuir várias contas; nome de exibição não é chave e nenhuma conta ocupa posição de singleton. A combinação da identidade externa não pode se repetir e o telefone de exibição, quando conhecido, usa E.164.
+
+Cadastro sempre começa `INATIVA`. Ativação só poderá ocorrer depois de configuração e validação explícitas no adaptador real. Tokens, segredos, certificados e outros materiais de autenticação não são atributos da entidade, não entram em auditoria e ficam em cofre/configuração do adaptador, associados pelo UUID interno. Conta com histórico não é excluída: desativação preserva a origem dos fatos já registrados.
+
+### 4.2 `Contato`
 
 Campos conceituais mínimos:
 
@@ -146,7 +167,7 @@ Somente administrador pode bloquear/desbloquear. O bloqueio exige motivo, pode e
 
 Dois contatos não são mesclados automaticamente porque apontam para o mesmo cliente ERP. Marido e esposa podem falar sobre o mesmo contrato e continuam sendo contatos distintos.
 
-### 4.2 `IdentidadeWhatsApp`
+### 4.3 `IdentidadeWhatsApp`
 
 ```text
 IdentidadeWhatsApp
@@ -171,7 +192,7 @@ Regras:
 - O telefone nunca é chave primária de `Contato`, `Conversa` ou `Atendimento`.
 - Uma identidade nova sem correlação confiável cria contato separado. Eventual mesclagem manual é decisão futura; na V1, contatos permanecem separados.
 
-### 4.3 `VinculoCliente`
+### 4.4 `VinculoCliente`
 
 ```text
 VinculoCliente
@@ -191,7 +212,7 @@ Um contato pode possuir vários vínculos. O vínculo diz “este contato pode t
 
 A criação, alteração, escolha como preferencial e revogação são auditadas. CPF por si só é identificador, não autenticação forte universal; cada ação consulta a política de risco aplicável.
 
-### 4.4 `ContextoAtendimento`
+### 4.5 `ContextoAtendimento`
 
 O atendimento mantém:
 

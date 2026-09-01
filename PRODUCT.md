@@ -85,6 +85,8 @@ No composer, `/` abre respostas rápidas pesquisáveis. O botão dedicado de aç
 
 - Integração direta com a API oficial por adaptador.
 - Múltiplas contas/números de WhatsApp na mesma instalação.
+- Cada conta possui identidade interna estável, nasce inativa e só pode ser ativada após configuração e validação explícitas; remover uma integração não apaga sua origem histórica.
+- Credenciais de conta pertencem ao adaptador/cofre e nunca ao cadastro de domínio, à interface ou à auditoria.
 - Fluxo de entrada próprio ou compartilhado por conta.
 - Recebimento e envio de texto, imagem, áudio, vídeo e PDF.
 - Botões, listas, templates aprovados e prévia de links conforme capacidade da conta.

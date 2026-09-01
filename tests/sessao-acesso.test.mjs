@@ -33,20 +33,13 @@ test('modelo não infere ATIVA por conexão cadastrada', async () => {
 });
 
 test('controle de recurso nasce desativado por migration aditiva', async () => {
-  const [migration, persistencia] = await Promise.all([
-    ler(
-      'apps/api/prisma/migrations/20260831001000_criar_controle_sessao_acesso_desativado/migration.sql',
-    ),
-    ler('apps/api/src/persistencia/servico-prisma.ts'),
-  ]);
+  const migration = await ler(
+    'apps/api/prisma/migrations/20260831001000_criar_controle_sessao_acesso_desativado/migration.sql',
+  );
   assert.match(migration, /'SESSAO_ACESSO'/);
   assert.match(migration, /'DESATIVADO'/);
   assert.match(migration, /FALSE,[\s\S]*FALSE,[\s\S]*0,[\s\S]*0/);
   assert.match(migration, /ON CONFLICT \("codigo"\) DO NOTHING/);
-  assert.match(
-    persistencia,
-    /20260831001000_criar_controle_sessao_acesso_desativado/,
-  );
 });
 
 test('simulador não é registrado como provedor real', async () => {

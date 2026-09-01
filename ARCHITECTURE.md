@@ -111,6 +111,7 @@ SessoesUsuario
 Dispositivos
 Autorizacao
 
+ContasWhatsApp
 Contatos
 IdentidadesWhatsApp
 VinculosCliente
@@ -147,6 +148,8 @@ Auditoria
 Observabilidade
 Saude
 ```
+
+`ContasWhatsApp` é um módulo de domínio real e persistente. Ele usa UUID interno estável, aceita múltiplas contas, cria cada registro como `INATIVA` e não conhece token, segredo, certificado, SDK ou DTO da Meta. A configuração protegida do adaptador referencia esse UUID; mensagens e atendimentos futuros persistem o mesmo `conta_whatsapp_id` para preservar a origem. Não existe exclusão da entidade com histórico.
 
 ### 4.1 Dependências permitidas
 

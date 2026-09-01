@@ -18,6 +18,8 @@ O backend é a autoridade para:
 
 Web e mobile nunca recebem credenciais da Meta, MK, storage ou banco e nunca chamam esses serviços diretamente.
 
+`ContaWhatsApp` guarda somente identidade operacional e referência externa minimizada. Token, segredo, certificado ou material equivalente não pode ser coluna dessa entidade, campo de domínio, evento ou auditoria. O cadastro exige `ADMINISTRAR_INTEGRACOES`, começa `INATIVA`, usa constraints para identidade externa/telefone e conserva histórico sem operação de exclusão. Credenciais futuras ficam no cofre do ambiente e só são resolvidas dentro do adaptador por `conta_whatsapp_id`.
+
 Eventos internos e itens da caixa de saída persistem somente dados minimizados e sanitizados. Eles não carregam payload externo bruto, segredo ou autorização; projeção ao cliente continua sujeita à permissão atual e só ocorre após commit.
 
 ## 2. Ativos protegidos
