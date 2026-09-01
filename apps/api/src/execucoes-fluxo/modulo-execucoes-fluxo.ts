@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ModuloAuditoria } from '../auditoria/modulo-auditoria.js';
 import { ModuloCalendarios } from '../calendarios/modulo-calendarios.js';
 import { ModuloContextosCliente } from '../contextos-cliente/modulo-contextos-cliente.js';
+import { ModuloComposicoes } from '../composicoes/modulo-composicoes.js';
 import { ModuloFluxos } from '../fluxos/modulo-fluxos.js';
 import { ModuloMensagens } from '../mensagens/modulo-mensagens.js';
 import { ModuloPersistencia } from '../persistencia/modulo-persistencia.js';
@@ -12,6 +13,7 @@ import { REPOSITORIO_PASSOS_EXECUCAO_FLUXO } from './repositorio-passos-execucao
 import { RepositorioPassosExecucaoFluxoPrisma } from './repositorio-passos-execucao-fluxo-prisma.js';
 import { ServicoExecutorNosFluxo } from './servico-executor-nos-fluxo.js';
 import { ServicoExecucoesFluxo } from './servico-execucoes-fluxo.js';
+import { ServicoFaturasFluxo } from './servico-faturas-fluxo.js';
 import { ServicoRecuperacaoExecucoesFluxo } from './servico-recuperacao-execucoes-fluxo.js';
 
 @Module({
@@ -23,6 +25,7 @@ import { ServicoRecuperacaoExecucoesFluxo } from './servico-recuperacao-execucoe
   imports: [
     ModuloAuditoria,
     ModuloCalendarios,
+    ModuloComposicoes,
     ModuloContextosCliente,
     ModuloFluxos,
     ModuloMensagens,
@@ -33,6 +36,7 @@ import { ServicoRecuperacaoExecucoesFluxo } from './servico-recuperacao-execucoe
     RepositorioPassosExecucaoFluxoPrisma,
     ServicoExecucoesFluxo,
     ServicoExecutorNosFluxo,
+    ServicoFaturasFluxo,
     ServicoRecuperacaoExecucoesFluxo,
     {
       provide: REPOSITORIO_EXECUCOES_FLUXO,

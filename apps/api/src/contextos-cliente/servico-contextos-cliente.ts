@@ -12,6 +12,7 @@ import {
 import type {
   AlvoContextoAtendimento,
   ContextoAtendimentoPersistido,
+  ContextoFinanceiroFluxo,
   EntradaAlteracaoContextoAtendimento,
   EntradaInicializacaoContextoAtendimento,
   EntradaSelecaoClientePorFluxo,
@@ -169,6 +170,50 @@ export class ServicoContextosCliente {
       transacao,
     );
     return alvo !== undefined && this.mesmoAlvo(contexto, alvo);
+  }
+
+  public async obterContextoFinanceiroParaFluxo(
+    atendimentoId: unknown,
+    transacao: TransacaoPrisma,
+  ): Promise<ContextoFinanceiroFluxo | undefined> {
+    if (
+      typeof atendimentoId !== 'string' ||
+      !IDENTIFICADOR_UUID.test(atendimentoId)
+    ) {
+      throw new ErroContextoAtendimentoInvalido();
+    }
+    const origem = await this.repositorio.obterOrigemDoAtendimento(
+      atendimentoId,
+      transacao,
+    );
+    const contexto = await this.repositorio.obterContexto(
+      atendimentoId,
+      transacao,
+    );
+    if (
+      origem === undefined ||
+      contexto?.contatoId !== origem.contatoId ||
+      contexto.vinculoContratoId === undefined ||
+      contexto.contratoExternoId === undefined
+    ) {
+      return undefined;
+    }
+    const alvo = await this.repositorio.obterAlvoAutomatizavel(
+      origem.contatoId,
+      contexto.vinculoClienteId,
+      contexto.vinculoContratoId,
+      transacao,
+    );
+    if (alvo === undefined || !this.mesmoAlvo(contexto, alvo)) {
+      return undefined;
+    }
+    return {
+      atendimentoId,
+      contaWhatsAppId: origem.contaWhatsAppId,
+      contatoId: origem.contatoId,
+      contratoExternoId: contexto.contratoExternoId,
+      versao: contexto.versao,
+    };
   }
 
   public async selecionarClientePorFluxo(

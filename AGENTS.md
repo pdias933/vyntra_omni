@@ -450,3 +450,7 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - `AGUARDAR` usa somente contratos fechados `RESPOSTA` ou `ATE_INSTANTE`; não adicione duração implícita, expressão, referência, variável ou relógio do cliente.
 - Resposta antecipa somente `AGUARDANDO_RESPOSTA` com marca persistida, nó e revisão esperados. Timeout e resposta concorrem por um único commit; nunca force retomada por SQL.
 - `HORARIO_ATENDIMENTO` chama `ServicoCalendarios` e exige uma referência `CALENDARIO` ativa. Não copie período/fuso para a definição e não importe adapter externo no executor.
+- `CONSULTAR_FATURAS` e `ENVIAR_FATURA` não aceitam parâmetros, referências ou variáveis; nunca escolha a primeira fatura pagável quando houver mais de uma.
+- Chamada financeira externa ocorre fora da transação. Ao retornar, revalide execução, revisão, nó, conta, contato, cliente, contrato e versão do contexto antes de aplicar qualquer efeito.
+- Pix, linha digitável, documento, ID externo e bytes de PDF não entram em passo, log ou auditoria. Sem ponte privada de mídia comprovada, segunda via segue parcial; não fabrique Base64, anexo ou URL.
+- Provedor ERP simulado pertence somente aos testes. Aplicação sem adapter real registrado falha fechada com `ERP_INDISPONIVEL`; fixture nunca habilita staging ou produção.

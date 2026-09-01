@@ -68,6 +68,23 @@ export class CompositorSegundaVia {
       disponiveis.length === 0
         ? 'Solicite uma nova forma de acesso à equipe.'
         : `Opções disponíveis: ${disponiveis.join(', ')}.`;
+    const dadosEntrega = [
+      entrada.pixCopiaCola === undefined
+        ? undefined
+        : `Pix copia e cola:\n${entrada.pixCopiaCola}`,
+      entrada.linhaDigitavel === undefined
+        ? undefined
+        : `Linha digitável:\n${entrada.linhaDigitavel}`,
+      entrada.linkSeguro === undefined
+        ? undefined
+        : `Link seguro:\n${entrada.linkSeguro}`,
+    ].filter((item): item is string => item !== undefined);
+    const textoProtegido = `Segunda via: ${valor}, vencimento ${vencimento}. ${complemento}${
+      dadosEntrega.length === 0 ? '' : `\n\n${dadosEntrega.join('\n\n')}`
+    }`;
+    if (textoProtegido.length > 4_096) {
+      throw new Error('COMPOSICAO_SEGUNDA_VIA_INVALIDA');
+    }
     return {
       contaWhatsAppId: entrada.contaWhatsAppId,
       contatoId: entrada.contatoId,
@@ -83,7 +100,7 @@ export class CompositorSegundaVia {
       opcoesHash,
       opcoesProtegidas,
       referenciaFatura: entrada.referenciaFatura,
-      textoProtegido: `Segunda via: ${valor}, vencimento ${vencimento}. ${complemento}`,
+      textoProtegido,
       valorCentavos: entrada.valorCentavos,
       vencimento: entrada.vencimento,
     };

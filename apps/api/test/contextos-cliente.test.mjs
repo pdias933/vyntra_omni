@@ -12,6 +12,7 @@ import { ServicoContextosCliente } from '../dist/contextos-cliente/servico-conte
 const agora = new Date('2026-09-01T01:00:00.000Z');
 const ids = {
   atendimento: randomUUID(),
+  contaWhatsApp: randomUUID(),
   cliente: randomUUID(),
   contato: randomUUID(),
   contrato: randomUUID(),
@@ -63,6 +64,14 @@ function criarCenario(sobrescritas = {}) {
       return sobrescritas.alvo === null ? undefined : alvo;
     },
     obterContexto: async () => contextoAtual,
+    obterOrigemDoAtendimento: async () =>
+      sobrescritas.origemAtendimento === null
+        ? undefined
+        : {
+            contaWhatsAppId: ids.contaWhatsApp,
+            contatoId:
+              sobrescritas.contatoAtendimento ?? ids.contato,
+          },
     obterContatoDoAtendimento: async () =>
       sobrescritas.contatoAtendimento === null
         ? undefined
@@ -229,6 +238,41 @@ test('identificação do fluxo exige contexto explícito e vínculo automatizáv
       inseguro.transacao,
     ),
     false,
+  );
+});
+
+test('contexto financeiro do fluxo exige contrato e vínculo automatizável exatos', async () => {
+  const cenario = criarCenario();
+  assert.deepEqual(
+    await cenario.servico.obterContextoFinanceiroParaFluxo(
+      ids.atendimento,
+      cenario.transacao,
+    ),
+    {
+      atendimentoId: ids.atendimento,
+      contaWhatsAppId: ids.contaWhatsApp,
+      contatoId: ids.contato,
+      contratoExternoId: alvo.contratoExternoId,
+      versao: 1,
+    },
+  );
+  const semContrato = criarCenario({
+    contextoAtual: {
+      alteradoEm: agora,
+      atendimentoId: ids.atendimento,
+      clienteExternoId: alvo.clienteExternoId,
+      contatoId: ids.contato,
+      origem: 'FLUXO',
+      versao: 1,
+      vinculoClienteId: ids.cliente,
+    },
+  });
+  assert.equal(
+    await semContrato.servico.obterContextoFinanceiroParaFluxo(
+      ids.atendimento,
+      semContrato.transacao,
+    ),
+    undefined,
   );
 });
 

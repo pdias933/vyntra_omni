@@ -411,6 +411,9 @@ function criarExecutor({
   resultadoCalendario = { estado: 'ABERTO' },
   resultadoIdentificacao = true,
   resultadoMensagem,
+  preparacaoFatura,
+  resultadoFatura = { resultado: 'ERP_INDISPONIVEL' },
+  contextoFaturaValido = true,
   resultadoSelecaoCliente = true,
   resultadoSelecaoContrato = true,
   variaveis = [],
@@ -421,6 +424,7 @@ function criarExecutor({
     calendarios: [],
     catalogo: [],
     contextos: [],
+    faturas: [],
     mensagens: [],
     passosFinalizados: [],
     passosIniciados: [],
@@ -440,6 +444,8 @@ function criarExecutor({
     SOLICITAR_DADOS_CONTATO: ['ENVIADO', 'FALLBACK', 'FALHA'],
     SELECIONAR_CLIENTE: ['SELECIONADO', 'NAO_SELECIONADO', 'FALHA'],
     SELECIONAR_CONTRATO: ['SELECIONADO', 'NAO_SELECIONADO', 'FALHA'],
+    CONSULTAR_FATURAS: ['ENCONTRADA', 'NAO_ENCONTRADA', 'ERP_INDISPONIVEL', 'FALHA'],
+    ENVIAR_FATURA: ['SUCESSO', 'DADOS_INCOMPLETOS', 'ERP_INDISPONIVEL', 'FALHA'],
   }[no.tipo] ?? [];
   const definicao = {
     conexoes: saidas.map((saida) => ({ destinoNoId: 'fim', origemNoId: no.id, saida })),
@@ -507,7 +513,33 @@ function criarExecutor({
     transitar: async (...argumentos) => chamadas.transicoes.push(argumentos),
   };
   const transacao = { id: 'transacao-executor' };
-  const prisma = { executarTransacao: async (operacao) => operacao(transacao) };
+  let emTransacao = false;
+  const prisma = {
+    executarTransacao: async (operacao) => {
+      emTransacao = true;
+      try {
+        return await operacao(transacao);
+      } finally {
+        emTransacao = false;
+      }
+    },
+  };
+  const faturas = {
+    contextoPermaneceValido: async (...argumentos) => {
+      chamadas.faturas.push(['VALIDAR', emTransacao, ...argumentos]);
+      return contextoFaturaValido;
+    },
+    executar: async (...argumentos) => {
+      chamadas.faturas.push(['EXECUTAR', emTransacao, ...argumentos]);
+      return resultadoFatura;
+    },
+    preparar: async (...argumentos) => {
+      chamadas.faturas.push(['PREPARAR', emTransacao, ...argumentos]);
+      return preparacaoFatura;
+    },
+    registrarComposicao: async (...argumentos) =>
+      chamadas.faturas.push(['REGISTRAR', emTransacao, ...argumentos]),
+  };
   return {
     chamadas,
     executor: new ServicoExecutorNosFluxo(
@@ -519,6 +551,7 @@ function criarExecutor({
       mensagens,
       execucoes,
       prisma,
+      faturas,
     ),
     transacao,
   };
@@ -849,6 +882,128 @@ test('seleção ausente não escolhe primeiro vínculo e pedido usa fallback ofi
     mensagemId,
     resultado: 'FALLBACK',
   });
+});
+
+test('consulta de fatura chama ERP fora da transação e guarda seleção somente no contexto', async () => {
+  const contextoFinanceiro = {
+    atendimentoId: ids.atendimento,
+    contaWhatsAppId: randomUUID(),
+    contatoId: randomUUID(),
+    contratoExternoId: 'contrato-sintetico-078',
+    versao: 3,
+  };
+  const selecao = {
+    contextoAtendimentoVersao: 3,
+    contratoExternoId: contextoFinanceiro.contratoExternoId,
+    faturaExternaId: 'fatura-sintetica-078',
+    situacao: 'ABERTA',
+    valorCentavos: 12345,
+    vencimento: '2026-09-10',
+  };
+  const preparacaoFatura = {
+    contexto: contextoFinanceiro,
+    resultado: 'PRONTA',
+    tipo: 'CONSULTAR_FATURAS',
+  };
+  const cenario = criarExecutor({
+    no: {
+      id: 'consultarFatura',
+      parametros: {},
+      referencias: [],
+      tipo: 'CONSULTAR_FATURAS',
+      variaveisEntrada: [],
+      variaveisSaida: [],
+    },
+    preparacaoFatura,
+    resultadoFatura: { resultado: 'ENCONTRADA', selecao },
+  });
+  await cenario.executor.executarCiclo(1, () => depois(10));
+  assert.equal(cenario.chamadas.faturas.find(([tipo]) => tipo === 'PREPARAR')[1], true);
+  assert.equal(cenario.chamadas.faturas.find(([tipo]) => tipo === 'EXECUTAR')[1], false);
+  assert.equal(cenario.chamadas.faturas.find(([tipo]) => tipo === 'VALIDAR')[1], true);
+  assert.deepEqual(
+    cenario.chamadas.avancos[0][0].contextoProtegido.faturaFluxo,
+    selecao,
+  );
+  assert.deepEqual(cenario.chamadas.passosFinalizados[0].saidaSanitizada, {
+    resultado: 'ENCONTRADA',
+  });
+  assert.equal(
+    JSON.stringify(cenario.chamadas.passosFinalizados).includes(
+      selecao.faturaExternaId,
+    ),
+    false,
+  );
+});
+
+test('envio revalida seleção, registra composição e não expõe Pix no passo', async () => {
+  const mensagemId = randomUUID();
+  const contaWhatsAppId = randomUUID();
+  const contatoId = randomUUID();
+  const selecao = {
+    contextoAtendimentoVersao: 4,
+    contratoExternoId: 'contrato-sintetico-078',
+    faturaExternaId: 'fatura-sintetica-078',
+    situacao: 'VENCIDA',
+    valorCentavos: 23456,
+    vencimento: '2026-08-31',
+  };
+  const preparacaoFatura = {
+    contexto: {
+      atendimentoId: ids.atendimento,
+      contaWhatsAppId,
+      contatoId,
+      contratoExternoId: selecao.contratoExternoId,
+      versao: 4,
+    },
+    resultado: 'PRONTA',
+    selecao,
+    tipo: 'ENVIAR_FATURA',
+  };
+  const pix = '00020101021226880014BR.GOV.BCB.PIX';
+  const composicao = {
+    contaWhatsAppId,
+    contatoId,
+    criadaEm: depois(10),
+    id: randomUUID(),
+    incluiLinhaDigitavel: false,
+    incluiLinkSeguro: false,
+    incluiPdf: false,
+    incluiPix: true,
+    opcoesHash: 'a'.repeat(64),
+    opcoesProtegidas: { pixCopiaCola: pix },
+    referenciaFatura: selecao.faturaExternaId,
+    textoProtegido: `Segunda via segura.\n\nPix copia e cola:\n${pix}`,
+    valorCentavos: selecao.valorCentavos,
+    vencimento: new Date('2026-08-31T00:00:00.000Z'),
+  };
+  const cenario = criarExecutor({
+    contextoProtegido: { faturaFluxo: selecao },
+    no: {
+      id: 'enviarFatura',
+      parametros: {},
+      referencias: [],
+      tipo: 'ENVIAR_FATURA',
+      variaveisEntrada: [],
+      variaveisSaida: [],
+    },
+    preparacaoFatura,
+    resultadoFatura: { composicao, resultado: 'DADOS_INCOMPLETOS' },
+    resultadoMensagem: { mensagem: { id: mensagemId }, resultado: 'SUCESSO' },
+  });
+  await cenario.executor.executarCiclo(1, () => depois(10));
+  assert.equal(cenario.chamadas.faturas.find(([tipo]) => tipo === 'EXECUTAR')[1], false);
+  assert.equal(cenario.chamadas.faturas.find(([tipo]) => tipo === 'REGISTRAR')[1], true);
+  assert.equal(cenario.chamadas.mensagens[0][0].texto.includes(pix), true);
+  assert.deepEqual(cenario.chamadas.passosFinalizados[0].saidaSanitizada, {
+    mensagemId,
+    resultado: 'DADOS_INCOMPLETOS',
+  });
+  assert.equal(JSON.stringify(cenario.chamadas.passosFinalizados).includes(pix), false);
+  assert.equal(
+    cenario.chamadas.avancos[0][0].contextoProtegido.faturaFluxo,
+    undefined,
+  );
 });
 
 test('definição de variável grava literal tipado somente no contexto protegido', async () => {

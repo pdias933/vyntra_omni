@@ -136,6 +136,35 @@ test('identidade e seleção usam contexto explícito sem escolher vínculo impl
   assert.match(modulo, /ModuloContextosCliente/);
 });
 
+test('fatura usa contexto exato, consulta fora da transação e composição protegida', async () => {
+  const [executor, servico, contexto, composicao, repositorio, modulo] =
+    await Promise.all([
+      ler('apps/api/src/execucoes-fluxo/servico-executor-nos-fluxo.ts'),
+      ler('apps/api/src/execucoes-fluxo/servico-faturas-fluxo.ts'),
+      ler('apps/api/src/execucoes-fluxo/contexto-fatura-execucao-fluxo.ts'),
+      ler('apps/api/src/composicoes/segunda-via.ts'),
+      ler(
+        'apps/api/src/composicoes/repositorio-composicoes-segunda-via-prisma.ts',
+      ),
+      ler('apps/api/src/execucoes-fluxo/modulo-execucoes-fluxo.ts'),
+    ]);
+  assert.match(executor, /prepararNoFatura/);
+  assert.match(executor, /this\.faturas\.executar/);
+  assert.match(executor, /contextoPermaneceValido/);
+  assert.match(executor, /ServicoMensagensSaida/);
+  assert.doesNotMatch(executor, /AdaptadorErp|ServicoFinanceiroErp|Snapshot/);
+  assert.match(servico, /ServicoFinanceiroErp/);
+  assert.match(servico, /SELECAO_FATURA_NECESSARIA/);
+  assert.match(servico, /ERP_INDISPONIVEL/);
+  assert.match(servico, /@Optional\(\)/);
+  assert.doesNotMatch(servico, /SNAPSHOT|MkSolutions|WSMK|https?:\/\//);
+  assert.match(contexto, /faturaFluxo/);
+  assert.match(composicao, /opcoesProtegidas/);
+  assert.match(repositorio, /composicaoSegundaVia\.create/);
+  assert.match(modulo, /ModuloComposicoes/);
+  assert.doesNotMatch(modulo, /ADAPTADOR_ERP|AdaptadorErpSimulado/);
+});
+
 test('nós de mensagem usam domínio, passos sanitizados e saídas nominais', async () => {
   const [schema, migration, executor, mensagens, repositorioMensagens, processo] = await Promise.all([
     ler('apps/api/prisma/schema.prisma'),

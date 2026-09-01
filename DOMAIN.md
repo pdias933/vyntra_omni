@@ -859,3 +859,11 @@ Desde a PR 077, `IDENTIFICAR_CONTATO` confirma somente um `ContextoAtendimento` 
 A matriz conservadora permite ao fluxo selecionar somente vínculo `VERIFICADO` com `verificado_em`, ou `MANUAL` com `verificado_em` e usuário verificador. `TEMPORARIO` permanece fora da automação enquanto não existir validade/revalidação modelada. Isso limita seleção de contexto; não amplia autorização para ações de risco médio ou alto, que continuam aplicando a própria política e dado em tempo real.
 
 `SELECIONAR_CLIENTE` recebe exatamente um `vinculo_cliente_id` escolhido em variável `UUID` sensível e limpa qualquer contrato anterior. `SELECIONAR_CONTRATO` exige contexto de cliente e recebe um `vinculo_contrato_id` ativo pertencente ao mesmo vínculo. A seleção cria ou incrementa a versão do contexto com origem `FLUXO`; repetição do mesmo alvo é idempotente. Auditoria conserva apenas UUIDs internos, fluxo e versão. Nome, documento, telefone, username e identificadores externos não entram no passo nem na auditoria.
+
+## 21. Fatura no Motor de Fluxos
+
+Desde a PR 078, a seleção de fatura pertence ao contexto protegido de `ExecucaoFluxo` e fixa versão do `ContextoAtendimento`, contrato externo, fatura externa, situação, valor e vencimento observados em `TEMPO_REAL`. Ela nunca entra em `PassoExecucaoFluxo`, auditoria ou log. Uma nova consulta substitui ou remove a seleção; um envio confirmado a consome, obrigando nova consulta antes de outro envio.
+
+`CONSULTAR_FATURAS` considera pagável somente `ABERTA` ou `VENCIDA`. Zero resultado segue `NAO_ENCONTRADA`; exatamente um segue `ENCONTRADA`; mais de um segue `FALHA/SELECAO_FATURA_NECESSARIA`, pois ordem externa não é decisão de domínio. `INDISPONIVEL` segue `ERP_INDISPONIVEL`. Snapshot nunca participa.
+
+`ENVIAR_FATURA` exige a seleção corrente, reconsulta base, documento e dados de pagamento e confirma novamente contrato e situação. `ComposicaoSegundaVia` é acrescentada no PostgreSQL com opções protegidas e hash. A mensagem automática, composição, evento, caixa de saída, auditoria sanitizada, passo e avanço compartilham o commit. A auditoria registra somente flags e UUIDs internos; referência externa, valor, Pix, linha e conteúdo ficam fora. Documento normalizado sem ponte privada de mídia não vira Base64, URL ou anexo fictício e força `DADOS_INCOMPLETOS`.

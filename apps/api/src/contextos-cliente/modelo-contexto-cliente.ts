@@ -21,6 +21,14 @@ export interface ContextoAtendimentoPersistido extends AlvoContextoAtendimento {
   readonly alteradoPorUsuarioId?: string;
 }
 
+export interface ContextoFinanceiroFluxo {
+  readonly atendimentoId: string;
+  readonly contaWhatsAppId: string;
+  readonly contatoId: string;
+  readonly contratoExternoId: string;
+  readonly versao: number;
+}
+
 export interface EntradaInicializacaoContextoAtendimento {
   readonly atendimentoId: string;
   readonly contatoId: string;

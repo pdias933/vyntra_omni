@@ -11,15 +11,35 @@ import type { RepositorioContextosCliente } from './repositorio-contextos-client
 export class RepositorioContextosClientePrisma
   implements RepositorioContextosCliente
 {
+  public async obterOrigemDoAtendimento(
+    atendimentoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<
+    | { readonly contaWhatsAppId: string; readonly contatoId: string }
+    | undefined
+  > {
+    const atendimento = await transacao.atendimento.findUnique({
+      select: {
+        contaWhatsAppId: true,
+        conversa: { select: { contatoId: true } },
+      },
+      where: { id: atendimentoId },
+    });
+    return atendimento === null
+      ? undefined
+      : {
+          contaWhatsAppId: atendimento.contaWhatsAppId,
+          contatoId: atendimento.conversa.contatoId,
+        };
+  }
+
   public async obterContatoDoAtendimento(
     atendimentoId: string,
     transacao: TransacaoPrisma,
   ): Promise<string | undefined> {
-    const atendimento = await transacao.atendimento.findUnique({
-      select: { conversa: { select: { contatoId: true } } },
-      where: { id: atendimentoId },
-    });
-    return atendimento?.conversa.contatoId;
+    return (
+      await this.obterOrigemDoAtendimento(atendimentoId, transacao)
+    )?.contatoId;
   }
 
   public async obterAlvoAtivo(

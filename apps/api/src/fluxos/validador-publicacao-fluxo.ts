@@ -397,6 +397,9 @@ export class ValidadorPublicacaoFluxo {
         IDENTIFICADOR.test(parametros.variavel)
       );
     }
+    if (tipo === 'CONSULTAR_FATURAS' || tipo === 'ENVIAR_FATURA') {
+      return this.temExatamenteChaves(parametros, []);
+    }
     if (tipo === 'INICIO' || tipo === 'FIM') {
       return this.temExatamenteChaves(parametros, []);
     }
@@ -663,6 +666,7 @@ export class ValidadorPublicacaoFluxo {
       this.validarNoDeVariavel(no, variaveis, problemas);
       this.validarNoEsperaOuCalendario(no, problemas);
       this.validarNoIdentidade(no, variaveis, problemas);
+      this.validarNoFatura(no, problemas);
       for (const nome of [...no.variaveisEntrada, ...no.variaveisSaida]) {
         if (!variaveis.has(nome)) {
           this.adicionar(problemas, {
@@ -858,6 +862,25 @@ export class ValidadorPublicacaoFluxo {
         codigo: 'CONFIGURACAO_SELECAO_CONTEXTO_INVALIDA',
         noId: no.id,
         ...(typeof nome === 'string' ? { variavel: nome } : {}),
+      });
+    }
+  }
+
+  private validarNoFatura(
+    no: NoDefinicaoFluxo,
+    problemas: ProblemaValidacaoFluxo[],
+  ): void {
+    if (no.tipo !== 'CONSULTAR_FATURAS' && no.tipo !== 'ENVIAR_FATURA') {
+      return;
+    }
+    if (
+      no.referencias.length !== 0 ||
+      no.variaveisEntrada.length !== 0 ||
+      no.variaveisSaida.length !== 0
+    ) {
+      this.adicionar(problemas, {
+        codigo: 'CONFIGURACAO_FATURA_INVALIDA',
+        noId: no.id,
       });
     }
   }

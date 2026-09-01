@@ -649,6 +649,44 @@ test('nós de identidade exigem configuração fechada e seleção UUID sensíve
   );
 });
 
+test('nós de fatura não aceitam parâmetro, referência ou variável declarada pelo fluxo', () => {
+  for (const [tipo, saidas] of [
+    ['CONSULTAR_FATURAS', ['ENCONTRADA', 'NAO_ENCONTRADA', 'ERP_INDISPONIVEL', 'FALHA']],
+    ['ENVIAR_FATURA', ['SUCESSO', 'DADOS_INCOMPLETOS', 'ERP_INDISPONIVEL', 'FALHA']],
+  ]) {
+    const definicao = definicaoBasica({
+      conexoes: [
+        conexao('inicio', 'SUCESSO', 'fatura'),
+        ...saidas.map((saida) => conexao('fatura', saida, 'fim')),
+      ],
+      nos: [no('inicio', 'INICIO'), no('fatura', tipo), no('fim', 'FIM')],
+    });
+    assert.equal(
+      new ValidadorPublicacaoFluxo().validar(
+        definicao,
+        contexto({ capacidadesHabilitadas: [tipo] }),
+      ).valido,
+      true,
+    );
+    const contaminada = {
+      ...definicao,
+      nos: definicao.nos.map((item) =>
+        item.id === 'fatura'
+          ? { ...item, parametros: { faturaExternaId: 'não-versionar' } }
+          : item,
+      ),
+    };
+    assert.ok(
+      codigos(
+        new ValidadorPublicacaoFluxo().validar(
+          contaminada,
+          contexto({ capacidadesHabilitadas: [tipo] }),
+        ),
+      ).includes('DEFINICAO_ESTRUTURAL_INVALIDA'),
+    );
+  }
+});
+
 test('identificação e pedido de dados não aceitam variáveis, referências ou payload livre', () => {
   const casos = [
     {

@@ -552,3 +552,11 @@ Não considerar integração concluída até documentar:
 - comportamento real do desbloqueio;
 - fonte e semântica de sessão PPPoE;
 - segredos, allowlists, rate limits e callbacks por ambiente.
+
+## 13. Integração dos nós de fatura da PR 078
+
+O Motor de Fluxos acessa finanças apenas por `ServicoFaturasFluxo`, que normaliza o `ServicoFinanceiroErp`; o executor não importa adapter, SDK, DTO ou vocabulário do MK Solutions. A chamada ao ERP acontece fora da transação e a aplicação revalida toda a autoridade local ao retornar.
+
+O token `ADAPTADOR_ERP` é opcional e nenhum provedor real ou simulado é registrado na aplicação nesta PR. Sem contrato real configurado, os nós falham fechados com `ERP_INDISPONIVEL`. O simulador determinístico existe somente nos testes e não habilita capacidade em staging ou produção.
+
+Resposta financeira permanece em memória protegida e apenas a referência interna da fatura selecionada entra no contexto protegido. Pix, linha digitável, documento, identificador externo e bytes de PDF não entram em passo, auditoria ou log. Um PDF só poderá ser enviado por uma ponte privada de mídia explicitamente implementada; enquanto ela não existir, a composição é parcial e nunca usa snapshot ou URL fabricada.

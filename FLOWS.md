@@ -638,3 +638,21 @@ saídas: SELECIONADO | NAO_SELECIONADO | FALHA
 A variável precisa estar disponível em todos os caminhos e representa a escolha estruturada, não telefone, documento ou ID externo do ERP. Cliente é validado contra o contato e limpa contrato anterior; contrato exige o cliente atual e pertencimento ao mesmo vínculo. A matriz automatizável aceita vínculo `VERIFICADO` com instante de verificação ou `MANUAL` também atribuído a usuário verificador. Vínculo temporário, revogado, divergente ou seleção ausente segue caminho não selecionado. O executor nunca usa primeiro/preferencial e nunca cria vínculo.
 
 `SOLICITAR_DADOS_CONTATO` aceita somente `textoFallback` e nenhuma variável/referência. A saída oficial `ENVIADO` permanece reservada para uma capacidade comprovada. Na implementação atual, o texto passa pelo serviço de mensagens e segue `FALLBACK` em sucesso; falha do pipeline segue `FALHA`. Configurar o nó não habilita recurso Meta inexistente.
+
+## 26. Nós de fatura da PR 078
+
+`CONSULTAR_FATURAS` e `ENVIAR_FATURA` possuem parâmetros, referências e variáveis vazios. Ambos exigem contato identificado, cliente e contrato selecionados por contexto automatizável exato. Não procuram o primeiro vínculo, o contrato preferencial nem aceitam identificador externo na definição.
+
+```text
+CONSULTAR_FATURAS
+  ENCONTRADA | NAO_ENCONTRADA | ERP_INDISPONIVEL | FALHA
+
+ENVIAR_FATURA
+  SUCESSO | DADOS_INCOMPLETOS | ERP_INDISPONIVEL | FALHA
+```
+
+A consulta considera pagáveis somente faturas `ABERTA` ou `VENCIDA`. Nenhuma segue `NAO_ENCONTRADA`; uma única segue `ENCONTRADA` e grava a seleção no contexto protegido; mais de uma segue `FALHA` com `SELECAO_FATURA_NECESSARIA`. O executor nunca escolhe uma fatura entre candidatas.
+
+`ENVIAR_FATURA` consome a seleção protegida atual, consulta novamente os detalhes no ERP e compõe a segunda via por serviço de domínio. Pix, linha digitável, link e demais dados financeiros não entram em definição, passo, log ou auditoria. Sem ponte privada comprovada para o PDF, a composição segue `DADOS_INCOMPLETOS`: não inventa anexo, Base64 ou URL pública. Quando existir capacidade integral comprovada, a saída `SUCESSO` poderá ser alcançada sem mudar esse contrato.
+
+A chamada externa ocorre fora da transação do PostgreSQL. Uma transação curta prepara nó, revisão e contexto; depois da resposta, outra transação relê e confirma execução, revisão, nó, conta, contato, cliente, contrato e versão do contexto antes de aplicar seleção, mensagem, composição, auditoria, passo e avanço. Divergência descarta a resposta antiga. Provedor ERP ausente percorre a saída `ERP_INDISPONIVEL`, sem snapshot e sem efeito parcial.

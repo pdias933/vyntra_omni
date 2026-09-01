@@ -401,6 +401,10 @@ Agendamento aceita somente `Date` válido, instante futuro e execução `EXECUTA
 
 Nós de identidade da PR 077 nunca buscam ou criam vínculo por telefone, username, preferência ou primeiro resultado. Seleção exige UUID interno sensível recebido de forma estruturada, pertencimento exato ao contato e vínculo não revogado com prova automatizável. A política aceita `VERIFICADO` com instante de verificação ou `MANUAL` com instante e usuário verificador; `TEMPORARIO` falha fechado até possuir validade/revalidação formal. Contrato precisa pertencer ao cliente já selecionado. O fluxo não cria, verifica, revoga nem torna vínculo preferencial. Passo e log não carregam variável nem UUID escolhido; a auditoria da mutação conserva somente referências UUID internas de vínculo, nunca nome de variável, dado pessoal ou identificador ERP externo. Essa seleção não substitui revalidação e ERP em tempo real exigidos por ações de maior risco.
 
+Nós de fatura da PR 078 possuem parâmetros, referências e variáveis vazios: uma definição não pode versionar identificador externo, valor, Pix, linha, documento ou URL. O contexto precisa fixar contrato automatizável e a consulta precisa responder `TEMPO_REAL`. Nunca há fallback para snapshot. Mais de uma fatura pagável falha sem escolha implícita. A chamada ERP ocorre fora da transação e sua aplicação compara execução, nó, revisão, conta, contato, contrato e versão do contexto sob nova transação. Resposta tardia perde autoridade.
+
+Fatura, valor e meios de pagamento permanecem apenas em contexto/composição/mensagem protegidos. Passo registra resultado e, quando existir, UUID interno da mensagem; log e auditoria não recebem referência externa, Pix, linha, valor ou PDF. A auditoria da composição usa apenas UUIDs internos e flags. Documento sem caminho privado de mídia não é convertido em Base64, URL ou texto e força `DADOS_INCOMPLETOS`. Adapter ausente, timeout normalizado ou indisponibilidade percorre `ERP_INDISPONIVEL`; simulador nunca habilita produção.
+
 Exemplo de desbloqueio:
 
 ```text

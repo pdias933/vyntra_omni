@@ -9,6 +9,14 @@ export const REPOSITORIO_CONTEXTOS_CLIENTE = Symbol(
 );
 
 export interface RepositorioContextosCliente {
+  obterOrigemDoAtendimento(
+    atendimentoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<
+    | { readonly contaWhatsAppId: string; readonly contatoId: string }
+    | undefined
+  >;
+
   obterContatoDoAtendimento(
     atendimentoId: string,
     transacao: TransacaoPrisma,

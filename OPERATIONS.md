@@ -591,3 +591,13 @@ Não há migration nova; a marca obrigatória permanece `20260901012500_espera_r
 Monitorar `CONFIGURACAO_IDENTIDADE_INVALIDA`, `CONFIGURACAO_SELECAO_CONTEXTO_INVALIDA`, crescimento de `NAO_IDENTIFICADO`/`NAO_SELECIONADO`, conflitos de versão de contexto e volume de `FALLBACK`. Resultado não selecionado é caminho de negócio; contexto divergente, auditoria ausente após mutação ou escolha de vínculo temporário é incidente. O aceite usa múltiplos vínculos reais, incluindo um revogado/temporário, comprova seleção exata e idempotente, contrato pertencente ao cliente e nenhuma escolha por ordem/preferência. Passos e logs não contêm variável nem UUID selecionado; a auditoria conserva somente UUIDs internos dos vínculos alterados, sem dado pessoal ou identificador ERP externo.
 
 Não inserir ou trocar `contexto_atendimento` por SQL e não promover vínculo para contornar a matriz. Corrigir o vínculo pelo caso de uso autorizado ou encaminhar ao humano. Rollback preserva contextos e auditoria; antes de usar worker PR 076, comprovar que nenhuma execução não terminal aponta para nós da PR 077.
+
+## 25. Operação dos nós de fatura da PR 078
+
+Não há migration nova; a marca obrigatória permanece `20260901012500_espera_resposta_fluxo`. Implantar API e todos os `worker_fluxos` com a mesma imagem PR 078 antes de publicar `CONSULTAR_FATURAS` ou `ENVIAR_FATURA`. A tabela `composicao_segunda_via` já existe desde a PR 049.
+
+Nenhum provedor ERP real é registrado nesta etapa. O comportamento esperado em staging sem integração configurada é a saída `ERP_INDISPONIVEL`, sem mensagem, composição, auditoria de envio ou seleção fabricada. Simulador pertence somente aos testes. Não cadastrar um fake no container da aplicação para transformar o aceite em falso sucesso.
+
+Monitorar `ERP_INDISPONIVEL`, `CONSULTA_ERP_FALHOU`, `SELECAO_FATURA_NECESSARIA`, `FATURA_NAO_ENCONTRADA`, `FATURA_NAO_SELECIONADA`, `CONTEXTO_FINANCEIRO_DIVERGENTE` e crescimento de `DADOS_INCOMPLETOS`. Também alertar para chamada externa mantendo transação aberta, dado financeiro em passo/log/auditoria, composição sem mensagem correspondente ou efeito depois de revisão/contexto divergente.
+
+No aceite automatizado, um provedor determinístico exclusivo de teste cobre zero, uma e várias faturas pagáveis, ausência do ERP, resposta parcial e composição protegida. No runtime real sem provedor, validar ao menos consulta e envio seguindo `ERP_INDISPONIVEL`, prontidão, estabilidade dos dois workers e ausência de efeitos parciais. Rollback preserva seleção protegida, passos e composições existentes; antes de usar worker PR 077, comprovar que nenhuma execução não terminal aponta para estes nós.

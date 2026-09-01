@@ -25,6 +25,10 @@ import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type { ObjetoJsonProtegido } from '../seguranca/modelo-dados-protegidos.js';
 import {
+  definirSelecaoFaturaExecucaoFluxo,
+  removerSelecaoFaturaExecucaoFluxo,
+} from './contexto-fatura-execucao-fluxo.js';
+import {
   agendarEsperaFluxo,
   lerEsperaFluxo,
   removerEsperaFluxo,
@@ -52,13 +56,21 @@ import {
   type RepositorioPassosExecucaoFluxo,
 } from './repositorio-passos-execucao-fluxo.js';
 import { ServicoExecucoesFluxo } from './servico-execucoes-fluxo.js';
+import {
+  ServicoFaturasFluxo,
+  type PreparacaoNoFaturaFluxo,
+  type ResultadoNoFaturaFluxo,
+  type TipoNoFaturaFluxo,
+} from './servico-faturas-fluxo.js';
 
 const TIPOS_SUPORTADOS = new Set([
   'AGUARDAR',
   'CONDICAO',
+  'CONSULTAR_FATURAS',
   'DEFINIR_VARIAVEL',
   'ENVIAR_BOTOES_OU_LISTA',
   'ENVIAR_MENSAGEM',
+  'ENVIAR_FATURA',
   'FIM',
   'HORARIO_ATENDIMENTO',
   'IDENTIFICAR_CONTATO',
@@ -81,6 +93,11 @@ interface ResultadoExecucaoNo {
   readonly mensagem?: { readonly id: string } | undefined;
 }
 
+interface AcaoExternaFatura {
+  readonly preparacao: PreparacaoNoFaturaFluxo;
+  readonly resultado: ResultadoNoFaturaFluxo;
+}
+
 @Injectable()
 export class ServicoExecutorNosFluxo {
   public constructor(
@@ -100,6 +117,8 @@ export class ServicoExecutorNosFluxo {
     private readonly execucoes: ServicoExecucoesFluxo,
     @Inject(ServicoPrisma)
     private readonly prisma: ServicoPrisma,
+    @Inject(ServicoFaturasFluxo)
+    private readonly faturas: ServicoFaturasFluxo,
   ) {}
 
   public async executarCiclo(
@@ -112,6 +131,7 @@ export class ServicoExecutorNosFluxo {
     let processadas = 0;
     while (processadas < limite) {
       let selecionada: ExecucaoFluxoPersistida | undefined;
+      let preparacaoFatura: PreparacaoNoFaturaFluxo | undefined;
       try {
         const encontrou = await this.prisma.executarTransacao(
           async (transacao) => {
@@ -122,11 +142,42 @@ export class ServicoExecutorNosFluxo {
               );
             selecionada = execucao;
             if (execucao === undefined) return false;
+            preparacaoFatura = await this.prepararNoFatura(
+              execucao,
+              transacao,
+            );
+            if (preparacaoFatura !== undefined) return true;
             await this.executarNo(execucao, transacao, relogio);
             return true;
           },
         );
         if (!encontrou) break;
+        if (preparacaoFatura !== undefined && selecionada !== undefined) {
+          const execucaoPreparada = selecionada;
+          const resultado = await this.faturas.executar(
+            preparacaoFatura,
+            relogio,
+          );
+          const acao: AcaoExternaFatura = {
+            preparacao: preparacaoFatura,
+            resultado,
+          };
+          await this.prisma.executarTransacao(async (transacao) => {
+            const atual = await this.repositorioExecucoes.obterPorId(
+              execucaoPreparada.id,
+              transacao,
+            );
+            if (
+              atual === undefined ||
+              atual.estado !== 'EXECUTANDO' ||
+              atual.revisao !== execucaoPreparada.revisao ||
+              atual.noAtualId !== execucaoPreparada.noAtualId
+            ) {
+              return;
+            }
+            await this.executarNo(atual, transacao, relogio, acao);
+          });
+        }
       } catch (erro) {
         if (
           !(erro instanceof ErroExecucaoFluxoInvalida) ||
@@ -169,10 +220,43 @@ export class ServicoExecutorNosFluxo {
     });
   }
 
+  private async prepararNoFatura(
+    execucao: ExecucaoFluxoPersistida,
+    transacao: TransacaoPrisma,
+  ): Promise<PreparacaoNoFaturaFluxo | undefined> {
+    const versao = await this.catalogo.obterVersaoFixaExecucao(
+      execucao.versaoFluxoId,
+      execucao.fluxoId,
+      transacao,
+    );
+    const definicao = this.lerDefinicao(versao.definicao);
+    const no = definicao.nos.find(({ id }) => id === execucao.noAtualId);
+    if (
+      no?.tipo !== 'CONSULTAR_FATURAS' &&
+      no?.tipo !== 'ENVIAR_FATURA'
+    ) {
+      return undefined;
+    }
+    if (!this.configuracaoNoFaturaValida(no)) {
+      return {
+        codigo: 'CONFIGURACAO_FATURA_INVALIDA',
+        resultado: 'FALHA',
+        tipo: no.tipo,
+      };
+    }
+    return this.faturas.preparar(
+      no.tipo,
+      execucao.atendimentoId,
+      execucao.contextoProtegido,
+      transacao,
+    );
+  }
+
   private async executarNo(
     execucao: ExecucaoFluxoPersistida,
     transacao: TransacaoPrisma,
     relogio: () => Date,
+    acaoFatura?: AcaoExternaFatura,
   ): Promise<void> {
     const agora = relogio();
     if (!Number.isFinite(agora.getTime()) || agora < execucao.atualizadaEm) {
@@ -228,6 +312,7 @@ export class ServicoExecutorNosFluxo {
       execucao,
       transacao,
       relogio,
+      acaoFatura,
     );
     if (resultado.agendamento !== undefined) {
       await this.finalizarPasso(
@@ -285,6 +370,7 @@ export class ServicoExecutorNosFluxo {
     execucao: ExecucaoFluxoPersistida,
     transacao: TransacaoPrisma,
     relogio: () => Date,
+    acaoFatura?: AcaoExternaFatura,
   ): Promise<ResultadoExecucaoNo> {
     if (no.tipo === 'AGUARDAR') {
       return this.executarEspera(no, execucao, relogio);
@@ -328,6 +414,16 @@ export class ServicoExecutorNosFluxo {
         relogio,
       );
     }
+    if (no.tipo === 'CONSULTAR_FATURAS' || no.tipo === 'ENVIAR_FATURA') {
+      return this.aplicarNoFatura(
+        no,
+        execucao,
+        iteracao.contexto,
+        acaoFatura,
+        transacao,
+        relogio,
+      );
+    }
     if (
       no.tipo === 'IDENTIFICAR_CONTATO' ||
       no.tipo === 'SELECIONAR_CLIENTE' ||
@@ -344,6 +440,118 @@ export class ServicoExecutorNosFluxo {
       );
     }
     throw new ErroExecucaoFluxoInvalida();
+  }
+
+  private async aplicarNoFatura(
+    no: NoDefinicaoFluxo,
+    execucao: ExecucaoFluxoPersistida,
+    contexto: ObjetoJsonProtegido,
+    acao: AcaoExternaFatura | undefined,
+    transacao: TransacaoPrisma,
+    relogio: () => Date,
+  ): Promise<ResultadoExecucaoNo> {
+    if (
+      (no.tipo !== 'CONSULTAR_FATURAS' && no.tipo !== 'ENVIAR_FATURA') ||
+      !this.configuracaoNoFaturaValida(no) ||
+      acao === undefined ||
+      acao.preparacao.tipo !== no.tipo
+    ) {
+      return {
+        codigo: 'CONFIGURACAO_FATURA_INVALIDA',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    if (!(await this.faturas.contextoPermaneceValido(acao.preparacao, transacao))) {
+      return {
+        codigo: 'CONTEXTO_FINANCEIRO_ALTERADO',
+        contextoProtegido: removerSelecaoFaturaExecucaoFluxo(contexto),
+        resultado: 'FALHA',
+      };
+    }
+    const resultado = acao.resultado;
+    if (resultado.resultado === 'FALHA') {
+      return {
+        codigo: resultado.codigo,
+        contextoProtegido: removerSelecaoFaturaExecucaoFluxo(contexto),
+        resultado: 'FALHA',
+      };
+    }
+    if (resultado.resultado === 'ERP_INDISPONIVEL') {
+      return { contextoProtegido: contexto, resultado: 'ERP_INDISPONIVEL' };
+    }
+    if (no.tipo === 'CONSULTAR_FATURAS') {
+      if (resultado.resultado === 'NAO_ENCONTRADA') {
+        return {
+          contextoProtegido: removerSelecaoFaturaExecucaoFluxo(contexto),
+          resultado: 'NAO_ENCONTRADA',
+        };
+      }
+      if (resultado.resultado !== 'ENCONTRADA') {
+        throw new ErroExecucaoFluxoInvalida();
+      }
+      const atualizado = definirSelecaoFaturaExecucaoFluxo(
+        contexto,
+        resultado.selecao,
+      );
+      return atualizado === undefined
+        ? {
+            codigo: 'CONTEXTO_FATURA_INVALIDO',
+            contextoProtegido: removerSelecaoFaturaExecucaoFluxo(contexto),
+            resultado: 'FALHA',
+          }
+        : { contextoProtegido: atualizado, resultado: 'ENCONTRADA' };
+    }
+    if (
+      resultado.resultado !== 'SUCESSO' &&
+      resultado.resultado !== 'DADOS_INCOMPLETOS'
+    ) {
+      throw new ErroExecucaoFluxoInvalida();
+    }
+    const mensagem = await this.mensagens.criarAutomatica(
+      {
+        atendimentoId: execucao.atendimentoId,
+        execucaoFluxoId: execucao.id,
+        revisaoExecucao: execucao.revisao,
+        texto: resultado.composicao.textoProtegido,
+        tipo: 'TEXTO',
+      },
+      transacao,
+      relogio,
+    );
+    if ('codigo' in mensagem) {
+      return {
+        codigo: mensagem.codigo,
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    await this.faturas.registrarComposicao(
+      {
+        atendimentoId: execucao.atendimentoId,
+        composicao: resultado.composicao,
+        fluxoId: execucao.fluxoId,
+        versaoFluxoId: execucao.versaoFluxoId,
+      },
+      transacao,
+    );
+    return {
+      contextoProtegido: removerSelecaoFaturaExecucaoFluxo(contexto),
+      mensagem: mensagem.mensagem,
+      resultado: resultado.resultado,
+    };
+  }
+
+  private configuracaoNoFaturaValida(
+    no: NoDefinicaoFluxo,
+  ): no is NoDefinicaoFluxo & { readonly tipo: TipoNoFaturaFluxo } {
+    return (
+      (no.tipo === 'CONSULTAR_FATURAS' || no.tipo === 'ENVIAR_FATURA') &&
+      this.temExatamenteChaves(no.parametros, []) &&
+      no.referencias.length === 0 &&
+      no.variaveisEntrada.length === 0 &&
+      no.variaveisSaida.length === 0
+    );
   }
 
   private async executarIdentidade(
@@ -838,7 +1046,11 @@ export class ServicoExecutorNosFluxo {
     | 'NAO_IDENTIFICADO'
     | 'ENVIADO'
     | 'SELECIONADO'
-    | 'NAO_SELECIONADO' {
+    | 'NAO_SELECIONADO'
+    | 'ENCONTRADA'
+    | 'NAO_ENCONTRADA'
+    | 'ERP_INDISPONIVEL'
+    | 'DADOS_INCOMPLETOS' {
     const permitidas = (() => {
       if (no.tipo === 'ENVIAR_BOTOES_OU_LISTA') {
         return new Set([
@@ -875,6 +1087,22 @@ export class ServicoExecutorNosFluxo {
       ) {
         return new Set(['SELECIONADO', 'NAO_SELECIONADO', 'FALHA']);
       }
+      if (no.tipo === 'CONSULTAR_FATURAS') {
+        return new Set([
+          'ENCONTRADA',
+          'NAO_ENCONTRADA',
+          'ERP_INDISPONIVEL',
+          'FALHA',
+        ]);
+      }
+      if (no.tipo === 'ENVIAR_FATURA') {
+        return new Set([
+          'SUCESSO',
+          'DADOS_INCOMPLETOS',
+          'ERP_INDISPONIVEL',
+          'FALHA',
+        ]);
+      }
       return new Set(['SUCESSO']);
     })();
     if (!permitidas.has(resultado)) throw new ErroExecucaoFluxoInvalida();
@@ -892,7 +1120,11 @@ export class ServicoExecutorNosFluxo {
       | 'NAO_IDENTIFICADO'
       | 'ENVIADO'
       | 'SELECIONADO'
-      | 'NAO_SELECIONADO';
+      | 'NAO_SELECIONADO'
+      | 'ENCONTRADA'
+      | 'NAO_ENCONTRADA'
+      | 'ERP_INDISPONIVEL'
+      | 'DADOS_INCOMPLETOS';
   }
 
   private obterDestino(
