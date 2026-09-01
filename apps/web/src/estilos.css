@@ -197,6 +197,67 @@ a {
 .erro-login { margin-top: 15px; padding: 10px 12px; border: 1px solid #f1cabe; border-radius: 10px; color: #923e2b; background: #fff5f2; font-size: 11px; }
 .botao-login { width: 100%; height: 45px; margin-top: 20px; }
 
+.pagina-atendimentos {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(560px, 44%) minmax(500px, 1fr);
+  background: #f5f7f6;
+}
+
+.lista-atendimentos {
+  display: grid;
+  min-height: 0;
+  padding: 27px 0 0;
+  border-right: 1px solid #dfe5e1;
+  background: rgba(255, 255, 255, .96);
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.lista-atendimentos > .cabecalho-pagina { padding: 0 28px 18px; }
+.filtros-atendimentos { display: flex; gap: 7px; overflow-x: auto; padding: 1px 28px 17px; scrollbar-width: none; }
+.filtros-atendimentos::-webkit-scrollbar { display: none; }
+.filtros-atendimentos button { min-width: max-content; height: 34px; padding: 0 13px; color: #647069; border: 1px solid #dfe6e1; border-radius: 999px; background: #fff; cursor: pointer; font-size: 11px; font-weight: 700; transition: color 140ms ease, border-color 140ms ease, background 140ms ease, transform 140ms ease; }
+.filtros-atendimentos button:hover { transform: translateY(-1px); border-color: #bad8c6; }
+.filtros-atendimentos button.ativo { color: #fff; border-color: #158b4b; background: #158b4b; box-shadow: 0 6px 14px rgba(17,136,71,.18); }
+
+.lista-atendimentos__corpo { min-height: 0; overflow-y: auto; padding: 0 16px 20px; border-top: 1px solid #edf1ee; }
+.cartao-atendimento { position: relative; display: grid; width: 100%; min-height: 104px; align-items: center; gap: 12px; padding: 15px 12px; border: 0; border-bottom: 1px solid #edf1ee; background: transparent; cursor: pointer; grid-template-columns: 48px minmax(0, 1fr) auto; text-align: left; animation: revelar-atendimento 190ms ease-out both; transition: background 140ms ease, transform 180ms ease; }
+.cartao-atendimento:hover { background: #f7faf8; }
+.cartao-atendimento--ativo { border-radius: 12px; background: #edf8f1; box-shadow: inset 3px 0 #19a456; }
+.avatar-atendimento { position: relative; display: grid; width: 46px; height: 46px; place-items: center; border-radius: 50%; color: #316046; background: linear-gradient(145deg, #e6f1ea, #d2e5d8); font-size: 13px; font-weight: 800; }
+.avatar-atendimento i { position: absolute; right: -2px; bottom: -2px; display: grid; width: 17px; height: 17px; place-items: center; border: 2px solid white; border-radius: 50%; color: white; background: #13aa52; font-size: 9px; font-style: normal; }
+.cartao-atendimento__conteudo { display: block; min-width: 0; }
+.cartao-atendimento__topo { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 10px; }
+.cartao-atendimento__topo strong { overflow: hidden; color: #1c2821; font-size: 14px; letter-spacing: -.015em; text-overflow: ellipsis; white-space: nowrap; }
+.cartao-atendimento__topo time { color: #859089; font-size: 10px; }
+.cartao-atendimento__mensagem { display: block; overflow: hidden; margin-top: 5px; color: #59655e; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.cartao-atendimento__mensagem i { color: #16874a; font-style: normal; }
+.cartao-atendimento__metadados { display: flex; min-width: 0; align-items: center; gap: 6px; margin-top: 9px; overflow: hidden; }
+.cartao-atendimento__metadados i, .cartao-atendimento__metadados small { overflow: hidden; padding: 4px 7px; border-radius: 6px; color: #67736c; background: #f0f3f1; font-size: 9px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.cartao-atendimento__metadados i { color: #356849; background: #eaf5ee; }
+.cartao-atendimento__estado { display: flex; min-width: 64px; align-items: flex-end; gap: 8px; flex-direction: column; }
+.cartao-atendimento__estado b { display: grid; min-width: 20px; height: 20px; padding: 0 5px; place-items: center; border-radius: 999px; color: white; background: #16a553; font-size: 10px; }
+.tempo-atendimento { padding: 5px 7px; border-radius: 7px; color: #6c7770; background: #f0f3f1; font-size: 9px; white-space: nowrap; }
+.tempo-atendimento--critico { color: #c23944; background: #fff0f1; }
+.tempo-atendimento--atencao { color: #a66b05; background: #fff7e8; }
+.tempo-atendimento--normal { color: #248051; background: #eef8f2; }
+.previa-atendimento { display: grid; min-width: 0; place-items: center; background: radial-gradient(circle at 50% 35%, rgba(38,167,92,.06), transparent 26%), #f5f7f6; }
+.previa-atendimento > div { display: grid; max-width: 310px; justify-items: center; color: #7b867f; text-align: center; }
+.previa-atendimento span { display: grid; width: 62px; height: 62px; margin-bottom: 17px; place-items: center; border: 1px solid #dfe7e2; border-radius: 20px; color: #28a55e; background: rgba(255,255,255,.88); box-shadow: var(--sombra); font-size: 30px; }
+.previa-atendimento strong { color: #344139; font-size: 14px; }
+.previa-atendimento p { margin: 7px 0; font-size: 11px; line-height: 1.5; }
+.estado-lista { display: grid; min-height: 360px; place-content: center; justify-items: center; color: #7a867e; text-align: center; }
+.estado-lista > span { display: grid; width: 42px; height: 42px; margin-bottom: 13px; place-items: center; border-radius: 14px; color: #16944e; background: #eaf7ef; }
+.estado-lista strong { color: #39463e; font-size: 13px; }
+.estado-lista p { margin: 6px 0; font-size: 10px; }
+.estado-lista--erro > strong { color: #9b4633; }
+.skeleton-atendimento { height: 82px; margin: 13px 0; border-radius: 13px; background: linear-gradient(100deg, #f0f3f1 30%, #f8faf9 45%, #f0f3f1 60%); background-size: 300% 100%; animation: skeleton-lista 1.2s ease infinite; }
+
+@keyframes revelar-atendimento { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes skeleton-lista { from { background-position: 100% 0; } to { background-position: 0 0; } }
+
 @keyframes carregar-shell { from { transform: translateX(-50px); } to { transform: translateX(130px); } }
 
 button:focus-visible,

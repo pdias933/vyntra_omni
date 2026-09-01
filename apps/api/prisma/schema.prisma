@@ -692,6 +692,7 @@ model Usuario {
   overridesCalendarioExecutados  OverrideCalendario[]
   notasInternasCriadas           NotaInterna[]
   mensagensEnviadas              Mensagem[]
+  marcadoresLeituraConversa      MarcadorLeituraConversaUsuario[]
   fluxosCriados                  Fluxo[]                           @relation("UsuarioCriacaoFluxo")
   versoesFluxoCriadas            VersaoFluxo[]                     @relation("UsuarioCriacaoVersaoFluxo")
   versoesFluxoPublicadas         VersaoFluxo[]                     @relation("UsuarioPublicacaoVersaoFluxo")
@@ -1141,9 +1142,28 @@ model Conversa {
   atendimentos        Atendimento[]
   notasInternas       NotaInterna[]
   mensagens           Mensagem[]
+  marcadoresLeitura   MarcadorLeituraConversaUsuario[]
 
   @@index([ultimaAtividadeEm, id], map: "conversa_ultima_atividade_idx")
   @@map("conversa")
+}
+
+model MarcadorLeituraConversaUsuario {
+  usuarioId              String    @map("usuario_id") @db.Uuid
+  conversaId             String    @map("conversa_id") @db.Uuid
+  ultimaMensagemLidaId   String?   @map("ultima_mensagem_lida_id") @db.Uuid
+  lidaAteEm              DateTime? @map("lida_ate_em") @db.Timestamptz(6)
+  marcadaNaoLida         Boolean   @default(false) @map("marcada_nao_lida")
+  versao                 Int       @default(1)
+  atualizadaEm           DateTime  @map("atualizada_em") @db.Timestamptz(6)
+  usuario                Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  conversa               Conversa  @relation(fields: [conversaId], references: [id], onDelete: Restrict)
+  ultimaMensagemLida     Mensagem? @relation("UltimaMensagemLida", fields: [ultimaMensagemLidaId], references: [id], onDelete: Restrict)
+
+  @@id([usuarioId, conversaId])
+  @@index([conversaId, marcadaNaoLida, atualizadaEm], map: "marcador_leitura_conversa_estado_idx")
+  @@index([ultimaMensagemLidaId], map: "marcador_leitura_ultima_mensagem_idx")
+  @@map("marcador_leitura_conversa_usuario")
 }
 
 model ParticipacaoContaConversa {
@@ -1456,6 +1476,7 @@ model Mensagem {
   submissaoFormulario          SubmissaoFormularioCanal?
   disparoTransacional          DisparoTransacional?
   execucaoFluxoOrigem          ExecucaoFluxo?            @relation(fields: [execucaoFluxoOrigemId], references: [id], onDelete: Restrict)
+  marcadoresUltimaLeitura      MarcadorLeituraConversaUsuario[] @relation("UltimaMensagemLida")
 
   @@unique([contaWhatsAppId, identificadorExternoMensagem], map: "mensagem_conta_identificador_externo_key")
   @@unique([usuarioRemetenteId, mensagemClienteId], map: "mensagem_usuario_cliente_key")

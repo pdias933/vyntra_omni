@@ -530,6 +530,8 @@ O snapshot completo publica `versao_permissoes`. O coordenador mobile aceita a r
 
 ### 9.4 Projeções de lista e timeline
 
+A lista web resolve primeiro as filas autorizadas e executa no PostgreSQL a consulta limitada dos atendimentos. Filtro, estado aberto, não lidos, SLA, janela e automação fazem parte da query; conteúdo não é carregado para filtragem posterior. A chave visual é `conversa_id`, enquanto a ordenação usa `ultima_atividade_em` confirmada. Eventos SSE provocam nova leitura silenciosa; nenhuma memória do navegador vira fonte da ordem.
+
 - A lista deriva do estado autorizado já aplicado e se reorganiza automaticamente.
 - Uma conversa que recebe mensagem sobe suavemente, preservando identidade estável, foco, seleção e rascunhos não relacionados.
 - A timeline é projetada por `Contato`, não por número empresarial.

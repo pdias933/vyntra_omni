@@ -570,6 +570,8 @@ MarcacaoPessoal: marcada_nao_lida
 
 Abrir a conversa registra leitura real. “Marcar como não lida” não desfaz o fato; só cria lembrete do usuário.
 
+`MarcadorLeituraConversaUsuario` materializa essa dimensão por usuário+conversa. Ele conserva a última mensagem realmente lida, o instante correspondente, a marca pessoal e uma versão. A lista calcula novas entradas depois desse ponto; ausência do marcador não concede acesso e não altera o estado de entrega da mensagem.
+
 ### 10.3 Estados locais do mobile
 
 ```text

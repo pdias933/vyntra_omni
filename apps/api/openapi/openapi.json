@@ -877,6 +877,50 @@
         ]
       }
     },
+    "/api/v1/web/atendimentos": {
+      "get": {
+        "operationId": "listarAtendimentosWeb",
+        "parameters": [
+          {
+            "name": "filtro",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "MEUS",
+                "PENDENTES",
+                "NAO_LIDOS",
+                "SLA",
+                "EXPIRANDO",
+                "EM_AUTOMACAO"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaAtendimentosWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Lista atendimentos autorizados para o console web",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
     "/api/v1/administracao/fluxos": {
       "get": {
         "operationId": "listarFluxosEditor",
@@ -2190,6 +2234,119 @@
           "autenticada_em",
           "ultima_atividade_em",
           "expira_em"
+        ]
+      },
+      "ResumoAtendimentoWebDto": {
+        "type": "object",
+        "properties": {
+          "atendimento_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "conversa_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contato_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "conta_whatsapp_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome_contato": {
+            "type": "string"
+          },
+          "identidade_secundaria": {
+            "type": "string"
+          },
+          "fila_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fila_nome": {
+            "type": "string"
+          },
+          "modo": {
+            "type": "string",
+            "enum": [
+              "BOT",
+              "HUMANO"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "AGUARDANDO",
+              "EM_ATENDIMENTO"
+            ]
+          },
+          "ultima_atividade_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ultima_mensagem_resumo": {
+            "type": "string"
+          },
+          "ultima_mensagem_direcao": {
+            "type": "string",
+            "enum": [
+              "ENTRADA",
+              "SAIDA"
+            ]
+          },
+          "quantidade_nao_lida": {
+            "type": "number"
+          },
+          "sla_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "janela_expira_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "atendimento_id",
+          "conversa_id",
+          "contato_id",
+          "conta_whatsapp_id",
+          "nome_contato",
+          "fila_id",
+          "fila_nome",
+          "modo",
+          "estado",
+          "ultima_atividade_em",
+          "ultima_mensagem_resumo",
+          "quantidade_nao_lida"
+        ]
+      },
+      "ListaAtendimentosWebDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumoAtendimentoWebDto"
+            }
+          },
+          "filtro": {
+            "type": "string",
+            "enum": [
+              "MEUS",
+              "PENDENTES",
+              "NAO_LIDOS",
+              "SLA",
+              "EXPIRANDO",
+              "EM_AUTOMACAO"
+            ]
+          }
+        },
+        "required": [
+          "itens",
+          "filtro"
         ]
       },
       "VersaoFluxoEditorDto": {

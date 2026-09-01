@@ -653,3 +653,7 @@ O smoke de staging deve executar os sete cenários, comprovar `efeitosReaisExecu
 ## 33. Operação do shell web da PR 086
 
 O shell depende de API e SSE sob a mesma origem autorizada. Monitore falhas de autenticação agregadas sem identificador em claro, expiração de sessão e reconexões anormais do stream. Estado saudável não mostra conexão, cursor ou horário de sincronização. Reversão da web não requer migration e não reativa sessão revogada.
+
+## 34. Operação da lista web da PR 087
+
+A migration `20260901014000_marcador_leitura_web` é aditiva e passa a ser a marca de prontidão. A lista limita cada consulta a 60 itens e filtra no PostgreSQL depois de resolver filas autorizadas. Monitore latência por filtro e plano dos índices de atendimento, conversa, mensagem, SLA, janela e marcador pessoal. Reversão de imagem preserva a tabela e não requer apagar marcadores.

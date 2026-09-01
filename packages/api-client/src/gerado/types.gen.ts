@@ -132,6 +132,30 @@ export type ResumoSessaoWebDto = {
     expira_em: string;
 };
 
+export type ResumoAtendimentoWebDto = {
+    atendimento_id: string;
+    conversa_id: string;
+    contato_id: string;
+    conta_whatsapp_id: string;
+    nome_contato: string;
+    identidade_secundaria?: string;
+    fila_id: string;
+    fila_nome: string;
+    modo: 'BOT' | 'HUMANO';
+    estado: 'AGUARDANDO' | 'EM_ATENDIMENTO';
+    ultima_atividade_em: string;
+    ultima_mensagem_resumo: string;
+    ultima_mensagem_direcao?: 'ENTRADA' | 'SAIDA';
+    quantidade_nao_lida: number;
+    sla_em?: string;
+    janela_expira_em?: string;
+};
+
+export type ListaAtendimentosWebDto = {
+    itens: Array<ResumoAtendimentoWebDto>;
+    filtro: 'MEUS' | 'PENDENTES' | 'NAO_LIDOS' | 'SLA' | 'EXPIRANDO' | 'EM_AUTOMACAO';
+};
+
 export type VersaoFluxoEditorDto = {
     id: string;
     fluxo_id: string;
@@ -766,6 +790,21 @@ export type RevogarDispositivosMobileAdministrativamenteResponses = {
 };
 
 export type RevogarDispositivosMobileAdministrativamenteResponse = RevogarDispositivosMobileAdministrativamenteResponses[keyof RevogarDispositivosMobileAdministrativamenteResponses];
+
+export type ListarAtendimentosWebData = {
+    body?: never;
+    path?: never;
+    query?: {
+        filtro?: 'MEUS' | 'PENDENTES' | 'NAO_LIDOS' | 'SLA' | 'EXPIRANDO' | 'EM_AUTOMACAO';
+    };
+    url: '/api/v1/web/atendimentos';
+};
+
+export type ListarAtendimentosWebResponses = {
+    200: ListaAtendimentosWebDto;
+};
+
+export type ListarAtendimentosWebResponse = ListarAtendimentosWebResponses[keyof ListarAtendimentosWebResponses];
 
 export type ListarFluxosEditorData = {
     body?: never;

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 
 import { AplicacaoEditorFluxos } from '../Aplicacao';
+import { ListaAtendimentosWeb } from './atendimentos/ListaAtendimentosWeb';
 
 type RotaWeb =
   | '/administracao/fluxos'
@@ -123,6 +124,7 @@ export function ShellWeb() {
           definirAvisoEscopo('Seu acesso foi atualizado. Revalidando áreas disponíveis…');
           void autenticar().finally(() => definirAvisoEscopo(undefined));
         }
+        window.dispatchEvent(new CustomEvent('vyntra:evento', { detail: dados }));
       } catch {
         // Evento inválido é descartado; a recuperação ocorre pelo cursor do SSE.
       }
@@ -213,10 +215,10 @@ export function ShellWeb() {
 
 function ConteudoRota({ rota }: { readonly rota: RotaWeb }) {
   if (rota === '/administracao/fluxos') return <AplicacaoEditorFluxos />;
-  const titulos: Record<Exclude<RotaWeb, '/administracao/fluxos'>, readonly [string, string]> = {
+  if (rota === '/atendimentos') return <ListaAtendimentosWeb />;
+  const titulos: Record<Exclude<RotaWeb, '/administracao/fluxos' | '/atendimentos'>, readonly [string, string]> = {
     '/administracao/operacao': ['Configuração operacional', 'Contas, filas, calendários, SLA e integrações.'],
     '/administracao/usuarios': ['Usuários e acessos', 'Perfis, permissões, filas e sessões.'],
-    '/atendimentos': ['Atendimentos', 'Suas conversas aparecerão aqui.'],
     '/saude': ['Saúde e releases', 'Componentes, recuperação e liberação controlada.'],
   };
   const [titulo, descricao] = titulos[rota];
