@@ -390,6 +390,12 @@ export class ValidadorPublicacaoFluxo {
         this.textoValido(parametros.textoFallback, 4_096)
       );
     }
+    if (tipo === 'SOLICITAR_FORMULARIO_WHATSAPP') {
+      return (
+        this.temExatamenteChaves(parametros, ['textoFallback']) &&
+        this.textoValido(parametros.textoFallback, 4_096)
+      );
+    }
     if (tipo === 'SELECIONAR_CLIENTE' || tipo === 'SELECIONAR_CONTRATO') {
       return (
         this.temExatamenteChaves(parametros, ['variavel']) &&
@@ -666,6 +672,7 @@ export class ValidadorPublicacaoFluxo {
       this.validarNoDeVariavel(no, variaveis, problemas);
       this.validarNoEsperaOuCalendario(no, problemas);
       this.validarNoIdentidade(no, variaveis, problemas);
+      this.validarNoFormulario(no, problemas);
       this.validarNoFatura(no, problemas);
       for (const nome of [...no.variaveisEntrada, ...no.variaveisSaida]) {
         if (!variaveis.has(nome)) {
@@ -880,6 +887,24 @@ export class ValidadorPublicacaoFluxo {
     ) {
       this.adicionar(problemas, {
         codigo: 'CONFIGURACAO_FATURA_INVALIDA',
+        noId: no.id,
+      });
+    }
+  }
+
+  private validarNoFormulario(
+    no: NoDefinicaoFluxo,
+    problemas: ProblemaValidacaoFluxo[],
+  ): void {
+    if (no.tipo !== 'SOLICITAR_FORMULARIO_WHATSAPP') return;
+    if (
+      no.referencias.length !== 1 ||
+      no.referencias[0]?.tipo !== 'FORMULARIO_WHATSAPP' ||
+      no.variaveisEntrada.length !== 0 ||
+      no.variaveisSaida.length !== 0
+    ) {
+      this.adicionar(problemas, {
+        codigo: 'CONFIGURACAO_FORMULARIO_INVALIDA',
         noId: no.id,
       });
     }

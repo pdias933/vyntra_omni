@@ -601,3 +601,11 @@ Nenhum provedor ERP real é registrado nesta etapa. O comportamento esperado em 
 Monitorar `ERP_INDISPONIVEL`, `CONSULTA_ERP_FALHOU`, `SELECAO_FATURA_NECESSARIA`, `FATURA_NAO_ENCONTRADA`, `FATURA_NAO_SELECIONADA`, `CONTEXTO_FINANCEIRO_DIVERGENTE` e crescimento de `DADOS_INCOMPLETOS`. Também alertar para chamada externa mantendo transação aberta, dado financeiro em passo/log/auditoria, composição sem mensagem correspondente ou efeito depois de revisão/contexto divergente.
 
 No aceite automatizado, um provedor determinístico exclusivo de teste cobre zero, uma e várias faturas pagáveis, ausência do ERP, resposta parcial e composição protegida. No runtime real sem provedor, validar ao menos consulta e envio seguindo `ERP_INDISPONIVEL`, prontidão, estabilidade dos dois workers e ausência de efeitos parciais. Rollback preserva seleção protegida, passos e composições existentes; antes de usar worker PR 077, comprovar que nenhuma execução não terminal aponta para estes nós.
+
+## 26. Operação do nó de formulário da PR 079
+
+Não há migration nova; a marca obrigatória permanece `20260901012500_espera_resposta_fluxo`, e as tabelas `formulario_canal`/`submissao_formulario_canal` continuam sendo as criadas na PR 050. Implantar API e todos os `worker_fluxos` com a mesma imagem PR 079 antes de publicar `SOLICITAR_FORMULARIO_WHATSAPP`.
+
+Sem adapter real de envio estruturado caracterizado, o comportamento obrigatório é `FALLBACK` textual para formulário ativo da conta. Não registrar simulador, copiar referência externa para a definição nem converter fallback em `ENVIADO`. Monitorar `FORMULARIO_INDISPONIVEL`, `CONFIGURACAO_FORMULARIO_INVALIDA`, `IDEMPOTENCIA_SUBMISSAO_FORMULARIO_DIVERGENTE`, crescimento de fallback, submissão sem evento e evento duplicado.
+
+No aceite, usar formulário sintético ativo da conta exata e outro inativo/de outra conta. Confirmar uma única mensagem no caso ativo, falha sem mensagem nos demais, passo sem UUID do formulário ou texto e replay sem segunda mensagem. Para submissão, usar mensagem de entrada sintética e repetir mensagem/referência; deve existir uma submissão e um evento, sem resposta ou token no evento/log. Rollback preserva formulários, submissões, mensagens e passos; antes de usar worker PR 078, comprovar que nenhuma execução não terminal aponta para o novo nó.

@@ -165,6 +165,32 @@ test('fatura usa contexto exato, consulta fora da transação e composição pro
   assert.doesNotMatch(modulo, /ADAPTADOR_ERP|AdaptadorErpSimulado/);
 });
 
+test('formulário usa cadastro interno, fallback seguro e submissão idempotente', async () => {
+  const [executor, servico, repositorio, modulo, validador] =
+    await Promise.all([
+      ler('apps/api/src/execucoes-fluxo/servico-executor-nos-fluxo.ts'),
+      ler('apps/api/src/formularios/servico-formularios.ts'),
+      ler('apps/api/src/formularios/repositorio-formularios-prisma.ts'),
+      ler('apps/api/src/formularios/modulo-formularios.ts'),
+      ler('apps/api/src/fluxos/validador-publicacao-fluxo.ts'),
+    ]);
+  assert.match(executor, /ServicoFormularios/);
+  assert.match(executor, /formularioAtivoNoAtendimento/);
+  assert.match(executor, /resultado: 'FALLBACK'/);
+  assert.match(executor, /ServicoMensagensSaida/);
+  assert.doesNotMatch(executor, /AdaptadorMeta|flow_token|flow_id|response_json/);
+  assert.match(servico, /bloquearSubmissao/);
+  assert.match(servico, /IDEMPOTENCIA_SUBMISSAO_FORMULARIO_DIVERGENTE/);
+  assert.match(servico, /SUBMISSAO_FORMULARIO_RECEBIDA/);
+  assert.doesNotMatch(servico, /flow_token|response_json|https?:\/\//);
+  assert.match(repositorio, /direcao: 'ENTRADA'/);
+  assert.match(repositorio, /estado: 'ATIVO'/);
+  assert.match(repositorio, /submissaoFormularioCanal\.create/);
+  assert.match(modulo, /ServicoFormularios/);
+  assert.doesNotMatch(modulo, /AdaptadorMeta|Simulado|CanalMensageria/);
+  assert.match(validador, /CONFIGURACAO_FORMULARIO_INVALIDA/);
+});
+
 test('nós de mensagem usam domínio, passos sanitizados e saídas nominais', async () => {
   const [schema, migration, executor, mensagens, repositorioMensagens, processo] = await Promise.all([
     ler('apps/api/prisma/schema.prisma'),

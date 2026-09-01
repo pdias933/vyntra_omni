@@ -560,3 +560,9 @@ O Motor de Fluxos acessa finanças apenas por `ServicoFaturasFluxo`, que normali
 O token `ADAPTADOR_ERP` é opcional e nenhum provedor real ou simulado é registrado na aplicação nesta PR. Sem contrato real configurado, os nós falham fechados com `ERP_INDISPONIVEL`. O simulador determinístico existe somente nos testes e não habilita capacidade em staging ou produção.
 
 Resposta financeira permanece em memória protegida e apenas a referência interna da fatura selecionada entra no contexto protegido. Pix, linha digitável, documento, identificador externo e bytes de PDF não entram em passo, auditoria ou log. Um PDF só poderá ser enviado por uma ponte privada de mídia explicitamente implementada; enquanto ela não existir, a composição é parcial e nunca usa snapshot ou URL fabricada.
+
+## 14. Fronteira de WhatsApp Flows da PR 079
+
+Até o envio estruturado ser caracterizado no ambiente real, `SOLICITAR_FORMULARIO_WHATSAPP` não chama a Meta e segue `FALLBACK` pelo serviço de mensagens. O adapter futuro deverá receber o UUID interno, resolver nele a referência externa e devolver somente aceite/falha normalizados; token, payload e criptografia não podem entrar na definição nem no passo.
+
+Na recepção, o adapter entrega `SubmissaoFormularioNormalizada` sem conservar o token usado pelo protocolo. O domínio deriva conta, contato, conversa e atendimento da mensagem de entrada, compara um hash canônico e persiste uma única submissão por mensagem e por referência. Repetição compatível não emite novo evento; divergência é incidente de idempotência. Simulador e fixture não habilitam essa capacidade em staging ou produção.

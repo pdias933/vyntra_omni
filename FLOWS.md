@@ -656,3 +656,17 @@ A consulta considera pagáveis somente faturas `ABERTA` ou `VENCIDA`. Nenhuma se
 `ENVIAR_FATURA` consome a seleção protegida atual, consulta novamente os detalhes no ERP e compõe a segunda via por serviço de domínio. Pix, linha digitável, link e demais dados financeiros não entram em definição, passo, log ou auditoria. Sem ponte privada comprovada para o PDF, a composição segue `DADOS_INCOMPLETOS`: não inventa anexo, Base64 ou URL pública. Quando existir capacidade integral comprovada, a saída `SUCESSO` poderá ser alcançada sem mudar esse contrato.
 
 A chamada externa ocorre fora da transação do PostgreSQL. Uma transação curta prepara nó, revisão e contexto; depois da resposta, outra transação relê e confirma execução, revisão, nó, conta, contato, cliente, contrato e versão do contexto antes de aplicar seleção, mensagem, composição, auditoria, passo e avanço. Divergência descarta a resposta antiga. Provedor ERP ausente percorre a saída `ERP_INDISPONIVEL`, sem snapshot e sem efeito parcial.
+
+## 21. Nó de formulário da PR 079
+
+```text
+SOLICITAR_FORMULARIO_WHATSAPP
+referencias: exatamente um FORMULARIO_WHATSAPP por UUID interno
+parametros: textoFallback
+variaveis: nenhuma
+saidas: ENVIADO | FALLBACK | FALHA
+```
+
+O UUID precisa estar ativo no contexto autoritativo de publicação e continuar ativo na conta de origem do atendimento quando o nó executar. A definição não conserva referência externa, token, resposta, esquema ou capacidade declarada pelo editor. Na PR 079 o runtime não possui ponte de envio estruturado caracterizada; portanto um recurso válido chama `ServicoMensagensSaida` e segue `FALLBACK`. `ENVIADO` existe no grafo para a integração futura comprovada, mas não pode ser produzido por fixture ou simulador.
+
+A recepção não é efeito do passo. O adapter normaliza a submissão e o domínio a associa à mensagem de entrada persistida. Mensagem e referência repetidas retornam o primeiro registro; divergência de hash, formulário ou contato é rejeitada. Somente o UUID interno do formulário entra no evento de classificação sensível, e nenhum dado recebido entra em contexto, passo, log ou auditoria. O card estruturado usa o mapeamento cadastrado e mascara campo sensível conforme RBAC.

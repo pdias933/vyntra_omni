@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 
 import { ProjetorSubmissaoFormulario } from '../dist/formularios/projetor-submissao-formulario.js';
+import { ServicoFormularios } from '../dist/formularios/servico-formularios.js';
 import { normalizarSubmissaoFlowMetaCloud } from '../dist/mensageria/adaptadores/meta-cloud/formularios-meta-cloud.js';
 
 const formulario = {
@@ -45,4 +46,100 @@ test('permissão revela campo sensível e conteúdo não declarado nunca entra n
   );
   assert.equal(card.camposMascarados.CPF, '12345678900');
   assert.equal(JSON.stringify(card.camposMascarados).includes('segredoExtra'), false);
+});
+
+function criarServico(sobrescritas = {}) {
+  const chamadas = { bloqueios: [], criacoes: [], eventos: [] };
+  let existenteMensagem = sobrescritas.existenteMensagem;
+  let existenteReferencia = sobrescritas.existenteReferencia;
+  const contexto = sobrescritas.contexto ?? {
+    atendimentoId: randomUUID(),
+    contatoId: randomUUID(),
+    conversaId: randomUUID(),
+    formularioId: formulario.id,
+    recebidaEm: new Date('2026-09-01T12:00:00Z'),
+  };
+  const repositorio = {
+    acrescentarSubmissao: async (item) => {
+      chamadas.criacoes.push(item);
+      existenteMensagem = item;
+      existenteReferencia = item;
+    },
+    bloquearSubmissao: async (...argumentos) => chamadas.bloqueios.push(argumentos),
+    formularioAtivoNoAtendimento: async () => sobrescritas.formularioAtivo ?? true,
+    obterContextoSubmissao: async () => contexto,
+    obterSubmissaoPorMensagem: async () => existenteMensagem,
+    obterSubmissaoPorReferencia: async () => existenteReferencia,
+  };
+  const eventos = {
+    acrescentar: async (...argumentos) => {
+      chamadas.eventos.push(argumentos);
+      return { sequenciaEvento: 79n };
+    },
+  };
+  return {
+    chamadas,
+    repositorio,
+    servico: new ServicoFormularios(repositorio, eventos),
+    transacao: { id: 'transacao-formulario' },
+  };
+}
+
+test('submissão é persistida uma vez e produz evento sem conteúdo sensível', async () => {
+  const cenario = criarServico();
+  const mensagemId = randomUUID();
+  const entrada = {
+    dadosProtegidos: { cpf: '12345678900', nome: 'João' },
+    formularioReferenciaCanal: 'flow-1',
+    referenciaCanal: 'c'.repeat(64),
+  };
+  const criada = await cenario.servico.registrarSubmissao(
+    mensagemId,
+    entrada,
+    cenario.transacao,
+  );
+  assert.equal(criada.resultado, 'PERSISTIDA');
+  assert.equal(criada.sequenciaEvento, 79n);
+  assert.equal(cenario.chamadas.criacoes.length, 1);
+  assert.equal(cenario.chamadas.eventos.length, 1);
+  assert.equal(
+    JSON.stringify(cenario.chamadas.eventos).includes('12345678900'),
+    false,
+  );
+
+  const repetida = await cenario.servico.registrarSubmissao(
+    mensagemId,
+    { ...entrada, dadosProtegidos: { nome: 'João', cpf: '12345678900' } },
+    cenario.transacao,
+  );
+  assert.equal(repetida.resultado, 'DUPLICADA');
+  assert.equal(cenario.chamadas.criacoes.length, 1);
+  assert.equal(cenario.chamadas.eventos.length, 1);
+});
+
+test('repetição divergente e mensagem sem contexto válido falham fechado', async () => {
+  const mensagemId = randomUUID();
+  const base = criarServico();
+  const entrada = {
+    dadosProtegidos: { nome: 'João' },
+    formularioReferenciaCanal: 'flow-1',
+    referenciaCanal: 'd'.repeat(64),
+  };
+  await base.servico.registrarSubmissao(mensagemId, entrada, base.transacao);
+  await assert.rejects(
+    base.servico.registrarSubmissao(
+      mensagemId,
+      { ...entrada, dadosProtegidos: { nome: 'Outra pessoa' } },
+      base.transacao,
+    ),
+    /IDEMPOTENCIA_SUBMISSAO_FORMULARIO_DIVERGENTE/u,
+  );
+
+  const semContexto = criarServico({ contexto: undefined });
+  semContexto.repositorio.obterContextoSubmissao = async () => undefined;
+  await assert.rejects(
+    semContexto.servico.registrarSubmissao(randomUUID(), entrada, semContexto.transacao),
+    /CONTEXTO_SUBMISSAO_FORMULARIO_INVALIDO/u,
+  );
+  assert.equal(semContexto.chamadas.criacoes.length, 0);
 });

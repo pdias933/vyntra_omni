@@ -29,3 +29,22 @@ export interface SubmissaoFormularioPersistida
   readonly dadosHash: string;
   readonly recebidaEm: Date;
 }
+
+export interface ContextoSubmissaoFormulario {
+  readonly atendimentoId: string;
+  readonly contatoId: string;
+  readonly conversaId: string;
+  readonly formularioId: string;
+  readonly recebidaEm: Date;
+}
+
+export type ResultadoRegistroSubmissaoFormulario =
+  | {
+      readonly resultado: 'PERSISTIDA';
+      readonly submissao: SubmissaoFormularioPersistida;
+      readonly sequenciaEvento: bigint;
+    }
+  | {
+      readonly resultado: 'DUPLICADA';
+      readonly submissao: SubmissaoFormularioPersistida;
+    };

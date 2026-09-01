@@ -15,6 +15,7 @@ import type {
   VariavelDefinicaoFluxo,
 } from '../fluxos/modelo-validacao-fluxo.js';
 import { ServicoCatalogoFluxos } from '../fluxos/servico-catalogo-fluxos.js';
+import { ServicoFormularios } from '../formularios/servico-formularios.js';
 import {
   avaliarCondicaoTipada,
   ehOperadorCondicaoFluxo,
@@ -78,6 +79,7 @@ const TIPOS_SUPORTADOS = new Set([
   'SELECIONAR_CLIENTE',
   'SELECIONAR_CONTRATO',
   'SOLICITAR_DADOS_CONTATO',
+  'SOLICITAR_FORMULARIO_WHATSAPP',
 ]);
 
 interface ResultadoExecucaoNo {
@@ -119,6 +121,8 @@ export class ServicoExecutorNosFluxo {
     private readonly prisma: ServicoPrisma,
     @Inject(ServicoFaturasFluxo)
     private readonly faturas: ServicoFaturasFluxo,
+    @Inject(ServicoFormularios)
+    private readonly formularios: ServicoFormularios,
   ) {}
 
   public async executarCiclo(
@@ -439,7 +443,79 @@ export class ServicoExecutorNosFluxo {
         relogio,
       );
     }
+    if (no.tipo === 'SOLICITAR_FORMULARIO_WHATSAPP') {
+      return this.executarFormulario(
+        no,
+        execucao,
+        iteracao.contexto,
+        transacao,
+        relogio,
+      );
+    }
     throw new ErroExecucaoFluxoInvalida();
+  }
+
+  private async executarFormulario(
+    no: NoDefinicaoFluxo,
+    execucao: ExecucaoFluxoPersistida,
+    contexto: ObjetoJsonProtegido,
+    transacao: TransacaoPrisma,
+    relogio: () => Date,
+  ): Promise<ResultadoExecucaoNo> {
+    const textoFallback = Reflect.get(no.parametros, 'textoFallback');
+    const referencia = no.referencias[0];
+    if (
+      !this.temExatamenteChaves(no.parametros, ['textoFallback']) ||
+      typeof textoFallback !== 'string' ||
+      no.referencias.length !== 1 ||
+      referencia?.tipo !== 'FORMULARIO_WHATSAPP' ||
+      no.variaveisEntrada.length !== 0 ||
+      no.variaveisSaida.length !== 0
+    ) {
+      return {
+        codigo: 'CONFIGURACAO_FORMULARIO_INVALIDA',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    if (
+      !(await this.formularios.formularioAtivoNoAtendimento(
+        referencia.recursoId,
+        execucao.atendimentoId,
+        transacao,
+      ))
+    ) {
+      return {
+        codigo: 'FORMULARIO_INDISPONIVEL',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    const resultado = await this.mensagens.criarAutomatica(
+      {
+        atendimentoId: execucao.atendimentoId,
+        execucaoFluxoId: execucao.id,
+        revisaoExecucao: execucao.revisao,
+        texto: textoFallback,
+        tipo: 'TEXTO',
+      },
+      transacao,
+      relogio,
+    );
+    if ('codigo' in resultado) {
+      return {
+        codigo: resultado.codigo,
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    return {
+      contextoProtegido: contexto,
+      ...(resultado.mensagem === undefined
+        ? {}
+        : { mensagem: resultado.mensagem }),
+      resultado: 'FALLBACK',
+    };
   }
 
   private async aplicarNoFatura(
@@ -1078,7 +1154,10 @@ export class ServicoExecutorNosFluxo {
       if (no.tipo === 'IDENTIFICAR_CONTATO') {
         return new Set(['IDENTIFICADO', 'NAO_IDENTIFICADO', 'FALHA']);
       }
-      if (no.tipo === 'SOLICITAR_DADOS_CONTATO') {
+      if (
+        no.tipo === 'SOLICITAR_DADOS_CONTATO' ||
+        no.tipo === 'SOLICITAR_FORMULARIO_WHATSAPP'
+      ) {
         return new Set(['ENVIADO', 'FALLBACK', 'FALHA']);
       }
       if (

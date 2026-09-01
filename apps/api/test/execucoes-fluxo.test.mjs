@@ -414,6 +414,7 @@ function criarExecutor({
   preparacaoFatura,
   resultadoFatura = { resultado: 'ERP_INDISPONIVEL' },
   contextoFaturaValido = true,
+  formularioAtivo = true,
   resultadoSelecaoCliente = true,
   resultadoSelecaoContrato = true,
   variaveis = [],
@@ -425,6 +426,7 @@ function criarExecutor({
     catalogo: [],
     contextos: [],
     faturas: [],
+    formularios: [],
     mensagens: [],
     passosFinalizados: [],
     passosIniciados: [],
@@ -442,6 +444,7 @@ function criarExecutor({
     HORARIO_ATENDIMENTO: ['DENTRO_HORARIO', 'FORA_HORARIO', 'FALHA'],
     IDENTIFICAR_CONTATO: ['IDENTIFICADO', 'NAO_IDENTIFICADO', 'FALHA'],
     SOLICITAR_DADOS_CONTATO: ['ENVIADO', 'FALLBACK', 'FALHA'],
+    SOLICITAR_FORMULARIO_WHATSAPP: ['ENVIADO', 'FALLBACK', 'FALHA'],
     SELECIONAR_CLIENTE: ['SELECIONADO', 'NAO_SELECIONADO', 'FALHA'],
     SELECIONAR_CONTRATO: ['SELECIONADO', 'NAO_SELECIONADO', 'FALHA'],
     CONSULTAR_FATURAS: ['ENCONTRADA', 'NAO_ENCONTRADA', 'ERP_INDISPONIVEL', 'FALHA'],
@@ -540,6 +543,12 @@ function criarExecutor({
     registrarComposicao: async (...argumentos) =>
       chamadas.faturas.push(['REGISTRAR', emTransacao, ...argumentos]),
   };
+  const formularios = {
+    formularioAtivoNoAtendimento: async (...argumentos) => {
+      chamadas.formularios.push(argumentos);
+      return formularioAtivo;
+    },
+  };
   return {
     chamadas,
     executor: new ServicoExecutorNosFluxo(
@@ -552,6 +561,7 @@ function criarExecutor({
       execucoes,
       prisma,
       faturas,
+      formularios,
     ),
     transacao,
   };
@@ -882,6 +892,66 @@ test('seleção ausente não escolhe primeiro vínculo e pedido usa fallback ofi
     mensagemId,
     resultado: 'FALLBACK',
   });
+});
+
+test('formulário ativo usa fallback oficial sem expor referência no passo', async () => {
+  const formularioId = randomUUID();
+  const mensagemId = randomUUID();
+  const cenario = criarExecutor({
+    no: {
+      id: 'solicitarFormulario',
+      parametros: { textoFallback: 'Vamos continuar pelo atendimento seguro.' },
+      referencias: [
+        { recursoId: formularioId, tipo: 'FORMULARIO_WHATSAPP' },
+      ],
+      tipo: 'SOLICITAR_FORMULARIO_WHATSAPP',
+      variaveisEntrada: [],
+      variaveisSaida: [],
+    },
+    resultadoMensagem: {
+      mensagem: { id: mensagemId },
+      resultado: 'SUCESSO',
+    },
+  });
+  await cenario.executor.executarCiclo(1, () => depois(10));
+  assert.deepEqual(cenario.chamadas.formularios[0].slice(0, 2), [
+    formularioId,
+    ids.atendimento,
+  ]);
+  assert.equal(cenario.chamadas.mensagens.length, 1);
+  assert.deepEqual(cenario.chamadas.passosFinalizados[0].saidaSanitizada, {
+    mensagemId,
+    resultado: 'FALLBACK',
+  });
+  assert.equal(
+    JSON.stringify(cenario.chamadas.passosFinalizados).includes(formularioId),
+    false,
+  );
+});
+
+test('formulário inativo ou de outra conta falha fechado sem enviar', async () => {
+  const cenario = criarExecutor({
+    formularioAtivo: false,
+    no: {
+      id: 'solicitarFormulario',
+      parametros: { textoFallback: 'Fallback seguro.' },
+      referencias: [
+        { recursoId: randomUUID(), tipo: 'FORMULARIO_WHATSAPP' },
+      ],
+      tipo: 'SOLICITAR_FORMULARIO_WHATSAPP',
+      variaveisEntrada: [],
+      variaveisSaida: [],
+    },
+  });
+  await cenario.executor.executarCiclo(1, () => depois(10));
+  assert.equal(cenario.chamadas.mensagens.length, 0);
+  assert.deepEqual(cenario.chamadas.passosFinalizados[0].saidaSanitizada, {
+    resultado: 'FALHA',
+  });
+  assert.equal(
+    cenario.chamadas.passosFinalizados[0].codigoErro,
+    'FORMULARIO_INDISPONIVEL',
+  );
 });
 
 test('consulta de fatura chama ERP fora da transação e guarda seleção somente no contexto', async () => {

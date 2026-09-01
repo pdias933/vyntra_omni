@@ -603,3 +603,13 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - `HORARIO_ATENDIMENTO` exige exatamente uma referência ativa a `CALENDARIO` e capacidade habilitada pelo backend. A definição não contém fuso, feriado, período ou override duplicado.
 - Calendário ausente/inválido percorre `FALHA`; não assume aberto, não usa horário do dispositivo e não cai para configuração inventada.
 - Passo de agendamento e passo de retomada usam revisões distintas. Concorrência entre resposta e timeout tem um único vencedor pelo lock e pela revisão esperada.
+
+## 20. Controles de formulário da PR 079
+
+- a definição referencia somente UUID interno; identificador externo, token, chave, URL, payload e criptografia pertencem ao adapter;
+- o executor confirma formulário ativo e mesma conta de origem antes de qualquer mensagem;
+- sem capacidade Meta real comprovada, somente o fallback textual pelo serviço de domínio é permitido e a saída `ENVIADO` é proibida;
+- a submissão deriva contato, conversa, atendimento e conta da mensagem de entrada persistida;
+- locks e unicidades por mensagem e referência tornam replay idempotente; conteúdo divergente falha fechado;
+- respostas são dados protegidos, não entram em passo, log, evento ou auditoria e só chegam ao card após mapeamento e mascaramento por permissão;
+- submissão e evento confirmam na mesma transação e o registro imutável não oferece update/delete operacional.

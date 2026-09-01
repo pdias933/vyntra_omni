@@ -454,3 +454,6 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - Chamada financeira externa ocorre fora da transação. Ao retornar, revalide execução, revisão, nó, conta, contato, cliente, contrato e versão do contexto antes de aplicar qualquer efeito.
 - Pix, linha digitável, documento, ID externo e bytes de PDF não entram em passo, log ou auditoria. Sem ponte privada de mídia comprovada, segunda via segue parcial; não fabrique Base64, anexo ou URL.
 - Provedor ERP simulado pertence somente aos testes. Aplicação sem adapter real registrado falha fechada com `ERP_INDISPONIVEL`; fixture nunca habilita staging ou produção.
+- `SOLICITAR_FORMULARIO_WHATSAPP` aceita somente um UUID interno ativo da conta, `textoFallback` e nenhuma variável. Sem ponte Meta real caracterizada, execute apenas o fallback pelo serviço de mensagens e nunca produza `ENVIADO`.
+- Token, referência externa, esquema e resposta de formulário pertencem ao adapter/armazenamento protegido; nunca entram na definição, contexto da execução, passo, log ou auditoria.
+- Submissão normalizada deriva autoridade da mensagem de entrada, usa locks e unicidades por mensagem/referência e emite um único evento mínimo. Repetição divergente falha fechada; não atualize nem apague submissão imutável.

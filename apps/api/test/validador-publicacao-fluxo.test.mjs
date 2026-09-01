@@ -687,6 +687,73 @@ test('nós de fatura não aceitam parâmetro, referência ou variável declarada
   }
 });
 
+test('nó de formulário exige um cadastro ativo e fallback textual fechado', () => {
+  const formularioId = randomUUID();
+  const definicao = definicaoBasica({
+    conexoes: [
+      conexao('inicio', 'SUCESSO', 'formulario'),
+      conexao('formulario', 'ENVIADO', 'fim'),
+      conexao('formulario', 'FALLBACK', 'fim'),
+      conexao('formulario', 'FALHA', 'fim'),
+    ],
+    nos: [
+      no('inicio', 'INICIO'),
+      no('formulario', 'SOLICITAR_FORMULARIO_WHATSAPP', {
+        parametros: { textoFallback: 'Vamos continuar pelo atendimento seguro.' },
+        referencias: [
+          { recursoId: formularioId, tipo: 'FORMULARIO_WHATSAPP' },
+        ],
+      }),
+      no('fim', 'FIM'),
+    ],
+  });
+  assert.equal(
+    new ValidadorPublicacaoFluxo().validar(
+      definicao,
+      contexto({
+        capacidadesHabilitadas: ['SOLICITAR_FORMULARIO_WHATSAPP'],
+        referenciasAtivas: [
+          { recursoId: formularioId, tipo: 'FORMULARIO_WHATSAPP' },
+        ],
+      }),
+    ).valido,
+    true,
+  );
+
+  const duplicada = structuredClone(definicao);
+  duplicada.nos[1].referencias.push({
+    recursoId: randomUUID(),
+    tipo: 'FORMULARIO_WHATSAPP',
+  });
+  const relatorio = new ValidadorPublicacaoFluxo().validar(
+    duplicada,
+    contexto({
+      capacidadesHabilitadas: ['SOLICITAR_FORMULARIO_WHATSAPP'],
+      referenciasAtivas: duplicada.nos[1].referencias,
+    }),
+  );
+  assert.ok(codigos(relatorio).includes('CONFIGURACAO_FORMULARIO_INVALIDA'));
+
+  const payloadLivre = structuredClone(definicao);
+  payloadLivre.nos[1].parametros = {
+    identificadorExterno: 'não pertence ao domínio',
+    textoFallback: 'Fallback seguro.',
+  };
+  assert.ok(
+    codigos(
+      new ValidadorPublicacaoFluxo().validar(
+        payloadLivre,
+        contexto({
+          capacidadesHabilitadas: ['SOLICITAR_FORMULARIO_WHATSAPP'],
+          referenciasAtivas: [
+            { recursoId: formularioId, tipo: 'FORMULARIO_WHATSAPP' },
+          ],
+        }),
+      ),
+    ).includes('DEFINICAO_ESTRUTURAL_INVALIDA'),
+  );
+});
+
 test('identificação e pedido de dados não aceitam variáveis, referências ou payload livre', () => {
   const casos = [
     {
