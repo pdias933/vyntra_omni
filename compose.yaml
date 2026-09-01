@@ -239,7 +239,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/api-desenvolvimento:local
+    image: vyntra/worker-fluxos-desenvolvimento:local
     pull_policy: build
     init: true
     user: "1000:0"

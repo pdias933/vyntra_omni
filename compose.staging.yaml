@@ -222,7 +222,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/api-staging:pr-055
+    image: vyntra/worker-fluxos-staging:pr-055
     pull_policy: build
     restart: *reinicio-staging
     init: true
