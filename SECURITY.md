@@ -658,3 +658,15 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - aceite anterior ao commit humano permanece `ENVIADA`; depois do commit, criação, início e aceite novos são recusados;
 - migration cancela legado automático ainda `NA_FILA` e para com erro se encontrar legado `ENVIANDO`, que exige reconciliação;
 - evento e auditoria registram somente a quantidade cancelada, nunca conteúdo, destino ou credencial.
+
+## 25. Controles do editor visual da PR 084
+
+- leitura exige `VISUALIZAR_FLUXO`; criação e salvamento exigem `EDITAR_FLUXO`; validar/publicar exige `PUBLICAR_FLUXO`, sem herança implícita entre permissões;
+- toda escrita web valida cookie, sessão, origem e CSRF; `PUT` integra a lista CORS explícita, sem origem ampla;
+- fluxo e versão são relidos juntos e vínculo divergente falha fechado, bloqueando IDOR/BOLA entre versões;
+- rascunho exige revisão esperada e alteração concorrente retorna conflito; estado imutável nunca é convertido pelo controller;
+- o navegador não envia capacidades habilitadas, referências ativas, estado, ponteiro publicado, autoria ou credenciais; essas autoridades vêm do backend;
+- definição é objeto fechado e tipado, sem JSON bruto na UI, URL, expressão, código, SQL, shell, segredo ou payload de adapter;
+- posição visual aceita somente coordenadas finitas limitadas e não altera semântica, ordem ou execução;
+- salvar não publica; validar não publica; publicação exige comando próprio e estado `EM_TESTE`;
+- erros e auditoria não carregam definição, parâmetros, valores de variável ou conteúdo sensível.

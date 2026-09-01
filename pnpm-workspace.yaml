@@ -13,6 +13,7 @@ verifyDepsBeforeRun: error
 overrides:
   deepmerge-ts: 8.0.2
   js-yaml: 4.3.2
+  mysql2: 3.24.2
   react: 19.2.3
   react-dom: 19.2.3
 
@@ -20,3 +21,7 @@ allowBuilds:
   '@scarf/scarf': false
   '@prisma/engines': true
   prisma: true
+
+minimumReleaseAgeExclude:
+  - '@xyflow/react@12.11.6'
+  - '@xyflow/system@0.0.82'

@@ -41,7 +41,7 @@ export async function criarAplicacao(
   aplicacao.enableCors({
     allowedHeaders: ['content-type', 'x-correlation-id', 'x-csrf-token'],
     credentials: true,
-    methods: ['GET', 'POST', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
     origin: (
       origem: string | undefined,
       concluir: (erro: Error | null, permitir?: boolean) => void,

@@ -8,10 +8,40 @@ import type {
   HistoricoPublicacaoFluxoPersistido,
   VersaoFluxoPersistida,
 } from './modelo-fluxo.js';
+import type { FluxoEditorPersistido } from './modelo-editor-fluxo.js';
 import type { RepositorioFluxos } from './repositorio-fluxos.js';
 
 @Injectable()
 export class RepositorioFluxosPrisma implements RepositorioFluxos {
+  public async listarFluxos(
+    transacao: TransacaoPrisma,
+  ): Promise<readonly FluxoEditorPersistido[]> {
+    const fluxos = await transacao.fluxo.findMany({
+      include: { versoes: { orderBy: { numeroVersao: 'desc' } } },
+      orderBy: [{ atualizadoEm: 'desc' }, { id: 'asc' }],
+      where: { ativo: true },
+    });
+    return fluxos.map((fluxo) => ({
+      ...this.mapearFluxo(fluxo),
+      versoes: fluxo.versoes.map((versao) => this.mapearVersao(versao)),
+    }));
+  }
+
+  public async obterFluxoComVersoes(
+    fluxoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<FluxoEditorPersistido | undefined> {
+    const fluxo = await transacao.fluxo.findFirst({
+      include: { versoes: { orderBy: { numeroVersao: 'desc' } } },
+      where: { ativo: true, id: fluxoId },
+    });
+    if (fluxo === null) return undefined;
+    return {
+      ...this.mapearFluxo(fluxo),
+      versoes: fluxo.versoes.map((versao) => this.mapearVersao(versao)),
+    };
+  }
+
   public async bloquearNome(
     nomeNormalizado: string,
     transacao: TransacaoPrisma,
@@ -86,21 +116,7 @@ export class RepositorioFluxosPrisma implements RepositorioFluxos {
   ): Promise<FluxoPersistido | undefined> {
     const fluxo = await transacao.fluxo.findUnique({ where: { id: fluxoId } });
     if (fluxo === null) return undefined;
-    return {
-      ativo: fluxo.ativo,
-      atualizadoEm: fluxo.atualizadoEm,
-      criadoEm: fluxo.criadoEm,
-      criadoPorUsuarioId: fluxo.criadoPorUsuarioId,
-      ...(fluxo.descricao === null ? {} : { descricao: fluxo.descricao }),
-      id: fluxo.id,
-      nome: fluxo.nome,
-      nomeNormalizado: fluxo.nomeNormalizado,
-      revisao: fluxo.revisao,
-      tipo: fluxo.tipo,
-      ...(fluxo.versaoPublicadaId === null
-        ? {}
-        : { versaoPublicadaId: fluxo.versaoPublicadaId }),
-    };
+    return this.mapearFluxo(fluxo);
   }
 
   public async obterVersao(
@@ -323,6 +339,36 @@ export class RepositorioFluxosPrisma implements RepositorioFluxos {
         : { publicadaPorUsuarioId: versao.publicadaPorUsuarioId }),
       revisao: versao.revisao,
       versaoSchemaDefinicao: versao.versaoSchemaDefinicao,
+    };
+  }
+
+  private mapearFluxo(fluxo: {
+    readonly ativo: boolean;
+    readonly atualizadoEm: Date;
+    readonly criadoEm: Date;
+    readonly criadoPorUsuarioId: string;
+    readonly descricao: string | null;
+    readonly id: string;
+    readonly nome: string;
+    readonly nomeNormalizado: string;
+    readonly revisao: number;
+    readonly tipo: FluxoPersistido['tipo'];
+    readonly versaoPublicadaId: string | null;
+  }): FluxoPersistido {
+    return {
+      ativo: fluxo.ativo,
+      atualizadoEm: fluxo.atualizadoEm,
+      criadoEm: fluxo.criadoEm,
+      criadoPorUsuarioId: fluxo.criadoPorUsuarioId,
+      ...(fluxo.descricao === null ? {} : { descricao: fluxo.descricao }),
+      id: fluxo.id,
+      nome: fluxo.nome,
+      nomeNormalizado: fluxo.nomeNormalizado,
+      revisao: fluxo.revisao,
+      tipo: fluxo.tipo,
+      ...(fluxo.versaoPublicadaId === null
+        ? {}
+        : { versaoPublicadaId: fluxo.versaoPublicadaId }),
     };
   }
 

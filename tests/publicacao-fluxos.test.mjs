@@ -40,8 +40,8 @@ test('publicação, arquivo e reversão usam RBAC, lock, revisão e uma transaç
   assert.match(repositorio, /historicoPublicacaoFluxo\.create/);
 });
 
-test('módulo continua interno sem rota de publicação antes do validador completo', async () => {
+test('publicação só é exposta pelo editor depois do validador completo', async () => {
   const modulo = await ler('apps/api/src/fluxos/modulo-fluxos.ts');
   assert.match(modulo, /ServicoPublicacaoFluxos/);
-  assert.doesNotMatch(modulo, /Controller/);
+  assert.match(modulo, /ControladorEditorFluxos/);
 });

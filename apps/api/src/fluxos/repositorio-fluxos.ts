@@ -4,10 +4,16 @@ import type {
   HistoricoPublicacaoFluxoPersistido,
   VersaoFluxoPersistida,
 } from './modelo-fluxo.js';
+import type { FluxoEditorPersistido } from './modelo-editor-fluxo.js';
 
 export const REPOSITORIO_FLUXOS = Symbol('REPOSITORIO_FLUXOS');
 
 export interface RepositorioFluxos {
+  listarFluxos(transacao: TransacaoPrisma): Promise<readonly FluxoEditorPersistido[]>;
+  obterFluxoComVersoes(
+    fluxoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<FluxoEditorPersistido | undefined>;
   bloquearNome(nomeNormalizado: string, transacao: TransacaoPrisma): Promise<void>;
   bloquearFluxo(fluxoId: string, transacao: TransacaoPrisma): Promise<void>;
   bloquearVersao(versaoFluxoId: string, transacao: TransacaoPrisma): Promise<void>;

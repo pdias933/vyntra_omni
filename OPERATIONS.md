@@ -637,3 +637,9 @@ A migration obrigatória passa a `20260901013500_corrida_resgate_envio_automatic
 Implantar API e futuro despachante de mensageria com a mesma versão. Monitorar duração e timeout do canal, espera do lock `autoridade-saida`, cancelamentos por resgate, `ENVIANDO` antigo e divergência entre execução/atribuição. O limite do transporte é oito segundos dentro de uma transação de dez; o cliente HTTP real precisa honrar o sinal de cancelamento. No aceite, provar as duas ordens: resgate primeiro cancela sem chamada; aceite primeiro termina `ENVIADA` e só depois permite o resgate. Também confirmar que falha temporária volta a `NA_FILA` e é cancelada pelo resgate, sem conteúdo em evento, auditoria ou log.
 
 Rollback preserva as colunas e mensagens terminais. Antes de usar imagem PR 082, parar o consumidor de saída e comprovar que não existe automática da PR 083 em `NA_FILA` ou `ENVIANDO`; a imagem anterior não conhece a coordenação persistida.
+
+## 31. Operação do editor visual da PR 084
+
+Não há migration. Implantar API com as rotas administrativas e web com o SDK gerado no mesmo release; o worker não recebe provider, estado ou regra nova. Manter `20260901013500_corrida_resgate_envio_automatico` como marca de prontidão e confirmar que todas as instâncias de API/worker continuam homogêneas.
+
+No aceite, criar um rascunho por uma sessão autorizada, salvar posição e parâmetros com revisão esperada, comprovar conflito de revisão concorrente e confirmar que o ponteiro publicado não muda. Depois, validar uma definição inválida sem promoção, preparar uma válida e publicar por comando separado; uma execução já iniciada deve conservar a versão anterior. Monitorar `ACESSO_NEGADO`, `ORIGEM_WEB_INVALIDA`, `CSRF_INVALIDO`, conflitos de revisão e falhas de validação sem registrar a definição. Rollback do web/API não exige alteração de dados e preserva versões criadas; não modificar estado ou ponteiro por SQL.

@@ -472,3 +472,8 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - Criação automática, despacho e qualquer mudança de atribuição compartilham o lock textual `autoridade-saida:<atendimento_id>`; não troque a chave nem use byte nulo.
 - Despacho automático revalida autoridade sob o lock, mantém `ENVIANDO` e resultado na mesma transação limitada e passa `AbortSignal` ao canal. Provider que ignore o cancelamento não pode ser registrado.
 - Resgate cancela somente automáticas `NA_FILA` no mesmo commit; não alcance mensagem humana ou disparo transacional. Aceite do canal anterior ao commit permanece enviado, e nenhum aceite posterior é permitido.
+- O editor visual usa somente o SDK OpenAPI gerado e o catálogo nativo tipado. Não adicione JSON bruto, URL arbitrária, adapter, segredo, capacidade ou referência externa declarada pelo cliente.
+- Posição de nó é metadado visual sem autoridade de negócio. Tipo, saídas, transições, referência ativa e capacidade continuam validados no backend.
+- `Salvar rascunho`, `Validar versão` e `Publicar versão` são comandos separados. Salvar só aceita `RASCUNHO` com revisão esperada; validar é a única promoção para `EM_TESTE`; publicar exige confirmação e não migra execução em curso.
+- Versão imutável é somente leitura no editor; para continuar, crie uma nova versão. Nunca habilite edição local de publicada/arquivada nem contorne o vínculo fluxo-versão.
+- Canvas e microinterações não podem bloquear comando e devem respeitar `prefers-reduced-motion`. Web mantém composição desktop própria e não replica literalmente o mobile.

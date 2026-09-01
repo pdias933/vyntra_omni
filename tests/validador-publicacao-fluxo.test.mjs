@@ -47,5 +47,5 @@ test('somente validação autorizada e persistida produz EM_TESTE', async () => 
   assert.match(provedor, /'ENVIAR_MENSAGEM'/);
   assert.match(provedor, /'ENVIAR_BOTOES_OU_LISTA'/);
   assert.match(provedor, /referenciasAtivas: \[\]/);
-  assert.doesNotMatch(modulo, /Controller/);
+  assert.match(modulo, /ControladorEditorFluxos/);
 });

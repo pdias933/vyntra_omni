@@ -59,11 +59,17 @@ export interface ReferenciaNoFluxo {
 export interface NoDefinicaoFluxo {
   readonly id: string;
   readonly tipo: TipoNoFluxo;
+  readonly posicao?: PosicaoNoFluxo;
   readonly variaveisEntrada: readonly string[];
   readonly variaveisSaida: readonly string[];
   readonly referencias: readonly ReferenciaNoFluxo[];
   readonly limiteIteracoes?: number;
   readonly parametros: Readonly<Record<string, unknown>>;
+}
+
+export interface PosicaoNoFluxo {
+  readonly x: number;
+  readonly y: number;
 }
 
 export interface ConexaoDefinicaoFluxo {

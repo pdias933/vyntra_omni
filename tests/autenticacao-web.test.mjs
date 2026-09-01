@@ -38,6 +38,7 @@ test('cookie, origem, CSRF e CORS são guardas obrigatórias', async () => {
   assert.match(origem, /url\.protocol === 'https:'/);
   assert.match(aplicacao, /credentials: true/);
   assert.match(aplicacao, /x-csrf-token/);
+  assert.match(aplicacao, /methods: \['GET', 'POST', 'PUT', 'OPTIONS'\]/);
   assert.ok(!aplicacao.includes('origin: true'));
 });
 

@@ -877,6 +877,356 @@
         ]
       }
     },
+    "/api/v1/administracao/fluxos": {
+      "get": {
+        "operationId": "listarFluxosEditor",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FluxoEditorDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Lista fluxos e versões autorizados para o editor visual",
+        "tags": [
+          "motor-de-fluxos"
+        ]
+      },
+      "post": {
+        "operationId": "criarFluxoEditor",
+        "parameters": [
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaCriacaoFluxoEditorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FluxoCriadoEditorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Cria um fluxo com rascunho tipado inicial",
+        "tags": [
+          "motor-de-fluxos"
+        ]
+      }
+    },
+    "/api/v1/administracao/fluxos/{fluxoId}": {
+      "get": {
+        "operationId": "obterFluxoEditor",
+        "parameters": [
+          {
+            "name": "fluxoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FluxoEditorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Obtém um fluxo e suas versões para edição autorizada",
+        "tags": [
+          "motor-de-fluxos"
+        ]
+      }
+    },
+    "/api/v1/administracao/fluxos/{fluxoId}/versoes": {
+      "post": {
+        "operationId": "criarVersaoFluxoEditor",
+        "parameters": [
+          {
+            "name": "fluxoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaNovaVersaoFluxoEditorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersaoFluxoEditorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Cria nova versão rascunho sem alterar a versão publicada",
+        "tags": [
+          "motor-de-fluxos"
+        ]
+      }
+    },
+    "/api/v1/administracao/fluxos/{fluxoId}/versoes/{versaoFluxoId}/rascunho": {
+      "put": {
+        "operationId": "salvarRascunhoFluxoEditor",
+        "parameters": [
+          {
+            "name": "fluxoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "versaoFluxoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaSalvarRascunhoFluxoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersaoFluxoEditorDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Salva somente a versão rascunho sob revisão otimista",
+        "tags": [
+          "motor-de-fluxos"
+        ]
+      }
+    },
+    "/api/v1/administracao/fluxos/{fluxoId}/versoes/{versaoFluxoId}/preparar-publicacao": {
+      "post": {
+        "operationId": "prepararPublicacaoFluxoEditor",
+        "parameters": [
+          {
+            "name": "fluxoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "versaoFluxoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaRevisaoVersaoFluxoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoPreparacaoFluxoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Valida integralmente e promove o rascunho para teste",
+        "tags": [
+          "motor-de-fluxos"
+        ]
+      }
+    },
+    "/api/v1/administracao/fluxos/{fluxoId}/versoes/{versaoFluxoId}/publicar": {
+      "post": {
+        "operationId": "publicarVersaoFluxoEditor",
+        "parameters": [
+          {
+            "name": "fluxoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "versaoFluxoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaRevisaoFluxoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoPublicacaoFluxoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Publica explicitamente uma versão já validada",
+        "tags": [
+          "motor-de-fluxos"
+        ]
+      }
+    },
     "/api/v1/configuracao/mobile/avaliar": {
       "post": {
         "operationId": "avaliarVersaoMobile",
@@ -1794,6 +2144,333 @@
           "autenticada_em",
           "ultima_atividade_em",
           "expira_em"
+        ]
+      },
+      "VersaoFluxoEditorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fluxo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "numero_versao": {
+            "type": "number",
+            "minimum": 1
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "RASCUNHO",
+              "EM_TESTE",
+              "PUBLICADA",
+              "ARQUIVADA"
+            ]
+          },
+          "revisao": {
+            "type": "number",
+            "minimum": 1
+          },
+          "versao_schema_definicao": {
+            "type": "number",
+            "minimum": 1
+          },
+          "definicao": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "atualizada_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publicada_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "fluxo_id",
+          "numero_versao",
+          "estado",
+          "revisao",
+          "versao_schema_definicao",
+          "definicao",
+          "atualizada_em"
+        ]
+      },
+      "FluxoEditorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "ATENDIMENTO",
+              "AUTENTICACAO",
+              "FINANCEIRO",
+              "COMERCIAL",
+              "SUPORTE",
+              "OUTRO"
+            ]
+          },
+          "ativo": {
+            "type": "boolean"
+          },
+          "revisao": {
+            "type": "number",
+            "minimum": 1
+          },
+          "versao_publicada_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "versoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VersaoFluxoEditorDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "tipo",
+          "ativo",
+          "revisao",
+          "atualizado_em",
+          "versoes"
+        ]
+      },
+      "EntradaCriacaoFluxoEditorDto": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "ATENDIMENTO",
+              "AUTENTICACAO",
+              "FINANCEIRO",
+              "COMERCIAL",
+              "SUPORTE",
+              "OUTRO"
+            ]
+          },
+          "definicao": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "nome",
+          "tipo",
+          "definicao"
+        ]
+      },
+      "FluxoCriadoEditorDto": {
+        "type": "object",
+        "properties": {
+          "fluxo": {
+            "$ref": "#/components/schemas/FluxoEditorDto"
+          },
+          "versao": {
+            "$ref": "#/components/schemas/VersaoFluxoEditorDto"
+          }
+        },
+        "required": [
+          "fluxo",
+          "versao"
+        ]
+      },
+      "EntradaNovaVersaoFluxoEditorDto": {
+        "type": "object",
+        "properties": {
+          "definicao": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "versao_schema_definicao": {
+            "type": "number",
+            "default": 1,
+            "minimum": 1
+          }
+        },
+        "required": [
+          "definicao",
+          "versao_schema_definicao"
+        ]
+      },
+      "EntradaSalvarRascunhoFluxoDto": {
+        "type": "object",
+        "properties": {
+          "definicao": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "versao_schema_definicao": {
+            "type": "number",
+            "default": 1,
+            "minimum": 1
+          },
+          "revisao_esperada": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "definicao",
+          "versao_schema_definicao",
+          "revisao_esperada"
+        ]
+      },
+      "EntradaRevisaoVersaoFluxoDto": {
+        "type": "object",
+        "properties": {
+          "revisao_esperada": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "revisao_esperada"
+        ]
+      },
+      "ProblemaValidacaoFluxoDto": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "no_id": {
+            "type": "string"
+          },
+          "referencia_id": {
+            "type": "string"
+          },
+          "variavel": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo"
+        ]
+      },
+      "ResultadoPreparacaoFluxoDto": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "type": "string",
+            "enum": [
+              "EM_TESTE"
+            ]
+          },
+          "fluxo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versao_fluxo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revisao_versao": {
+            "type": "number",
+            "minimum": 1
+          },
+          "valido": {
+            "type": "boolean"
+          },
+          "quantidade_nos": {
+            "type": "number"
+          },
+          "quantidade_conexoes": {
+            "type": "number"
+          },
+          "problemas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProblemaValidacaoFluxoDto"
+            }
+          }
+        },
+        "required": [
+          "estado",
+          "fluxo_id",
+          "versao_fluxo_id",
+          "revisao_versao",
+          "valido",
+          "quantidade_nos",
+          "quantidade_conexoes",
+          "problemas"
+        ]
+      },
+      "EntradaRevisaoFluxoDto": {
+        "type": "object",
+        "properties": {
+          "revisao_fluxo_esperada": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "revisao_fluxo_esperada"
+        ]
+      },
+      "ResultadoPublicacaoFluxoDto": {
+        "type": "object",
+        "properties": {
+          "fluxo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "PUBLICACAO",
+              "ARQUIVAMENTO",
+              "REVERSAO"
+            ]
+          },
+          "revisao_fluxo": {
+            "type": "number",
+            "minimum": 1
+          },
+          "versao_anterior_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versao_publicada_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "fluxo_id",
+          "tipo",
+          "revisao_fluxo"
         ]
       },
       "EntradaAvaliacaoVersaoMobileDto": {

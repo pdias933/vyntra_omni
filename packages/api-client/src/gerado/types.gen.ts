@@ -132,6 +132,95 @@ export type ResumoSessaoWebDto = {
     expira_em: string;
 };
 
+export type VersaoFluxoEditorDto = {
+    id: string;
+    fluxo_id: string;
+    numero_versao: number;
+    estado: 'RASCUNHO' | 'EM_TESTE' | 'PUBLICADA' | 'ARQUIVADA';
+    revisao: number;
+    versao_schema_definicao: number;
+    definicao: {
+        [key: string]: unknown;
+    };
+    atualizada_em: string;
+    publicada_em?: string;
+};
+
+export type FluxoEditorDto = {
+    id: string;
+    nome: string;
+    descricao?: string;
+    tipo: 'ATENDIMENTO' | 'AUTENTICACAO' | 'FINANCEIRO' | 'COMERCIAL' | 'SUPORTE' | 'OUTRO';
+    ativo: boolean;
+    revisao: number;
+    versao_publicada_id?: string;
+    atualizado_em: string;
+    versoes: Array<VersaoFluxoEditorDto>;
+};
+
+export type EntradaCriacaoFluxoEditorDto = {
+    nome: string;
+    descricao?: string;
+    tipo: 'ATENDIMENTO' | 'AUTENTICACAO' | 'FINANCEIRO' | 'COMERCIAL' | 'SUPORTE' | 'OUTRO';
+    definicao: {
+        [key: string]: unknown;
+    };
+};
+
+export type FluxoCriadoEditorDto = {
+    fluxo: FluxoEditorDto;
+    versao: VersaoFluxoEditorDto;
+};
+
+export type EntradaNovaVersaoFluxoEditorDto = {
+    definicao: {
+        [key: string]: unknown;
+    };
+    versao_schema_definicao: number;
+};
+
+export type EntradaSalvarRascunhoFluxoDto = {
+    definicao: {
+        [key: string]: unknown;
+    };
+    versao_schema_definicao: number;
+    revisao_esperada: number;
+};
+
+export type EntradaRevisaoVersaoFluxoDto = {
+    revisao_esperada: number;
+};
+
+export type ProblemaValidacaoFluxoDto = {
+    codigo: string;
+    no_id?: string;
+    referencia_id?: string;
+    variavel?: string;
+};
+
+export type ResultadoPreparacaoFluxoDto = {
+    estado: 'EM_TESTE';
+    fluxo_id: string;
+    versao_fluxo_id: string;
+    revisao_versao: number;
+    valido: boolean;
+    quantidade_nos: number;
+    quantidade_conexoes: number;
+    problemas: Array<ProblemaValidacaoFluxoDto>;
+};
+
+export type EntradaRevisaoFluxoDto = {
+    revisao_fluxo_esperada: number;
+};
+
+export type ResultadoPublicacaoFluxoDto = {
+    fluxo_id: string;
+    tipo: 'PUBLICACAO' | 'ARQUIVAMENTO' | 'REVERSAO';
+    revisao_fluxo: number;
+    versao_anterior_id?: string;
+    versao_publicada_id?: string;
+};
+
 export type EntradaAvaliacaoVersaoMobileDto = {
     plataforma: 'IOS' | 'ANDROID';
     versao_aplicativo: string;
@@ -638,6 +727,125 @@ export type RevogarDispositivosMobileAdministrativamenteResponses = {
 };
 
 export type RevogarDispositivosMobileAdministrativamenteResponse = RevogarDispositivosMobileAdministrativamenteResponses[keyof RevogarDispositivosMobileAdministrativamenteResponses];
+
+export type ListarFluxosEditorData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/administracao/fluxos';
+};
+
+export type ListarFluxosEditorResponses = {
+    200: Array<FluxoEditorDto>;
+};
+
+export type ListarFluxosEditorResponse = ListarFluxosEditorResponses[keyof ListarFluxosEditorResponses];
+
+export type CriarFluxoEditorData = {
+    body: EntradaCriacaoFluxoEditorDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/administracao/fluxos';
+};
+
+export type CriarFluxoEditorResponses = {
+    201: FluxoCriadoEditorDto;
+};
+
+export type CriarFluxoEditorResponse = CriarFluxoEditorResponses[keyof CriarFluxoEditorResponses];
+
+export type ObterFluxoEditorData = {
+    body?: never;
+    path: {
+        fluxoId: string;
+    };
+    query?: never;
+    url: '/api/v1/administracao/fluxos/{fluxoId}';
+};
+
+export type ObterFluxoEditorResponses = {
+    200: FluxoEditorDto;
+};
+
+export type ObterFluxoEditorResponse = ObterFluxoEditorResponses[keyof ObterFluxoEditorResponses];
+
+export type CriarVersaoFluxoEditorData = {
+    body: EntradaNovaVersaoFluxoEditorDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        fluxoId: string;
+    };
+    query?: never;
+    url: '/api/v1/administracao/fluxos/{fluxoId}/versoes';
+};
+
+export type CriarVersaoFluxoEditorResponses = {
+    201: VersaoFluxoEditorDto;
+};
+
+export type CriarVersaoFluxoEditorResponse = CriarVersaoFluxoEditorResponses[keyof CriarVersaoFluxoEditorResponses];
+
+export type SalvarRascunhoFluxoEditorData = {
+    body: EntradaSalvarRascunhoFluxoDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        fluxoId: string;
+        versaoFluxoId: string;
+    };
+    query?: never;
+    url: '/api/v1/administracao/fluxos/{fluxoId}/versoes/{versaoFluxoId}/rascunho';
+};
+
+export type SalvarRascunhoFluxoEditorResponses = {
+    200: VersaoFluxoEditorDto;
+};
+
+export type SalvarRascunhoFluxoEditorResponse = SalvarRascunhoFluxoEditorResponses[keyof SalvarRascunhoFluxoEditorResponses];
+
+export type PrepararPublicacaoFluxoEditorData = {
+    body: EntradaRevisaoVersaoFluxoDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        fluxoId: string;
+        versaoFluxoId: string;
+    };
+    query?: never;
+    url: '/api/v1/administracao/fluxos/{fluxoId}/versoes/{versaoFluxoId}/preparar-publicacao';
+};
+
+export type PrepararPublicacaoFluxoEditorResponses = {
+    200: ResultadoPreparacaoFluxoDto;
+};
+
+export type PrepararPublicacaoFluxoEditorResponse = PrepararPublicacaoFluxoEditorResponses[keyof PrepararPublicacaoFluxoEditorResponses];
+
+export type PublicarVersaoFluxoEditorData = {
+    body: EntradaRevisaoFluxoDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        fluxoId: string;
+        versaoFluxoId: string;
+    };
+    query?: never;
+    url: '/api/v1/administracao/fluxos/{fluxoId}/versoes/{versaoFluxoId}/publicar';
+};
+
+export type PublicarVersaoFluxoEditorResponses = {
+    200: ResultadoPublicacaoFluxoDto;
+};
+
+export type PublicarVersaoFluxoEditorResponse = PublicarVersaoFluxoEditorResponses[keyof PublicarVersaoFluxoEditorResponses];
 
 export type AvaliarVersaoMobileData = {
     body: EntradaAvaliacaoVersaoMobileDto;

@@ -735,3 +735,17 @@ A espera usa estado persistido `AGUARDANDO_ATENDENTE`, marcador protegido e `ret
 Cada mensagem automática conserva a execução e a versão de atribuição que autorizaram sua criação. Criar a mensagem, iniciar o despacho e assumir/transferir/resgatar o atendimento compartilham o lock `autoridade-saida` do atendimento. O despachante revalida o registro sob o lock e só então percorre `NA_FILA → ENVIANDO`; a chamada ao canal recebe limite de oito segundos e sinal de cancelamento, e termina em `ENVIADA`, `NA_FILA` ou `FALHOU` antes de liberar o lock.
 
 O resgate que chega durante a requisição aguarda a resolução. Ao vencer o lock, muda a autoridade, incrementa `versao_atribuicao` e cancela no mesmo commit todas as mensagens automáticas ainda `NA_FILA`. Um aceite confirmado antes desse commit permanece no histórico; qualquer despacho iniciado depois vê a autoridade divergente e não chama o canal. Mensagem automática legada `NA_FILA` é cancelada na migration; legado `ENVIANDO` bloqueia a implantação e exige reconciliação explícita.
+
+## 32. Editor visual da PR 084
+
+O editor manipula a mesma definição fechada validada pelo servidor. O catálogo oferece somente os 23 tipos nativos já aprovados; parâmetros, referências, variáveis globais, entradas, saídas e limites são campos tipados. Não existe modo de JSON, URL arbitrária, adapter, segredo, código ou capacidade declarada pelo navegador. Posição `x/y` é metadado visual finito e não participa da decisão de negócio.
+
+O ciclo de edição é explícito:
+
+```text
+editar no navegador → salvar RASCUNHO com revisão esperada
+                    → validar no backend → EM_TESTE
+                    → confirmar publicação → PUBLICADA para novas execuções
+```
+
+Salvar usa concorrência otimista e nunca altera o ponteiro publicado. O backend relê fluxo e versão para impedir acesso cruzado, compõe referências/capacidades a partir das autoridades reais e mantém a promoção/publicação nos serviços de domínio existentes. Versões `EM_TESTE`, `PUBLICADA` e `ARQUIVADA` são somente leitura; continuar a edição cria nova versão `RASCUNHO`. A interface sempre mostra qual versão está em produção antes da confirmação.

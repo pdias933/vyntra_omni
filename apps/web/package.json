@@ -11,6 +11,8 @@
     "typecheck": "tsc -b --pretty false"
   },
   "dependencies": {
+    "@vyntra/api-client": "workspace:*",
+    "@xyflow/react": "12.11.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },

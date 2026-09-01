@@ -42,12 +42,13 @@ test('catálogo exige RBAC, versão otimista e auditoria sem definição', async
   assert.match(repositorio, /pg_advisory_xact_lock/);
 });
 
-test('módulo de fluxos é interno e não antecipa editor ou executor', async () => {
+test('módulo expõe o editor aprovado sem registrar executor ou adapter', async () => {
   const [modulo, aplicacao] = await Promise.all([
     ler('apps/api/src/fluxos/modulo-fluxos.ts'),
     ler('apps/api/src/modulo-aplicacao.ts'),
   ]);
 
   assert.match(aplicacao, /ModuloFluxos/);
-  assert.doesNotMatch(modulo, /Controller|Worker|Executor|Adapter/);
+  assert.match(modulo, /ControladorEditorFluxos/);
+  assert.doesNotMatch(modulo, /Worker|Executor|Adapter/);
 });

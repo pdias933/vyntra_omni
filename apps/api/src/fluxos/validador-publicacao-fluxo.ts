@@ -9,6 +9,7 @@ import {
   type DefinicaoFluxoV1,
   type NoDefinicaoFluxo,
   type ProblemaValidacaoFluxo,
+  type PosicaoNoFluxo,
   type ReferenciaAtivaFluxo,
   type ReferenciaNoFluxo,
   type RelatorioValidacaoFluxo,
@@ -130,6 +131,19 @@ const REFERENCIAS_OBRIGATORIAS: Readonly<
 
 @Injectable()
 export class ValidadorPublicacaoFluxo {
+  public validarRascunho(
+    definicaoRecebida: unknown,
+  ): RelatorioValidacaoFluxo {
+    const problemas: ProblemaValidacaoFluxo[] = [];
+    const definicao = this.lerDefinicao(definicaoRecebida, problemas);
+    return {
+      problemas,
+      quantidadeConexoes: definicao?.conexoes.length ?? 0,
+      quantidadeNos: definicao?.nos.length ?? 0,
+      valido: definicao !== undefined && problemas.length === 0,
+    };
+  }
+
   public validar(
     definicaoRecebida: unknown,
     contextoRecebido: unknown,
@@ -233,6 +247,7 @@ export class ValidadorPublicacaoFluxo {
         'id',
         'limiteIteracoes',
         'parametros',
+        'posicao',
         'referencias',
         'tipo',
         'variaveisEntrada',
@@ -244,6 +259,7 @@ export class ValidadorPublicacaoFluxo {
       !this.ehTipoNo(valor.tipo) ||
       !this.ehListaIdentificadores(valor.variaveisEntrada) ||
       !this.ehListaIdentificadores(valor.variaveisSaida) ||
+      !this.posicaoValida(valor.posicao) ||
       !Array.isArray(valor.referencias) ||
       !this.ehRegistro(valor.parametros) ||
       !this.parametrosSaoSeguros(valor.parametros, 0) ||
@@ -274,6 +290,7 @@ export class ValidadorPublicacaoFluxo {
     return {
       id: valor.id,
       parametros: valor.parametros,
+      ...(valor.posicao === undefined ? {} : { posicao: valor.posicao }),
       referencias: referencias.filter((item) => item !== undefined),
       tipo: valor.tipo,
       variaveisEntrada: valor.variaveisEntrada,
@@ -282,6 +299,23 @@ export class ValidadorPublicacaoFluxo {
         ? {}
         : { limiteIteracoes: valor.limiteIteracoes }),
     };
+  }
+
+  private posicaoValida(
+    valor: unknown,
+  ): valor is PosicaoNoFluxo | undefined {
+    if (valor === undefined) return true;
+    if (
+      !this.ehRegistro(valor) ||
+      !this.temExatamenteChaves(valor, ['x', 'y']) ||
+      typeof valor.x !== 'number' ||
+      typeof valor.y !== 'number' ||
+      !Number.isFinite(valor.x) ||
+      !Number.isFinite(valor.y)
+    ) {
+      return false;
+    }
+    return Math.abs(valor.x) <= 1_000_000 && Math.abs(valor.y) <= 1_000_000;
   }
 
   private parametrosNoSaoValidos(
