@@ -81,7 +81,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 057 | CONCLUÍDA | `high` |
 | 058 | CONCLUÍDA | `xhigh` |
 | 059 | CONCLUÍDA | `xhigh` |
-| 060 | EM ANDAMENTO | `high` |
+| 060 | CONCLUÍDA | `high` |
 | 061 | PENDENTE | `xhigh` |
 | 062 | PENDENTE | `xhigh` |
 | 063 | PENDENTE | `xhigh` |
@@ -425,6 +425,10 @@ Aceite concluído em 1º de setembro de 2026: cada usuário ativo passou a possu
 ### PR 059 — caracterização real do MK Solutions
 
 Aceite concluído em 1º de setembro de 2026: a integração MK Solutions recebeu um inventário versionado de onze capacidades internas, famílias externas, licenciamento, transporte e estado da evidência. O validador usa allowlist estrita, exige fontes oficiais e rejeita campos, capacidades ausentes ou duplicadas. A fixture pública sanitizada registra honestamente que respostas reais, DTOs, paginação e erros ainda não foram observados; por isso o portão de ativação permanece fechado e nenhum contrato externo foi inventado. Lint, tipos, 246 testes da API, 170 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-059` ficou saudável com prontidão `PRONTO`. Em staging, as onze operações foram lidas, o portão permaneceu fechado, campo inesperado foi recusado e nenhum erro de nível 50 foi emitido.
+
+### PR 060 — consultas de cliente e contrato
+
+Aceite concluído em 1º de setembro de 2026: a porta ERP passou a oferecer busca e detalhes exatos de cliente e contrato em modelos internos normalizados. `ServicoConsultasClienteContratoErp` valida entrada e resposta, limita resultados, exige coerência cliente↔contrato e recusa qualquer campo desconhecido. Ausência, indisponibilidade e resposta inválida são distintas; sucesso sempre declara origem `TEMPO_REAL`. Nenhum nome, DTO, endpoint ou provider MK atravessa a fronteira, e o adapter real permanece desligado até a observação aprovada. Lint, tipos, 250 testes da API, 172 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-060` ficou saudável com prontidão `PRONTO`. Em staging, busca, cliente e contrato normalizados tiveram sucesso, ausência foi preservada, documento de busca não vazou e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
