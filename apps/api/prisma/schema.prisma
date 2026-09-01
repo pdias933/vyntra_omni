@@ -90,6 +90,14 @@ enum EstadoOverrideCalendario {
   @@map("estado_override_calendario")
 }
 
+enum NivelAlertaSla {
+  ATENDENTE
+  SUPERVISOR
+  ADMINISTRADOR
+
+  @@map("nivel_alerta_sla")
+}
+
 enum PapelBase {
   ADMINISTRADOR
   SUPERVISOR
@@ -715,6 +723,7 @@ model Fila {
   atendimentosFallbackReabertura Atendimento[] @relation("FilaFallbackReaberturaAtendimento")
   historicosAtribuicao HistoricoAtribuicao[]
   calendarioAtendimento CalendarioAtendimento? @relation("CalendarioFila")
+  politicaSla      PoliticaSla?
 
   @@index([estado, nome], map: "fila_estado_nome_idx")
   @@map("fila")
@@ -850,6 +859,7 @@ model Atendimento {
   contexto                        ContextoAtendimento?
   protocoloErp                    ProtocoloErp?
   historicosAtribuicao            HistoricoAtribuicao[]
+  relogiosSla                     RelogioSlaAtendimento[]
 
   @@index([conversaId, iniciadoEm, id], map: "atendimento_conversa_inicio_idx")
   @@index([contaWhatsAppOrigemId, estado, iniciadoEm], map: "atendimento_origem_estado_idx")
@@ -961,6 +971,55 @@ model OverrideCalendario {
 
   @@index([calendarioId, vigenteDe, vigenteAte], map: "override_calendario_vigencia_idx")
   @@map("override_calendario")
+}
+
+model PoliticaSla {
+  id                              String                   @id @db.Uuid
+  filaId                          String                   @unique(map: "politica_sla_fila_key") @map("fila_id") @db.Uuid
+  alertaAtendenteAposMinutos      Int                      @map("alerta_atendente_apos_minutos")
+  alertaSupervisorAposMinutos     Int                      @map("alerta_supervisor_apos_minutos")
+  alertaAdministradorAposMinutos  Int                      @map("alerta_administrador_apos_minutos")
+  versao                          Int                      @default(1)
+  criadoEm                        DateTime                 @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm                    DateTime                 @map("atualizado_em") @db.Timestamptz(6)
+  fila                            Fila                     @relation(fields: [filaId], references: [id], onDelete: Restrict)
+  relogios                        RelogioSlaAtendimento[]
+
+  @@index([atualizadoEm, id], map: "politica_sla_atualizado_idx")
+  @@map("politica_sla")
+}
+
+model RelogioSlaAtendimento {
+  id                     String             @id @db.Uuid
+  atendimentoId          String             @map("atendimento_id") @db.Uuid
+  politicaSlaId          String             @map("politica_sla_id") @db.Uuid
+  numeroCiclo            Int                @map("numero_ciclo")
+  obrigacaoHumanaEm      DateTime           @map("obrigacao_humana_em") @db.Timestamptz(6)
+  alertaAtendenteEm      DateTime           @map("alerta_atendente_em") @db.Timestamptz(6)
+  alertaSupervisorEm     DateTime           @map("alerta_supervisor_em") @db.Timestamptz(6)
+  alertaAdministradorEm  DateTime           @map("alerta_administrador_em") @db.Timestamptz(6)
+  finalizadoEm           DateTime?          @map("finalizado_em") @db.Timestamptz(6)
+  versao                 Int                @default(1)
+  atendimento            Atendimento        @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  politicaSla            PoliticaSla        @relation(fields: [politicaSlaId], references: [id], onDelete: Restrict)
+  alertas                AlertaSla[]
+
+  @@unique([atendimentoId, numeroCiclo], map: "relogio_sla_atendimento_ciclo_key")
+  @@index([finalizadoEm, alertaAtendenteEm, alertaSupervisorEm, alertaAdministradorEm], map: "relogio_sla_pendencias_idx")
+  @@map("relogio_sla_atendimento")
+}
+
+model AlertaSla {
+  id            String                 @id @db.Uuid
+  relogioSlaId  String                 @map("relogio_sla_id") @db.Uuid
+  nivel         NivelAlertaSla
+  previstoEm    DateTime               @map("previsto_em") @db.Timestamptz(6)
+  emitidoEm     DateTime               @map("emitido_em") @db.Timestamptz(6)
+  relogioSla    RelogioSlaAtendimento  @relation(fields: [relogioSlaId], references: [id], onDelete: Restrict)
+
+  @@unique([relogioSlaId, nivel], map: "alerta_sla_relogio_nivel_key")
+  @@index([nivel, emitidoEm, id], map: "alerta_sla_nivel_emitido_idx")
+  @@map("alerta_sla")
 }
 
 model ProtocoloErp {
