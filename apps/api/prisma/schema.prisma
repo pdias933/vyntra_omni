@@ -144,6 +144,15 @@ enum EstadoSaidaMensagem {
   @@map("estado_saida_mensagem")
 }
 
+enum CategoriaMidiaMensagem {
+  IMAGEM
+  AUDIO
+  VIDEO
+  PDF
+
+  @@map("categoria_midia_mensagem")
+}
+
 enum PapelBase {
   ADMINISTRADOR
   SUPERVISOR
@@ -1166,6 +1175,7 @@ model Mensagem {
   respostas                       Mensagem[]               @relation("RespostaMensagem")
   mensagemAlvoReacao              Mensagem?               @relation("ReacaoMensagem", fields: [mensagemAlvoReacaoId], references: [id], onDelete: Restrict)
   reacoes                         Mensagem[]               @relation("ReacaoMensagem")
+  midia                           MidiaMensagem?
 
   @@unique([contaWhatsAppId, identificadorExternoMensagem], map: "mensagem_conta_identificador_externo_key")
   @@unique([usuarioRemetenteId, mensagemClienteId], map: "mensagem_usuario_cliente_key")
@@ -1173,6 +1183,23 @@ model Mensagem {
   @@index([atendimentoId, recebidaServidorEm, id], map: "mensagem_atendimento_recebida_idx")
   @@index([estadoSaida, proximaTentativaEm, recebidaServidorEm], map: "mensagem_saida_pendente_idx")
   @@map("mensagem")
+}
+
+model MidiaMensagem {
+  mensagemId       String                 @id @map("mensagem_id") @db.Uuid
+  categoria        CategoriaMidiaMensagem
+  bucketPrivado    String                 @map("bucket_privado") @db.VarChar(100)
+  chaveObjeto      String                 @map("chave_objeto") @db.VarChar(500)
+  mimeDeclarado    String                 @map("mime_declarado") @db.VarChar(100)
+  mimeDetectado    String                 @map("mime_detectado") @db.VarChar(100)
+  tamanhoBytes     BigInt                 @map("tamanho_bytes")
+  conteudoHash     String                 @map("conteudo_hash") @db.Char(64)
+  armazenadaEm     DateTime               @map("armazenada_em") @db.Timestamptz(6)
+  mensagem         Mensagem               @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
+
+  @@unique([bucketPrivado, chaveObjeto], map: "midia_mensagem_bucket_chave_key")
+  @@index([conteudoHash, tamanhoBytes], map: "midia_mensagem_hash_tamanho_idx")
+  @@map("midia_mensagem")
 }
 
 model ProtocoloErp {
