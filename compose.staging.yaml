@@ -327,7 +327,7 @@ services:
         - wget
         - --quiet
         - --spider
-        - --header=Host: omni.up100.com.br
+        - "--header=Host: omni.up100.com.br"
         - http://127.0.0.1/
       interval: 10s
       timeout: 5s

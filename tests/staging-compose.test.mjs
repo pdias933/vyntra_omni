@@ -107,6 +107,11 @@ test('mantém banco, Redis e storage inacessíveis pelo host', () => {
     { name: 'web-https', published: '443', protocol: 'tcp', target: 443 },
     { name: 'web-http3', published: '443', protocol: 'udp', target: 443 },
   ]);
+  assert.ok(
+    compose.services.proxy.healthcheck.test.includes(
+      '--header=Host: omni.up100.com.br',
+    ),
+  );
 });
 
 test('separa todos os segredos e não aceita credencial de produção', () => {
