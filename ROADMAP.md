@@ -107,7 +107,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 083 | CONCLUÍDA | `xhigh` |
 | 084 | CONCLUÍDA | `xhigh` |
 | 085 | CONCLUÍDA | `high` |
-| 086 | EM ANDAMENTO | `high` |
+| 086 | CONCLUÍDA | `high` |
 | 087 | PENDENTE | `high` |
 | 088 | PENDENTE | `high` |
 | 089 | PENDENTE | `high` |
@@ -594,6 +594,10 @@ Aceite concluído em 1º de setembro de 2026: o editor recebeu um painel lateral
 | 094 | Administração operacional | Contas WhatsApp, filas, calendários, SLA e integrações. |
 | 095 | Administração do Motor de Fluxos | Editor, versões, simulador e publicação/reversão autorizadas. |
 | 096 | Saúde, reprocessamento e releases | Componentes, falhas, Reprocessar agora, controles de recurso e política mobile. |
+
+### PR 086 — shell e autenticação
+
+Aceite concluído em 1º de setembro de 2026: a web recebeu shell desktop autenticado, login, logout, expiração, confirmação explícita para substituir a terceira sessão e rotas estáveis por histórico. Senha e token não são persistidos no navegador; o CSRF continua vindo somente do cookie emitido pelo backend. O SSE observa `PERMISSOES_ALTERADAS`, revalida a sessão e nunca transforma navegação em autoridade. A inspeção no navegador encontrou e fechou o caso em que uma resposta HTML de desenvolvimento poderia atravessar o tipo gerado: sessão agora exige validação estrutural em runtime antes de qualquer conteúdo protegido. O login foi conferido visualmente com zero erro após a correção. Lint, tipos, 408 testes da API, 214 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, dependências e segredos foram aprovados. Não houve migration; a reversão da web preserva as sessões sob autoridade do PostgreSQL.
 
 ## 12. Mobile
 
