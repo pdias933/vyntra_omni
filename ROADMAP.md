@@ -73,7 +73,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 049 | CONCLUÍDA | `xhigh` |
 | 050 | CONCLUÍDA | `xhigh` |
 | 051 | CONCLUÍDA | `xhigh` |
-| 052 | EM ANDAMENTO | `xhigh` |
+| 052 | CONCLUÍDA | `xhigh` |
 | 053 | PENDENTE | `xhigh` |
 | 054 | PENDENTE | `xhigh` |
 | 055 | PENDENTE | `xhigh` |
@@ -393,6 +393,10 @@ Aceite concluído em 1º de setembro de 2026: formulários de identificação e 
 ### PR 051 — disparo transacional pelo ERP
 
 Aceite concluído em 1º de setembro de 2026: aplicações de integração passaram a autenticar com segredo de alta entropia persistido somente por SHA-256 e comparado em tempo constante. Cada disparo exige aplicação ativa, consentimento `MENSAGEM_TRANSACIONAL` concedido para o contato e conta exatos, modelo aprovado, mensagem de máquina sem usuário remetente e chave idempotente armazenada somente por hash. Repetição compatível devolve o mesmo disparo e comando divergente é recusado. A mensagem nasce `NA_FILA`, entra na timeline e segue a máquina já aprovada; o retorno lê `NA_FILA`, `ENVIADA`, `ENTREGUE`, `LIDA` ou `FALHOU` da própria mensagem. O PostgreSQL repete as validações no instante da inserção e torna o disparo imutável. Lint, tipos, 218 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901003300_criar_disparo_transacional` terminou com código zero e `vyntra/api-staging:pr-051` ficou saudável com prontidão `PRONTO`. Em staging, replay inseriu zero linhas, consentimento revogado e mutação foram recusados, o retorno chegou a `ENTREGUE`, não havia credencial bruta, houve rollback e nenhum erro de nível 50 foi emitido. Endpoint e callback reais permanecem desligados até cumprir os portões externos já documentados.
+
+### PR 052 — projeções autorizadas de evento
+
+Aceite concluído em 1º de setembro de 2026: `EventoDominio` passou a ser convertido por negação padrão em contratos discriminados para `WEB`, `MOBILE` e `PUSH`. Sessão e acesso ao recurso são avaliados no contexto atual; `PERMISSOES_ALTERADAS` alcança somente o próprio usuário. Tipos não publicados viram atualização genérica e dados seguem allowlist de primitivas compatível com sua classificação. Web não recebe política local; mobile recebe somente a política de cache; push admite apenas os cinco avisos aprovados, com sequência e IDs mínimos, sem dados ou conteúdo. Lint, tipos, 222 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-052` ficou saudável com prontidão `PRONTO`. Em staging, web, mobile e push receberam suas projeções, recurso negado não recebeu evento, conteúdo protegido não vazou, migration encerrou com código zero e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
