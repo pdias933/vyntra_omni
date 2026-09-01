@@ -103,7 +103,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 079 | CONCLUÍDA | `xhigh` |
 | 080 | CONCLUÍDA | `xhigh` |
 | 081 | CONCLUÍDA | `xhigh` |
-| 082 | EM ANDAMENTO | `xhigh` |
+| 082 | CONCLUÍDA | `xhigh` |
 | 083 | PENDENTE | `xhigh` |
 | 084 | PENDENTE | `xhigh` |
 | 085 | PENDENTE | `high` |
@@ -497,6 +497,10 @@ Aceite concluído em 1º de setembro de 2026: `CRIAR_ATENDIMENTO` e `CRIAR_ORDEM
 ### PR 081 — nós de desbloqueio de confiança
 
 Aceite concluído em 1º de setembro de 2026: `VERIFICAR_DESBLOQUEIO_CONFIANCA` e `EXECUTAR_DESBLOQUEIO_CONFIANCA` passaram a ter contratos fechados e efeitos separados. O runtime deriva contrato e chave idempotente no servidor, exige confirmação explícita para executar, chama o ERP fora da transação do executor e revalida atendimento `AGUARDANDO/BOT` sem fila/responsável, execução/versão e vínculo automatizável. A autoridade de fluxo não fabrica usuário, sessão ou fila; a ação humana conserva RBAC e fila obrigatória. Sem provider ERP, verificação e execução terminam conservadoramente sem materializar efeito. Lint, tipos, 388 testes da API, 203 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `20260901012500_espera_resposta_fluxo` permaneceu como marca mais recente. `vyntra/api-staging:pr-081` e duas instâncias de `vyntra/worker-fluxos-staging:pr-081` ficaram saudáveis com prontidão `PRONTO`. Em staging, duas execuções concluíram seis passos únicos: a verificação percorreu `INDISPONIVEL` e a execução percorreu `FALHA/INTEGRACAO_ERP_INDISPONIVEL`; houve zero operação, reserva, histórico ou auditoria de efeito. Passos e logs não expuseram contrato ou identificadores das execuções, e os workers tiveram zero erro.
+
+### PR 082 — nós de fila e encerramento
+
+Aceite concluído em 1º de setembro de 2026: `TRANSFERIR_PARA_FILA`, `AGUARDAR_ATENDENTE` e `ENCERRAR_ATENDIMENTO` passaram a operar pelas máquinas de domínio, com autoridade exata da execução e da versão, topologia integral validada e recuperação de espera no PostgreSQL. A transferência gera uma única atribuição aberta sem responsável; o encerramento conserva a fila de fallback, identifica o autor como `FLUXO` e aplica a janela de reabertura de 30 minutos. Auditoria e eventos não fabricam usuário ou sessão, e a suspensão por resgate humano está coberta pelos testes automatizados. Lint, tipos, 396 testes da API, 204 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901013000_espera_atendente_fluxo` terminou com código zero; `vyntra/api-staging:pr-082` e duas instâncias de `vyntra/worker-fluxos-staging:pr-082` ficaram saudáveis com prontidão `PRONTO`. Em staging, duas execuções concluíram sete passos únicos: a primeira transferiu para a fila exata, persistiu a espera e retomou por timeout; a segunda encerrou o atendimento no próprio nó com a janela exata. Ficaram uma única atribuição aberta no cenário humano, eventos e auditorias `FLUXO` sem usuário/sessão e nenhuma exposição do motivo sintético. O primeiro ensaio revelou byte nulo nas chaves advisory; a serialização de fila e atribuição foi corrigida para chaves textuais válidas, o aceite foi repetido e os workers não emitiram novas falhas de ciclo.
 
 ## 7. Mensageria Meta
 
