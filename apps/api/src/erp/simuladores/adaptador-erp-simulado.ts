@@ -13,6 +13,9 @@ import type {
   ContratoErpNormalizado,
   CriteriosLocalizacaoClienteErp,
   FaturaErpNormalizada,
+  DadosPagamentoFaturaErpNormalizados,
+  DocumentoFaturaErpNormalizado,
+  ResultadoComplementoFaturaErp,
   ResultadoConsultaErp,
   ResultadoConsultaUnicaErp,
   ResultadoCriacaoAtendimentoErp,
@@ -32,6 +35,8 @@ export interface DadosErpSimulados {
   readonly clientes?: readonly ClienteErpSimulado[];
   readonly contratos?: readonly ContratoErpNormalizado[];
   readonly faturas?: readonly FaturaErpNormalizada[];
+  readonly documentosFatura?: readonly DocumentoFaturaErpNormalizado[];
+  readonly dadosPagamentoFatura?: readonly DadosPagamentoFaturaErpNormalizados[];
 }
 
 type CenarioCriacaoAtendimento =
@@ -207,6 +212,54 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
       .filter((fatura) => fatura.contratoExternoId === contratoExternoId)
       .map((fatura) => ({ ...fatura }));
     return { itens, origem: 'TEMPO_REAL', resultado: 'SUCESSO' };
+  }
+
+  public async consultarFatura(
+    faturaExternaId: string,
+  ): Promise<ResultadoConsultaUnicaErp<FaturaErpNormalizada>> {
+    this.validarIdentificadorExterno(faturaExternaId);
+    if (!this.consultasDisponiveis) return this.indisponivel();
+    const fatura = (this.dados.faturas ?? []).find(
+      (item) => item.faturaExternaId === faturaExternaId,
+    );
+    if (fatura === undefined) {
+      return { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' };
+    }
+    return { item: { ...fatura }, origem: 'TEMPO_REAL', resultado: 'SUCESSO' };
+  }
+
+  public async obterDocumentoFatura(
+    faturaExternaId: string,
+  ): Promise<ResultadoComplementoFaturaErp<DocumentoFaturaErpNormalizado>> {
+    this.validarIdentificadorExterno(faturaExternaId);
+    if (!this.consultasDisponiveis) return this.indisponivel();
+    const documento = (this.dados.documentosFatura ?? []).find(
+      (item) => item.faturaExternaId === faturaExternaId,
+    );
+    if (documento === undefined) {
+      return { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' };
+    }
+    return {
+      item: { ...documento, conteudo: new Uint8Array(documento.conteudo) },
+      origem: 'TEMPO_REAL',
+      resultado: 'SUCESSO',
+    };
+  }
+
+  public async obterDadosPagamentoFatura(
+    faturaExternaId: string,
+  ): Promise<
+    ResultadoComplementoFaturaErp<DadosPagamentoFaturaErpNormalizados>
+  > {
+    this.validarIdentificadorExterno(faturaExternaId);
+    if (!this.consultasDisponiveis) return this.indisponivel();
+    const dados = (this.dados.dadosPagamentoFatura ?? []).find(
+      (item) => item.faturaExternaId === faturaExternaId,
+    );
+    if (dados === undefined) {
+      return { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' };
+    }
+    return { item: { ...dados }, origem: 'TEMPO_REAL', resultado: 'SUCESSO' };
   }
 
   public async criarAtendimento(

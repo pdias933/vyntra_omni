@@ -30,6 +30,34 @@ export interface FaturaErpNormalizada {
   readonly vencimento: string;
 }
 
+export interface DocumentoFaturaErpNormalizado {
+  readonly faturaExternaId: string;
+  readonly nomeArquivo: string;
+  readonly tipoArquivo: 'PDF';
+  readonly conteudo: Uint8Array;
+}
+
+export interface DadosPagamentoFaturaErpNormalizados {
+  readonly faturaExternaId: string;
+  readonly pixCopiaCola?: string;
+  readonly linhaDigitavel?: string;
+}
+
+export type ResultadoComplementoFaturaErp<T> =
+  | {
+      readonly resultado: 'SUCESSO';
+      readonly origem: OrigemConsultaErp;
+      readonly item: T;
+    }
+  | {
+      readonly resultado: 'NAO_ENCONTRADO';
+      readonly origem: OrigemConsultaErp;
+    }
+  | {
+      readonly resultado: 'INDISPONIVEL';
+      readonly codigo: 'CAPACIDADE_NAO_HABILITADA' | 'ERP_INDISPONIVEL';
+    };
+
 export type ResultadoConsultaErp<T> =
   | {
       readonly resultado: 'SUCESSO';

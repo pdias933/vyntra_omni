@@ -5,6 +5,9 @@ import type {
   ContratoErpNormalizado,
   CriteriosLocalizacaoClienteErp,
   FaturaErpNormalizada,
+  DadosPagamentoFaturaErpNormalizados,
+  DocumentoFaturaErpNormalizado,
+  ResultadoComplementoFaturaErp,
   ResultadoConsultaErp,
   ResultadoConsultaUnicaErp,
   ResultadoCriacaoAtendimentoErp,
@@ -33,6 +36,20 @@ export interface ConsultasErp {
   listarFaturas(
     contratoExternoId: string,
   ): Promise<ResultadoConsultaErp<FaturaErpNormalizada>>;
+
+  consultarFatura(
+    faturaExternaId: string,
+  ): Promise<ResultadoConsultaUnicaErp<FaturaErpNormalizada>>;
+
+  obterDocumentoFatura(
+    faturaExternaId: string,
+  ): Promise<ResultadoComplementoFaturaErp<DocumentoFaturaErpNormalizado>>;
+
+  obterDadosPagamentoFatura(
+    faturaExternaId: string,
+  ): Promise<
+    ResultadoComplementoFaturaErp<DadosPagamentoFaturaErpNormalizados>
+  >;
 }
 
 export interface EscritasErp {

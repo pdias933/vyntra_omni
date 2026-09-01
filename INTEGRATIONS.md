@@ -215,6 +215,8 @@ O simulador não contém DTO MK, credencial, endpoint ou inferência sobre campo
 
 A PR 060 completa a semântica interna de busca e detalhe com `consultarCliente` e `consultarContrato`. `ServicoConsultasClienteContratoErp` valida critérios antes da porta e revalida a resposta normalizada: limites, identificadores relacionados, estados canônicos e allowlist de campos. Campo desconhecido ou contrato pertencente a outro cliente falha fechado como `RESPOSTA_CONSULTA_ERP_INVALIDA`; ausência exata é distinta de indisponibilidade. Toda resposta bem-sucedida informa `TEMPO_REAL`. O serviço, a porta e seus consumidores não conhecem nomes MK, famílias WSMK ou DTOs externos. O adapter real continua sem provider até existirem fixtures reais aprovadas; os testes desta etapa usam somente o simulador sintético.
 
+A PR 061 acrescenta `consultarFatura`, `obterDocumentoFatura` e `obterDadosPagamentoFatura` à porta interna. `ServicoFinanceiroErp` valida vínculo fatura↔contrato, estado, valor, vencimento, assinatura e teto do PDF, formato de Pix e linha digitável. Documento e pagamento têm disponibilidade independente; ausência ou capacidade não habilitada produz resposta `PARCIAL` com motivo explícito, nunca valor inventado. Fatura inexistente e ERP indisponível continuam distintos. Sucesso sempre declara `TEMPO_REAL`; financeiro não usa snapshot como fallback. O documento cru é convertido pelo adapter em bytes internos e não transporta URL, Base64 ou nomenclatura do fornecedor.
+
 ## 4. `AdaptadorMkSolutions`
 
 É a primeira implementação de `AdaptadorErp`.
