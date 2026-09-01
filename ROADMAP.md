@@ -90,7 +90,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 066 | CONCLUÍDA | `xhigh` |
 | 067 | CONCLUÍDA | `xhigh` |
 | 068 | CONDICIONAL | `xhigh` |
-| 069 | EM ANDAMENTO | `high` |
+| 069 | CONCLUÍDA | `high` |
 | 070 | PENDENTE | `xhigh` |
 | 071 | PENDENTE | `xhigh` |
 | 072 | PENDENTE | `xhigh` |
@@ -449,6 +449,10 @@ Aceite concluído em 1º de setembro de 2026: criação e atualização de ordem
 ### PR 067 — comentário, encerramento e link
 
 Aceite concluído em 1º de setembro de 2026: comentário de finalização e encerramento por protocolo oficial passaram a exigir confirmação explícita, `ENCERRAR_ATENDIMENTO`, fila autorizada e contexto exato. Comentário confirmado persiste apenas hash e não altera o atendimento. Encerramento usa advisory lock, versão otimista, reserva exclusiva e a máquina de estado; somente a confirmação externa fecha a atribuição, grava evento e deixa o atendimento `ENCERRADO_REABRIVEL`. Resultado ambíguo preserva o atendimento aberto e a reserva até reconciliação, sem repetição cega. Auditoria não recebe comentário, motivo ou protocolo em claro. O link público permanece `DESATIVADO` por aprovação jurídica pendente, sem token, URL ou rota; controller e provider MK real continuam ausentes. Lint, tipos, 300 testes da API, 184 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901005500_acoes_atendimento_erp` terminou com código zero e `vyntra/api-staging:pr-067` ficou saudável com prontidão `PRONTO`. Em staging, comentário e encerramento produziram um efeito externo cada, os replays foram estáveis, a resposta perdida manteve o atendimento aberto até a reconciliação, a transição final gerou um evento, encerrou o histórico, removeu a reserva e preservou auditoria sanitizada. Dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
+
+### PR 069 — fluxo, versão e ponteiro publicado
+
+Aceite concluído em 1º de setembro de 2026: `Fluxo` passou a ser a identidade estável e `VersaoFluxo` a definição numerada. Criação de fluxo e versão 1 em `RASCUNHO` compartilha transação; novas versões recebem número sob lock; alteração de rascunho exige revisão esperada. PostgreSQL limita a definição a objeto JSON de 256 KiB, impõe uma única versão `PUBLICADA`, valida por referência composta e constraint diferida que o ponteiro pertença ao mesmo fluxo e protege definição, autoria e datas publicadas contra reescrita ou exclusão. O seletor para futura execução devolve exatamente a versão apontada, não a versão mais recente. Não há controller, editor, executor, worker ou adapter antecipado. Lint, tipos, 307 testes da API, 187 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901010000_fluxos_versionados` terminou com código zero e `vyntra/api-staging:pr-069` ficou saudável com prontidão `PRONTO`. Em staging, o serviço e repositório reais criaram as versões 1 e 2, fixaram o ponteiro na versão 1, editaram somente o rascunho e o trigger recusou alterar a definição publicada; a transação de aceite foi revertida integralmente, os dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
