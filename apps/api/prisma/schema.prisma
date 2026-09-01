@@ -663,6 +663,7 @@ model ContaWhatsApp {
   atualizadoEm                    DateTime             @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   identidadesUltimaObservacao     IdentidadeWhatsApp[]
   eventosAlteracaoIdentidade      EventoAlteracaoIdentidadeWhatsApp[]
+  participacoesConversa           ParticipacaoContaConversa[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorCanalExterno], map: "conta_whatsapp_identidade_externa_key")
   @@index([estado, nomeExibicao, id], map: "conta_whatsapp_estado_nome_idx")
@@ -682,9 +683,38 @@ model Contato {
   identidadesWhatsApp   IdentidadeWhatsApp[]
   vinculosCliente       VinculoCliente[]
   contextosAtendimento  ContextoAtendimento[]
+  conversa              Conversa?
 
   @@index([estado, ultimaInteracaoEm, id], map: "contato_estado_ultima_interacao_idx")
   @@map("contato")
+}
+
+model Conversa {
+  id                    String                       @id @db.Uuid
+  contatoId             String                       @unique(map: "conversa_contato_key") @map("contato_id") @db.Uuid
+  criadaEm              DateTime                     @default(now()) @map("criada_em") @db.Timestamptz(6)
+  atualizadaEm          DateTime                     @default(now()) @updatedAt @map("atualizada_em") @db.Timestamptz(6)
+  ultimaAtividadeEm     DateTime                     @map("ultima_atividade_em") @db.Timestamptz(6)
+  versao                Int                          @default(1)
+  contato               Contato                      @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  contasParticipantes   ParticipacaoContaConversa[]
+
+  @@index([ultimaAtividadeEm, id], map: "conversa_ultima_atividade_idx")
+  @@map("conversa")
+}
+
+model ParticipacaoContaConversa {
+  conversaId            String          @map("conversa_id") @db.Uuid
+  contaWhatsAppId        String          @map("conta_whatsapp_id") @db.Uuid
+  primeiraInteracaoEm   DateTime        @map("primeira_interacao_em") @db.Timestamptz(6)
+  ultimaInteracaoEm     DateTime        @map("ultima_interacao_em") @db.Timestamptz(6)
+  versao                Int             @default(1)
+  conversa              Conversa        @relation(fields: [conversaId], references: [id], onDelete: Restrict)
+  contaWhatsApp         ContaWhatsApp   @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+
+  @@id([conversaId, contaWhatsAppId])
+  @@index([contaWhatsAppId, ultimaInteracaoEm, conversaId], map: "participacao_conta_conversa_conta_atividade_idx")
+  @@map("participacao_conta_conversa")
 }
 
 model IdentidadeWhatsApp {

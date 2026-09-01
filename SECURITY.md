@@ -502,6 +502,8 @@ Vínculo e contexto obedecem a uma defesa adicional contra associação indevida
 
 O snapshot da PR 026 aceita apenas o vocabulário interno permitido e documento/telefone mascarados. Campo bruto ou desconhecido falha antes do lock/persistência. Origem, idade, hash e versão permanecem explícitos; captura atrasada não regride o dado e divergência no mesmo instante falha fechada. O módulo não publica controller nem ação ERP. Snapshot, ainda que recente, nunca concede permissão, comprova identidade de alto risco ou autoriza escrita; Redis não participa dessa autoridade.
 
+A conversa única da PR 027 não amplia visibilidade. Ela consolida identidade da timeline, enquanto autorização por atendimento/fila e permissões transversais continuam obrigatórias na consulta futura. Conta participante não concede acesso nem apaga a origem dos itens. Resolução exige contato existente e conta ativa, serializa por contato e não publica controller; FKs restritivas preservam origem histórica após desativação.
+
 ## 15. Regras de código seguro
 
 - Não adicionar dependência sem necessidade, análise e justificativa.

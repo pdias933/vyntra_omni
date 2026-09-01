@@ -261,6 +261,8 @@ EstadoJanelaCanal.contato_id + conta_whatsapp_id
 
 Transferência interna nunca altera `conta_whatsapp_origem_id`. Respostas do atendimento saem pela conta de origem na V1.
 
+A PR 027 materializa `Conversa` com unicidade por `contato_id`, sem estado/data de fechamento. `ParticipacaoContaConversa` registra cada conta observada na mesma timeline e seus intervalos de interação. Resolução serializa pelo contato, exige conta ativa e atualiza somente máximos/mínimos: interação atrasada pode antecipar a primeira origem, mas nunca regride a última atividade. A participação não substitui a origem obrigatória de cada `Mensagem` e `Atendimento` futuros.
+
 ### 5.2 Resolução de atendimento na entrada
 
 Ao persistir uma mensagem de entrada:

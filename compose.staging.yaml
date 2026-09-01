@@ -123,7 +123,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: migracao
-    image: vyntra/migracoes-staging:pr-026
+    image: vyntra/migracoes-staging:pr-027
     pull_policy: build
     restart: "no"
     init: true
@@ -152,7 +152,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/api-staging:pr-026
+    image: vyntra/api-staging:pr-027
     pull_policy: build
     restart: *reinicio-staging
     init: true

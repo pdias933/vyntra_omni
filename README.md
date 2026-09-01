@@ -90,6 +90,8 @@ Alterações explícitas anterior→atual preservam contato por alias e evento a
 
 `SnapshotCliente` conserva no PostgreSQL uma leitura normalizada e protegida por vínculo ativo. Captura, origem, hash e versão impedem regressão ou divergência silenciosa; toda leitura declara `SNAPSHOT` e sua idade. Não existe rota de escrita ERP nem dependência de Redis neste módulo. Modelo e operação estão em [docs/operacoes/PR-026.md](docs/operacoes/PR-026.md); não houve nova dependência, conforme [docs/dependencias/PR-026.md](docs/dependencias/PR-026.md).
 
+`Conversa` é única por `Contato` e nunca recebe estado de encerramento. Contas WhatsApp diferentes registram participações na mesma conversa, com primeiro/último instante próprios; isso preserva a origem sem fragmentar a timeline. Modelo e operação estão em [docs/operacoes/PR-027.md](docs/operacoes/PR-027.md); não houve nova dependência, conforme [docs/dependencias/PR-027.md](docs/dependencias/PR-027.md).
+
 O workflow de integração contínua repete essas verificações, examina segredos em todo o histórico e não executa deploy. Política, exceções e configurações remotas necessárias estão em [docs/ci/PR-003.md](docs/ci/PR-003.md).
 
 ### Ambiente local

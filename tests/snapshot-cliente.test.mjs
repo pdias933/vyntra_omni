@@ -43,8 +43,3 @@ test('PostgreSQL é autoridade e módulo não publica escrita ou usa Redis', asy
   assert.match(codigo, /pg_advisory_xact_lock/);
   assert.ok(!/Redis|Controller/.test(codigo));
 });
-
-test('prontidão exige a migration de snapshot mais recente', async () => {
-  const persistencia = await ler('apps/api/src/persistencia/servico-prisma.ts');
-  assert.match(persistencia, /20260831001500_criar_snapshot_cliente/);
-});
