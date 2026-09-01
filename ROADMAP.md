@@ -47,7 +47,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 023 | CONCLUÍDA | `high` |
 | 024 | CONCLUÍDA | `xhigh` |
 | 025 | CONCLUÍDA | `xhigh` |
-| 026 | EM ANDAMENTO | `xhigh` |
+| 026 | CONCLUÍDA | `xhigh` |
 | 027 | PENDENTE | `xhigh` |
 | 028 | PENDENTE | `xhigh` |
 | 029 | PENDENTE | `high` |
@@ -289,6 +289,10 @@ Aceite concluído em 31 de agosto de 2026: alteração explícita anterior→atu
 ### PR 025 — vínculos de cliente e contexto do atendimento
 
 Aceite concluído em 31 de agosto de 2026: múltiplos `VinculoCliente` e `VinculoContrato` passaram a coexistir por contato, enquanto `ContextoAtendimento` fixa um alvo explícito e versionado. FKs compostas recusam contrato/cliente de outro contato; troca humana exige autorização central, alvo ativo, versão esperada e auditoria transacional sem identificadores externos. Não há rota pública de criação/troca e o UUID do atendimento fica reservado até a FK aditiva da PR 028. Lint, tipos, 111 testes da API, 109 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001400_criar_vinculo_contexto_atendimento` terminou com código zero e `vyntra/api-staging:pr-025` ficou saudável com prontidão `PRONTO`. Em staging, dois clientes e dois contratos coexistiram, a troca chegou à versão 2, combinação cruzada e segundo preferencial foram recusados, a transação sintética foi revertida e não houve erro de nível 50.
+
+### PR 026 — SnapshotCliente no PostgreSQL
+
+Aceite concluído em 31 de agosto de 2026: `SnapshotCliente` passou a persistir uma leitura protegida por vínculo ativo, com origem, captura, hash, versão e idade explícitos. Atualização serializa por vínculo, ignora captura antiga, trata replay idêntico e recusa divergência no mesmo instante; documento/telefone bruto ou campo desconhecido falha antes de persistir. A leitura declara `SNAPSHOT`; não há controller, escrita ERP, limiar fictício de obsolescência ou autoridade em Redis. Lint, tipos, 117 testes da API, 112 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001500_criar_snapshot_cliente` terminou com código zero e `vyntra/api-staging:pr-026` ficou saudável com prontidão `PRONTO`. Em staging, atualização avançou à versão 2, unicidade por vínculo, JSON objeto e hash foram protegidos, a transação sintética foi revertida e não houve erro de nível 50.
 
 ## 7. Mensageria Meta
 
