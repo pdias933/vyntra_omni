@@ -292,6 +292,8 @@ test('roteamento humano e encerramento preservam máquinas, fila ativa e autorid
     recuperacao,
     migration,
     modulo,
+    historico,
+    filas,
   ] = await Promise.all([
     ler('apps/api/src/execucoes-fluxo/servico-executor-nos-fluxo.ts'),
     ler(
@@ -309,6 +311,10 @@ test('roteamento humano e encerramento preservam máquinas, fila ativa e autorid
       'apps/api/prisma/migrations/20260901013000_espera_atendente_fluxo/migration.sql',
     ),
     ler('apps/api/src/execucoes-fluxo/modulo-execucoes-fluxo.ts'),
+    ler(
+      'apps/api/src/historico-atribuicao/repositorio-historico-atribuicao-prisma.ts',
+    ),
+    ler('apps/api/src/filas/repositorio-filas-prisma.ts'),
   ]);
   assert.match(executor, /executarRoteamentoAtendimento/);
   assert.match(executor, /estadoEspera: 'AGUARDANDO_ATENDENTE'/);
@@ -327,4 +333,5 @@ test('roteamento humano e encerramento preservam máquinas, fila ativa e autorid
   assert.match(migration, /'ATENDENTE'/);
   assert.match(modulo, /ModuloAtribuicoesAtendimento/);
   assert.doesNotMatch(atribuicoes, /MkSolutions|MetaCloud|https?:\/\//);
+  assert.doesNotMatch(`${repositorio}\n${historico}\n${filas}`, /\\u0000/);
 });

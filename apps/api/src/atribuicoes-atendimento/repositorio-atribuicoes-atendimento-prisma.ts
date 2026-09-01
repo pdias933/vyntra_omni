@@ -15,10 +15,10 @@ export class RepositorioAtribuicoesAtendimentoPrisma
     transacao: TransacaoPrisma,
   ): Promise<void> {
     await transacao.$executeRaw(
-      Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`historico-atribuicao\u0000${atendimentoId}`}, 0))`,
+      Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`historico-atribuicao:${atendimentoId}`}, 0))`,
     );
     await transacao.$executeRaw(
-      Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`fila\u0000${filaId}`}, 0))`,
+      Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`fila:${filaId}`}, 0))`,
     );
   }
 

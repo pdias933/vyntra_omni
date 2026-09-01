@@ -14,14 +14,14 @@ export class RepositorioFilasPrisma implements RepositorioFilas {
     nomeNormalizado: string,
     transacao: TransacaoPrisma,
   ): Promise<void> {
-    await this.bloquear(`fila-nome\u0000${nomeNormalizado}`, transacao);
+    await this.bloquear(`fila-nome:${nomeNormalizado}`, transacao);
   }
 
   public async bloquearFila(
     filaId: string,
     transacao: TransacaoPrisma,
   ): Promise<void> {
-    await this.bloquear(`fila\u0000${filaId}`, transacao);
+    await this.bloquear(`fila:${filaId}`, transacao);
   }
 
   public async bloquearVinculo(
@@ -29,7 +29,7 @@ export class RepositorioFilasPrisma implements RepositorioFilas {
     usuarioId: string,
     transacao: TransacaoPrisma,
   ): Promise<void> {
-    await this.bloquear(`fila-vinculo\u0000${filaId}\u0000${usuarioId}`, transacao);
+    await this.bloquear(`fila-vinculo:${filaId}:${usuarioId}`, transacao);
   }
 
   public async criarFila(
