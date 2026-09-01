@@ -80,7 +80,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 056 | CONCLUÍDA | `xhigh` |
 | 057 | CONCLUÍDA | `high` |
 | 058 | CONCLUÍDA | `xhigh` |
-| 059 | EM ANDAMENTO | `xhigh` |
+| 059 | CONCLUÍDA | `xhigh` |
 | 060 | PENDENTE | `high` |
 | 061 | PENDENTE | `xhigh` |
 | 062 | PENDENTE | `xhigh` |
@@ -421,6 +421,10 @@ Aceite concluído em 1º de setembro de 2026: a projeção `PUSH` passou por um 
 ### PR 058 — invalidação por permissão
 
 Aceite concluído em 1º de setembro de 2026: cada usuário ativo passou a possuir `versao_permissoes`. Concessão, revogação ou inativação de fila incrementa a versão e confirma `PERMISSOES_ALTERADAS` na mesma transação da mudança de escopo; repetição idempotente não cria nova invalidação. A projeção alcança somente o usuário afetado. SSE revalida a sessão durante o stream e, após entregar o evento, encerra a resposta. WebSocket autentica no upgrade, heartbeat e confirmação e fecha com código privado `4003` depois de entregar a invalidação. O snapshot completo publica `versao_permissoes`; o coordenador mobile pausa comandos, fecha o tempo real, exige snapshot ao menos tão novo quanto evento e versão, substitui a réplica removendo ausentes, reconcilia pendências e só então reconecta. Falha bloqueia a área autenticada. Lint, tipos, 244 testes da API, 168 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901003400_versionar_permissoes_usuario` terminou com código zero e `vyntra/api-staging:pr-058` ficou saudável com prontidão `PRONTO`. Em staging, uma fila autorizada apareceu no snapshot de versão 1; a revogação transacional gerou o evento `14`, encerrou o WebSocket com `4003`, elevou a versão para 2, removeu a fila do novo snapshot e permitiu reconexão em `PRONTO`. Dados sintéticos foram removidos e nenhum erro de nível 50 foi emitido.
+
+### PR 059 — caracterização real do MK Solutions
+
+Aceite concluído em 1º de setembro de 2026: a integração MK Solutions recebeu um inventário versionado de onze capacidades internas, famílias externas, licenciamento, transporte e estado da evidência. O validador usa allowlist estrita, exige fontes oficiais e rejeita campos, capacidades ausentes ou duplicadas. A fixture pública sanitizada registra honestamente que respostas reais, DTOs, paginação e erros ainda não foram observados; por isso o portão de ativação permanece fechado e nenhum contrato externo foi inventado. Lint, tipos, 246 testes da API, 170 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-059` ficou saudável com prontidão `PRONTO`. Em staging, as onze operações foram lidas, o portão permaneceu fechado, campo inesperado foi recusado e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
