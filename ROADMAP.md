@@ -44,7 +44,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 020 | CONCLUÍDA | `high` |
 | 021 | CONCLUÍDA | `medium` |
 | 022 | CONCLUÍDA | `medium` |
-| 023 | EM ANDAMENTO | `high` |
+| 023 | CONCLUÍDA | `high` |
 | 024 | PENDENTE | `xhigh` |
 | 025 | PENDENTE | `xhigh` |
 | 026 | PENDENTE | `xhigh` |
@@ -277,6 +277,10 @@ Aceite concluído em 31 de agosto de 2026: `AdaptadorSessaoAcesso` foi separado 
 ### PR 022 — ContaWhatsApp
 
 Aceite concluído em 31 de agosto de 2026: `ContaWhatsApp` passou a representar múltiplas origens empresariais por UUID interno estável, identidade externa única, telefone de exibição opcional, estado inicial `INATIVA` e histórico sem operação de exclusão. Cadastro exige `ADMINISTRAR_INTEGRACOES`, normaliza os campos textuais e audita na mesma transação sem propagar identificadores externos, telefone ou credencial. Token, segredo e certificado permanecem ausentes do domínio, banco e módulo da aplicação. Lint, tipos, 94 testes da API, 98 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001100_criar_conta_whatsapp` terminou com código zero e a imagem `vyntra/api-staging:pr-022` ficou saudável com prontidão `PRONTO`. Em staging, duas contas coexistiram com IDs distintos e estado inativo; identidade externa duplicada, telefone inválido e telefone repetido foram recusados; nenhuma coluna de credencial existe, os dados sintéticos foram removidos e não houve erro de nível 50.
+
+### PR 023 — Contato e IdentidadeWhatsApp
+
+Aceite concluído em 31 de agosto de 2026: `Contato` e `IdentidadeWhatsApp` foram materializados com UUID interno, correlação única por portfólio+identificador estável, serialização transacional antes da primeira criação e FKs restritivas. Username, telefone e nome de perfil são opcionais e não participam da chave nem provam identidade ERP; reobservação preserva o contato e a auditoria não recebe seus valores. Lint, tipos, 100 testes da API, 102 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260831001200_criar_contato_identidade_whatsapp` terminou com código zero e `vyntra/api-staging:pr-023` ficou saudável com prontidão `PRONTO`. Em staging, identidade sem username/telefone foi aceita, atributos repetidos coexistiram, identificador estável duplicado foi recusado, os dados sintéticos foram revertidos e não houve erro de nível 50.
 
 ## 7. Mensageria Meta
 
