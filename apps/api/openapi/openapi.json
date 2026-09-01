@@ -877,6 +877,240 @@
         ]
       }
     },
+    "/api/v1/web/atendimentos/{atendimentoId}/contato": {
+      "get": {
+        "operationId": "obterDetalhesContatoWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalhesContatoWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Obtém identidade, contexto e dados autorizados do contato",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
+    "/api/v1/web/atendimentos/{atendimentoId}/contexto": {
+      "post": {
+        "operationId": "alterarContextoContatoWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaAlterarContextoWebDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalhesContatoWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Troca cliente e contrato ativos com concorrência otimista",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
+    "/api/v1/web/atendimentos/{atendimentoId}/financeiro": {
+      "get": {
+        "operationId": "consultarFinanceiroContatoWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoFinanceiroContatoWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Consulta situação financeira em tempo real, sem snapshot decisório",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
+    "/api/v1/web/atendimentos/{atendimentoId}/acoes-erp/preparar": {
+      "post": {
+        "operationId": "prepararAcaoErpContatoWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaPrepararAcaoErpWebDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviaAcaoErpWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Revalida o contexto e prepara uma ação sensível para confirmação",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
+    "/api/v1/web/atendimentos/{atendimentoId}/acoes-erp/executar": {
+      "post": {
+        "operationId": "executarAcaoErpContatoWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaExecutarAcaoErpWebDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoAcaoErpWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Executa a ação confirmada por serviço idempotente de domínio",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
     "/api/v1/web/atendimentos/{atendimentoId}/busca": {
       "get": {
         "operationId": "buscarConversaWeb",
@@ -2854,6 +3088,344 @@
           "autenticada_em",
           "ultima_atividade_em",
           "expira_em"
+        ]
+      },
+      "IdentidadeContatoWebDto": {
+        "type": "object",
+        "properties": {
+          "bsuid": {
+            "type": "string"
+          },
+          "nome_perfil": {
+            "type": "string"
+          },
+          "nome_usuario": {
+            "type": "string"
+          },
+          "telefone_mascarado": {
+            "type": "string"
+          }
+        }
+      },
+      "ContratoContatoWebDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "situacao": {
+            "type": "string"
+          },
+          "servico": {
+            "type": "string"
+          },
+          "endereco_resumido": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "situacao"
+        ]
+      },
+      "VinculoContatoWebDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome_exibicao": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "preferencial": {
+            "type": "boolean"
+          },
+          "origem": {
+            "type": "string",
+            "enum": [
+              "SNAPSHOT"
+            ]
+          },
+          "estado_snapshot": {
+            "type": "string",
+            "enum": [
+              "ATUAL",
+              "EXCLUIDO",
+              "NAO_DISPONIVEL",
+              "OBSOLETO"
+            ]
+          },
+          "idade_snapshot_segundos": {
+            "type": "number"
+          },
+          "documento_mascarado": {
+            "type": "string"
+          },
+          "contratos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContratoContatoWebDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "nome_exibicao",
+          "tipo",
+          "preferencial",
+          "origem",
+          "estado_snapshot",
+          "contratos"
+        ]
+      },
+      "DetalhesContatoWebDto": {
+        "type": "object",
+        "properties": {
+          "atendimento_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "conversa_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contato_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fila_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome_exibicao": {
+            "type": "string"
+          },
+          "estado_contato": {
+            "type": "string"
+          },
+          "identidades": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IdentidadeContatoWebDto"
+            }
+          },
+          "contexto": {
+            "type": "object"
+          },
+          "protocolo": {
+            "type": "string"
+          },
+          "contagens": {
+            "type": "object",
+            "properties": {
+              "atendimentos": {
+                "type": "number"
+              },
+              "midias": {
+                "type": "number"
+              },
+              "notas": {
+                "type": "number"
+              },
+              "ordens_servico": {
+                "type": "number"
+              }
+            }
+          },
+          "permissoes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "vinculos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VinculoContatoWebDto"
+            }
+          }
+        },
+        "required": [
+          "atendimento_id",
+          "conversa_id",
+          "contato_id",
+          "fila_id",
+          "nome_exibicao",
+          "estado_contato",
+          "identidades",
+          "contagens",
+          "permissoes",
+          "vinculos"
+        ]
+      },
+      "EntradaAlterarContextoWebDto": {
+        "type": "object",
+        "properties": {
+          "vinculo_cliente_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vinculo_contrato_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versao_esperada": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "vinculo_cliente_id",
+          "versao_esperada"
+        ]
+      },
+      "ResultadoFinanceiroContatoWebDto": {
+        "type": "object",
+        "properties": {
+          "origem": {
+            "type": "string",
+            "enum": [
+              "INDISPONIVEL",
+              "TEMPO_REAL"
+            ]
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "faturas": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "referencia": {
+                  "type": "string"
+                },
+                "situacao": {
+                  "type": "string"
+                },
+                "valor_centavos": {
+                  "type": "number"
+                },
+                "vencimento": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "origem",
+          "faturas"
+        ]
+      },
+      "EntradaPrepararAcaoErpWebDto": {
+        "type": "object",
+        "properties": {
+          "acao": {
+            "type": "string",
+            "enum": [
+              "CRIAR_ORDEM_SERVICO",
+              "EXECUTAR_DESBLOQUEIO"
+            ]
+          }
+        },
+        "required": [
+          "acao"
+        ]
+      },
+      "PreviaAcaoErpWebDto": {
+        "type": "object",
+        "properties": {
+          "acao": {
+            "type": "string",
+            "enum": [
+              "CRIAR_ORDEM_SERVICO",
+              "EXECUTAR_DESBLOQUEIO"
+            ]
+          },
+          "confirmacao_obrigatoria": {
+            "type": "boolean"
+          },
+          "disponivel": {
+            "type": "boolean"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "resumo": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "rotulo": {
+                  "type": "string"
+                },
+                "valor": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "acao",
+          "confirmacao_obrigatoria",
+          "disponivel",
+          "resumo"
+        ]
+      },
+      "EntradaExecutarAcaoErpWebDto": {
+        "type": "object",
+        "properties": {
+          "acao": {
+            "type": "string",
+            "enum": [
+              "CRIAR_ORDEM_SERVICO",
+              "EXECUTAR_DESBLOQUEIO"
+            ]
+          },
+          "chave_idempotencia": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "confirmacao_explicita": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "assunto": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "acao",
+          "chave_idempotencia",
+          "confirmacao_explicita"
+        ]
+      },
+      "ResultadoAcaoErpWebDto": {
+        "type": "object",
+        "properties": {
+          "situacao": {
+            "type": "string"
+          },
+          "operacao_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "situacao"
         ]
       },
       "ResultadoBuscaConversaWebDto": {

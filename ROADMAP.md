@@ -113,7 +113,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 089 | CONCLUÍDA | `high` |
 | 090 | CONCLUÍDA | `high` |
 | 091 | CONCLUÍDA | `xhigh` |
-| 092 | PENDENTE | `xhigh` |
+| 092 | CONCLUÍDA | `xhigh` |
 | 093 | PENDENTE | `xhigh` |
 | 094 | PENDENTE | `high` |
 | 095 | PENDENTE | `xhigh` |
@@ -618,6 +618,10 @@ Aceite concluído em 1º de setembro de 2026: imagem, áudio, vídeo e PDF passa
 ### PR 091 — busca e galeria
 
 Aceite concluído em 1º de setembro de 2026: a busca textual e as galerias `Mídias`, `Links` e `Documentos` ganharam painéis próprios de desktop, paginação por cursor e navegação até a mensagem original. O backend autentica o atendimento atual, resolve a interseção de filas/histórico autorizados e só então executa consultas parametrizadas no PostgreSQL; nenhum conteúdo é carregado para filtragem no processo. A busca usa dicionário português e projeção curta, enquanto a galeria devolve somente metadados mínimos e reutiliza o download privado já autorizado. A migration aditiva `20260901015500_busca_galeria_web` criou índices GIN para texto/links e índice temporal parcial para mídia; a prontidão avançou. Lint, tipos, 417 testes da API e 229 testes de arquitetura foram aprovados. Effort `xhigh` foi confirmado pela paginação estável, índices e autorização transversal antes do conteúdo.
+
+### PR 092 — contato, contexto e ações ERP
+
+Aceite concluído em 1º de setembro de 2026: nome/avatar abre Detalhes do Contato sem desmontar timeline nem composer, e o painel concentra identidade WhatsApp, dados mascarados, vínculos, contratos, contexto ativo, protocolo, histórico e contagens conforme RBAC. O backend autoriza atendimento e cada capacidade antes de consultar ou projetar conteúdo; BSUID exige permissão sensível e identificadores externos do ERP não atravessam o DTO. Cadastro de contingência declara `SNAPSHOT` e idade/estado, enquanto financeiro aceita apenas `TEMPO_REAL` ou `INDISPONIVEL`. Troca de cliente/contrato usa seleção, confirmação, fila derivada no servidor e versão esperada. Desbloqueio e ordem de serviço passam por prévia, confirmação literal, nova autorização, contexto atual e serviços idempotentes; integração ausente não finge sucesso. O web usa exclusivamente o SDK OpenAPI gerado. Não houve migration; `20260901015500_busca_galeria_web` permanece a marca mais recente. Lint, tipos, 419 testes da API e 232 testes de arquitetura foram aprovados. Effort `xhigh` foi confirmado pela matriz RBAC, separação Snapshot/Tempo Real e ações externas recuperáveis.
 
 ## 12. Mobile
 

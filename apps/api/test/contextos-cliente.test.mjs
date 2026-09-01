@@ -17,6 +17,7 @@ const ids = {
   cliente: randomUUID(),
   contato: randomUUID(),
   contrato: randomUUID(),
+  fila: randomUUID(),
 };
 const sessao = {
   estado: 'ATIVA',
@@ -160,6 +161,7 @@ test('alteração autoriza antes da mutação, incrementa versão e audita', asy
     sessao,
     {
       atendimentoId: ids.atendimento,
+      filaId: ids.fila,
       versaoEsperada: 1,
       vinculoClienteId: ids.cliente,
       vinculoContratoId: ids.contrato,
@@ -172,6 +174,7 @@ test('alteração autoriza antes da mutação, incrementa versão e audita', asy
   assert.equal(contexto.alteradoPorUsuarioId, sessao.usuarioId);
   assert.ok(cenario.chamadas.ordem.indexOf('AUTORIZAR') < cenario.chamadas.ordem.indexOf('ALTERAR'));
   assert.equal(cenario.chamadas.autorizacao[0].permissao, 'ALTERAR_CONTEXTO_CLIENTE');
+  assert.equal(cenario.chamadas.autorizacao[0].filaId, ids.fila);
   assert.equal(cenario.chamadas.alteracoes[0][1], 1);
   assert.equal(cenario.chamadas.auditoria[0][1], cenario.transacao);
 });
@@ -183,6 +186,7 @@ test('alvo que não pertence ao contato é negado sem mutação', async () => {
       sessao,
       {
         atendimentoId: ids.atendimento,
+        filaId: ids.fila,
         versaoEsperada: 1,
         vinculoClienteId: ids.cliente,
       },
@@ -200,6 +204,7 @@ test('conflito otimista não audita alteração inexistente', async () => {
       sessao,
       {
         atendimentoId: ids.atendimento,
+        filaId: ids.fila,
         versaoEsperada: 1,
         vinculoClienteId: ids.cliente,
       },

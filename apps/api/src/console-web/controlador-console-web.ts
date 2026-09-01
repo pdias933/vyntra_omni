@@ -5,12 +5,14 @@ import { ApiBody, ApiConsumes, ApiCookieAuth, ApiHeader, ApiOkResponse, ApiOpera
 import { NOME_HEADER_CSRF_WEB, obterTokenCsrfWeb, obterTokenSessaoWeb } from '../autenticacao/cookies-sessao-web.js';
 import { ServicoAutenticacaoWeb } from '../autenticacao/servico-autenticacao-web.js';
 import { ServicoOrigemWeb } from '../autenticacao/servico-origem-web.js';
+import type { ContextoSessaoAutorizacao } from '../autorizacao/modelo-autorizacao.js';
 import { ExcecaoHttpCanonica } from '../http/excecao-http-canonica.js';
 import { ErroTextoLivreForaJanela } from '../janela-canal/erros-janela-canal.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
-import { EntradaEnvioModeloWebDto, EntradaEnvioTextoWebDto, EntradaLeituraTimelineWebDto, EntradaMarcarNaoLidaWebDto, EntradaReacaoWebDto, ListaAtendimentosWebDto, MarcadorLeituraWebDto, MensagemCriadaWebDto, ModeloAprovadoWebDto, PaginaBuscaConversaWebDto, PaginaGaleriaConversaWebDto, PaginaTimelineWebDto, RespostaRapidaWebDto } from './dto/console-web.dto.js';
+import { DetalhesContatoWebDto, EntradaAlterarContextoWebDto, EntradaEnvioModeloWebDto, EntradaEnvioTextoWebDto, EntradaExecutarAcaoErpWebDto, EntradaLeituraTimelineWebDto, EntradaMarcarNaoLidaWebDto, EntradaPrepararAcaoErpWebDto, EntradaReacaoWebDto, ListaAtendimentosWebDto, MarcadorLeituraWebDto, MensagemCriadaWebDto, ModeloAprovadoWebDto, PaginaBuscaConversaWebDto, PaginaGaleriaConversaWebDto, PaginaTimelineWebDto, PreviaAcaoErpWebDto, RespostaRapidaWebDto, ResultadoAcaoErpWebDto, ResultadoFinanceiroContatoWebDto } from './dto/console-web.dto.js';
 import { FILTROS_ATENDIMENTOS_WEB, type FiltroAtendimentosWeb, type TipoGaleriaWeb } from './modelo-console-web.js';
 import { ServicoBuscaGaleriaWeb } from './servico-busca-galeria-web.js';
+import { ServicoContatoAcoesWeb } from './servico-contato-acoes-web.js';
 import { ServicoListaAtendimentosWeb } from './servico-lista-atendimentos-web.js';
 import { ServicoTimelineWeb } from './servico-timeline-web.js';
 import { ServicoComposerWeb } from './servico-composer-web.js';
@@ -25,7 +27,96 @@ export class ControladorConsoleWeb {
     @Inject(ServicoOrigemWeb) private readonly origens: ServicoOrigemWeb,
     @Inject(ServicoComposerWeb) private readonly composer: ServicoComposerWeb,
     @Inject(ServicoBuscaGaleriaWeb) private readonly buscaGaleria: ServicoBuscaGaleriaWeb,
+    @Inject(ServicoContatoAcoesWeb) private readonly contatoAcoes: ServicoContatoAcoesWeb,
   ) {}
+
+  @Get('atendimentos/:atendimentoId/contato')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiOperation({ operationId: 'obterDetalhesContatoWeb', summary: 'Obtém identidade, contexto e dados autorizados do contato' })
+  @ApiOkResponse({ type: DetalhesContatoWebDto })
+  public async obterDetalhesContato(
+    @Param('atendimentoId') atendimentoId: string,
+    @Headers('cookie') cookies: string | undefined,
+  ): Promise<DetalhesContatoWebDto> {
+    const sessao = await this.autenticacao.autenticar(obterTokenSessaoWeb(cookies));
+    return new DetalhesContatoWebDto(await this.contatoAcoes.obterDetalhes(sessao.contexto, atendimentoId));
+  }
+
+  @Post('atendimentos/:atendimentoId/contexto')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiHeader({ name: NOME_HEADER_CSRF_WEB, required: true })
+  @ApiBody({ type: EntradaAlterarContextoWebDto })
+  @ApiOperation({ operationId: 'alterarContextoContatoWeb', summary: 'Troca cliente e contrato ativos com concorrência otimista' })
+  @ApiOkResponse({ type: DetalhesContatoWebDto })
+  public async alterarContextoContato(
+    @Param('atendimentoId') atendimentoId: string,
+    @Body() entrada: EntradaAlterarContextoWebDto,
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_CSRF_WEB) csrfCabecalho: string | undefined,
+    @Headers('origin') origem: string | undefined,
+  ): Promise<DetalhesContatoWebDto> {
+    const sessao = await this.executarEscrita(cookies, csrfCabecalho, origem, async (contextoSessao, transacao) => {
+      await this.contatoAcoes.alterarContexto(contextoSessao, atendimentoId, {
+        versaoEsperada: entrada.versao_esperada,
+        vinculoClienteId: entrada.vinculo_cliente_id,
+        ...(entrada.vinculo_contrato_id === undefined ? {} : { vinculoContratoId: entrada.vinculo_contrato_id }),
+      }, transacao);
+      return contextoSessao;
+    });
+    return new DetalhesContatoWebDto(await this.contatoAcoes.obterDetalhes(sessao, atendimentoId));
+  }
+
+  @Get('atendimentos/:atendimentoId/financeiro')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiOperation({ operationId: 'consultarFinanceiroContatoWeb', summary: 'Consulta situação financeira em tempo real, sem snapshot decisório' })
+  @ApiOkResponse({ type: ResultadoFinanceiroContatoWebDto })
+  public async consultarFinanceiroContato(
+    @Param('atendimentoId') atendimentoId: string,
+    @Headers('cookie') cookies: string | undefined,
+  ): Promise<ResultadoFinanceiroContatoWebDto> {
+    const sessao = await this.autenticacao.autenticar(obterTokenSessaoWeb(cookies));
+    return new ResultadoFinanceiroContatoWebDto(await this.contatoAcoes.consultarFinanceiro(sessao.contexto, atendimentoId));
+  }
+
+  @Post('atendimentos/:atendimentoId/acoes-erp/preparar')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiHeader({ name: NOME_HEADER_CSRF_WEB, required: true })
+  @ApiBody({ type: EntradaPrepararAcaoErpWebDto })
+  @ApiOperation({ operationId: 'prepararAcaoErpContatoWeb', summary: 'Revalida o contexto e prepara uma ação sensível para confirmação' })
+  @ApiOkResponse({ type: PreviaAcaoErpWebDto })
+  public async prepararAcaoErpContato(
+    @Param('atendimentoId') atendimentoId: string,
+    @Body() entrada: EntradaPrepararAcaoErpWebDto,
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_CSRF_WEB) csrfCabecalho: string | undefined,
+    @Headers('origin') origem: string | undefined,
+  ): Promise<PreviaAcaoErpWebDto> {
+    const sessao = await this.autenticarEscrita(cookies, csrfCabecalho, origem);
+    return new PreviaAcaoErpWebDto(await this.contatoAcoes.prepararAcao(sessao, atendimentoId, entrada.acao));
+  }
+
+  @Post('atendimentos/:atendimentoId/acoes-erp/executar')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiHeader({ name: NOME_HEADER_CSRF_WEB, required: true })
+  @ApiBody({ type: EntradaExecutarAcaoErpWebDto })
+  @ApiOperation({ operationId: 'executarAcaoErpContatoWeb', summary: 'Executa a ação confirmada por serviço idempotente de domínio' })
+  @ApiOkResponse({ type: ResultadoAcaoErpWebDto })
+  public async executarAcaoErpContato(
+    @Param('atendimentoId') atendimentoId: string,
+    @Body() entrada: EntradaExecutarAcaoErpWebDto,
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_CSRF_WEB) csrfCabecalho: string | undefined,
+    @Headers('origin') origem: string | undefined,
+  ): Promise<ResultadoAcaoErpWebDto> {
+    const sessao = await this.autenticarEscrita(cookies, csrfCabecalho, origem);
+    return new ResultadoAcaoErpWebDto(await this.contatoAcoes.executarAcao(sessao, atendimentoId, {
+      acao: entrada.acao,
+      chaveIdempotencia: entrada.chave_idempotencia,
+      confirmacaoExplicita: true,
+      ...(entrada.assunto === undefined ? {} : { assunto: entrada.assunto }),
+      ...(entrada.descricao === undefined ? {} : { descricao: entrada.descricao }),
+    }));
+  }
 
   @Get('atendimentos/:atendimentoId/busca')
   @ApiCookieAuth('sessaoWeb')
@@ -288,6 +379,19 @@ export class ControladorConsoleWeb {
       throw new ExcecaoHttpCanonica(400, 'FILTRO_ATENDIMENTOS_INVALIDO', 'O filtro informado é inválido.');
     }
     return encontrado;
+  }
+
+  private async autenticarEscrita(
+    cookies: string | undefined,
+    csrfCabecalho: string | undefined,
+    origem: string | undefined,
+  ): Promise<ContextoSessaoAutorizacao> {
+    this.origens.validar(origem);
+    return this.autenticacao.executarComSessaoAtual(
+      obterTokenSessaoWeb(cookies),
+      obterTokenCsrfWeb(cookies, csrfCabecalho),
+      async (sessao) => ({ estado: 'ATIVA', expiraEm: sessao.expiraEm, sessaoId: sessao.id, usuarioId: sessao.usuarioId }),
+    );
   }
 
   private async executarEscrita<Resultado>(

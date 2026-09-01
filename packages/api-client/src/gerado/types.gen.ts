@@ -132,6 +132,101 @@ export type ResumoSessaoWebDto = {
     expira_em: string;
 };
 
+export type IdentidadeContatoWebDto = {
+    bsuid?: string;
+    nome_perfil?: string;
+    nome_usuario?: string;
+    telefone_mascarado?: string;
+};
+
+export type ContratoContatoWebDto = {
+    id: string;
+    situacao: string;
+    servico?: string;
+    endereco_resumido?: string;
+};
+
+export type VinculoContatoWebDto = {
+    id: string;
+    nome_exibicao: string;
+    tipo: string;
+    preferencial: boolean;
+    origem: 'SNAPSHOT';
+    estado_snapshot: 'ATUAL' | 'EXCLUIDO' | 'NAO_DISPONIVEL' | 'OBSOLETO';
+    idade_snapshot_segundos?: number;
+    documento_mascarado?: string;
+    contratos: Array<ContratoContatoWebDto>;
+};
+
+export type DetalhesContatoWebDto = {
+    atendimento_id: string;
+    conversa_id: string;
+    contato_id: string;
+    fila_id: string;
+    nome_exibicao: string;
+    estado_contato: string;
+    identidades: Array<IdentidadeContatoWebDto>;
+    contexto?: {
+        [key: string]: unknown;
+    };
+    protocolo?: string;
+    contagens: {
+        atendimentos?: number;
+        midias?: number;
+        notas?: number;
+        ordens_servico?: number;
+    };
+    permissoes: {
+        [key: string]: boolean;
+    };
+    vinculos: Array<VinculoContatoWebDto>;
+};
+
+export type EntradaAlterarContextoWebDto = {
+    vinculo_cliente_id: string;
+    vinculo_contrato_id?: string;
+    versao_esperada: number;
+};
+
+export type ResultadoFinanceiroContatoWebDto = {
+    origem: 'INDISPONIVEL' | 'TEMPO_REAL';
+    codigo?: string;
+    faturas: Array<{
+        referencia?: string;
+        situacao?: string;
+        valor_centavos?: number;
+        vencimento?: string;
+    }>;
+};
+
+export type EntradaPrepararAcaoErpWebDto = {
+    acao: 'CRIAR_ORDEM_SERVICO' | 'EXECUTAR_DESBLOQUEIO';
+};
+
+export type PreviaAcaoErpWebDto = {
+    acao: 'CRIAR_ORDEM_SERVICO' | 'EXECUTAR_DESBLOQUEIO';
+    confirmacao_obrigatoria: boolean;
+    disponivel: boolean;
+    motivo?: string;
+    resumo: Array<{
+        rotulo?: string;
+        valor?: string;
+    }>;
+};
+
+export type EntradaExecutarAcaoErpWebDto = {
+    acao: 'CRIAR_ORDEM_SERVICO' | 'EXECUTAR_DESBLOQUEIO';
+    chave_idempotencia: string;
+    confirmacao_explicita: true;
+    assunto?: string;
+    descricao?: string;
+};
+
+export type ResultadoAcaoErpWebDto = {
+    situacao: string;
+    operacao_id?: string;
+};
+
 export type ResultadoBuscaConversaWebDto = {
     id: string;
     atendimento_id: string;
@@ -900,6 +995,90 @@ export type RevogarDispositivosMobileAdministrativamenteResponses = {
 };
 
 export type RevogarDispositivosMobileAdministrativamenteResponse = RevogarDispositivosMobileAdministrativamenteResponses[keyof RevogarDispositivosMobileAdministrativamenteResponses];
+
+export type ObterDetalhesContatoWebData = {
+    body?: never;
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/contato';
+};
+
+export type ObterDetalhesContatoWebResponses = {
+    200: DetalhesContatoWebDto;
+};
+
+export type ObterDetalhesContatoWebResponse = ObterDetalhesContatoWebResponses[keyof ObterDetalhesContatoWebResponses];
+
+export type AlterarContextoContatoWebData = {
+    body: EntradaAlterarContextoWebDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/contexto';
+};
+
+export type AlterarContextoContatoWebResponses = {
+    200: DetalhesContatoWebDto;
+};
+
+export type AlterarContextoContatoWebResponse = AlterarContextoContatoWebResponses[keyof AlterarContextoContatoWebResponses];
+
+export type ConsultarFinanceiroContatoWebData = {
+    body?: never;
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/financeiro';
+};
+
+export type ConsultarFinanceiroContatoWebResponses = {
+    200: ResultadoFinanceiroContatoWebDto;
+};
+
+export type ConsultarFinanceiroContatoWebResponse = ConsultarFinanceiroContatoWebResponses[keyof ConsultarFinanceiroContatoWebResponses];
+
+export type PrepararAcaoErpContatoWebData = {
+    body: EntradaPrepararAcaoErpWebDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/acoes-erp/preparar';
+};
+
+export type PrepararAcaoErpContatoWebResponses = {
+    200: PreviaAcaoErpWebDto;
+};
+
+export type PrepararAcaoErpContatoWebResponse = PrepararAcaoErpContatoWebResponses[keyof PrepararAcaoErpContatoWebResponses];
+
+export type ExecutarAcaoErpContatoWebData = {
+    body: EntradaExecutarAcaoErpWebDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/acoes-erp/executar';
+};
+
+export type ExecutarAcaoErpContatoWebResponses = {
+    200: ResultadoAcaoErpWebDto;
+};
+
+export type ExecutarAcaoErpContatoWebResponse = ExecutarAcaoErpContatoWebResponses[keyof ExecutarAcaoErpContatoWebResponses];
 
 export type BuscarConversaWebData = {
     body?: never;

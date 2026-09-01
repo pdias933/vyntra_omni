@@ -122,3 +122,64 @@ export interface PaginaGaleriaConversaWeb {
   readonly itens: readonly ItemGaleriaConversaWeb[];
   readonly proximoCursor?: string;
 }
+
+export interface IdentidadeContatoWeb {
+  readonly bsuid?: string;
+  readonly nomePerfil?: string;
+  readonly nomeUsuario?: string;
+  readonly telefoneMascarado?: string;
+}
+
+export interface ContratoContatoWeb {
+  readonly enderecoResumido?: string;
+  readonly id: string;
+  readonly servico?: string;
+  readonly situacao: string;
+}
+
+export interface VinculoContatoWeb {
+  readonly contratos: readonly ContratoContatoWeb[];
+  readonly documentoMascarado?: string;
+  readonly estadoSnapshot: 'ATUAL' | 'EXCLUIDO' | 'NAO_DISPONIVEL' | 'OBSOLETO';
+  readonly id: string;
+  readonly idadeSnapshotSegundos?: number;
+  readonly nomeExibicao: string;
+  readonly origem: 'SNAPSHOT';
+  readonly preferencial: boolean;
+  readonly tipo: string;
+}
+
+export interface DetalhesContatoWeb {
+  readonly atendimentoId: string;
+  readonly conversaId: string;
+  readonly contatoId: string;
+  readonly estadoContato: string;
+  readonly filaId: string;
+  readonly identidades: readonly IdentidadeContatoWeb[];
+  readonly nomeExibicao: string;
+  readonly contexto?: {
+    readonly origem: string;
+    readonly versao: number;
+    readonly vinculoClienteId: string;
+    readonly vinculoContratoId?: string;
+  };
+  readonly protocolo?: string;
+  readonly contagens: { readonly atendimentos: number; readonly midias: number; readonly notas: number; readonly ordensServico: number };
+  readonly permissoes: { readonly alterarContexto: boolean; readonly consultarCliente: boolean; readonly consultarContrato: boolean; readonly consultarFinanceiro: boolean; readonly criarOrdemServico: boolean; readonly executarDesbloqueio: boolean };
+  readonly vinculos: readonly VinculoContatoWeb[];
+}
+
+export interface ResultadoFinanceiroContatoWeb {
+  readonly codigo?: string;
+  readonly faturas: readonly { readonly referencia: string; readonly situacao: string; readonly valorCentavos: number; readonly vencimento: string }[];
+  readonly origem: 'INDISPONIVEL' | 'TEMPO_REAL';
+}
+
+export type AcaoErpWeb = 'CRIAR_ORDEM_SERVICO' | 'EXECUTAR_DESBLOQUEIO';
+export interface PreviaAcaoErpWeb {
+  readonly acao: AcaoErpWeb;
+  readonly confirmacaoObrigatoria: true;
+  readonly disponivel: boolean;
+  readonly motivo?: string;
+  readonly resumo: readonly { readonly rotulo: string; readonly valor: string }[];
+}

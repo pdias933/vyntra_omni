@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcompanharEventosWebData, AcompanharEventosWebResponses, AtualizarControleRecursoData, AtualizarControleRecursoResponses, AtualizarPoliticaVersaoMobileData, AtualizarPoliticaVersaoMobileResponses, AvaliarVersaoMobileData, AvaliarVersaoMobileResponses, BaixarMidiaWebData, BaixarMidiaWebResponses, BuscarConversaWebData, BuscarConversaWebResponses, CancelarPareamentoQrWebData, CancelarPareamentoQrWebResponses, ConcluirPareamentoQrMobileData, ConcluirPareamentoQrMobileResponses, ConfirmarLeituraTimelineWebData, ConfirmarLeituraTimelineWebResponses, ConfirmarPareamentoQrWebData, ConfirmarPareamentoQrWebResponses, ConsultarPareamentoQrMobileData, ConsultarPareamentoQrMobileResponses, ConsultarPareamentoQrWebData, ConsultarPareamentoQrWebResponses, CriarFluxoEditorData, CriarFluxoEditorResponses, CriarVersaoFluxoEditorData, CriarVersaoFluxoEditorResponses, EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, EnviarMidiaWebData, EnviarMidiaWebResponses, EnviarModeloAprovadoWebData, EnviarModeloAprovadoWebResponses, EnviarTextoWebData, EnviarTextoWebResponses, GerarPareamentoQrWebData, GerarPareamentoQrWebResponses, ListarAdministracaoReleasesData, ListarAdministracaoReleasesResponses, ListarAtendimentosWebData, ListarAtendimentosWebResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarFluxosEditorData, ListarFluxosEditorResponses, ListarGaleriaConversaWebData, ListarGaleriaConversaWebResponses, ListarModelosAprovadosWebData, ListarModelosAprovadosWebResponses, ListarRespostasRapidasWebData, ListarRespostasRapidasWebResponses, ListarSessoesWebData, ListarSessoesWebResponses, MarcarTimelineWebNaoLidaData, MarcarTimelineWebNaoLidaResponses, ObterConfiguracaoMobileAtualData, ObterConfiguracaoMobileAtualResponses, ObterConfiguracaoWebAtualData, ObterConfiguracaoWebAtualResponses, ObterFluxoEditorData, ObterFluxoEditorResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, ObterTimelineWebData, ObterTimelineWebResponses, PrepararPublicacaoFluxoEditorData, PrepararPublicacaoFluxoEditorResponses, PublicarVersaoFluxoEditorData, PublicarVersaoFluxoEditorResponses, ReagirMensagemWebData, ReagirMensagemWebResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, ResgatarPareamentoQrMobileData, ResgatarPareamentoQrMobileResponses, RessincronizarCompletaData, RessincronizarCompletaResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, SalvarRascunhoFluxoEditorData, SalvarRascunhoFluxoEditorResponses, SimularFluxoEditorData, SimularFluxoEditorResponses, SincronizarIncrementalData, SincronizarIncrementalResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
+import type { AcompanharEventosWebData, AcompanharEventosWebResponses, AlterarContextoContatoWebData, AlterarContextoContatoWebResponses, AtualizarControleRecursoData, AtualizarControleRecursoResponses, AtualizarPoliticaVersaoMobileData, AtualizarPoliticaVersaoMobileResponses, AvaliarVersaoMobileData, AvaliarVersaoMobileResponses, BaixarMidiaWebData, BaixarMidiaWebResponses, BuscarConversaWebData, BuscarConversaWebResponses, CancelarPareamentoQrWebData, CancelarPareamentoQrWebResponses, ConcluirPareamentoQrMobileData, ConcluirPareamentoQrMobileResponses, ConfirmarLeituraTimelineWebData, ConfirmarLeituraTimelineWebResponses, ConfirmarPareamentoQrWebData, ConfirmarPareamentoQrWebResponses, ConsultarFinanceiroContatoWebData, ConsultarFinanceiroContatoWebResponses, ConsultarPareamentoQrMobileData, ConsultarPareamentoQrMobileResponses, ConsultarPareamentoQrWebData, ConsultarPareamentoQrWebResponses, CriarFluxoEditorData, CriarFluxoEditorResponses, CriarVersaoFluxoEditorData, CriarVersaoFluxoEditorResponses, EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, EnviarMidiaWebData, EnviarMidiaWebResponses, EnviarModeloAprovadoWebData, EnviarModeloAprovadoWebResponses, EnviarTextoWebData, EnviarTextoWebResponses, ExecutarAcaoErpContatoWebData, ExecutarAcaoErpContatoWebResponses, GerarPareamentoQrWebData, GerarPareamentoQrWebResponses, ListarAdministracaoReleasesData, ListarAdministracaoReleasesResponses, ListarAtendimentosWebData, ListarAtendimentosWebResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarFluxosEditorData, ListarFluxosEditorResponses, ListarGaleriaConversaWebData, ListarGaleriaConversaWebResponses, ListarModelosAprovadosWebData, ListarModelosAprovadosWebResponses, ListarRespostasRapidasWebData, ListarRespostasRapidasWebResponses, ListarSessoesWebData, ListarSessoesWebResponses, MarcarTimelineWebNaoLidaData, MarcarTimelineWebNaoLidaResponses, ObterConfiguracaoMobileAtualData, ObterConfiguracaoMobileAtualResponses, ObterConfiguracaoWebAtualData, ObterConfiguracaoWebAtualResponses, ObterDetalhesContatoWebData, ObterDetalhesContatoWebResponses, ObterFluxoEditorData, ObterFluxoEditorResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, ObterTimelineWebData, ObterTimelineWebResponses, PrepararAcaoErpContatoWebData, PrepararAcaoErpContatoWebResponses, PrepararPublicacaoFluxoEditorData, PrepararPublicacaoFluxoEditorResponses, PublicarVersaoFluxoEditorData, PublicarVersaoFluxoEditorResponses, ReagirMensagemWebData, ReagirMensagemWebResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, ResgatarPareamentoQrMobileData, ResgatarPareamentoQrMobileResponses, RessincronizarCompletaData, RessincronizarCompletaResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, SalvarRascunhoFluxoEditorData, SalvarRascunhoFluxoEditorResponses, SimularFluxoEditorData, SimularFluxoEditorResponses, SincronizarIncrementalData, SincronizarIncrementalResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -295,6 +295,83 @@ export const revogarDispositivosMobileAdministrativamente = <ThrowOnError extend
         }],
     url: '/api/v1/autenticacao/web/usuarios/{usuarioId}/revogar-dispositivos-mobile',
     ...options
+});
+
+/**
+ * Obtém identidade, contexto e dados autorizados do contato
+ */
+export const obterDetalhesContatoWeb = <ThrowOnError extends boolean = false>(options: Options<ObterDetalhesContatoWebData, ThrowOnError>): RequestResult<ObterDetalhesContatoWebResponses, unknown, ThrowOnError> => (options.client ?? client).get<ObterDetalhesContatoWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/web/atendimentos/{atendimentoId}/contato',
+    ...options
+});
+
+/**
+ * Troca cliente e contrato ativos com concorrência otimista
+ */
+export const alterarContextoContatoWeb = <ThrowOnError extends boolean = false>(options: Options<AlterarContextoContatoWebData, ThrowOnError>): RequestResult<AlterarContextoContatoWebResponses, unknown, ThrowOnError> => (options.client ?? client).post<AlterarContextoContatoWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/web/atendimentos/{atendimentoId}/contexto',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Consulta situação financeira em tempo real, sem snapshot decisório
+ */
+export const consultarFinanceiroContatoWeb = <ThrowOnError extends boolean = false>(options: Options<ConsultarFinanceiroContatoWebData, ThrowOnError>): RequestResult<ConsultarFinanceiroContatoWebResponses, unknown, ThrowOnError> => (options.client ?? client).get<ConsultarFinanceiroContatoWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/web/atendimentos/{atendimentoId}/financeiro',
+    ...options
+});
+
+/**
+ * Revalida o contexto e prepara uma ação sensível para confirmação
+ */
+export const prepararAcaoErpContatoWeb = <ThrowOnError extends boolean = false>(options: Options<PrepararAcaoErpContatoWebData, ThrowOnError>): RequestResult<PrepararAcaoErpContatoWebResponses, unknown, ThrowOnError> => (options.client ?? client).post<PrepararAcaoErpContatoWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/web/atendimentos/{atendimentoId}/acoes-erp/preparar',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Executa a ação confirmada por serviço idempotente de domínio
+ */
+export const executarAcaoErpContatoWeb = <ThrowOnError extends boolean = false>(options: Options<ExecutarAcaoErpContatoWebData, ThrowOnError>): RequestResult<ExecutarAcaoErpContatoWebResponses, unknown, ThrowOnError> => (options.client ?? client).post<ExecutarAcaoErpContatoWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/web/atendimentos/{atendimentoId}/acoes-erp/executar',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

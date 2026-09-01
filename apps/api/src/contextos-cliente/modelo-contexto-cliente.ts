@@ -39,6 +39,7 @@ export interface EntradaInicializacaoContextoAtendimento {
 
 export interface EntradaAlteracaoContextoAtendimento {
   readonly atendimentoId: string;
+  readonly filaId: string;
   readonly vinculoClienteId: string;
   readonly vinculoContratoId?: string;
   readonly versaoEsperada: number;

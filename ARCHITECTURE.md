@@ -750,3 +750,9 @@ Citação e reação conservam relações internas reais. A timeline projeta uma
 `ServicoBuscaGaleriaWeb` resolve a conversa e os atendimentos históricos permitidos antes de tocar conteúdo. A consulta parametrizada recebe os UUIDs já autorizados e executa busca, filtro, ordenação e limite no PostgreSQL. Busca textual usa `to_tsvector`/`websearch_to_tsquery` em português; mídia/documento usa tipo canônico e links usam padrão HTTPS. Cursores combinam instante e UUID para paginação determinística.
 
 A migration da PR 091 instala `pg_trgm` e cria índices aditivos: GIN para texto, GIN trigram para links e B-tree parcial por conversa/tipo/instante para mídia. O cliente recebe somente trecho, origem interna, tipo e metadados estritamente necessários. O painel web usa o SDK gerado e não possui fallback de filtragem em memória.
+
+### 13.16 Contato, contexto e ações do console web
+
+`ServicoContatoAcoesWeb` usa o atendimento somente como porta de entrada: resolve fila e contato, chama `ServicoAutorizacao` e apenas depois consulta identidade, vínculos, snapshots e contagens. Permissões de cliente, contrato, financeiro, dado sensível, ordem de serviço e desbloqueio são independentes. BSUID não é projetado sem permissão explícita; telefone continua mascarado.
+
+A troca de contexto deriva fila e identificadores externos dos vínculos persistidos, usa versão esperada e delega a mutação auditada a `ServicoContextosCliente`. Consulta financeira encerra a leitura/autorizacão local antes de chamar `AdaptadorErp` e devolve somente resultado normalizado em `TEMPO_REAL`; adaptador ausente ou falha nunca cai para snapshot. Ações sensíveis seguem duas chamadas: preparar revalida permissão/contexto/elegibilidade e executar recebe confirmação literal, gera efeito somente pelos serviços recuperáveis e idempotentes existentes. O web consome tudo pelo SDK OpenAPI gerado.

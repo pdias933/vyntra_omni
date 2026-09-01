@@ -1,22 +1,30 @@
 import {
+  alterarContextoContatoWeb,
   confirmarLeituraTimelineWeb,
   baixarMidiaWeb,
   buscarConversaWeb,
+  consultarFinanceiroContatoWeb,
   enviarMidiaWeb,
   enviarModeloAprovadoWeb,
   enviarTextoWeb,
+  executarAcaoErpContatoWeb,
   listarModelosAprovadosWeb,
   listarGaleriaConversaWeb,
   listarRespostasRapidasWeb,
   marcarTimelineWebNaoLida,
+  obterDetalhesContatoWeb,
   obterTimelineWeb,
+  prepararAcaoErpContatoWeb,
   reagirMensagemWeb,
+  type DetalhesContatoWebDto,
   type ItemTimelineWebDto,
   type ModeloAprovadoWebDto,
   type ItemGaleriaConversaWebDto,
   type ResultadoBuscaConversaWebDto,
   type RespostaRapidaWebDto,
+  type PreviaAcaoErpWebDto,
   type ResumoAtendimentoWebDto,
+  type ResultadoFinanceiroContatoWebDto,
 } from '@vyntra/api-client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
@@ -54,7 +62,7 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
   const [marcador, definirMarcador] = useState<Marcador>({ marcadaNaoLida: false, versao: 0 });
   const [estado, definirEstado] = useState<'CARREGANDO' | 'ERRO' | 'PRONTO'>('CARREGANDO');
   const [respondendo, definirRespondendo] = useState<ItemTimelineWebDto>();
-  const [painel, definirPainel] = useState<'BUSCA' | 'GALERIA'>();
+  const [painel, definirPainel] = useState<'ACOES' | 'BUSCA' | 'CONTATO' | 'GALERIA'>();
   const leituraEmVoo = useRef<string | undefined>(undefined);
   const finalTimeline = useRef<HTMLDivElement>(null);
 
@@ -132,13 +140,14 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
     <section className="conversa-web">
       <header className="conversa-web__cabecalho">
         <span className="conversa-web__avatar">{atendimento.nome_contato.slice(0, 1).toLocaleUpperCase('pt-BR')}</span>
-        <button className="conversa-web__contato" type="button">
+        <button className="conversa-web__contato" onClick={() => definirPainel('CONTATO')} type="button">
           <strong>{atendimento.nome_contato}</strong>
           <small>{atendimento.identidade_secundaria ?? atendimento.fila_nome}</small>
         </button>
         {atendimento.janela_expira_em !== undefined && <span className="janela-meta">Janela Meta ativa</span>}
         <button aria-label="Buscar na conversa" className="acao-cabecalho" onClick={() => definirPainel('BUSCA')} type="button">⌕</button>
         <button className="acao-cabecalho" onClick={() => definirPainel('GALERIA')} type="button">Mídias</button>
+        <button className="acao-cabecalho" onClick={() => definirPainel('ACOES')} type="button">Ações</button>
         <button className="acao-cabecalho" onClick={() => void marcarNaoLida()} type="button">{marcador.marcadaNaoLida ? 'Não lida' : 'Marcar não lida'}</button>
       </header>
       <div className="timeline-web" aria-live="polite">
@@ -156,10 +165,110 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
         ))}
         <div ref={finalTimeline} />
       </div>
-      <ComposerWeb atendimento={atendimento} aoCancelarResposta={() => definirRespondendo(undefined)} aoEnviar={() => carregar(true)} respondendo={respondendo} />
-      {painel !== undefined && <PainelBuscaGaleriaWeb atendimentoId={atendimento.atendimento_id} key={painel} modo={painel} aoFechar={() => definirPainel(undefined)} />}
+      <ComposerWeb atendimento={atendimento} aoAbrirAcoes={() => definirPainel('ACOES')} aoCancelarResposta={() => definirRespondendo(undefined)} aoEnviar={() => carregar(true)} respondendo={respondendo} />
+      {(painel === 'BUSCA' || painel === 'GALERIA') && <PainelBuscaGaleriaWeb atendimentoId={atendimento.atendimento_id} key={painel} modo={painel} aoFechar={() => definirPainel(undefined)} />}
+      {painel === 'CONTATO' && <PainelContatoWeb atendimentoId={atendimento.atendimento_id} aoFechar={() => definirPainel(undefined)} />}
+      {painel === 'ACOES' && <PainelAcoesErpWeb atendimentoId={atendimento.atendimento_id} aoFechar={() => definirPainel(undefined)} />}
     </section>
   );
+}
+
+function PainelContatoWeb({ atendimentoId, aoFechar }: { readonly atendimentoId: string; readonly aoFechar: () => void }) {
+  const [detalhes, definirDetalhes] = useState<DetalhesContatoWebDto>();
+  const [financeiro, definirFinanceiro] = useState<ResultadoFinanceiroContatoWebDto>();
+  const [selecao, definirSelecao] = useState<{ readonly clienteId: string; readonly contratoId?: string }>();
+  const [estado, definirEstado] = useState<'CARREGANDO' | 'ERRO' | 'PRONTO'>('CARREGANDO');
+  const [ocupado, definirOcupado] = useState(false);
+  const contexto = detalhes?.contexto;
+  const clienteAtual = textoCampo(contexto, 'vinculo_cliente_id');
+  const contratoAtual = textoCampo(contexto, 'vinculo_contrato_id');
+  const versaoContexto = numeroCampo(contexto, 'versao');
+
+  const carregar = useCallback(async () => {
+    definirEstado('CARREGANDO');
+    try {
+      const resposta = await obterDetalhesContatoWeb({ path: { atendimentoId }, throwOnError: true });
+      definirDetalhes(resposta.data); definirEstado('PRONTO');
+    } catch { definirEstado('ERRO'); }
+  }, [atendimentoId]);
+
+  useEffect(() => { const temporizador = window.setTimeout(() => void carregar(), 0); return () => window.clearTimeout(temporizador); }, [carregar]);
+
+  async function confirmarContexto() {
+    if (selecao === undefined || versaoContexto === undefined) return;
+    definirOcupado(true);
+    try {
+      const resposta = await alterarContextoContatoWeb({
+        body: { vinculo_cliente_id: selecao.clienteId, ...(selecao.contratoId === undefined ? {} : { vinculo_contrato_id: selecao.contratoId }), versao_esperada: versaoContexto },
+        headers: { 'x-csrf-token': obterCsrf() }, path: { atendimentoId }, throwOnError: true,
+      });
+      definirDetalhes(resposta.data); definirSelecao(undefined);
+    } catch { definirEstado('ERRO'); } finally { definirOcupado(false); }
+  }
+
+  async function consultarFinanceiro() {
+    definirOcupado(true);
+    try { const resposta = await consultarFinanceiroContatoWeb({ path: { atendimentoId }, throwOnError: true }); definirFinanceiro(resposta.data); }
+    catch { definirFinanceiro({ codigo: 'CONSULTA_NAO_CONCLUIDA', faturas: [], origem: 'INDISPONIVEL' }); }
+    finally { definirOcupado(false); }
+  }
+
+  return <aside aria-label="Detalhes do contato" className="painel-conversa painel-contato">
+    <header><div><strong>Detalhes do contato</strong><small>Contexto preservado ao voltar</small></div><button aria-label="Fechar detalhes" onClick={aoFechar} type="button">×</button></header>
+    <div className="painel-conversa__lista" aria-live="polite">
+      {estado === 'CARREGANDO' && <div className="skeleton-timeline" />}
+      {estado === 'ERRO' && <p>Não foi possível carregar os dados autorizados.</p>}
+      {estado === 'PRONTO' && detalhes !== undefined && <>
+        <section className="cartao-detalhes identidade-detalhes">
+          <span className="avatar-detalhes">{detalhes.nome_exibicao.slice(0, 1).toLocaleUpperCase('pt-BR')}</span>
+          <div><strong>{detalhes.nome_exibicao}</strong><small>{detalhes.estado_contato === 'IDENTIFICADO' ? 'Cliente identificado' : 'Contato não identificado'}</small></div>
+        </section>
+        {detalhes.identidades.map((identidade, indice) => <section className="cartao-detalhes" key={`${identidade.bsuid ?? identidade.telefone_mascarado ?? 'identidade'}-${indice}`}><h3>Identidade WhatsApp</h3>{identidade.nome_usuario !== undefined && <p>@{identidade.nome_usuario}</p>}{identidade.telefone_mascarado !== undefined && <p>{identidade.telefone_mascarado}</p>}{identidade.bsuid !== undefined && <p className="dado-tecnico">BSUID {identidade.bsuid}</p>}</section>)}
+        {detalhes.vinculos.length === 0 ? <section className="cartao-vincular"><strong>Contato não identificado</strong><p>Vincule este número a um cliente para visualizar contratos e histórico.</p><button disabled type="button">Vincular a cliente</button><small>Disponível com a permissão e o cadastro do ERP.</small></section> : <section className="cartao-detalhes"><h3>Cliente e contrato ativos</h3>{detalhes.vinculos.map((vinculo) => <div className={`opcao-contexto ${clienteAtual === vinculo.id ? 'opcao-contexto--ativa' : ''}`} key={vinculo.id}><button disabled={!detalhes.permissoes.alterarContexto} onClick={() => definirSelecao({ clienteId: vinculo.id, ...(vinculo.contratos[0] === undefined ? {} : { contratoId: vinculo.contratos[0].id }) })} type="button"><strong>{vinculo.nome_exibicao}</strong><small>{vinculo.documento_mascarado ?? vinculo.tipo} · Snapshot {vinculo.estado_snapshot.toLocaleLowerCase('pt-BR')}</small></button>{vinculo.contratos.map((contrato) => <button className={contratoAtual === contrato.id ? 'contrato-ativo' : ''} disabled={!detalhes.permissoes.alterarContexto} key={contrato.id} onClick={() => definirSelecao({ clienteId: vinculo.id, contratoId: contrato.id })} type="button"><span>{contrato.servico ?? 'Contrato'}</span><small>{contrato.situacao}{contrato.endereco_resumido === undefined ? '' : ` · ${contrato.endereco_resumido}`}</small></button>)}</div>)}</section>}
+        {selecao !== undefined && <section className="confirmacao-contexto"><strong>Confirmar troca de contexto?</strong><p>As próximas consultas e ações usarão o cliente e o contrato selecionados.</p><div><button onClick={() => definirSelecao(undefined)} type="button">Cancelar</button><button disabled={ocupado} onClick={() => void confirmarContexto()} type="button">Confirmar troca</button></div></section>}
+        <section className="cartao-detalhes grade-contagens"><button type="button"><strong>{detalhes.contagens.atendimentos ?? 0}</strong><small>Atendimentos</small></button><button type="button"><strong>{detalhes.contagens.midias ?? 0}</strong><small>Mídias</small></button><button type="button"><strong>{detalhes.contagens.notas ?? 0}</strong><small>Notas</small></button><button type="button"><strong>{detalhes.contagens.ordens_servico ?? 0}</strong><small>Ordens</small></button></section>
+        {detalhes.permissoes.consultarFinanceiro && <section className="cartao-detalhes"><h3>Situação financeira</h3><button className="botao-consulta" disabled={ocupado} onClick={() => void consultarFinanceiro()} type="button">Consultar em tempo real</button>{financeiro !== undefined && <div className={`resultado-financeiro resultado-financeiro--${financeiro.origem.toLocaleLowerCase('pt-BR')}`}><small>{financeiro.origem === 'TEMPO_REAL' ? 'Dados em tempo real' : `Indisponível · ${financeiro.codigo ?? 'tente novamente'}`}</small>{financeiro.faturas.map((fatura) => <p key={fatura.referencia}>{fatura.referencia} · {fatura.situacao} · {formatarCentavos(fatura.valor_centavos)}</p>)}</div>}</section>}
+        <section className="rodape-detalhes"><small>Protocolo ERP</small><strong>{detalhes.protocolo ?? 'Ainda não disponível'}</strong></section>
+      </>}
+    </div>
+  </aside>;
+}
+
+type AcaoErp = 'CRIAR_ORDEM_SERVICO' | 'EXECUTAR_DESBLOQUEIO';
+
+function PainelAcoesErpWeb({ atendimentoId, aoFechar }: { readonly atendimentoId: string; readonly aoFechar: () => void }) {
+  const [previa, definirPrevia] = useState<PreviaAcaoErpWebDto>();
+  const [assunto, definirAssunto] = useState('Suporte técnico');
+  const [descricao, definirDescricao] = useState('Solicitação registrada durante o atendimento omnichannel.');
+  const [estado, definirEstado] = useState<string>();
+  const [ocupado, definirOcupado] = useState(false);
+
+  async function preparar(acao: AcaoErp) {
+    definirOcupado(true); definirEstado(undefined);
+    try { const resposta = await prepararAcaoErpContatoWeb({ body: { acao }, headers: { 'x-csrf-token': obterCsrf() }, path: { atendimentoId }, throwOnError: true }); definirPrevia(resposta.data); }
+    catch { definirEstado('Não foi possível preparar a ação.'); }
+    finally { definirOcupado(false); }
+  }
+
+  async function executar() {
+    if (previa === undefined || !previa.disponivel) return;
+    definirOcupado(true);
+    try {
+      const resposta = await executarAcaoErpContatoWeb({ body: { acao: previa.acao, chave_idempotencia: crypto.randomUUID(), confirmacao_explicita: true, ...(previa.acao === 'CRIAR_ORDEM_SERVICO' ? { assunto, descricao } : {}) }, headers: { 'x-csrf-token': obterCsrf() }, path: { atendimentoId }, throwOnError: true });
+      definirEstado(`Ação registrada: ${resposta.data.situacao.toLocaleLowerCase('pt-BR')}.`); definirPrevia(undefined);
+    } catch { definirEstado('A ação não foi concluída. Nenhum sucesso foi presumido.'); }
+    finally { definirOcupado(false); }
+  }
+
+  return <aside aria-label="Ações do sistema" className="painel-conversa painel-acoes">
+    <header><div><strong>Ações</strong><small>Sistema e ERP</small></div><button aria-label="Fechar ações" onClick={aoFechar} type="button">×</button></header>
+    <div className="painel-conversa__lista">
+      <section className="grupo-acoes"><h3>Cliente e financeiro</h3><button onClick={() => void preparar('EXECUTAR_DESBLOQUEIO')} type="button"><span>⚡</span><div><strong>Desbloqueio de confiança</strong><small>Elegibilidade em tempo real</small></div></button>{['Consultar faturas', 'Segunda via e Pix', 'Consultar conexão'].map((item) => <button disabled key={item} type="button"><span>○</span><div><strong>{item}</strong><small>Capacidade depende da integração ativa</small></div></button>)}</section>
+      <section className="grupo-acoes"><h3>Atendimento</h3><button onClick={() => void preparar('CRIAR_ORDEM_SERVICO')} type="button"><span>+</span><div><strong>Criar ordem de serviço</strong><small>Protocolo e contexto atuais</small></div></button>{['Solicitar WhatsApp Flow', 'Adicionar nota interna'].map((item) => <button disabled key={item} type="button"><span>○</span><div><strong>{item}</strong><small>Disponível no fluxo correspondente</small></div></button>)}</section>
+      {previa !== undefined && <section className="previa-acao"><strong>Revise antes de confirmar</strong>{previa.resumo.map((item, indice) => <p key={`${item.rotulo}-${indice}`}><small>{item.rotulo}</small><span>{item.valor}</span></p>)}{previa.acao === 'CRIAR_ORDEM_SERVICO' && <><label>Assunto<input maxLength={200} onChange={(evento) => definirAssunto(evento.target.value)} value={assunto} /></label><label>Descrição<textarea maxLength={4000} onChange={(evento) => definirDescricao(evento.target.value)} value={descricao} /></label></>}{!previa.disponivel && <div className="aviso-indisponivel">Indisponível: {previa.motivo ?? 'capacidade não habilitada'}.</div>}<div><button onClick={() => definirPrevia(undefined)} type="button">Cancelar</button><button disabled={ocupado || !previa.disponivel} onClick={() => void executar()} type="button">Confirmar e executar</button></div></section>}
+      {estado !== undefined && <p className="resultado-acao" role="status">{estado}</p>}
+    </div>
+  </aside>;
 }
 
 function PainelBuscaGaleriaWeb({ atendimentoId, aoFechar, modo }: { readonly atendimentoId: string; readonly aoFechar: () => void; readonly modo: 'BUSCA' | 'GALERIA' }) {
@@ -227,7 +336,7 @@ function PainelBuscaGaleriaWeb({ atendimentoId, aoFechar, modo }: { readonly ate
   </aside>;
 }
 
-function ComposerWeb({ atendimento, aoCancelarResposta, aoEnviar, respondendo }: { readonly atendimento: ResumoAtendimentoWebDto; readonly aoCancelarResposta: () => void; readonly aoEnviar: () => Promise<void>; readonly respondendo: ItemTimelineWebDto | undefined }) {
+function ComposerWeb({ atendimento, aoAbrirAcoes, aoCancelarResposta, aoEnviar, respondendo }: { readonly atendimento: ResumoAtendimentoWebDto; readonly aoAbrirAcoes: () => void; readonly aoCancelarResposta: () => void; readonly aoEnviar: () => Promise<void>; readonly respondendo: ItemTimelineWebDto | undefined }) {
   const [texto, definirTexto] = useState('');
   const [respostas, definirRespostas] = useState<readonly RespostaRapidaWebDto[]>([]);
   const [modelos, definirModelos] = useState<readonly ModeloAprovadoWebDto[]>([]);
@@ -340,7 +449,7 @@ function ComposerWeb({ atendimento, aoCancelarResposta, aoEnviar, respondendo }:
     </div>
     {texto.trim().length > 0 && !janelaFechada
       ? <button aria-label="Enviar" className="botao-enviar" disabled={ocupado} onClick={() => void enviarTexto()} type="button">➤</button>
-      : <button aria-label="Ações do sistema" type="button">⌘</button>}
+      : <button aria-label="Ações do sistema" onClick={aoAbrirAcoes} type="button">⌘</button>}
     <button className="abrir-modelos" onClick={() => void abrirModelos()} type="button">Mensagem aprovada</button>
   </footer>;
 }
@@ -351,6 +460,21 @@ function codigoFalha(erro: unknown): string | undefined {
   const dados = typeof resposta === 'object' && resposta !== null ? Reflect.get(resposta, 'data') : undefined;
   const codigo = typeof dados === 'object' && dados !== null ? Reflect.get(dados, 'codigo') : undefined;
   return typeof codigo === 'string' ? codigo : undefined;
+}
+
+function textoCampo(valor: Readonly<Record<string, unknown>> | undefined, campo: string): string | undefined {
+  const encontrado = valor?.[campo];
+  return typeof encontrado === 'string' ? encontrado : undefined;
+}
+
+function numeroCampo(valor: Readonly<Record<string, unknown>> | undefined, campo: string): number | undefined {
+  const encontrado = valor?.[campo];
+  return typeof encontrado === 'number' ? encontrado : undefined;
+}
+
+function formatarCentavos(valor?: number): string {
+  if (valor === undefined) return 'valor indisponível';
+  return new Intl.NumberFormat('pt-BR', { currency: 'BRL', style: 'currency' }).format(valor / 100);
 }
 
 function ItemTimeline({ aoReagir, aoResponder, item, mostrarData }: { readonly aoReagir: (emoji: EmojiReacao) => void; readonly aoResponder: () => void; readonly item: ItemTimelineWebDto; readonly mostrarData: boolean }) {

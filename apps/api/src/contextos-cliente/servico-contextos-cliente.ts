@@ -68,6 +68,7 @@ export class ServicoContextosCliente {
     this.validarAlteracao(entrada);
     await this.autorizacao.autorizar(
       {
+        filaId: entrada.filaId,
         permissao: 'ALTERAR_CONTEXTO_CLIENTE',
         recurso: { id: entrada.atendimentoId, tipo: 'CONTEXTO_ATENDIMENTO' },
         sessao,
@@ -441,6 +442,7 @@ export class ServicoContextosCliente {
     if (
       !this.uuidsValidos([
         entrada.atendimentoId,
+        entrada.filaId,
         entrada.vinculoClienteId,
         entrada.vinculoContratoId,
       ]) ||

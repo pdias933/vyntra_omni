@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ArrayMaxSize, IsArray, IsIn, IsInt, IsOptional, IsString, IsUUID, Length, MaxLength, Min } from 'class-validator';
+import { ArrayMaxSize, Equals, IsArray, IsIn, IsInt, IsOptional, IsString, IsUUID, Length, MaxLength, Min } from 'class-validator';
 import {
   FILTROS_ATENDIMENTOS_WEB,
   type FiltroAtendimentosWeb,
@@ -11,6 +11,10 @@ import {
   type RespostaRapidaWeb,
   type PaginaBuscaConversaWeb,
   type PaginaGaleriaConversaWeb,
+  type AcaoErpWeb,
+  type DetalhesContatoWeb,
+  type PreviaAcaoErpWeb,
+  type ResultadoFinanceiroContatoWeb,
 } from '../modelo-console-web.js';
 
 export class ResumoAtendimentoWebDto {
@@ -237,3 +241,82 @@ export class PaginaGaleriaConversaWebDto {
     if (pagina.proximoCursor !== undefined) this.proximo_cursor = pagina.proximoCursor;
   }
 }
+
+export class IdentidadeContatoWebDto {
+  @ApiProperty({ required: false }) public readonly bsuid?: string;
+  @ApiProperty({ required: false }) public readonly nome_perfil?: string;
+  @ApiProperty({ required: false }) public readonly nome_usuario?: string;
+  @ApiProperty({ required: false }) public readonly telefone_mascarado?: string;
+  public constructor(item: DetalhesContatoWeb['identidades'][number]) { if (item.bsuid !== undefined) this.bsuid = item.bsuid; if (item.nomePerfil !== undefined) this.nome_perfil = item.nomePerfil; if (item.nomeUsuario !== undefined) this.nome_usuario = item.nomeUsuario; if (item.telefoneMascarado !== undefined) this.telefone_mascarado = item.telefoneMascarado; }
+}
+
+export class ContratoContatoWebDto {
+  @ApiProperty({ format: 'uuid' }) public readonly id: string;
+  @ApiProperty() public readonly situacao: string;
+  @ApiProperty({ required: false }) public readonly servico?: string;
+  @ApiProperty({ required: false }) public readonly endereco_resumido?: string;
+  public constructor(item: DetalhesContatoWeb['vinculos'][number]['contratos'][number]) { this.id = item.id; this.situacao = item.situacao; if (item.servico !== undefined) this.servico = item.servico; if (item.enderecoResumido !== undefined) this.endereco_resumido = item.enderecoResumido; }
+}
+
+export class VinculoContatoWebDto {
+  @ApiProperty({ format: 'uuid' }) public readonly id: string;
+  @ApiProperty() public readonly nome_exibicao: string;
+  @ApiProperty() public readonly tipo: string;
+  @ApiProperty() public readonly preferencial: boolean;
+  @ApiProperty({ enum: ['SNAPSHOT'] }) public readonly origem: 'SNAPSHOT';
+  @ApiProperty({ enum: ['ATUAL', 'EXCLUIDO', 'NAO_DISPONIVEL', 'OBSOLETO'] }) public readonly estado_snapshot: 'ATUAL' | 'EXCLUIDO' | 'NAO_DISPONIVEL' | 'OBSOLETO';
+  @ApiProperty({ required: false }) public readonly idade_snapshot_segundos?: number;
+  @ApiProperty({ required: false }) public readonly documento_mascarado?: string;
+  @ApiProperty({ type: [ContratoContatoWebDto] }) public readonly contratos: readonly ContratoContatoWebDto[];
+  public constructor(item: DetalhesContatoWeb['vinculos'][number]) { this.id = item.id; this.nome_exibicao = item.nomeExibicao; this.tipo = item.tipo; this.preferencial = item.preferencial; this.origem = item.origem; this.estado_snapshot = item.estadoSnapshot; if (item.idadeSnapshotSegundos !== undefined) this.idade_snapshot_segundos = item.idadeSnapshotSegundos; if (item.documentoMascarado !== undefined) this.documento_mascarado = item.documentoMascarado; this.contratos = item.contratos.map((contrato) => new ContratoContatoWebDto(contrato)); }
+}
+
+export class DetalhesContatoWebDto {
+  @ApiProperty({ format: 'uuid' }) public readonly atendimento_id: string;
+  @ApiProperty({ format: 'uuid' }) public readonly conversa_id: string;
+  @ApiProperty({ format: 'uuid' }) public readonly contato_id: string;
+  @ApiProperty({ format: 'uuid' }) public readonly fila_id: string;
+  @ApiProperty() public readonly nome_exibicao: string;
+  @ApiProperty() public readonly estado_contato: string;
+  @ApiProperty({ type: [IdentidadeContatoWebDto] }) public readonly identidades: readonly IdentidadeContatoWebDto[];
+  @ApiProperty({ required: false, type: Object }) public readonly contexto?: { readonly origem: string; readonly versao: number; readonly vinculo_cliente_id: string; readonly vinculo_contrato_id?: string };
+  @ApiProperty({ required: false }) public readonly protocolo?: string;
+  @ApiProperty({ type: 'object', properties: { atendimentos: { type: 'number' }, midias: { type: 'number' }, notas: { type: 'number' }, ordens_servico: { type: 'number' } } }) public readonly contagens: { readonly atendimentos: number; readonly midias: number; readonly notas: number; readonly ordens_servico: number };
+  @ApiProperty({ type: 'object', additionalProperties: { type: 'boolean' } }) public readonly permissoes: DetalhesContatoWeb['permissoes'];
+  @ApiProperty({ type: [VinculoContatoWebDto] }) public readonly vinculos: readonly VinculoContatoWebDto[];
+  public constructor(item: DetalhesContatoWeb) { this.atendimento_id = item.atendimentoId; this.conversa_id = item.conversaId; this.contato_id = item.contatoId; this.fila_id = item.filaId; this.nome_exibicao = item.nomeExibicao; this.estado_contato = item.estadoContato; this.identidades = item.identidades.map((identidade) => new IdentidadeContatoWebDto(identidade)); if (item.contexto !== undefined) this.contexto = { origem: item.contexto.origem, versao: item.contexto.versao, vinculo_cliente_id: item.contexto.vinculoClienteId, ...(item.contexto.vinculoContratoId === undefined ? {} : { vinculo_contrato_id: item.contexto.vinculoContratoId }) }; if (item.protocolo !== undefined) this.protocolo = item.protocolo; this.contagens = { atendimentos: item.contagens.atendimentos, midias: item.contagens.midias, notas: item.contagens.notas, ordens_servico: item.contagens.ordensServico }; this.permissoes = item.permissoes; this.vinculos = item.vinculos.map((vinculo) => new VinculoContatoWebDto(vinculo)); }
+}
+
+export class EntradaAlterarContextoWebDto {
+  @ApiProperty({ format: 'uuid' }) @IsUUID() public readonly vinculo_cliente_id!: string;
+  @ApiProperty({ format: 'uuid', required: false }) @IsOptional() @IsUUID() public readonly vinculo_contrato_id?: string;
+  @ApiProperty({ minimum: 1 }) @IsInt() @Min(1) public readonly versao_esperada!: number;
+}
+
+export class ResultadoFinanceiroContatoWebDto {
+  @ApiProperty({ enum: ['INDISPONIVEL', 'TEMPO_REAL'] }) public readonly origem: 'INDISPONIVEL' | 'TEMPO_REAL';
+  @ApiProperty({ required: false }) public readonly codigo?: string;
+  @ApiProperty({ type: 'array', items: { type: 'object', properties: { referencia: { type: 'string' }, situacao: { type: 'string' }, valor_centavos: { type: 'number' }, vencimento: { type: 'string' } } } }) public readonly faturas: readonly { readonly referencia: string; readonly situacao: string; readonly valor_centavos: number; readonly vencimento: string }[];
+  public constructor(item: ResultadoFinanceiroContatoWeb) { this.origem = item.origem; if (item.codigo !== undefined) this.codigo = item.codigo; this.faturas = item.faturas.map((fatura) => ({ referencia: fatura.referencia, situacao: fatura.situacao, valor_centavos: fatura.valorCentavos, vencimento: fatura.vencimento })); }
+}
+
+export class EntradaPrepararAcaoErpWebDto { @ApiProperty({ enum: ['CRIAR_ORDEM_SERVICO', 'EXECUTAR_DESBLOQUEIO'] }) @IsIn(['CRIAR_ORDEM_SERVICO', 'EXECUTAR_DESBLOQUEIO']) public readonly acao!: AcaoErpWeb; }
+
+export class PreviaAcaoErpWebDto {
+  @ApiProperty({ enum: ['CRIAR_ORDEM_SERVICO', 'EXECUTAR_DESBLOQUEIO'] }) public readonly acao: AcaoErpWeb;
+  @ApiProperty() public readonly confirmacao_obrigatoria: true;
+  @ApiProperty() public readonly disponivel: boolean;
+  @ApiProperty({ required: false }) public readonly motivo?: string;
+  @ApiProperty({ type: 'array', items: { type: 'object', properties: { rotulo: { type: 'string' }, valor: { type: 'string' } } } }) public readonly resumo: readonly { readonly rotulo: string; readonly valor: string }[];
+  public constructor(item: PreviaAcaoErpWeb) { this.acao = item.acao; this.confirmacao_obrigatoria = item.confirmacaoObrigatoria; this.disponivel = item.disponivel; if (item.motivo !== undefined) this.motivo = item.motivo; this.resumo = item.resumo; }
+}
+
+export class EntradaExecutarAcaoErpWebDto {
+  @ApiProperty({ enum: ['CRIAR_ORDEM_SERVICO', 'EXECUTAR_DESBLOQUEIO'] }) @IsIn(['CRIAR_ORDEM_SERVICO', 'EXECUTAR_DESBLOQUEIO']) public readonly acao!: AcaoErpWeb;
+  @ApiProperty({ format: 'uuid' }) @IsUUID() public readonly chave_idempotencia!: string;
+  @ApiProperty({ enum: [true] }) @Equals(true) public readonly confirmacao_explicita!: true;
+  @ApiProperty({ maxLength: 200, required: false }) @IsOptional() @IsString() @Length(1, 200) public readonly assunto?: string;
+  @ApiProperty({ maxLength: 4000, required: false }) @IsOptional() @IsString() @Length(1, 4000) public readonly descricao?: string;
+}
+
+export class ResultadoAcaoErpWebDto { @ApiProperty() public readonly situacao: string; @ApiProperty({ required: false }) public readonly operacao_id?: string; public constructor(item: { readonly situacao: string; readonly operacaoId?: string }) { this.situacao = item.situacao; if (item.operacaoId !== undefined) this.operacao_id = item.operacaoId; } }
