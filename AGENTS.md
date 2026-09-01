@@ -461,3 +461,6 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - OS automática exige `confirmacaoExplicita: true`, capacidade publicada e revalidação no domínio de atendimento BOT sem fila/responsável, execução/versão, vínculo verificado, contrato e protocolo. Fila segue obrigatória para humano; não fabrique fila, sessão ou usuário para autorizar fluxo.
 - Escrita ERP do fluxo ocorre fora da transação e usa chave estável por execução+nó. Resultado incerto só reconcilia; nunca repita criação cega.
 - Sem provider ERP real, percorra `INDISPONIVEL` sem operação externa. Simulador/fixture não pode ser registrado como provider de runtime.
+- No Motor de Fluxos, verificar e executar desbloqueio são nós distintos. Verificação nunca escreve; execução aceita somente `confirmacaoExplicita: true`, refaz a elegibilidade em tempo real e usa chave estável execução+nó.
+- Derive contrato do contexto e exija atendimento BOT sem fila/responsável, execução/versão corrente e vínculo automatizável verificado. Ação humana mantém fila+RBAC; não fabrique usuário, sessão ou fila para fluxo.
+- Não exponha contrato, motivos, chave, instantes ou resposta ERP em passo/log/auditoria. Resultado incerto só reconcilia; sem provider, nenhum efeito ou operação pode nascer.

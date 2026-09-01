@@ -266,6 +266,28 @@ test('execução confirmada é idempotente, auditada e inicia janela local', asy
   assert.ok(!JSON.stringify(cenario.auditorias).includes(contratoExternoId));
 });
 
+test('execução por fluxo não fabrica usuário, sessão ou fila', async () => {
+  const cenario = criarCenario();
+  const ator = { fluxoId: randomUUID(), versaoFluxoId: randomUUID() };
+  const resultado = await cenario.servico.executar(
+    ator,
+    entrada(randomUUID(), { filaId: undefined }),
+    cenario.adaptador,
+  );
+  assert.equal(resultado.situacao, 'CONCLUIDO');
+  assert.equal(cenario.auditorias[0][0].origem, 'FLUXO');
+  assert.equal(cenario.auditorias[0][0].fluxoId, ator.fluxoId);
+  assert.equal(cenario.auditorias[0][0].versaoFluxoId, ator.versaoFluxoId);
+  assert.equal(cenario.auditorias[0][0].filaId, undefined);
+  assert.equal(cenario.auditorias[0][0].usuarioId, undefined);
+  assert.equal(cenario.auditorias[0][0].sessaoId, undefined);
+
+  await assert.rejects(
+    cenario.servico.executar(ator, entrada(), cenario.adaptador),
+    ErroEntradaDesbloqueioConfiancaInvalida,
+  );
+});
+
 test('reserva por contrato impede duas chaves concorrentes', async () => {
   let liberar;
   let iniciou;

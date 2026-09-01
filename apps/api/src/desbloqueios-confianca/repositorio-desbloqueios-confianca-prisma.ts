@@ -47,6 +47,49 @@ export class RepositorioDesbloqueiosConfiancaPrisma
     return atendimento !== null;
   }
 
+  public async contextoAtivoCorrespondeParaFluxo(
+    atendimentoId: string,
+    contratoExternoId: string,
+    fluxoId: string,
+    versaoFluxoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const atendimento = await transacao.atendimento.findFirst({
+      select: { id: true },
+      where: {
+        contexto: {
+          is: {
+            contratoExternoAtivoId: contratoExternoId,
+            vinculoCliente: {
+              revogadoEm: null,
+              verificadoEm: { not: null },
+              OR: [
+                { tipo: 'VERIFICADO' },
+                {
+                  tipo: 'MANUAL',
+                  verificadoPorUsuarioId: { not: null },
+                },
+              ],
+            },
+            vinculoContrato: {
+              contratoExternoId,
+              revogadoEm: null,
+            },
+          },
+        },
+        estado: 'AGUARDANDO',
+        execucoesFluxo: {
+          some: { estado: 'EXECUTANDO', fluxoId, versaoFluxoId },
+        },
+        filaAtualId: null,
+        id: atendimentoId,
+        modo: 'BOT',
+        usuarioResponsavelId: null,
+      },
+    });
+    return atendimento !== null;
+  }
+
   public async obterUltimoConfirmado(
     contratoExternoId: string,
     transacao: TransacaoPrisma,

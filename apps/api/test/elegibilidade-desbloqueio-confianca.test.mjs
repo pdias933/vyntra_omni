@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 
 import { ErroRespostaElegibilidadeDesbloqueioInvalida } from '../dist/desbloqueios-confianca/erros-desbloqueio-confianca.js';
@@ -31,6 +32,10 @@ function criarCenario({
   const repositorio = {
     contextoAtivoCorresponde: async (...argumentos) => {
       chamadas.push(['CONTEXTO', ...argumentos]);
+      return contextoValido;
+    },
+    contextoAtivoCorrespondeParaFluxo: async (...argumentos) => {
+      chamadas.push(['CONTEXTO_FLUXO', ...argumentos]);
       return contextoValido;
     },
     obterUltimoConfirmado: async (...argumentos) => {
@@ -162,6 +167,24 @@ test('contexto divergente falha antes de consultar o ERP', async () => {
     /PERMISSAO_NEGADA/,
   );
   assert.ok(!cenario.chamadas.some(([tipo]) => tipo === 'ERP'));
+});
+
+test('fluxo usa autoridade BOT exata sem herdar RBAC humano', async () => {
+  const cenario = criarCenario();
+  const ator = { fluxoId: randomUUID(), versaoFluxoId: randomUUID() };
+  const resultado = await cenario.servico.verificarParaFluxo(
+    ator,
+    { atendimentoId, contratoExternoId },
+    cenario.consultas,
+  );
+  assert.equal(resultado.resultado, 'SUCESSO');
+  assert.equal(resultado.elegivel, true);
+  assert.deepEqual(
+    cenario.chamadas.map(([tipo]) => tipo),
+    ['CONTEXTO_FLUXO', 'HISTORICO', 'ERP'],
+  );
+  assert.equal(cenario.chamadas[0][3], ator.fluxoId);
+  assert.equal(cenario.chamadas[0][4], ator.versaoFluxoId);
 });
 
 test('resposta ERP com contrato ou campo divergente falha fechada', async () => {

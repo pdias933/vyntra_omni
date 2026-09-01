@@ -17,6 +17,7 @@ import {
   ErroRespostaElegibilidadeDesbloqueioInvalida,
 } from './erros-desbloqueio-confianca.js';
 import type {
+  AtorFluxoDesbloqueioConfianca,
   EntradaVerificacaoDesbloqueioConfianca,
   ResultadoVerificacaoDesbloqueioConfianca,
   UltimoDesbloqueioConfianca,
@@ -29,6 +30,10 @@ import {
 const IDENTIFICADOR_UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const INTERVALO_TRINTA_DIAS_MS = 30 * 24 * 60 * 60 * 1_000;
+
+type AtorDesbloqueioConfianca =
+  | ContextoSessaoAutorizacao
+  | AtorFluxoDesbloqueioConfianca;
 
 @Injectable()
 export class ServicoElegibilidadeDesbloqueioConfianca {
@@ -56,7 +61,7 @@ export class ServicoElegibilidadeDesbloqueioConfianca {
   }
 
   public async verificarParaExecucao(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaVerificacaoDesbloqueioConfianca,
     consultasErp: ConsultasErp,
     relogio: () => Date = () => new Date(),
@@ -70,12 +75,28 @@ export class ServicoElegibilidadeDesbloqueioConfianca {
     );
   }
 
+  public async verificarParaFluxo(
+    ator: AtorFluxoDesbloqueioConfianca,
+    entrada: EntradaVerificacaoDesbloqueioConfianca,
+    consultasErp: ConsultasErp,
+    relogio: () => Date = () => new Date(),
+  ): Promise<ResultadoVerificacaoDesbloqueioConfianca> {
+    return this.verificarComPermissao(
+      ator,
+      entrada,
+      consultasErp,
+      'VERIFICAR_DESBLOQUEIO_CONFIANCA',
+      relogio,
+    );
+  }
+
   public async autorizarExecucaoEObterUltimo(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaVerificacaoDesbloqueioConfianca,
     transacao: TransacaoPrisma,
   ): Promise<UltimoDesbloqueioConfianca | undefined> {
-    this.validarEntrada(entrada);
+    this.validarAtor(sessao);
+    this.validarEntrada(entrada, this.ehAtorFluxo(sessao));
     return this.autorizarEObterUltimo(
       sessao,
       entrada,
@@ -99,13 +120,14 @@ export class ServicoElegibilidadeDesbloqueioConfianca {
   }
 
   private async verificarComPermissao(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaVerificacaoDesbloqueioConfianca,
     consultasErp: ConsultasErp,
     permissao: CodigoPermissaoAutorizacao,
     relogio: () => Date,
   ): Promise<ResultadoVerificacaoDesbloqueioConfianca> {
-    this.validarEntrada(entrada);
+    this.validarAtor(sessao);
+    this.validarEntrada(entrada, this.ehAtorFluxo(sessao));
     const ultimo = await this.prisma.executarLeituraConsistente((transacao) =>
       this.autorizarEObterUltimo(sessao, entrada, permissao, transacao),
     );
@@ -125,14 +147,35 @@ export class ServicoElegibilidadeDesbloqueioConfianca {
   }
 
   private async autorizarEObterUltimo(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaVerificacaoDesbloqueioConfianca,
     permissao: CodigoPermissaoAutorizacao,
     transacao: TransacaoPrisma,
   ): Promise<UltimoDesbloqueioConfianca | undefined> {
+    if (this.ehAtorFluxo(sessao)) {
+      if (
+        !(await this.repositorio.contextoAtivoCorrespondeParaFluxo(
+          entrada.atendimentoId,
+          entrada.contratoExternoId,
+          sessao.fluxoId,
+          sessao.versaoFluxoId,
+          transacao,
+        ))
+      ) {
+        throw new Error('CONTEXTO_DESBLOQUEIO_FLUXO_INVALIDO');
+      }
+      return this.repositorio.obterUltimoConfirmado(
+        entrada.contratoExternoId,
+        transacao,
+      );
+    }
+    if (entrada.filaId === undefined) {
+      throw new ErroEntradaDesbloqueioConfiancaInvalida();
+    }
+    const filaId = entrada.filaId;
     await this.autorizacao.autorizar(
       {
-        filaId: entrada.filaId,
+        filaId,
         permissao,
         recurso: {
           id: entrada.atendimentoId,
@@ -145,7 +188,7 @@ export class ServicoElegibilidadeDesbloqueioConfianca {
           transacaoAutorizada !== undefined &&
           (await this.repositorio.contextoAtivoCorresponde(
             entrada.atendimentoId,
-            entrada.filaId,
+            filaId,
             entrada.contratoExternoId,
             transacaoAutorizada,
           )),
@@ -236,12 +279,32 @@ export class ServicoElegibilidadeDesbloqueioConfianca {
 
   private validarEntrada(
     entrada: EntradaVerificacaoDesbloqueioConfianca,
+    origemFluxo = false,
   ): void {
     if (
       !IDENTIFICADOR_UUID.test(entrada.atendimentoId) ||
-      !IDENTIFICADOR_UUID.test(entrada.filaId) ||
+      (origemFluxo
+        ? entrada.filaId !== undefined
+        : entrada.filaId === undefined ||
+          !IDENTIFICADOR_UUID.test(entrada.filaId)) ||
       entrada.contratoExternoId.trim().length < 1 ||
       entrada.contratoExternoId.length > 256
+    ) {
+      throw new ErroEntradaDesbloqueioConfiancaInvalida();
+    }
+  }
+
+  private ehAtorFluxo(
+    ator: AtorDesbloqueioConfianca,
+  ): ator is AtorFluxoDesbloqueioConfianca {
+    return 'fluxoId' in ator && 'versaoFluxoId' in ator;
+  }
+
+  private validarAtor(ator: AtorDesbloqueioConfianca): void {
+    if (
+      this.ehAtorFluxo(ator) &&
+      (!IDENTIFICADOR_UUID.test(ator.fluxoId) ||
+        !IDENTIFICADOR_UUID.test(ator.versaoFluxoId))
     ) {
       throw new ErroEntradaDesbloqueioConfiancaInvalida();
     }

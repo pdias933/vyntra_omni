@@ -570,3 +570,9 @@ Na recepção, o adapter entrega `SubmissaoFormularioNormalizada` sem conservar 
 ## 15. Escritas ERP do Motor de Fluxos da PR 080
 
 O executor não chama MK nem conhece DTO externo. `ServicoProtocolosOrdensFluxo` depende da porta interna `EscritasErp` e entrega comandos aos serviços de protocolo/OS já idempotentes. Identificadores externos vêm somente do contexto persistido; a definição não os transporta. `RESULTADO_INCERTO` exige a operação de reconciliação correspondente antes de outra tentativa. Ausência do provider real produz `INDISPONIVEL`, sem snapshot, simulador ou resposta fabricada.
+
+## 16. Desbloqueio no Motor de Fluxos da PR 081
+
+O motor usa a mesma porta ERP normalizada e os mesmos serviços das PRs 064–065. `VERIFICAR_DESBLOQUEIO_CONFIANCA` chama somente `verificarElegibilidadeDesbloqueio`; `EXECUTAR_DESBLOQUEIO_CONFIANCA` refaz essa consulta e só então pode chamar `executarDesbloqueioConfianca` ou `reconciliarDesbloqueioConfianca`. Todas as chamadas ficam fora da transação do executor.
+
+Contrato e chave nunca vêm do editor. O contrato é derivado do contexto ativo e a chave é estável por execução+nó. O adapter retorna apenas resultados internos normalizados; resposta externa, motivo detalhado e identificadores não atravessam para passo, log ou auditoria. Sem provider real caracterizado, a verificação fica `INDISPONIVEL` e a execução termina antes de criar operação. Fixture ou simulador continuam proibidos como provider de runtime.

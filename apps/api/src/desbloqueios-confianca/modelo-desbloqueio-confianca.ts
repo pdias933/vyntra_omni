@@ -1,7 +1,12 @@
 export interface EntradaVerificacaoDesbloqueioConfianca {
   readonly atendimentoId: string;
   readonly contratoExternoId: string;
-  readonly filaId: string;
+  readonly filaId?: string;
+}
+
+export interface AtorFluxoDesbloqueioConfianca {
+  readonly fluxoId: string;
+  readonly versaoFluxoId: string;
 }
 
 export interface UltimoDesbloqueioConfianca {

@@ -687,3 +687,20 @@ saidas: CRIADA | RESULTADO_INCERTO | INDISPONIVEL | FALHA
 Nenhum nó aceita ID externo, protocolo, fila, cliente, contrato ou chave idempotente. O servidor deriva esses valores do atendimento e usa uma chave UUID determinística por execução+nó. Protocolo oficial existente é sucesso idempotente. Resultado externo ambíguo nunca repete criação cega: conserva `RESULTADO_INCERTO` e só o serviço de domínio pode reconciliar.
 
 OS exige confirmação explícita versionada e capacidade habilitada na publicação, sem considerar isso permissão humana. Na execução, o domínio revalida a autoridade automatizada e audita como `FLUXO`. Adapter ausente segue `INDISPONIVEL` antes de criar operação; simulador não é provider. A preparação e aplicação usam transações curtas, e a chamada ERP ocorre fora da transação PostgreSQL.
+
+## 29. Nós de desbloqueio de confiança da PR 081
+
+```text
+VERIFICAR_DESBLOQUEIO_CONFIANCA
+parametros/referencias/variaveis: vazios
+saidas: ELEGIVEL | NAO_ELEGIVEL | INDISPONIVEL | FALHA
+
+EXECUTAR_DESBLOQUEIO_CONFIANCA
+parametros: confirmacaoExplicita=true
+referencias/variaveis: vazios
+saidas: CONCLUIDO | NAO_ELEGIVEL | RESULTADO_INCERTO | FALHA
+```
+
+Contrato e autoridade vêm do atendimento; a chave vem de execução+nó. Mesmo depois de `ELEGIVEL`, a execução refaz a consulta em tempo real e revalida contexto, vínculo, execução/versão e intervalo local antes do efeito. Ambos exigem atendimento `AGUARDANDO/BOT` sem fila/responsável e vínculo automatizável verificado.
+
+Chamadas ERP ocorrem fora da transação do executor, e o passo só é aplicado se execução, revisão e nó permanecerem iguais. Sem provider, a verificação segue `INDISPONIVEL` e a execução falha antes de criar operação. Motivos, contrato, chave, instante e resposta externa não entram em passo, log ou auditoria.

@@ -615,3 +615,9 @@ No aceite, usar formulário sintético ativo da conta exata e outro inativo/de o
 Não há migration nova. Implantar API e todas as instâncias de `worker_fluxos` com a mesma imagem antes de publicar os nós. Sem `ADAPTADOR_ERP` real, o aceite obrigatório é `INDISPONIVEL`, zero operação recuperável nova, zero protocolo/OS e zero auditoria de sucesso.
 
 Em teste isolado com adapter determinístico, comprovar uma operação por execução+nó, replay estável, protocolo oficial sem nova chamada, OS somente com confirmação explícita e auditoria `FLUXO` sem usuário. Monitorar `RESULTADO_INCERTO`, operação vencida para reconciliação, `CONTEXTO_ORDEM_SERVICO_FLUXO_INVALIDO` e divergência de idempotência. Nunca corrigir protocolo, OS, execução ou operação por SQL. Rollback preserva operações, protocolos, OS e auditoria; não voltar ao worker anterior enquanto execução não terminal apontar para os novos nós.
+
+## 28. Operação dos nós de desbloqueio da PR 081
+
+Não há migration nova. Implantar API e todas as instâncias de `worker_fluxos` com a mesma imagem e manter `20260901012500_espera_resposta_fluxo` como marca de prontidão. Sem provider ERP, validar `INDISPONIVEL` na verificação, `FALHA` na execução e ausência de operação, reserva, histórico ou auditoria de sucesso. Com adapter determinístico exclusivo de teste, comprovar consulta separada, nova elegibilidade antes da escrita, uma chave por execução+nó e auditoria `FLUXO` sanitizada.
+
+Monitorar operações `RESULTADO_INCERTO`, reservas antigas e concorrência por contrato. Nunca liberar reserva, criar histórico ou marcar sucesso por SQL. Rollback preserva todo histórico; antes de voltar ao worker PR 080, interromper novas execuções e comprovar que nenhum nó da PR 081 permanece não terminal.

@@ -18,6 +18,14 @@ export interface RepositorioDesbloqueiosConfianca {
     transacao: TransacaoPrisma,
   ): Promise<boolean>;
 
+  contextoAtivoCorrespondeParaFluxo(
+    atendimentoId: string,
+    contratoExternoId: string,
+    fluxoId: string,
+    versaoFluxoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+
   obterUltimoConfirmado(
     contratoExternoId: string,
     transacao: TransacaoPrisma,

@@ -248,3 +248,36 @@ test('condições e variáveis são tipadas, limitadas e ficam fora do diagnóst
     /\beval\s*\(|new Function|child_process|\bsql\b|https?:\/\//,
   );
 });
+
+test('desbloqueio separa verificação de efeito e revalida autoridade automatizada', async () => {
+  const [executor, fronteira, elegibilidade, execucao, repositorio, modulo] =
+    await Promise.all([
+      ler('apps/api/src/execucoes-fluxo/servico-executor-nos-fluxo.ts'),
+      ler('apps/api/src/execucoes-fluxo/servico-desbloqueios-fluxo.ts'),
+      ler(
+        'apps/api/src/desbloqueios-confianca/servico-elegibilidade-desbloqueio-confianca.ts',
+      ),
+      ler(
+        'apps/api/src/desbloqueios-confianca/servico-execucao-desbloqueio-confianca.ts',
+      ),
+      ler(
+        'apps/api/src/desbloqueios-confianca/repositorio-desbloqueios-confianca-prisma.ts',
+      ),
+      ler('apps/api/src/execucoes-fluxo/modulo-execucoes-fluxo.ts'),
+    ]);
+  assert.match(executor, /prepararNoDesbloqueio/);
+  assert.match(executor, /this\.desbloqueios\.executar/);
+  assert.match(fronteira, /verificarParaFluxo/);
+  assert.match(fronteira, /confirmacaoExplicita: true/);
+  assert.match(fronteira, /uuidEstavel/);
+  assert.match(elegibilidade, /contextoAtivoCorrespondeParaFluxo/);
+  assert.match(execucao, /origem: 'FLUXO'/);
+  assert.match(repositorio, /estado: 'AGUARDANDO'/);
+  assert.match(repositorio, /modo: 'BOT'/);
+  assert.match(repositorio, /filaAtualId: null/);
+  assert.match(repositorio, /usuarioResponsavelId: null/);
+  assert.match(repositorio, /verificadoEm: \{ not: null \}/);
+  assert.match(modulo, /ModuloDesbloqueiosConfianca/);
+  assert.doesNotMatch(modulo, /ADAPTADOR_ERP|AdaptadorErpSimulado/);
+  assert.doesNotMatch(fronteira, /Snapshot|MkSolutions|WSMK|https?:\/\//);
+});

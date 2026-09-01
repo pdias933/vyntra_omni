@@ -819,6 +819,72 @@ test('protocolo e OS usam contratos fechados e confirmação explícita', () => 
   );
 });
 
+test('verificação e execução de desbloqueio são separadas e fechadas', () => {
+  for (const caso of [
+    {
+      parametros: {},
+      saidas: ['ELEGIVEL', 'NAO_ELEGIVEL', 'INDISPONIVEL', 'FALHA'],
+      tipo: 'VERIFICAR_DESBLOQUEIO_CONFIANCA',
+    },
+    {
+      parametros: { confirmacaoExplicita: true },
+      saidas: ['CONCLUIDO', 'NAO_ELEGIVEL', 'RESULTADO_INCERTO', 'FALHA'],
+      tipo: 'EXECUTAR_DESBLOQUEIO_CONFIANCA',
+    },
+  ]) {
+    const definicao = definicaoBasica({
+      conexoes: [
+        conexao('inicio', 'SUCESSO', 'desbloqueio'),
+        ...caso.saidas.map((saida) =>
+          conexao('desbloqueio', saida, 'fim'),
+        ),
+      ],
+      nos: [
+        no('inicio', 'INICIO'),
+        no('desbloqueio', caso.tipo, { parametros: caso.parametros }),
+        no('fim', 'FIM'),
+      ],
+    });
+    assert.equal(
+      new ValidadorPublicacaoFluxo().validar(
+        definicao,
+        contexto({ capacidadesHabilitadas: [caso.tipo] }),
+      ).valido,
+      true,
+    );
+  }
+
+  for (const parametros of [
+    {},
+    { confirmacaoExplicita: false },
+    { confirmacaoExplicita: true, contratoExternoId: 'nao-aceitar' },
+  ]) {
+    const definicao = definicaoBasica({
+      conexoes: [
+        conexao('inicio', 'SUCESSO', 'executar'),
+        ...['CONCLUIDO', 'NAO_ELEGIVEL', 'RESULTADO_INCERTO', 'FALHA'].map(
+          (saida) => conexao('executar', saida, 'fim'),
+        ),
+      ],
+      nos: [
+        no('inicio', 'INICIO'),
+        no('executar', 'EXECUTAR_DESBLOQUEIO_CONFIANCA', { parametros }),
+        no('fim', 'FIM'),
+      ],
+    });
+    assert.ok(
+      codigos(
+        new ValidadorPublicacaoFluxo().validar(
+          definicao,
+          contexto({
+            capacidadesHabilitadas: ['EXECUTAR_DESBLOQUEIO_CONFIANCA'],
+          }),
+        ),
+      ).includes('DEFINICAO_ESTRUTURAL_INVALIDA'),
+    );
+  }
+});
+
 test('identificação e pedido de dados não aceitam variáveis, referências ou payload livre', () => {
   const casos = [
     {

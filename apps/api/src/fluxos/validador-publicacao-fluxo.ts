@@ -406,6 +406,15 @@ export class ValidadorPublicacaoFluxo {
     if (tipo === 'CONSULTAR_FATURAS' || tipo === 'ENVIAR_FATURA') {
       return this.temExatamenteChaves(parametros, []);
     }
+    if (tipo === 'VERIFICAR_DESBLOQUEIO_CONFIANCA') {
+      return this.temExatamenteChaves(parametros, []);
+    }
+    if (tipo === 'EXECUTAR_DESBLOQUEIO_CONFIANCA') {
+      return (
+        this.temExatamenteChaves(parametros, ['confirmacaoExplicita']) &&
+        parametros.confirmacaoExplicita === true
+      );
+    }
     if (tipo === 'CRIAR_ATENDIMENTO') {
       return this.temExatamenteChaves(parametros, []);
     }

@@ -624,3 +624,15 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - chave estável por execução+nó impede duplicação em retry ou reinício;
 - auditoria de OS usa `FLUXO`, nunca usuário/sessão fictícios, e omite assunto, descrição, IDs externos e protocolo;
 - sem adapter real registrado, os dois nós seguem `INDISPONIVEL` e não criam efeito; fixture/simulador não pode mudar essa regra.
+
+## 22. Controles de desbloqueio do Motor de Fluxos da PR 081
+
+- verificação e execução permanecem casos de uso distintos; consultar nunca escreve nem reserva;
+- nenhum nó aceita fila, contrato, chave, payload ERP, referência ou variável; tudo é derivado e validado no servidor;
+- execução exige `confirmacaoExplicita: true` e repete a elegibilidade ERP em tempo real, mesmo após uma verificação elegível;
+- autoridade automática exige atendimento `AGUARDANDO/BOT` sem fila/responsável, execução/versão corrente e vínculo automatizável verificado;
+- ação humana continua exigindo fila, sessão e RBAC; fluxo não herda nem fabrica essas credenciais;
+- lock e reserva única por contrato bloqueiam chaves concorrentes; chave estável execução+nó bloqueia retry divergente;
+- resposta perdida nunca vira sucesso: conserva a operação incerta e só reconciliação pode confirmar ou provar ausência;
+- passo, log e auditoria não recebem contrato, motivo ERP, chave ou instante da política; efeito confirmado é auditado como `FLUXO`;
+- ausência de provider falha antes de criar operação, e simulador não pode ocupar a porta de runtime.

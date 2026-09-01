@@ -19,6 +19,7 @@ import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import { ErroEntradaDesbloqueioConfiancaInvalida } from './erros-desbloqueio-confianca.js';
 import type {
+  AtorFluxoDesbloqueioConfianca,
   EntradaExecucaoDesbloqueioConfianca,
   ResultadoExecucaoDesbloqueioConfianca,
 } from './modelo-desbloqueio-confianca.js';
@@ -31,6 +32,10 @@ import { ServicoElegibilidadeDesbloqueioConfianca } from './servico-elegibilidad
 const IDENTIFICADOR_UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const DURACAO_CONCESSAO_PADRAO_MS = 60_000;
+
+type AtorDesbloqueioConfianca =
+  | ContextoSessaoAutorizacao
+  | AtorFluxoDesbloqueioConfianca;
 
 @Injectable()
 export class ServicoExecucaoDesbloqueioConfianca {
@@ -47,11 +52,12 @@ export class ServicoExecucaoDesbloqueioConfianca {
   ) {}
 
   public async executar(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaExecucaoDesbloqueioConfianca,
     adaptador: AdaptadorErp,
   ): Promise<ResultadoExecucaoDesbloqueioConfianca> {
-    this.validarEntrada(entrada);
+    this.validarAtor(sessao);
+    this.validarEntrada(entrada, this.ehAtorFluxo(sessao));
     const preparada = await this.preparar(sessao, entrada);
     const existente = await this.resultadoExistente(preparada);
     if (existente !== undefined) return existente;
@@ -156,11 +162,12 @@ export class ServicoExecucaoDesbloqueioConfianca {
   }
 
   public async reconciliar(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaExecucaoDesbloqueioConfianca,
     adaptador: AdaptadorErp,
   ): Promise<ResultadoExecucaoDesbloqueioConfianca> {
-    this.validarEntrada(entrada);
+    this.validarAtor(sessao);
+    this.validarEntrada(entrada, this.ehAtorFluxo(sessao));
     const preparada = await this.preparar(sessao, entrada);
     const existente = await this.resultadoAntesDaReconciliacao(preparada);
     if (existente !== undefined) return existente;
@@ -230,7 +237,7 @@ export class ServicoExecucaoDesbloqueioConfianca {
   }
 
   private async preparar(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaExecucaoDesbloqueioConfianca,
   ): Promise<ResultadoIdempotencia> {
     return this.prisma.executarTransacao(async (transacao) => {
@@ -255,7 +262,7 @@ export class ServicoExecucaoDesbloqueioConfianca {
   }
 
   private async adquirirExecucao(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaExecucaoDesbloqueioConfianca,
     operacaoId: string,
   ): Promise<ConcessaoOperacao | ResultadoExecucaoDesbloqueioConfianca> {
@@ -303,7 +310,7 @@ export class ServicoExecucaoDesbloqueioConfianca {
   }
 
   private async adquirirReconciliacao(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaExecucaoDesbloqueioConfianca,
     operacaoId: string,
   ): Promise<ConcessaoOperacao | ResultadoExecucaoDesbloqueioConfianca> {
@@ -342,7 +349,7 @@ export class ServicoExecucaoDesbloqueioConfianca {
   }
 
   private async confirmar(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaExecucaoDesbloqueioConfianca,
     concessao: ConcessaoOperacao,
     confirmadoEm: Date,
@@ -399,7 +406,7 @@ export class ServicoExecucaoDesbloqueioConfianca {
   }
 
   private async registrarEfeitoAusente(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaExecucaoDesbloqueioConfianca,
     concessao: ConcessaoOperacao,
   ): Promise<ResultadoExecucaoDesbloqueioConfianca> {
@@ -441,7 +448,7 @@ export class ServicoExecucaoDesbloqueioConfianca {
   }
 
   private async marcarIncerto(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaExecucaoDesbloqueioConfianca,
     concessao: ConcessaoOperacao,
     codigo: string,
@@ -467,7 +474,7 @@ export class ServicoExecucaoDesbloqueioConfianca {
   }
 
   private async marcarFalhaTemporaria(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaExecucaoDesbloqueioConfianca,
     concessao: ConcessaoOperacao,
     codigo: string,
@@ -493,7 +500,7 @@ export class ServicoExecucaoDesbloqueioConfianca {
   }
 
   private async auditar(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorDesbloqueioConfianca,
     entrada: EntradaExecucaoDesbloqueioConfianca,
     tipoEvento: string,
     resultado: string,
@@ -506,11 +513,19 @@ export class ServicoExecucaoDesbloqueioConfianca {
         dadosNovos: { resultado },
         entidadeId: entrada.atendimentoId,
         entidadeTipo: 'DESBLOQUEIO_CONFIANCA',
-        filaId: entrada.filaId,
-        origem: 'USUARIO',
-        sessaoId: sessao.sessaoId,
+        ...(entrada.filaId === undefined ? {} : { filaId: entrada.filaId }),
+        ...(this.ehAtorFluxo(sessao)
+          ? {
+              fluxoId: sessao.fluxoId,
+              origem: 'FLUXO' as const,
+              versaoFluxoId: sessao.versaoFluxoId,
+            }
+          : {
+              origem: 'USUARIO' as const,
+              sessaoId: sessao.sessaoId,
+              usuarioId: sessao.usuarioId,
+            }),
         tipoEvento,
-        usuarioId: sessao.usuarioId,
       },
       transacao,
     );
@@ -658,10 +673,16 @@ export class ServicoExecucaoDesbloqueioConfianca {
     );
   }
 
-  private validarEntrada(entrada: EntradaExecucaoDesbloqueioConfianca): void {
+  private validarEntrada(
+    entrada: EntradaExecucaoDesbloqueioConfianca,
+    origemFluxo = false,
+  ): void {
     if (
       !IDENTIFICADOR_UUID.test(entrada.atendimentoId) ||
-      !IDENTIFICADOR_UUID.test(entrada.filaId) ||
+      (origemFluxo
+        ? entrada.filaId !== undefined
+        : entrada.filaId === undefined ||
+          !IDENTIFICADOR_UUID.test(entrada.filaId)) ||
       !IDENTIFICADOR_UUID.test(entrada.chaveIdempotencia) ||
       entrada.confirmacaoExplicita !== true ||
       entrada.contratoExternoId.trim().length < 1 ||
@@ -669,6 +690,22 @@ export class ServicoExecucaoDesbloqueioConfianca {
       !(entrada.proximaAcaoEm instanceof Date) ||
       Number.isNaN(entrada.proximaAcaoEm.getTime()) ||
       entrada.proximaAcaoEm <= new Date()
+    ) {
+      throw new ErroEntradaDesbloqueioConfiancaInvalida();
+    }
+  }
+
+  private ehAtorFluxo(
+    ator: AtorDesbloqueioConfianca,
+  ): ator is AtorFluxoDesbloqueioConfianca {
+    return 'fluxoId' in ator && 'versaoFluxoId' in ator;
+  }
+
+  private validarAtor(ator: AtorDesbloqueioConfianca): void {
+    if (
+      this.ehAtorFluxo(ator) &&
+      (!IDENTIFICADOR_UUID.test(ator.fluxoId) ||
+        !IDENTIFICADOR_UUID.test(ator.versaoFluxoId))
     ) {
       throw new ErroEntradaDesbloqueioConfiancaInvalida();
     }

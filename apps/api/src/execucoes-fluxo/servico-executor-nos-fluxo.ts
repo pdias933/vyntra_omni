@@ -58,6 +58,12 @@ import {
 } from './repositorio-passos-execucao-fluxo.js';
 import { ServicoExecucoesFluxo } from './servico-execucoes-fluxo.js';
 import {
+  ServicoDesbloqueiosFluxo,
+  type PreparacaoNoDesbloqueioFluxo,
+  type ResultadoNoDesbloqueioFluxo,
+  type TipoNoDesbloqueioFluxo,
+} from './servico-desbloqueios-fluxo.js';
+import {
   ServicoFaturasFluxo,
   type PreparacaoNoFaturaFluxo,
   type ResultadoNoFaturaFluxo,
@@ -80,6 +86,7 @@ const TIPOS_SUPORTADOS = new Set([
   'ENVIAR_BOTOES_OU_LISTA',
   'ENVIAR_MENSAGEM',
   'ENVIAR_FATURA',
+  'EXECUTAR_DESBLOQUEIO_CONFIANCA',
   'FIM',
   'HORARIO_ATENDIMENTO',
   'IDENTIFICAR_CONTATO',
@@ -88,6 +95,7 @@ const TIPOS_SUPORTADOS = new Set([
   'SELECIONAR_CONTRATO',
   'SOLICITAR_DADOS_CONTATO',
   'SOLICITAR_FORMULARIO_WHATSAPP',
+  'VERIFICAR_DESBLOQUEIO_CONFIANCA',
 ]);
 
 interface ResultadoExecucaoNo {
@@ -111,6 +119,11 @@ interface AcaoExternaFatura {
 interface AcaoExternaProtocoloOrdem {
   readonly preparacao: PreparacaoNoProtocoloOrdemFluxo;
   readonly resultado: ResultadoNoProtocoloOrdemFluxo;
+}
+
+interface AcaoExternaDesbloqueio {
+  readonly preparacao: PreparacaoNoDesbloqueioFluxo;
+  readonly resultado: ResultadoNoDesbloqueioFluxo;
 }
 
 @Injectable()
@@ -138,6 +151,8 @@ export class ServicoExecutorNosFluxo {
     private readonly formularios: ServicoFormularios,
     @Inject(ServicoProtocolosOrdensFluxo)
     private readonly protocolosOrdens: ServicoProtocolosOrdensFluxo,
+    @Inject(ServicoDesbloqueiosFluxo)
+    private readonly desbloqueios: ServicoDesbloqueiosFluxo,
   ) {}
 
   public async executarCiclo(
@@ -151,6 +166,7 @@ export class ServicoExecutorNosFluxo {
     while (processadas < limite) {
       let selecionada: ExecucaoFluxoPersistida | undefined;
       let preparacaoFatura: PreparacaoNoFaturaFluxo | undefined;
+      let preparacaoDesbloqueio: PreparacaoNoDesbloqueioFluxo | undefined;
       let preparacaoProtocoloOrdem:
         | PreparacaoNoProtocoloOrdemFluxo
         | undefined;
@@ -169,6 +185,11 @@ export class ServicoExecutorNosFluxo {
               transacao,
             );
             if (preparacaoFatura !== undefined) return true;
+            preparacaoDesbloqueio = await this.prepararNoDesbloqueio(
+              execucao,
+              transacao,
+            );
+            if (preparacaoDesbloqueio !== undefined) return true;
             preparacaoProtocoloOrdem =
               await this.prepararNoProtocoloOrdem(execucao, transacao);
             if (preparacaoProtocoloOrdem !== undefined) return true;
@@ -201,6 +222,41 @@ export class ServicoExecutorNosFluxo {
               return;
             }
             await this.executarNo(atual, transacao, relogio, acao);
+          });
+        } else if (
+          preparacaoDesbloqueio !== undefined &&
+          selecionada !== undefined
+        ) {
+          const execucaoPreparada = selecionada;
+          const resultado = await this.desbloqueios.executar(
+            preparacaoDesbloqueio,
+            relogio,
+          );
+          const acao: AcaoExternaDesbloqueio = {
+            preparacao: preparacaoDesbloqueio,
+            resultado,
+          };
+          await this.prisma.executarTransacao(async (transacao) => {
+            const atual = await this.repositorioExecucoes.obterPorId(
+              execucaoPreparada.id,
+              transacao,
+            );
+            if (
+              atual === undefined ||
+              atual.estado !== 'EXECUTANDO' ||
+              atual.revisao !== execucaoPreparada.revisao ||
+              atual.noAtualId !== execucaoPreparada.noAtualId
+            ) {
+              return;
+            }
+            await this.executarNo(
+              atual,
+              transacao,
+              relogio,
+              undefined,
+              undefined,
+              acao,
+            );
           });
         } else if (
           preparacaoProtocoloOrdem !== undefined &&
@@ -336,12 +392,37 @@ export class ServicoExecutorNosFluxo {
     );
   }
 
+  private async prepararNoDesbloqueio(
+    execucao: ExecucaoFluxoPersistida,
+    transacao: TransacaoPrisma,
+  ): Promise<PreparacaoNoDesbloqueioFluxo | undefined> {
+    const versao = await this.catalogo.obterVersaoFixaExecucao(
+      execucao.versaoFluxoId,
+      execucao.fluxoId,
+      transacao,
+    );
+    const definicao = this.lerDefinicao(versao.definicao);
+    const no = definicao.nos.find(({ id }) => id === execucao.noAtualId);
+    if (
+      no?.tipo !== 'VERIFICAR_DESBLOQUEIO_CONFIANCA' &&
+      no?.tipo !== 'EXECUTAR_DESBLOQUEIO_CONFIANCA'
+    ) {
+      return undefined;
+    }
+    return this.desbloqueios.preparar(
+      no as NoDefinicaoFluxo & { readonly tipo: TipoNoDesbloqueioFluxo },
+      execucao,
+      transacao,
+    );
+  }
+
   private async executarNo(
     execucao: ExecucaoFluxoPersistida,
     transacao: TransacaoPrisma,
     relogio: () => Date,
     acaoFatura?: AcaoExternaFatura,
     acaoProtocoloOrdem?: AcaoExternaProtocoloOrdem,
+    acaoDesbloqueio?: AcaoExternaDesbloqueio,
   ): Promise<void> {
     const agora = relogio();
     if (!Number.isFinite(agora.getTime()) || agora < execucao.atualizadaEm) {
@@ -399,6 +480,7 @@ export class ServicoExecutorNosFluxo {
       relogio,
       acaoFatura,
       acaoProtocoloOrdem,
+      acaoDesbloqueio,
     );
     if (resultado.agendamento !== undefined) {
       await this.finalizarPasso(
@@ -458,6 +540,7 @@ export class ServicoExecutorNosFluxo {
     relogio: () => Date,
     acaoFatura?: AcaoExternaFatura,
     acaoProtocoloOrdem?: AcaoExternaProtocoloOrdem,
+    acaoDesbloqueio?: AcaoExternaDesbloqueio,
   ): Promise<ResultadoExecucaoNo> {
     if (no.tipo === 'AGUARDAR') {
       return this.executarEspera(no, execucao, relogio);
@@ -512,6 +595,16 @@ export class ServicoExecutorNosFluxo {
       );
     }
     if (
+      no.tipo === 'VERIFICAR_DESBLOQUEIO_CONFIANCA' ||
+      no.tipo === 'EXECUTAR_DESBLOQUEIO_CONFIANCA'
+    ) {
+      return this.aplicarNoDesbloqueio(
+        no,
+        iteracao.contexto,
+        acaoDesbloqueio,
+      );
+    }
+    if (
       no.tipo === 'IDENTIFICAR_CONTATO' ||
       no.tipo === 'SELECIONAR_CLIENTE' ||
       no.tipo === 'SELECIONAR_CONTRATO' ||
@@ -561,6 +654,32 @@ export class ServicoExecutorNosFluxo {
     ) {
       return {
         codigo: 'CONFIGURACAO_OPERACAO_ERP_INVALIDA',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    return {
+      ...('codigo' in acao.resultado
+        ? { codigo: acao.resultado.codigo }
+        : {}),
+      contextoProtegido: contexto,
+      resultado: acao.resultado.resultado,
+    };
+  }
+
+  private aplicarNoDesbloqueio(
+    no: NoDefinicaoFluxo,
+    contexto: ObjetoJsonProtegido,
+    acao: AcaoExternaDesbloqueio | undefined,
+  ): ResultadoExecucaoNo {
+    if (
+      (no.tipo !== 'VERIFICAR_DESBLOQUEIO_CONFIANCA' &&
+        no.tipo !== 'EXECUTAR_DESBLOQUEIO_CONFIANCA') ||
+      acao === undefined ||
+      acao.preparacao.tipo !== no.tipo
+    ) {
+      return {
+        codigo: 'CONFIGURACAO_DESBLOQUEIO_INVALIDA',
         contextoProtegido: contexto,
         resultado: 'FALHA',
       };
@@ -1246,6 +1365,8 @@ export class ServicoExecutorNosFluxo {
     | 'NAO_ENCONTRADA'
     | 'ERP_INDISPONIVEL'
     | 'DADOS_INCOMPLETOS'
+    | 'ELEGIVEL'
+    | 'NAO_ELEGIVEL'
     | 'CRIADO'
     | 'CRIADA'
     | 'RESULTADO_INCERTO'
@@ -1305,6 +1426,22 @@ export class ServicoExecutorNosFluxo {
           'FALHA',
         ]);
       }
+      if (no.tipo === 'VERIFICAR_DESBLOQUEIO_CONFIANCA') {
+        return new Set([
+          'ELEGIVEL',
+          'NAO_ELEGIVEL',
+          'INDISPONIVEL',
+          'FALHA',
+        ]);
+      }
+      if (no.tipo === 'EXECUTAR_DESBLOQUEIO_CONFIANCA') {
+        return new Set([
+          'CONCLUIDO',
+          'NAO_ELEGIVEL',
+          'RESULTADO_INCERTO',
+          'FALHA',
+        ]);
+      }
       if (no.tipo === 'CRIAR_ATENDIMENTO') {
         return new Set([
           'CRIADO',
@@ -1343,6 +1480,8 @@ export class ServicoExecutorNosFluxo {
       | 'NAO_ENCONTRADA'
       | 'ERP_INDISPONIVEL'
       | 'DADOS_INCOMPLETOS'
+      | 'ELEGIVEL'
+      | 'NAO_ELEGIVEL'
       | 'CRIADO'
       | 'CRIADA'
       | 'RESULTADO_INCERTO'
