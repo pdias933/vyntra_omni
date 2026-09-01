@@ -71,8 +71,8 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 047 | CONCLUÍDA | `high` |
 | 048 | CONCLUÍDA | `high` |
 | 049 | CONCLUÍDA | `xhigh` |
-| 050 | EM ANDAMENTO | `xhigh` |
-| 051 | PENDENTE | `xhigh` |
+| 050 | CONCLUÍDA | `xhigh` |
+| 051 | EM ANDAMENTO | `xhigh` |
 | 052 | PENDENTE | `xhigh` |
 | 053 | PENDENTE | `xhigh` |
 | 054 | PENDENTE | `xhigh` |
@@ -385,6 +385,10 @@ Aceite concluído em 1º de setembro de 2026: modelos passaram a ser normalizado
 ### PR 049 — composição de segunda via
 
 Aceite concluído em 1º de setembro de 2026: a composição de segunda via passou a sempre apresentar valor e vencimento e selecionar PDF, Pix copia e cola, linha digitável e link HTTPS conforme disponibilidade. Ausência de todos os meios produz fallback explícito para a equipe, sem inventar conteúdo. Opções permanecem em objeto protegido com hash e indicadores coerentes; PDF referencia mídia privada existente. O componente somente compõe a comunicação: não possui comando, estado ou coluna para pagar, cobrar ou liquidar. Lint, tipos, 212 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901003100_criar_composicao_segunda_via` terminou com código zero e `vyntra/api-staging:pr-049` ficou saudável com prontidão `PRONTO`. Em staging, composição completa e fallback coexistiram, indicador incoerente foi recusado, zero coluna de pagamento foi encontrada, houve rollback e nenhum erro de nível 50 foi emitido.
+
+### PR 050 — WhatsApp Flows e submissões
+
+Aceite concluído em 1º de setembro de 2026: formulários de identificação e cadastro comercial passaram a ser catalogados por conta, com definição protegida, hash, estado e versão. O adapter transforma a resposta externa em submissão idempotente sem conservar o token do Flow. O projetor da timeline aceita apenas campos declarados, mascara os sensíveis sem permissão e entrega um card estruturado `FORMULARIO`, `SOMENTE_EQUIPE`, com a ação `VER_FORMULARIO`; o JSON protegido não integra a projeção. Submissões são imutáveis no PostgreSQL e únicas por mensagem e referência do canal. Lint, tipos, 215 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. A migration `20260901003200_criar_formularios_canal` terminou com código zero e `vyntra/api-staging:pr-050` ficou saudável com prontidão `PRONTO`. Em staging, uma submissão `INTERATIVA` de formulário ativo foi persistida, o replay inseriu zero linhas, a mutação foi recusada, nenhuma coluna bruta foi encontrada, houve rollback e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 
