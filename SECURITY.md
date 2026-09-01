@@ -613,3 +613,14 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - locks e unicidades por mensagem e referência tornam replay idempotente; conteúdo divergente falha fechado;
 - respostas são dados protegidos, não entram em passo, log, evento ou auditoria e só chegam ao card após mapeamento e mascaramento por permissão;
 - submissão e evento confirmam na mesma transação e o registro imutável não oferece update/delete operacional.
+
+## 21. Controles de protocolo e OS da PR 080
+
+- `CRIAR_ATENDIMENTO` não aceita protocolo, identificador externo ou chave do editor; protocolo oficial existente impede nova escrita;
+- `CRIAR_ORDEM_SERVICO` exige schema fechado, `confirmacaoExplicita: true` e capacidade habilitada, sem transformar publicação em permissão humana;
+- cliente, contrato, fila e protocolo são derivados no servidor e revalidados pelo serviço de domínio imediatamente antes da confirmação;
+- autoridade de fluxo exige atendimento `AGUARDANDO/BOT`, sem responsável, vínculo verificado e execução `EXECUTANDO` da mesma versão;
+- chamadas ERP ocorrem fora da transação; resposta perdida permanece incerta e só reconciliação pode confirmar ou provar ausência;
+- chave estável por execução+nó impede duplicação em retry ou reinício;
+- auditoria de OS usa `FLUXO`, nunca usuário/sessão fictícios, e omite assunto, descrição, IDs externos e protocolo;
+- sem adapter real registrado, os dois nós seguem `INDISPONIVEL` e não criam efeito; fixture/simulador não pode mudar essa regra.

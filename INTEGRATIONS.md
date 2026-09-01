@@ -566,3 +566,7 @@ Resposta financeira permanece em memória protegida e apenas a referência inter
 Até o envio estruturado ser caracterizado no ambiente real, `SOLICITAR_FORMULARIO_WHATSAPP` não chama a Meta e segue `FALLBACK` pelo serviço de mensagens. O adapter futuro deverá receber o UUID interno, resolver nele a referência externa e devolver somente aceite/falha normalizados; token, payload e criptografia não podem entrar na definição nem no passo.
 
 Na recepção, o adapter entrega `SubmissaoFormularioNormalizada` sem conservar o token usado pelo protocolo. O domínio deriva conta, contato, conversa e atendimento da mensagem de entrada, compara um hash canônico e persiste uma única submissão por mensagem e por referência. Repetição compatível não emite novo evento; divergência é incidente de idempotência. Simulador e fixture não habilitam essa capacidade em staging ou produção.
+
+## 15. Escritas ERP do Motor de Fluxos da PR 080
+
+O executor não chama MK nem conhece DTO externo. `ServicoProtocolosOrdensFluxo` depende da porta interna `EscritasErp` e entrega comandos aos serviços de protocolo/OS já idempotentes. Identificadores externos vêm somente do contexto persistido; a definição não os transporta. `RESULTADO_INCERTO` exige a operação de reconciliação correspondente antes de outra tentativa. Ausência do provider real produz `INDISPONIVEL`, sem snapshot, simulador ou resposta fabricada.

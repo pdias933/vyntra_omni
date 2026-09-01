@@ -692,3 +692,9 @@ Antes dos PRs correspondentes, confirmar:
 - autenticação, protocolo/callback, consentimento e opt-out reais antes de habilitar disparos vindos do ERP.
 
 Visibilidade/notas, matriz inicial de risco, validade offline, QR, senha/MFA e tetos internos foram fechados no Portão Zero. O restante da arquitetura pode avançar respeitando `default deny`; condições externas acima mantêm somente o recurso dependente desligado.
+
+### 13.8 Protocolo e OS pelo Motor de Fluxos
+
+Na PR 080, `ServicoProtocolosOrdensFluxo` prepara o comando sob a transação curta do executor, mas chama `ServicoCriacaoProtocoloErp` ou `ServicoOrdensServicoErp` somente depois do commit. O adapter ERP é opcional; sua ausência resulta em `INDISPONIVEL` sem provider alternativo. A aplicação do passo relê execução, revisão e nó, enquanto a confirmação de OS revalida no próprio serviço de domínio atendimento BOT, execução/versão, vínculo automatizável, contrato, fila e protocolo.
+
+A chave é derivada deterministicamente de execução+nó e não depende da revisão, permitindo que um caminho de reconciliação revisite o nó sem gerar outra operação. Protocolo oficial existente evita a chamada. OS registra auditoria com ator `FLUXO`; não há sessão técnica, usuário sintético nem autorização herdada de quem publicou. Conteúdo e identificadores externos não entram no passo ou auditoria.

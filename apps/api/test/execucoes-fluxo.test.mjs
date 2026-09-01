@@ -412,7 +412,9 @@ function criarExecutor({
   resultadoIdentificacao = true,
   resultadoMensagem,
   preparacaoFatura,
+  preparacaoProtocoloOrdem,
   resultadoFatura = { resultado: 'ERP_INDISPONIVEL' },
+  resultadoProtocoloOrdem = { resultado: 'INDISPONIVEL' },
   contextoFaturaValido = true,
   formularioAtivo = true,
   resultadoSelecaoCliente = true,
@@ -427,6 +429,7 @@ function criarExecutor({
     contextos: [],
     faturas: [],
     formularios: [],
+    protocolosOrdens: [],
     mensagens: [],
     passosFinalizados: [],
     passosIniciados: [],
@@ -449,6 +452,8 @@ function criarExecutor({
     SELECIONAR_CONTRATO: ['SELECIONADO', 'NAO_SELECIONADO', 'FALHA'],
     CONSULTAR_FATURAS: ['ENCONTRADA', 'NAO_ENCONTRADA', 'ERP_INDISPONIVEL', 'FALHA'],
     ENVIAR_FATURA: ['SUCESSO', 'DADOS_INCOMPLETOS', 'ERP_INDISPONIVEL', 'FALHA'],
+    CRIAR_ATENDIMENTO: ['CRIADO', 'RESULTADO_INCERTO', 'INDISPONIVEL', 'FALHA'],
+    CRIAR_ORDEM_SERVICO: ['CRIADA', 'RESULTADO_INCERTO', 'INDISPONIVEL', 'FALHA'],
   }[no.tipo] ?? [];
   const definicao = {
     conexoes: saidas.map((saida) => ({ destinoNoId: 'fim', origemNoId: no.id, saida })),
@@ -549,6 +554,16 @@ function criarExecutor({
       return formularioAtivo;
     },
   };
+  const protocolosOrdens = {
+    executar: async (...argumentos) => {
+      chamadas.protocolosOrdens.push(['EXECUTAR', emTransacao, ...argumentos]);
+      return resultadoProtocoloOrdem;
+    },
+    preparar: async (...argumentos) => {
+      chamadas.protocolosOrdens.push(['PREPARAR', emTransacao, ...argumentos]);
+      return preparacaoProtocoloOrdem;
+    },
+  };
   return {
     chamadas,
     executor: new ServicoExecutorNosFluxo(
@@ -562,10 +577,43 @@ function criarExecutor({
       prisma,
       faturas,
       formularios,
+      protocolosOrdens,
     ),
     transacao,
   };
 }
+
+test('operação ERP do fluxo é preparada em transação e executada fora dela', async () => {
+  const no = {
+    id: 'protocolo',
+    parametros: {},
+    referencias: [],
+    tipo: 'CRIAR_ATENDIMENTO',
+    variaveisEntrada: [],
+    variaveisSaida: [],
+  };
+  const preparacao = {
+    atendimentoId: ids.atendimento,
+    assunto: 'Atendimento omnichannel',
+    chaveIdempotencia: randomUUID(),
+    iniciadoEm: inicio,
+    resultado: 'PRONTA',
+    tipo: 'CRIAR_ATENDIMENTO',
+  };
+  const cenario = criarExecutor({
+    no,
+    preparacaoProtocoloOrdem: preparacao,
+    resultadoProtocoloOrdem: { resultado: 'CRIADO' },
+  });
+  assert.equal(await cenario.executor.executarCiclo(1, () => depois(10)), 1);
+  assert.equal(cenario.chamadas.protocolosOrdens[0][0], 'PREPARAR');
+  assert.equal(cenario.chamadas.protocolosOrdens[0][1], true);
+  assert.equal(cenario.chamadas.protocolosOrdens[1][0], 'EXECUTAR');
+  assert.equal(cenario.chamadas.protocolosOrdens[1][1], false);
+  assert.deepEqual(cenario.chamadas.passosFinalizados[0].saidaSanitizada, {
+    resultado: 'CRIADO',
+  });
+});
 
 test('executor usa versão fixa, serviço de domínio e avança pela saída de sucesso', async () => {
   const mensagemId = randomUUID();

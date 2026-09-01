@@ -609,3 +609,9 @@ Não há migration nova; a marca obrigatória permanece `20260901012500_espera_r
 Sem adapter real de envio estruturado caracterizado, o comportamento obrigatório é `FALLBACK` textual para formulário ativo da conta. Não registrar simulador, copiar referência externa para a definição nem converter fallback em `ENVIADO`. Monitorar `FORMULARIO_INDISPONIVEL`, `CONFIGURACAO_FORMULARIO_INVALIDA`, `IDEMPOTENCIA_SUBMISSAO_FORMULARIO_DIVERGENTE`, crescimento de fallback, submissão sem evento e evento duplicado.
 
 No aceite, usar formulário sintético ativo da conta exata e outro inativo/de outra conta. Confirmar uma única mensagem no caso ativo, falha sem mensagem nos demais, passo sem UUID do formulário ou texto e replay sem segunda mensagem. Para submissão, usar mensagem de entrada sintética e repetir mensagem/referência; deve existir uma submissão e um evento, sem resposta ou token no evento/log. Rollback preserva formulários, submissões, mensagens e passos; antes de usar worker PR 078, comprovar que nenhuma execução não terminal aponta para o novo nó.
+
+## 27. Operação dos nós de protocolo e OS da PR 080
+
+Não há migration nova. Implantar API e todas as instâncias de `worker_fluxos` com a mesma imagem antes de publicar os nós. Sem `ADAPTADOR_ERP` real, o aceite obrigatório é `INDISPONIVEL`, zero operação recuperável nova, zero protocolo/OS e zero auditoria de sucesso.
+
+Em teste isolado com adapter determinístico, comprovar uma operação por execução+nó, replay estável, protocolo oficial sem nova chamada, OS somente com confirmação explícita e auditoria `FLUXO` sem usuário. Monitorar `RESULTADO_INCERTO`, operação vencida para reconciliação, `CONTEXTO_ORDEM_SERVICO_FLUXO_INVALIDO` e divergência de idempotência. Nunca corrigir protocolo, OS, execução ou operação por SQL. Rollback preserva operações, protocolos, OS e auditoria; não voltar ao worker anterior enquanto execução não terminal apontar para os novos nós.

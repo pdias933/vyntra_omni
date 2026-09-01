@@ -20,6 +20,11 @@ export interface EntradaCriacaoOrdemServicoErp
   readonly duracaoConcessaoMs?: number;
 }
 
+export interface AtorFluxoOrdemServicoErp {
+  readonly fluxoId: string;
+  readonly versaoFluxoId: string;
+}
+
 export interface EntradaAtualizacaoOrdemServicoErp
   extends EntradaCriacaoOrdemServicoErp {
   readonly ordemServicoId: string;

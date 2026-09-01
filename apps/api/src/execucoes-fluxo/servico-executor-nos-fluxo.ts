@@ -63,11 +63,19 @@ import {
   type ResultadoNoFaturaFluxo,
   type TipoNoFaturaFluxo,
 } from './servico-faturas-fluxo.js';
+import {
+  ServicoProtocolosOrdensFluxo,
+  type PreparacaoNoProtocoloOrdemFluxo,
+  type ResultadoNoProtocoloOrdemFluxo,
+  type TipoNoProtocoloOrdemFluxo,
+} from './servico-protocolos-ordens-fluxo.js';
 
 const TIPOS_SUPORTADOS = new Set([
   'AGUARDAR',
   'CONDICAO',
   'CONSULTAR_FATURAS',
+  'CRIAR_ATENDIMENTO',
+  'CRIAR_ORDEM_SERVICO',
   'DEFINIR_VARIAVEL',
   'ENVIAR_BOTOES_OU_LISTA',
   'ENVIAR_MENSAGEM',
@@ -100,6 +108,11 @@ interface AcaoExternaFatura {
   readonly resultado: ResultadoNoFaturaFluxo;
 }
 
+interface AcaoExternaProtocoloOrdem {
+  readonly preparacao: PreparacaoNoProtocoloOrdemFluxo;
+  readonly resultado: ResultadoNoProtocoloOrdemFluxo;
+}
+
 @Injectable()
 export class ServicoExecutorNosFluxo {
   public constructor(
@@ -123,6 +136,8 @@ export class ServicoExecutorNosFluxo {
     private readonly faturas: ServicoFaturasFluxo,
     @Inject(ServicoFormularios)
     private readonly formularios: ServicoFormularios,
+    @Inject(ServicoProtocolosOrdensFluxo)
+    private readonly protocolosOrdens: ServicoProtocolosOrdensFluxo,
   ) {}
 
   public async executarCiclo(
@@ -136,6 +151,9 @@ export class ServicoExecutorNosFluxo {
     while (processadas < limite) {
       let selecionada: ExecucaoFluxoPersistida | undefined;
       let preparacaoFatura: PreparacaoNoFaturaFluxo | undefined;
+      let preparacaoProtocoloOrdem:
+        | PreparacaoNoProtocoloOrdemFluxo
+        | undefined;
       try {
         const encontrou = await this.prisma.executarTransacao(
           async (transacao) => {
@@ -151,6 +169,9 @@ export class ServicoExecutorNosFluxo {
               transacao,
             );
             if (preparacaoFatura !== undefined) return true;
+            preparacaoProtocoloOrdem =
+              await this.prepararNoProtocoloOrdem(execucao, transacao);
+            if (preparacaoProtocoloOrdem !== undefined) return true;
             await this.executarNo(execucao, transacao, relogio);
             return true;
           },
@@ -180,6 +201,39 @@ export class ServicoExecutorNosFluxo {
               return;
             }
             await this.executarNo(atual, transacao, relogio, acao);
+          });
+        } else if (
+          preparacaoProtocoloOrdem !== undefined &&
+          selecionada !== undefined
+        ) {
+          const execucaoPreparada = selecionada;
+          const resultado = await this.protocolosOrdens.executar(
+            preparacaoProtocoloOrdem,
+          );
+          const acao: AcaoExternaProtocoloOrdem = {
+            preparacao: preparacaoProtocoloOrdem,
+            resultado,
+          };
+          await this.prisma.executarTransacao(async (transacao) => {
+            const atual = await this.repositorioExecucoes.obterPorId(
+              execucaoPreparada.id,
+              transacao,
+            );
+            if (
+              atual === undefined ||
+              atual.estado !== 'EXECUTANDO' ||
+              atual.revisao !== execucaoPreparada.revisao ||
+              atual.noAtualId !== execucaoPreparada.noAtualId
+            ) {
+              return;
+            }
+            await this.executarNo(
+              atual,
+              transacao,
+              relogio,
+              undefined,
+              acao,
+            );
           });
         }
       } catch (erro) {
@@ -256,11 +310,38 @@ export class ServicoExecutorNosFluxo {
     );
   }
 
+  private async prepararNoProtocoloOrdem(
+    execucao: ExecucaoFluxoPersistida,
+    transacao: TransacaoPrisma,
+  ): Promise<PreparacaoNoProtocoloOrdemFluxo | undefined> {
+    const versao = await this.catalogo.obterVersaoFixaExecucao(
+      execucao.versaoFluxoId,
+      execucao.fluxoId,
+      transacao,
+    );
+    const definicao = this.lerDefinicao(versao.definicao);
+    const no = definicao.nos.find(({ id }) => id === execucao.noAtualId);
+    if (
+      no?.tipo !== 'CRIAR_ATENDIMENTO' &&
+      no?.tipo !== 'CRIAR_ORDEM_SERVICO'
+    ) {
+      return undefined;
+    }
+    return this.protocolosOrdens.preparar(
+      no as NoDefinicaoFluxo & {
+        readonly tipo: TipoNoProtocoloOrdemFluxo;
+      },
+      execucao,
+      transacao,
+    );
+  }
+
   private async executarNo(
     execucao: ExecucaoFluxoPersistida,
     transacao: TransacaoPrisma,
     relogio: () => Date,
     acaoFatura?: AcaoExternaFatura,
+    acaoProtocoloOrdem?: AcaoExternaProtocoloOrdem,
   ): Promise<void> {
     const agora = relogio();
     if (!Number.isFinite(agora.getTime()) || agora < execucao.atualizadaEm) {
@@ -317,6 +398,7 @@ export class ServicoExecutorNosFluxo {
       transacao,
       relogio,
       acaoFatura,
+      acaoProtocoloOrdem,
     );
     if (resultado.agendamento !== undefined) {
       await this.finalizarPasso(
@@ -375,6 +457,7 @@ export class ServicoExecutorNosFluxo {
     transacao: TransacaoPrisma,
     relogio: () => Date,
     acaoFatura?: AcaoExternaFatura,
+    acaoProtocoloOrdem?: AcaoExternaProtocoloOrdem,
   ): Promise<ResultadoExecucaoNo> {
     if (no.tipo === 'AGUARDAR') {
       return this.executarEspera(no, execucao, relogio);
@@ -452,7 +535,43 @@ export class ServicoExecutorNosFluxo {
         relogio,
       );
     }
+    if (
+      no.tipo === 'CRIAR_ATENDIMENTO' ||
+      no.tipo === 'CRIAR_ORDEM_SERVICO'
+    ) {
+      return this.aplicarNoProtocoloOrdem(
+        no,
+        iteracao.contexto,
+        acaoProtocoloOrdem,
+      );
+    }
     throw new ErroExecucaoFluxoInvalida();
+  }
+
+  private aplicarNoProtocoloOrdem(
+    no: NoDefinicaoFluxo,
+    contexto: ObjetoJsonProtegido,
+    acao: AcaoExternaProtocoloOrdem | undefined,
+  ): ResultadoExecucaoNo {
+    if (
+      (no.tipo !== 'CRIAR_ATENDIMENTO' &&
+        no.tipo !== 'CRIAR_ORDEM_SERVICO') ||
+      acao === undefined ||
+      acao.preparacao.tipo !== no.tipo
+    ) {
+      return {
+        codigo: 'CONFIGURACAO_OPERACAO_ERP_INVALIDA',
+        contextoProtegido: contexto,
+        resultado: 'FALHA',
+      };
+    }
+    return {
+      ...('codigo' in acao.resultado
+        ? { codigo: acao.resultado.codigo }
+        : {}),
+      contextoProtegido: contexto,
+      resultado: acao.resultado.resultado,
+    };
   }
 
   private async executarFormulario(
@@ -1126,7 +1245,11 @@ export class ServicoExecutorNosFluxo {
     | 'ENCONTRADA'
     | 'NAO_ENCONTRADA'
     | 'ERP_INDISPONIVEL'
-    | 'DADOS_INCOMPLETOS' {
+    | 'DADOS_INCOMPLETOS'
+    | 'CRIADO'
+    | 'CRIADA'
+    | 'RESULTADO_INCERTO'
+    | 'INDISPONIVEL' {
     const permitidas = (() => {
       if (no.tipo === 'ENVIAR_BOTOES_OU_LISTA') {
         return new Set([
@@ -1182,6 +1305,22 @@ export class ServicoExecutorNosFluxo {
           'FALHA',
         ]);
       }
+      if (no.tipo === 'CRIAR_ATENDIMENTO') {
+        return new Set([
+          'CRIADO',
+          'RESULTADO_INCERTO',
+          'INDISPONIVEL',
+          'FALHA',
+        ]);
+      }
+      if (no.tipo === 'CRIAR_ORDEM_SERVICO') {
+        return new Set([
+          'CRIADA',
+          'RESULTADO_INCERTO',
+          'INDISPONIVEL',
+          'FALHA',
+        ]);
+      }
       return new Set(['SUCESSO']);
     })();
     if (!permitidas.has(resultado)) throw new ErroExecucaoFluxoInvalida();
@@ -1203,7 +1342,11 @@ export class ServicoExecutorNosFluxo {
       | 'ENCONTRADA'
       | 'NAO_ENCONTRADA'
       | 'ERP_INDISPONIVEL'
-      | 'DADOS_INCOMPLETOS';
+      | 'DADOS_INCOMPLETOS'
+      | 'CRIADO'
+      | 'CRIADA'
+      | 'RESULTADO_INCERTO'
+      | 'INDISPONIVEL';
   }
 
   private obterDestino(

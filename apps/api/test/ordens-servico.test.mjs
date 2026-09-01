@@ -158,6 +158,18 @@ function criarCenario(adaptadorPersonalizado = {}) {
       contexto.clienteExternoId === clienteExternoId &&
       contexto.contratoExternoId === contratoExternoId &&
       contexto.protocoloOficial === protocoloOficial,
+    contextoEProtocoloCorrespondemParaFluxo: async (
+      contexto,
+      fluxoId,
+      versaoFluxoId,
+    ) =>
+      contexto.atendimentoId === atendimentoId &&
+      contexto.filaId === filaId &&
+      contexto.clienteExternoId === clienteExternoId &&
+      contexto.contratoExternoId === contratoExternoId &&
+      contexto.protocoloOficial === protocoloOficial &&
+      typeof fluxoId === 'string' &&
+      typeof versaoFluxoId === 'string',
     criar: async (ordem) => {
       if (
         ordens.has(ordem.id) ||
@@ -316,6 +328,23 @@ test('criação confirmada fixa contexto, protocolo e uma operação por chave',
     ),
     true,
   );
+});
+
+test('criação por fluxo não fabrica usuário e revalida autoridade automatizada', async () => {
+  const cenario = criarCenario();
+  const ator = { fluxoId: randomUUID(), versaoFluxoId: randomUUID() };
+  const resultado = await cenario.servico.criar(
+    ator,
+    entradaCriacao(),
+    cenario.adaptador,
+  );
+  assert.equal(resultado.situacao, 'CONCLUIDA');
+  assert.equal(cenario.autorizacoes.length, 0);
+  assert.equal(cenario.auditorias[0].origem, 'FLUXO');
+  assert.equal(cenario.auditorias[0].fluxoId, ator.fluxoId);
+  assert.equal(cenario.auditorias[0].versaoFluxoId, ator.versaoFluxoId);
+  assert.equal(cenario.auditorias[0].usuarioId, undefined);
+  assert.equal(cenario.auditorias[0].sessaoId, undefined);
 });
 
 test('resposta perdida na criação reconcilia sem repetir a escrita', async () => {

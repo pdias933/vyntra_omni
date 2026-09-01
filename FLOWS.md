@@ -670,3 +670,20 @@ saidas: ENVIADO | FALLBACK | FALHA
 O UUID precisa estar ativo no contexto autoritativo de publicação e continuar ativo na conta de origem do atendimento quando o nó executar. A definição não conserva referência externa, token, resposta, esquema ou capacidade declarada pelo editor. Na PR 079 o runtime não possui ponte de envio estruturado caracterizada; portanto um recurso válido chama `ServicoMensagensSaida` e segue `FALLBACK`. `ENVIADO` existe no grafo para a integração futura comprovada, mas não pode ser produzido por fixture ou simulador.
 
 A recepção não é efeito do passo. O adapter normaliza a submissão e o domínio a associa à mensagem de entrada persistida. Mensagem e referência repetidas retornam o primeiro registro; divergência de hash, formulário ou contato é rejeitada. O evento de classificação sensível recebe apenas a referência interna do formulário e a persiste protegida; nenhum dado recebido entra em contexto, passo, log ou auditoria. O card estruturado usa o mapeamento cadastrado e mascara campo sensível conforme RBAC.
+
+## 28. Nós de protocolo e ordem de serviço da PR 080
+
+```text
+CRIAR_ATENDIMENTO
+parametros/referencias/variaveis: vazios
+saidas: CRIADO | RESULTADO_INCERTO | INDISPONIVEL | FALHA
+
+CRIAR_ORDEM_SERVICO
+parametros: assunto, descricao, confirmacaoExplicita=true
+referencias/variaveis: vazios
+saidas: CRIADA | RESULTADO_INCERTO | INDISPONIVEL | FALHA
+```
+
+Nenhum nó aceita ID externo, protocolo, fila, cliente, contrato ou chave idempotente. O servidor deriva esses valores do atendimento e usa uma chave UUID determinística por execução+nó. Protocolo oficial existente é sucesso idempotente. Resultado externo ambíguo nunca repete criação cega: conserva `RESULTADO_INCERTO` e só o serviço de domínio pode reconciliar.
+
+OS exige confirmação explícita versionada e capacidade habilitada na publicação, sem considerar isso permissão humana. Na execução, o domínio revalida a autoridade automatizada e audita como `FLUXO`. Adapter ausente segue `INDISPONIVEL` antes de criar operação; simulador não é provider. A preparação e aplicação usam transações curtas, e a chamada ERP ocorre fora da transação PostgreSQL.

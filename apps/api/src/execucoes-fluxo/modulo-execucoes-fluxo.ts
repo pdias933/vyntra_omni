@@ -7,7 +7,9 @@ import { ModuloComposicoes } from '../composicoes/modulo-composicoes.js';
 import { ModuloFluxos } from '../fluxos/modulo-fluxos.js';
 import { ModuloFormularios } from '../formularios/modulo-formularios.js';
 import { ModuloMensagens } from '../mensagens/modulo-mensagens.js';
+import { ModuloOrdensServico } from '../ordens-servico/modulo-ordens-servico.js';
 import { ModuloPersistencia } from '../persistencia/modulo-persistencia.js';
+import { ModuloProtocolosErp } from '../protocolos-erp/modulo-protocolos-erp.js';
 import { REPOSITORIO_EXECUCOES_FLUXO } from './repositorio-execucoes-fluxo.js';
 import { RepositorioExecucoesFluxoPrisma } from './repositorio-execucoes-fluxo-prisma.js';
 import { REPOSITORIO_PASSOS_EXECUCAO_FLUXO } from './repositorio-passos-execucao-fluxo.js';
@@ -15,6 +17,7 @@ import { RepositorioPassosExecucaoFluxoPrisma } from './repositorio-passos-execu
 import { ServicoExecutorNosFluxo } from './servico-executor-nos-fluxo.js';
 import { ServicoExecucoesFluxo } from './servico-execucoes-fluxo.js';
 import { ServicoFaturasFluxo } from './servico-faturas-fluxo.js';
+import { ServicoProtocolosOrdensFluxo } from './servico-protocolos-ordens-fluxo.js';
 import { ServicoRecuperacaoExecucoesFluxo } from './servico-recuperacao-execucoes-fluxo.js';
 
 @Module({
@@ -31,7 +34,9 @@ import { ServicoRecuperacaoExecucoesFluxo } from './servico-recuperacao-execucoe
     ModuloFluxos,
     ModuloFormularios,
     ModuloMensagens,
+    ModuloOrdensServico,
     ModuloPersistencia,
+    ModuloProtocolosErp,
   ],
   providers: [
     RepositorioExecucoesFluxoPrisma,
@@ -39,6 +44,7 @@ import { ServicoRecuperacaoExecucoesFluxo } from './servico-recuperacao-execucoe
     ServicoExecucoesFluxo,
     ServicoExecutorNosFluxo,
     ServicoFaturasFluxo,
+    ServicoProtocolosOrdensFluxo,
     ServicoRecuperacaoExecucoesFluxo,
     {
       provide: REPOSITORIO_EXECUCOES_FLUXO,

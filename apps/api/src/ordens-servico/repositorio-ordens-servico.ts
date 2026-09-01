@@ -32,6 +32,13 @@ export interface RepositorioOrdensServico {
     transacao: TransacaoPrisma,
   ): Promise<boolean>;
 
+  contextoEProtocoloCorrespondemParaFluxo(
+    contexto: ContextoOrdemServicoErp,
+    fluxoId: string,
+    versaoFluxoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
+
   obterPorOperacaoCriacao(
     operacaoId: string,
     transacao: TransacaoPrisma,

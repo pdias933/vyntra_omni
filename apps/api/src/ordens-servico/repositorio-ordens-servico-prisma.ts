@@ -51,6 +51,59 @@ export class RepositorioOrdensServicoPrisma
     return atendimento !== null;
   }
 
+  public async contextoEProtocoloCorrespondemParaFluxo(
+    contexto: ContextoOrdemServicoErp,
+    fluxoId: string,
+    versaoFluxoId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    const atendimento = await transacao.atendimento.findFirst({
+      select: { id: true },
+      where: {
+        contexto: {
+          is: {
+            clienteExternoAtivoId: contexto.clienteExternoId,
+            contratoExternoAtivoId: contexto.contratoExternoId,
+            vinculoCliente: {
+              revogadoEm: null,
+              verificadoEm: { not: null },
+              OR: [
+                { tipo: 'VERIFICADO' },
+                {
+                  tipo: 'MANUAL',
+                  verificadoPorUsuarioId: { not: null },
+                },
+              ],
+            },
+            vinculoContrato: {
+              contratoExternoId: contexto.contratoExternoId,
+              revogadoEm: null,
+            },
+          },
+        },
+        estado: 'AGUARDANDO',
+        execucoesFluxo: {
+          some: {
+            estado: 'EXECUTANDO',
+            fluxoId,
+            versaoFluxoId,
+          },
+        },
+        filaAtualId: contexto.filaId,
+        id: contexto.atendimentoId,
+        modo: 'BOT',
+        protocoloErp: {
+          is: {
+            estado: 'OFICIAL',
+            protocoloOficial: contexto.protocoloOficial,
+          },
+        },
+        usuarioResponsavelId: null,
+      },
+    });
+    return atendimento !== null;
+  }
+
   public async obterPorOperacaoCriacao(
     operacaoId: string,
     transacao: TransacaoPrisma,

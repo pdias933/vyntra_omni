@@ -406,6 +406,21 @@ export class ValidadorPublicacaoFluxo {
     if (tipo === 'CONSULTAR_FATURAS' || tipo === 'ENVIAR_FATURA') {
       return this.temExatamenteChaves(parametros, []);
     }
+    if (tipo === 'CRIAR_ATENDIMENTO') {
+      return this.temExatamenteChaves(parametros, []);
+    }
+    if (tipo === 'CRIAR_ORDEM_SERVICO') {
+      return (
+        this.temExatamenteChaves(parametros, [
+          'assunto',
+          'confirmacaoExplicita',
+          'descricao',
+        ]) &&
+        parametros.confirmacaoExplicita === true &&
+        this.textoValido(parametros.assunto, 200) &&
+        this.textoValido(parametros.descricao, 4_000)
+      );
+    }
     if (tipo === 'INICIO' || tipo === 'FIM') {
       return this.temExatamenteChaves(parametros, []);
     }
@@ -674,6 +689,7 @@ export class ValidadorPublicacaoFluxo {
       this.validarNoIdentidade(no, variaveis, problemas);
       this.validarNoFormulario(no, problemas);
       this.validarNoFatura(no, problemas);
+      this.validarNoProtocoloOuOrdem(no, problemas);
       for (const nome of [...no.variaveisEntrada, ...no.variaveisSaida]) {
         if (!variaveis.has(nome)) {
           this.adicionar(problemas, {
@@ -757,6 +773,28 @@ export class ValidadorPublicacaoFluxo {
           });
         }
       }
+    }
+  }
+
+  private validarNoProtocoloOuOrdem(
+    no: NoDefinicaoFluxo,
+    problemas: ProblemaValidacaoFluxo[],
+  ): void {
+    if (
+      no.tipo !== 'CRIAR_ATENDIMENTO' &&
+      no.tipo !== 'CRIAR_ORDEM_SERVICO'
+    ) {
+      return;
+    }
+    if (
+      no.referencias.length !== 0 ||
+      no.variaveisEntrada.length !== 0 ||
+      no.variaveisSaida.length !== 0
+    ) {
+      this.adicionar(problemas, {
+        codigo: 'CONFIGURACAO_OPERACAO_ERP_INVALIDA',
+        noId: no.id,
+      });
     }
   }
 

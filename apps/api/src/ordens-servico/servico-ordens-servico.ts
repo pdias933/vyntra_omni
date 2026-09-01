@@ -24,6 +24,7 @@ import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import { ErroEntradaOrdemServicoInvalida } from './erros-ordem-servico.js';
 import type {
   ContextoOrdemServicoErp,
+  AtorFluxoOrdemServicoErp,
   EntradaAtualizacaoOrdemServicoErp,
   EntradaCriacaoOrdemServicoErp,
   OrdemServicoErpPersistida,
@@ -38,6 +39,10 @@ const IDENTIFICADOR_UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const IDENTIFICADOR_EXTERNO_MAXIMO = 256;
 const DURACAO_CONCESSAO_PADRAO_MS = 60_000;
+
+type AtorOrdemServicoErp =
+  | ContextoSessaoAutorizacao
+  | AtorFluxoOrdemServicoErp;
 
 interface ConcessaoAtualizacao extends ConcessaoOperacao {
   readonly ordem: OrdemServicoErpPersistida;
@@ -58,10 +63,11 @@ export class ServicoOrdensServicoErp {
   ) {}
 
   public async criar(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorOrdemServicoErp,
     entrada: EntradaCriacaoOrdemServicoErp,
     adaptador: EscritasErp,
   ): Promise<ResultadoOperacaoOrdemServicoErp> {
+    this.validarAtor(sessao);
     this.validarCriacao(entrada);
     const preparada = await this.prepararCriacao(sessao, entrada);
     const existente = await this.resultadoCriacaoExistente(
@@ -132,10 +138,11 @@ export class ServicoOrdensServicoErp {
   }
 
   public async reconciliarCriacao(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorOrdemServicoErp,
     entrada: EntradaCriacaoOrdemServicoErp,
     adaptador: EscritasErp,
   ): Promise<ResultadoOperacaoOrdemServicoErp> {
+    this.validarAtor(sessao);
     this.validarCriacao(entrada);
     const preparada = await this.prepararCriacao(sessao, entrada);
     const existente = await this.resultadoCriacaoExistente(preparada, true);
@@ -346,7 +353,7 @@ export class ServicoOrdensServicoErp {
   }
 
   private async prepararCriacao(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorOrdemServicoErp,
     entrada: EntradaCriacaoOrdemServicoErp,
   ): Promise<ResultadoIdempotencia> {
     return this.prisma.executarTransacao(async (transacao) => {
@@ -392,7 +399,7 @@ export class ServicoOrdensServicoErp {
   }
 
   private async adquirirCriacao(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorOrdemServicoErp,
     entrada: EntradaCriacaoOrdemServicoErp,
     operacaoId: string,
     reconciliacao: boolean,
@@ -489,7 +496,7 @@ export class ServicoOrdensServicoErp {
   }
 
   private async confirmarCriacao(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorOrdemServicoErp,
     entrada: EntradaCriacaoOrdemServicoErp,
     concessao: ConcessaoOperacao,
     ordemServicoExternaId: string,
@@ -508,6 +515,7 @@ export class ServicoOrdensServicoErp {
     const criadoEm = new Date();
     const ordemServicoId = randomUUID();
     await this.prisma.executarTransacao(async (transacao) => {
+      await this.autorizarContexto(sessao, this.contexto(entrada), transacao);
       if (
         !(await this.repositorio.criar(
           {
@@ -638,7 +646,7 @@ export class ServicoOrdensServicoErp {
   }
 
   private async registrarEfeitoAusenteCriacao(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorOrdemServicoErp,
     entrada: EntradaCriacaoOrdemServicoErp,
     concessao: ConcessaoOperacao,
   ): Promise<void> {
@@ -707,7 +715,7 @@ export class ServicoOrdensServicoErp {
   }
 
   private async marcarIncerto(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorOrdemServicoErp,
     entrada: EntradaCriacaoOrdemServicoErp,
     concessao: ConcessaoOperacao,
     acao: 'ATUALIZAR_ORDEM_SERVICO' | 'CRIAR_ORDEM_SERVICO',
@@ -737,7 +745,7 @@ export class ServicoOrdensServicoErp {
   }
 
   private async marcarFalhaTemporaria(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorOrdemServicoErp,
     entrada: EntradaCriacaoOrdemServicoErp,
     concessao: ConcessaoOperacao,
     acao: 'ATUALIZAR_ORDEM_SERVICO' | 'CRIAR_ORDEM_SERVICO',
@@ -767,10 +775,23 @@ export class ServicoOrdensServicoErp {
   }
 
   private async autorizarContexto(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorOrdemServicoErp,
     contexto: ContextoOrdemServicoErp,
     transacao: TransacaoPrisma,
   ): Promise<void> {
+    if (this.ehAtorFluxo(sessao)) {
+      if (
+        !(await this.repositorio.contextoEProtocoloCorrespondemParaFluxo(
+          contexto,
+          sessao.fluxoId,
+          sessao.versaoFluxoId,
+          transacao,
+        ))
+      ) {
+        throw new Error('CONTEXTO_ORDEM_SERVICO_FLUXO_INVALIDO');
+      }
+      return;
+    }
     await this.autorizacao.autorizar(
       {
         filaId: contexto.filaId,
@@ -823,7 +844,7 @@ export class ServicoOrdensServicoErp {
   }
 
   private async auditar(
-    sessao: ContextoSessaoAutorizacao,
+    sessao: AtorOrdemServicoErp,
     entrada: EntradaCriacaoOrdemServicoErp,
     acao: 'ATUALIZAR_ORDEM_SERVICO' | 'CRIAR_ORDEM_SERVICO',
     tipoEvento: string,
@@ -840,13 +861,37 @@ export class ServicoOrdensServicoErp {
         entidadeTipo:
           ordemServicoId === undefined ? 'ATENDIMENTO' : 'ORDEM_SERVICO',
         filaId: entrada.filaId,
-        origem: 'USUARIO',
-        sessaoId: sessao.sessaoId,
+        ...(this.ehAtorFluxo(sessao)
+          ? {
+              fluxoId: sessao.fluxoId,
+              origem: 'FLUXO' as const,
+              versaoFluxoId: sessao.versaoFluxoId,
+            }
+          : {
+              origem: 'USUARIO' as const,
+              sessaoId: sessao.sessaoId,
+              usuarioId: sessao.usuarioId,
+            }),
         tipoEvento,
-        usuarioId: sessao.usuarioId,
       },
       transacao,
     );
+  }
+
+  private ehAtorFluxo(
+    ator: AtorOrdemServicoErp,
+  ): ator is AtorFluxoOrdemServicoErp {
+    return 'fluxoId' in ator && 'versaoFluxoId' in ator;
+  }
+
+  private validarAtor(ator: AtorOrdemServicoErp): void {
+    if (
+      this.ehAtorFluxo(ator) &&
+      (!IDENTIFICADOR_UUID.test(ator.fluxoId) ||
+        !IDENTIFICADOR_UUID.test(ator.versaoFluxoId))
+    ) {
+      throw new ErroEntradaOrdemServicoInvalida();
+    }
   }
 
   private async resultadoCriacaoExistente(

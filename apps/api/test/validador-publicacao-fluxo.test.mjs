@@ -754,6 +754,71 @@ test('nó de formulário exige um cadastro ativo e fallback textual fechado', ()
   );
 });
 
+test('protocolo e OS usam contratos fechados e confirmação explícita', () => {
+  for (const caso of [
+    {
+      parametros: {},
+      saidas: ['CRIADO', 'RESULTADO_INCERTO', 'INDISPONIVEL', 'FALHA'],
+      tipo: 'CRIAR_ATENDIMENTO',
+    },
+    {
+      parametros: {
+        assunto: 'Instalação técnica',
+        confirmacaoExplicita: true,
+        descricao: 'Executar a instalação confirmada pelo cliente.',
+      },
+      saidas: ['CRIADA', 'RESULTADO_INCERTO', 'INDISPONIVEL', 'FALHA'],
+      tipo: 'CRIAR_ORDEM_SERVICO',
+    },
+  ]) {
+    const definicao = definicaoBasica({
+      conexoes: [
+        conexao('inicio', 'SUCESSO', 'operacao'),
+        ...caso.saidas.map((saida) => conexao('operacao', saida, 'fim')),
+      ],
+      nos: [
+        no('inicio', 'INICIO'),
+        no('operacao', caso.tipo, { parametros: caso.parametros }),
+        no('fim', 'FIM'),
+      ],
+    });
+    assert.equal(
+      new ValidadorPublicacaoFluxo().validar(
+        definicao,
+        contexto({ capacidadesHabilitadas: [caso.tipo] }),
+      ).valido,
+      true,
+    );
+  }
+
+  const semConfirmacao = definicaoBasica({
+    conexoes: [
+      conexao('inicio', 'SUCESSO', 'ordem'),
+      ...['CRIADA', 'RESULTADO_INCERTO', 'INDISPONIVEL', 'FALHA'].map(
+        (saida) => conexao('ordem', saida, 'fim'),
+      ),
+    ],
+    nos: [
+      no('inicio', 'INICIO'),
+      no('ordem', 'CRIAR_ORDEM_SERVICO', {
+        parametros: {
+          assunto: 'Instalação',
+          descricao: 'Sem confirmação explícita.',
+        },
+      }),
+      no('fim', 'FIM'),
+    ],
+  });
+  assert.ok(
+    codigos(
+      new ValidadorPublicacaoFluxo().validar(
+        semConfirmacao,
+        contexto({ capacidadesHabilitadas: ['CRIAR_ORDEM_SERVICO'] }),
+      ),
+    ).includes('DEFINICAO_ESTRUTURAL_INVALIDA'),
+  );
+});
+
 test('identificação e pedido de dados não aceitam variáveis, referências ou payload livre', () => {
   const casos = [
     {
