@@ -123,7 +123,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: migracao
-      image: vyntra/migracoes-staging:pr-054
+    image: vyntra/migracoes-staging:pr-054
     pull_policy: build
     restart: "no"
     init: true
