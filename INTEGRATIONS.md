@@ -309,6 +309,8 @@ A PR 064 acrescenta à porta de consulta `verificarElegibilidadeDesbloqueio`. O 
 
 A PR 065 acrescenta `executarDesbloqueioConfianca` e `reconciliarDesbloqueioConfianca` à porta de escrita. A execução normalizada pode ser `CONFIRMADO`, `INDISPONIVEL` sem possibilidade de efeito ou `RESULTADO_INCERTO`; somente a reconciliação distingue efeito confirmado de comprovadamente ausente. O serviço exige confirmação explícita, permissão de execução, contexto exato, elegibilidade ERP em tempo real e uma reserva única por contrato antes de chamar o adapter. Repetição compatível devolve o mesmo resultado; outra chave não atravessa uma reserva pendente. Código, resposta ou campo não normalizado falha de modo conservador e nunca libera repetição cega. O adapter MK real continua desligado até sua capacidade e seus contratos serem observados e aprovados.
 
+A PR 066 acrescenta quatro operações à porta de escrita: criar e reconciliar criação de ordem de serviço, atualizar e reconciliar atualização. Os comandos usam exclusivamente o modelo interno e carregam atendimento, chave idempotente, cliente, contrato e protocolo oficial; criação/atualização acrescentam assunto e descrição, enquanto atualização referencia a ordem externa já confirmada. Os resultados distinguem confirmação, indisponibilidade anterior ao efeito e resultado incerto. O serviço local mantém versão, reserva e histórico; o adapter não decide autorização, contexto nem concorrência. Nenhum DTO, endpoint ou comportamento não observado do MK foi inventado, e o provider real permanece desligado.
+
 ## 5. `SnapshotCliente` (Customer Snapshot)
 
 ### 5.1 Natureza

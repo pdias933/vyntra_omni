@@ -412,6 +412,8 @@ A PR 064 materializa a fase de verificação. Autorização e correspondência e
 
 A PR 065 materializa a execução com confirmação explícita, permissão distinta e revalidação imediatamente antes da escrita. Um lock transacional e uma reserva única por contrato fecham a corrida entre chaves idempotentes diferentes. O efeito externo não ocorre dentro de transação longa; a confirmação posterior atualiza histórico, operação e auditoria atomicamente. Resposta perdida, inválida ou exceção mantém a operação incerta e a reserva ativa até reconciliação. O adapter não escolhe `confirmado_em`, não recebe snapshot e não pode reduzir o intervalo local. Auditoria guarda somente resultado normalizado e identificadores internos, sem contrato externo ou payload ERP.
 
+A PR 066 protege criação e atualização de ordem de serviço com prévia e confirmação explícita, `CRIAR_ORDEM_SERVICO`, escopo de fila, atendimento aberto e correspondência exata entre cliente, contrato e protocolo oficial. O comando assinado inclui todo o conteúdo mutável; reutilizar a chave com conteúdo diferente é negado. A criação é única pela operação e pelo identificador externo. Atualizações usam versão otimista, lock e reserva exclusiva para impedir duas chaves sobre a mesma versão. Resposta perdida ou formato externo inválido nunca autoriza repetição cega; reconciliação conserva ou libera a reserva conforme a prova do efeito. Descrição protegida não aparece em auditoria, log ou histórico em claro, e snapshot não participa da decisão.
+
 ## 13. Auditoria
 
 `RegistroAuditoria` é imutável para usuários da plataforma:

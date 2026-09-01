@@ -1,8 +1,12 @@
 import type {
   ClienteErpNormalizado,
+  ComandoAtualizarOrdemServicoErp,
+  ComandoCriarOrdemServicoErp,
   ComandoExecutarDesbloqueioConfiancaErp,
   ComandoCriarAtendimentoErp,
   ComandoReconciliarDesbloqueioConfiancaErp,
+  ComandoReconciliarAtualizacaoOrdemServicoErp,
+  ComandoReconciliarCriacaoOrdemServicoErp,
   ComandoReconciliarAtendimentoErp,
   ContratoErpNormalizado,
   CriteriosLocalizacaoClienteErp,
@@ -14,8 +18,12 @@ import type {
   ResultadoConsultaErp,
   ResultadoConsultaUnicaErp,
   ResultadoCriacaoAtendimentoErp,
+  ResultadoCriacaoOrdemServicoErp,
+  ResultadoAtualizacaoOrdemServicoErp,
   ResultadoExecucaoDesbloqueioConfiancaErp,
   ResultadoReconciliacaoDesbloqueioConfiancaErp,
+  ResultadoReconciliacaoAtualizacaoOrdemServicoErp,
+  ResultadoReconciliacaoCriacaoOrdemServicoErp,
   ResultadoReconciliacaoAtendimentoErp,
 } from './modelo-erp.js';
 
@@ -77,6 +85,22 @@ export interface EscritasErp {
   reconciliarDesbloqueioConfianca(
     comando: ComandoReconciliarDesbloqueioConfiancaErp,
   ): Promise<ResultadoReconciliacaoDesbloqueioConfiancaErp>;
+
+  criarOrdemServico(
+    comando: ComandoCriarOrdemServicoErp,
+  ): Promise<ResultadoCriacaoOrdemServicoErp>;
+
+  reconciliarCriacaoOrdemServico(
+    comando: ComandoReconciliarCriacaoOrdemServicoErp,
+  ): Promise<ResultadoReconciliacaoCriacaoOrdemServicoErp>;
+
+  atualizarOrdemServico(
+    comando: ComandoAtualizarOrdemServicoErp,
+  ): Promise<ResultadoAtualizacaoOrdemServicoErp>;
+
+  reconciliarAtualizacaoOrdemServico(
+    comando: ComandoReconciliarAtualizacaoOrdemServicoErp,
+  ): Promise<ResultadoReconciliacaoAtualizacaoOrdemServicoErp>;
 }
 
 export interface AdaptadorErp extends ConsultasErp, EscritasErp {}

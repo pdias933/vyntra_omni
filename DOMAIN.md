@@ -636,6 +636,14 @@ O resultado final é elegível somente quando o ERP autoriza e não existe desbl
 
 A execução é um comando separado com `confirmacao_explicita`, chave idempotente e permissão `EXECUTAR_DESBLOQUEIO_CONFIANCA`. Após uma nova verificação ERP em tempo real, o backend serializa pelo contrato, revalida autorização, contexto e histórico e cria uma única `ReservaDesbloqueioConfianca`. A reserva impede duas chaves distintas de produzirem efeitos concorrentes. Confirmação externa grava histórico, conclui a operação, audita e libera a reserva na mesma transação. Resposta perdida mantém operação e reserva em estado incerto; somente reconciliação pode confirmar o efeito ou comprovar ausência e liberar nova tentativa. O instante confirmado é o instante local de recebimento da confirmação normalizada, não um relógio fornecido pelo ERP.
 
+### 12.2 Ordem de serviço do ERP
+
+`OrdemServicoErp` é o registro local de uma criação externa confirmada. Ela pertence a um único `Atendimento`, fixa o protocolo oficial e o contexto de cliente/contrato usados no efeito, preserva o identificador externo somente na fronteira de integração e nasce na versão 1. Assunto e descrição atual são protegidos; a descrição também possui hash para comparação sem exposição. Uma operação recuperável de criação só pode produzir uma ordem, e um identificador externo confirmado só pode pertencer a uma ordem.
+
+Cada alteração confirmada incrementa a versão exatamente uma vez e acrescenta `HistoricoAtualizacaoOrdemServicoErp`, imutável e único pela operação e pela versão resultante. `ReservaAtualizacaoOrdemServicoErp` permite somente uma operação pendente por ordem; outra chave não pode atravessá-la. Confirmação externa atualiza a ordem, acrescenta o histórico, conclui a idempotência, audita e libera a reserva atomicamente. Resposta perdida mantém a reserva até a reconciliação confirmar o efeito ou comprovar sua ausência.
+
+Criação e atualização exigem `confirmacao_explicita`, chave idempotente, atendimento aberto, escopo de fila, contexto corrente e `ProtocoloErp(OFICIAL)` exatamente correspondentes. A permissão aprovada `CRIAR_ORDEM_SERVICO` governa as duas mutações na V1; uma atualização não amplia esse poder para outras capacidades ERP. Snapshot nunca autoriza nenhuma delas, e a mesma chave não pode representar comandos com assunto, descrição ou contexto diferentes.
+
 Sessão de acesso usa porta própria e estados `ATIVA`, `INATIVA` ou `DESCONHECIDA`. Conexão cadastrada, contrato ativo ou presença em snapshot nunca promove o estado para `ATIVA`. `NAO_CONFIGURADO` e `DESATIVADO` são disponibilidade do recurso/fonte, não estados da sessão. Desconexão só pode atingir sessão explicitamente `ATIVA`; resposta perdida vira `RESULTADO_INCERTO` e exige reconciliação.
 
 ## 13. Eventos e sincronização

@@ -18,6 +18,7 @@ import { ModuloIdempotencia } from './idempotencia/modulo-idempotencia.js';
 import { ModuloJanelaCanal } from './janela-canal/modulo-janela-canal.js';
 import { ModuloMensagens } from './mensagens/modulo-mensagens.js';
 import { ModuloNotasInternas } from './notas-internas/modulo-notas-internas.js';
+import { ModuloOrdensServico } from './ordens-servico/modulo-ordens-servico.js';
 import { ModuloPersistencia } from './persistencia/modulo-persistencia.js';
 import { ModuloProtocolosErp } from './protocolos-erp/modulo-protocolos-erp.js';
 import { ControladorInformacoesApi } from './sistema/controlador-informacoes-api.js';
@@ -55,6 +56,7 @@ import { ModuloSincronizacao } from './sincronizacao/modulo-sincronizacao.js';
     ModuloJanelaCanal,
     ModuloMensagens,
     ModuloNotasInternas,
+    ModuloOrdensServico,
     ModuloPersistencia,
     ModuloProtocolosErp,
     ModuloReleases,

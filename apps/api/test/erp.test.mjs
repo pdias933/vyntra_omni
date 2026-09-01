@@ -175,6 +175,133 @@ test('resposta perdida no desbloqueio exige reconciliação sem repetir efeito',
   );
 });
 
+function comandoOrdemServico(sobrescritas = {}) {
+  return {
+    assunto: 'Visita técnica',
+    atendimentoId: randomUUID(),
+    chaveIdempotencia: 'chave_ordem_servico_0001',
+    clienteExternoId: 'cliente-sintetico-001',
+    contratoExternoId: 'contrato-sintetico-001',
+    descricao: 'Verificar sinal no endereço do contrato.',
+    protocoloOficial: 'PROTOCOLO-OFICIAL-0001',
+    ...sobrescritas,
+  };
+}
+
+test('criação de ordem de serviço é idempotente no limite do adapter', async () => {
+  const adaptador = adaptadorComDados();
+  const entrada = comandoOrdemServico();
+  const primeira = await adaptador.criarOrdemServico(entrada);
+  const repetida = await adaptador.criarOrdemServico(entrada);
+
+  assert.deepEqual(repetida, primeira);
+  assert.equal(primeira.resultado, 'CONFIRMADO');
+  assert.match(primeira.ordemServicoExternaId, /^OS-SIM-[A-F0-9]{16}$/);
+  assert.equal(adaptador.obterQuantidadeTentativasCriacaoOrdemServico(), 1);
+  assert.equal(adaptador.obterQuantidadeEfeitosCriacaoOrdemServico(), 1);
+});
+
+test('resposta perdida na criação da ordem reconcilia sem repetir efeito', async () => {
+  const adaptador = adaptadorComDados();
+  const entrada = comandoOrdemServico({
+    chaveIdempotencia: 'chave_ordem_criacao_perdida_01',
+  });
+  adaptador.programarCriacaoOrdemServico(
+    entrada.chaveIdempotencia,
+    'PERDER_RESPOSTA',
+  );
+
+  const primeira = await adaptador.criarOrdemServico(entrada);
+  const repetida = await adaptador.criarOrdemServico(entrada);
+  assert.deepEqual(primeira, {
+    codigo: 'RESPOSTA_PERDIDA',
+    requerReconciliacao: true,
+    resultado: 'RESULTADO_INCERTO',
+  });
+  assert.deepEqual(repetida, primeira);
+  assert.equal(adaptador.obterQuantidadeTentativasCriacaoOrdemServico(), 1);
+  assert.equal(adaptador.obterQuantidadeEfeitosCriacaoOrdemServico(), 1);
+
+  const reconciliada = await adaptador.reconciliarCriacaoOrdemServico({
+    atendimentoId: entrada.atendimentoId,
+    chaveIdempotencia: entrada.chaveIdempotencia,
+    clienteExternoId: entrada.clienteExternoId,
+    contratoExternoId: entrada.contratoExternoId,
+    protocoloOficial: entrada.protocoloOficial,
+  });
+  assert.equal(reconciliada.resultado, 'CONFIRMADO');
+  assert.match(reconciliada.ordemServicoExternaId, /^OS-SIM-[A-F0-9]{16}$/);
+});
+
+test('atualização de ordem de serviço é idempotente no limite do adapter', async () => {
+  const adaptador = adaptadorComDados();
+  const criacao = comandoOrdemServico({
+    chaveIdempotencia: 'chave_ordem_base_atualizacao_01',
+  });
+  const ordem = await adaptador.criarOrdemServico(criacao);
+  assert.equal(ordem.resultado, 'CONFIRMADO');
+  const atualizacao = {
+    ...criacao,
+    assunto: 'Visita técnica reagendada',
+    chaveIdempotencia: 'chave_ordem_atualizacao_0001',
+    ordemServicoExternaId: ordem.ordemServicoExternaId,
+  };
+
+  const primeira = await adaptador.atualizarOrdemServico(atualizacao);
+  const repetida = await adaptador.atualizarOrdemServico(atualizacao);
+  assert.deepEqual(primeira, { resultado: 'CONFIRMADO' });
+  assert.deepEqual(repetida, primeira);
+  assert.equal(
+    adaptador.obterQuantidadeTentativasAtualizacaoOrdemServico(),
+    1,
+  );
+  assert.equal(adaptador.obterQuantidadeEfeitosAtualizacaoOrdemServico(), 1);
+});
+
+test('resposta perdida na atualização da ordem reconcilia sem repetir efeito', async () => {
+  const adaptador = adaptadorComDados();
+  const criacao = comandoOrdemServico({
+    chaveIdempotencia: 'chave_ordem_base_perdida_0001',
+  });
+  const ordem = await adaptador.criarOrdemServico(criacao);
+  assert.equal(ordem.resultado, 'CONFIRMADO');
+  const atualizacao = {
+    ...criacao,
+    chaveIdempotencia: 'chave_ordem_atualizacao_perdida_01',
+    descricao: 'Atualização aplicada, mas resposta não recebida.',
+    ordemServicoExternaId: ordem.ordemServicoExternaId,
+  };
+  adaptador.programarAtualizacaoOrdemServico(
+    atualizacao.chaveIdempotencia,
+    'PERDER_RESPOSTA',
+  );
+
+  const primeira = await adaptador.atualizarOrdemServico(atualizacao);
+  const repetida = await adaptador.atualizarOrdemServico(atualizacao);
+  assert.deepEqual(primeira, {
+    codigo: 'RESPOSTA_PERDIDA',
+    requerReconciliacao: true,
+    resultado: 'RESULTADO_INCERTO',
+  });
+  assert.deepEqual(repetida, primeira);
+  assert.equal(
+    adaptador.obterQuantidadeTentativasAtualizacaoOrdemServico(),
+    1,
+  );
+  assert.equal(adaptador.obterQuantidadeEfeitosAtualizacaoOrdemServico(), 1);
+  assert.deepEqual(
+    await adaptador.reconciliarAtualizacaoOrdemServico({
+      atendimentoId: atualizacao.atendimentoId,
+      chaveIdempotencia: atualizacao.chaveIdempotencia,
+      clienteExternoId: atualizacao.clienteExternoId,
+      contratoExternoId: atualizacao.contratoExternoId,
+      ordemServicoExternaId: atualizacao.ordemServicoExternaId,
+      protocoloOficial: atualizacao.protocoloOficial,
+    }),
+    { resultado: 'CONFIRMADO' },
+  );
+});
+
 test('criação confirmada é idempotente e produz um protocolo oficial', async () => {
   const adaptador = adaptadorComDados();
   const entrada = comando();

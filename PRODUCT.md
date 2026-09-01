@@ -209,6 +209,7 @@ No composer, `/` abre respostas rápidas pesquisáveis. O botão dedicado de aç
 - Consulta de cliente, contratos, conexões cadastradas, planos/velocidades quando retornados, endereços, financeiro e faturas.
 - Segunda via, Pix e linha digitável/código de barras conforme API real.
 - Verificação e execução de desbloqueio de confiança são passos separados. A verificação consulta o ERP em tempo real e combina a resposta com a política interna de um desbloqueio confirmado a cada 30 dias; nunca executa a ação. A execução exige prévia e confirmação explícita, revalida permissão, contexto, decisão ERP e janela local imediatamente antes da escrita e nunca usa snapshot.
+- Criar ou atualizar uma ordem de serviço exige atendimento aberto, fila autorizada, cliente, contrato e protocolo oficial exatamente iguais ao contexto corrente. Antes do efeito, o operador vê a prévia e confirma explicitamente; cada criação ou atualização usa uma operação idempotente própria, e resposta ambígua só avança por reconciliação.
 - Criação e atualização de atendimento/protocolo, comentários/link da transcrição e ordens de serviço, conforme APIs liberadas.
 - Escritas com autorização, auditoria e idempotência.
 - `SnapshotCliente` persistente no PostgreSQL para identificação e contexto durante indisponibilidade.

@@ -187,3 +187,79 @@ export type ResultadoReconciliacaoDesbloqueioConfiancaErp =
       readonly resultado: 'INDISPONIVEL';
       readonly codigo: 'ERP_INDISPONIVEL';
     };
+
+export interface ComandoCriarOrdemServicoErp {
+  readonly atendimentoId: string;
+  readonly chaveIdempotencia: string;
+  readonly clienteExternoId: string;
+  readonly contratoExternoId: string;
+  readonly protocoloOficial: string;
+  readonly assunto: string;
+  readonly descricao: string;
+}
+
+export interface ComandoReconciliarCriacaoOrdemServicoErp {
+  readonly atendimentoId: string;
+  readonly chaveIdempotencia: string;
+  readonly clienteExternoId: string;
+  readonly contratoExternoId: string;
+  readonly protocoloOficial: string;
+}
+
+export type ResultadoCriacaoOrdemServicoErp =
+  | {
+      readonly resultado: 'CONFIRMADO';
+      readonly ordemServicoExternaId: string;
+    }
+  | {
+      readonly resultado: 'INDISPONIVEL';
+      readonly codigo: 'ERP_INDISPONIVEL';
+      readonly efeitoExternoPossivel: false;
+    }
+  | {
+      readonly resultado: 'RESULTADO_INCERTO';
+      readonly codigo: 'RESPOSTA_PERDIDA';
+      readonly requerReconciliacao: true;
+    };
+
+export type ResultadoReconciliacaoCriacaoOrdemServicoErp =
+  | {
+      readonly resultado: 'CONFIRMADO';
+      readonly ordemServicoExternaId: string;
+    }
+  | { readonly resultado: 'EFEITO_AUSENTE' }
+  | {
+      readonly resultado: 'INDISPONIVEL';
+      readonly codigo: 'ERP_INDISPONIVEL';
+    };
+
+export interface ComandoAtualizarOrdemServicoErp
+  extends ComandoCriarOrdemServicoErp {
+  readonly ordemServicoExternaId: string;
+}
+
+export interface ComandoReconciliarAtualizacaoOrdemServicoErp
+  extends ComandoReconciliarCriacaoOrdemServicoErp {
+  readonly ordemServicoExternaId: string;
+}
+
+export type ResultadoAtualizacaoOrdemServicoErp =
+  | { readonly resultado: 'CONFIRMADO' }
+  | {
+      readonly resultado: 'INDISPONIVEL';
+      readonly codigo: 'ERP_INDISPONIVEL';
+      readonly efeitoExternoPossivel: false;
+    }
+  | {
+      readonly resultado: 'RESULTADO_INCERTO';
+      readonly codigo: 'RESPOSTA_PERDIDA';
+      readonly requerReconciliacao: true;
+    };
+
+export type ResultadoReconciliacaoAtualizacaoOrdemServicoErp =
+  | { readonly resultado: 'CONFIRMADO' }
+  | { readonly resultado: 'EFEITO_AUSENTE' }
+  | {
+      readonly resultado: 'INDISPONIVEL';
+      readonly codigo: 'ERP_INDISPONIVEL';
+    };

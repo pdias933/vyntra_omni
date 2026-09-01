@@ -8,9 +8,13 @@ import {
 } from '../erros-erp.js';
 import type {
   ClienteErpNormalizado,
+  ComandoAtualizarOrdemServicoErp,
+  ComandoCriarOrdemServicoErp,
   ComandoExecutarDesbloqueioConfiancaErp,
   ComandoCriarAtendimentoErp,
   ComandoReconciliarDesbloqueioConfiancaErp,
+  ComandoReconciliarAtualizacaoOrdemServicoErp,
+  ComandoReconciliarCriacaoOrdemServicoErp,
   ComandoReconciliarAtendimentoErp,
   ContratoErpNormalizado,
   CriteriosLocalizacaoClienteErp,
@@ -22,9 +26,13 @@ import type {
   ResultadoConsultaErp,
   ResultadoConsultaUnicaErp,
   ResultadoCriacaoAtendimentoErp,
+  ResultadoCriacaoOrdemServicoErp,
+  ResultadoAtualizacaoOrdemServicoErp,
   ResultadoExecucaoDesbloqueioConfiancaErp,
   ResultadoElegibilidadeDesbloqueioErp,
   ResultadoReconciliacaoAtendimentoErp,
+  ResultadoReconciliacaoAtualizacaoOrdemServicoErp,
+  ResultadoReconciliacaoCriacaoOrdemServicoErp,
   ResultadoReconciliacaoDesbloqueioConfiancaErp,
 } from '../modelo-erp.js';
 
@@ -56,6 +64,11 @@ type CenarioDesbloqueioConfianca =
   | 'ERP_INDISPONIVEL'
   | 'PERDER_RESPOSTA';
 
+type CenarioOrdemServico =
+  | 'CONFIRMAR'
+  | 'ERP_INDISPONIVEL'
+  | 'PERDER_RESPOSTA';
+
 interface EfeitoCriacaoAtendimento {
   readonly atendimentoId: string;
   readonly confirmadoEm: Date;
@@ -75,6 +88,29 @@ interface ExecucaoDesbloqueioConfianca {
 interface EfeitoDesbloqueioConfianca {
   readonly atendimentoId: string;
   readonly contratoExternoId: string;
+}
+
+interface EfeitoCriacaoOrdemServico {
+  readonly atendimentoId: string;
+  readonly clienteExternoId: string;
+  readonly contratoExternoId: string;
+  readonly ordemServicoExternaId: string;
+  readonly protocoloOficial: string;
+}
+
+interface EfeitoAtualizacaoOrdemServico {
+  readonly atendimentoId: string;
+  readonly ordemServicoExternaId: string;
+}
+
+interface ExecucaoCriacaoOrdemServico {
+  readonly assinatura: string;
+  readonly resultado: ResultadoCriacaoOrdemServicoErp;
+}
+
+interface ExecucaoAtualizacaoOrdemServico {
+  readonly assinatura: string;
+  readonly resultado: ResultadoAtualizacaoOrdemServicoErp;
 }
 
 function textoValido(valor: string, limite: number): boolean {
@@ -97,7 +133,7 @@ function normalizarParaAssinatura(valor: unknown): unknown {
   );
 }
 
-function assinaturaComando(comando: ComandoCriarAtendimentoErp): string {
+function assinaturaComando(comando: unknown): string {
   return hashHex(JSON.stringify(normalizarParaAssinatura(comando)));
 }
 
@@ -153,6 +189,32 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     EfeitoDesbloqueioConfianca
   >();
   private tentativasDesbloqueio = 0;
+  private readonly cenariosCriacaoOrdem = new Map<
+    string,
+    CenarioOrdemServico
+  >();
+  private readonly execucoesCriacaoOrdem = new Map<
+    string,
+    ExecucaoCriacaoOrdemServico
+  >();
+  private readonly efeitosCriacaoOrdem = new Map<
+    string,
+    EfeitoCriacaoOrdemServico
+  >();
+  private tentativasCriacaoOrdem = 0;
+  private readonly cenariosAtualizacaoOrdem = new Map<
+    string,
+    CenarioOrdemServico
+  >();
+  private readonly execucoesAtualizacaoOrdem = new Map<
+    string,
+    ExecucaoAtualizacaoOrdemServico
+  >();
+  private readonly efeitosAtualizacaoOrdem = new Map<
+    string,
+    EfeitoAtualizacaoOrdemServico
+  >();
+  private tentativasAtualizacaoOrdem = 0;
 
   public constructor(
     private readonly dados: DadosErpSimulados = {},
@@ -191,6 +253,32 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
       throw new ErroComandoErpInvalido();
     }
     this.cenariosDesbloqueio.set(chaveIdempotencia, cenario);
+  }
+
+  public programarCriacaoOrdemServico(
+    chaveIdempotencia: string,
+    cenario: CenarioOrdemServico,
+  ): void {
+    if (
+      !CHAVE_IDEMPOTENCIA.test(chaveIdempotencia) ||
+      this.execucoesCriacaoOrdem.has(chaveIdempotencia)
+    ) {
+      throw new ErroComandoErpInvalido();
+    }
+    this.cenariosCriacaoOrdem.set(chaveIdempotencia, cenario);
+  }
+
+  public programarAtualizacaoOrdemServico(
+    chaveIdempotencia: string,
+    cenario: CenarioOrdemServico,
+  ): void {
+    if (
+      !CHAVE_IDEMPOTENCIA.test(chaveIdempotencia) ||
+      this.execucoesAtualizacaoOrdem.has(chaveIdempotencia)
+    ) {
+      throw new ErroComandoErpInvalido();
+    }
+    this.cenariosAtualizacaoOrdem.set(chaveIdempotencia, cenario);
   }
 
   public async localizarClientes(
@@ -395,6 +483,104 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     };
   }
 
+  public async criarOrdemServico(
+    comando: ComandoCriarOrdemServicoErp,
+  ): Promise<ResultadoCriacaoOrdemServicoErp> {
+    this.validarComandoCriacaoOrdemServico(comando);
+    const assinatura = assinaturaComando(comando);
+    const anterior = this.execucoesCriacaoOrdem.get(
+      comando.chaveIdempotencia,
+    );
+    if (anterior !== undefined) {
+      if (anterior.assinatura !== assinatura) {
+        throw new ErroChaveErpReutilizada();
+      }
+      return { ...anterior.resultado };
+    }
+    this.tentativasCriacaoOrdem += 1;
+    const cenario =
+      this.cenariosCriacaoOrdem.get(comando.chaveIdempotencia) ??
+      'CONFIRMAR';
+    const resultado = this.executarCenarioCriacaoOrdemServico(
+      comando,
+      cenario,
+    );
+    this.execucoesCriacaoOrdem.set(comando.chaveIdempotencia, {
+      assinatura,
+      resultado,
+    });
+    return { ...resultado };
+  }
+
+  public async reconciliarCriacaoOrdemServico(
+    comando: ComandoReconciliarCriacaoOrdemServicoErp,
+  ): Promise<ResultadoReconciliacaoCriacaoOrdemServicoErp> {
+    this.validarContextoOrdemServico(comando);
+    if (!this.reconciliacaoDisponivel) return this.indisponivel();
+    const efeito = this.efeitosCriacaoOrdem.get(comando.chaveIdempotencia);
+    if (efeito === undefined) return { resultado: 'EFEITO_AUSENTE' };
+    if (
+      efeito.atendimentoId !== comando.atendimentoId ||
+      efeito.clienteExternoId !== comando.clienteExternoId ||
+      efeito.contratoExternoId !== comando.contratoExternoId ||
+      efeito.protocoloOficial !== comando.protocoloOficial
+    ) {
+      throw new ErroChaveErpReutilizada();
+    }
+    return {
+      ordemServicoExternaId: efeito.ordemServicoExternaId,
+      resultado: 'CONFIRMADO',
+    };
+  }
+
+  public async atualizarOrdemServico(
+    comando: ComandoAtualizarOrdemServicoErp,
+  ): Promise<ResultadoAtualizacaoOrdemServicoErp> {
+    this.validarComandoAtualizacaoOrdemServico(comando);
+    const assinatura = assinaturaComando(comando);
+    const anterior = this.execucoesAtualizacaoOrdem.get(
+      comando.chaveIdempotencia,
+    );
+    if (anterior !== undefined) {
+      if (anterior.assinatura !== assinatura) {
+        throw new ErroChaveErpReutilizada();
+      }
+      return { ...anterior.resultado };
+    }
+    this.tentativasAtualizacaoOrdem += 1;
+    const cenario =
+      this.cenariosAtualizacaoOrdem.get(comando.chaveIdempotencia) ??
+      'CONFIRMAR';
+    const resultado = this.executarCenarioAtualizacaoOrdemServico(
+      comando,
+      cenario,
+    );
+    this.execucoesAtualizacaoOrdem.set(comando.chaveIdempotencia, {
+      assinatura,
+      resultado,
+    });
+    return { ...resultado };
+  }
+
+  public async reconciliarAtualizacaoOrdemServico(
+    comando: ComandoReconciliarAtualizacaoOrdemServicoErp,
+  ): Promise<ResultadoReconciliacaoAtualizacaoOrdemServicoErp> {
+    this.validarContextoOrdemServico(comando);
+    this.validarIdentificadorExterno(comando.ordemServicoExternaId);
+    if (!this.reconciliacaoDisponivel) return this.indisponivel();
+    const efeito = this.efeitosAtualizacaoOrdem.get(
+      comando.chaveIdempotencia,
+    );
+    if (efeito === undefined) return { resultado: 'EFEITO_AUSENTE' };
+    if (
+      efeito.atendimentoId !== comando.atendimentoId ||
+      efeito.ordemServicoExternaId !== comando.ordemServicoExternaId
+    ) {
+      throw new ErroChaveErpReutilizada();
+    }
+    return { resultado: 'CONFIRMADO' };
+  }
+
   public async reconciliarCriacaoAtendimento(
     comando: ComandoReconciliarAtendimentoErp,
   ): Promise<ResultadoReconciliacaoAtendimentoErp> {
@@ -431,6 +617,22 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
 
   public obterQuantidadeEfeitosDesbloqueio(): number {
     return this.efeitosDesbloqueio.size;
+  }
+
+  public obterQuantidadeTentativasCriacaoOrdemServico(): number {
+    return this.tentativasCriacaoOrdem;
+  }
+
+  public obterQuantidadeEfeitosCriacaoOrdemServico(): number {
+    return this.efeitosCriacaoOrdem.size;
+  }
+
+  public obterQuantidadeTentativasAtualizacaoOrdemServico(): number {
+    return this.tentativasAtualizacaoOrdem;
+  }
+
+  public obterQuantidadeEfeitosAtualizacaoOrdemServico(): number {
+    return this.efeitosAtualizacaoOrdem.size;
   }
 
   private indisponivel(): {
@@ -509,6 +711,68 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     };
   }
 
+  private executarCenarioCriacaoOrdemServico(
+    comando: ComandoCriarOrdemServicoErp,
+    cenario: CenarioOrdemServico,
+  ): ResultadoCriacaoOrdemServicoErp {
+    if (cenario === 'ERP_INDISPONIVEL') {
+      return {
+        codigo: 'ERP_INDISPONIVEL',
+        efeitoExternoPossivel: false,
+        resultado: 'INDISPONIVEL',
+      };
+    }
+    const efeito: EfeitoCriacaoOrdemServico = {
+      atendimentoId: comando.atendimentoId,
+      clienteExternoId: comando.clienteExternoId,
+      contratoExternoId: comando.contratoExternoId,
+      ordemServicoExternaId: `OS-SIM-${hashHex(
+        `${comando.atendimentoId}:${comando.chaveIdempotencia}`,
+      )
+        .slice(0, 16)
+        .toUpperCase()}`,
+      protocoloOficial: comando.protocoloOficial,
+    };
+    this.efeitosCriacaoOrdem.set(comando.chaveIdempotencia, efeito);
+    if (cenario === 'PERDER_RESPOSTA') {
+      return {
+        codigo: 'RESPOSTA_PERDIDA',
+        requerReconciliacao: true,
+        resultado: 'RESULTADO_INCERTO',
+      };
+    }
+    return {
+      ordemServicoExternaId: efeito.ordemServicoExternaId,
+      resultado: 'CONFIRMADO',
+    };
+  }
+
+  private executarCenarioAtualizacaoOrdemServico(
+    comando: ComandoAtualizarOrdemServicoErp,
+    cenario: CenarioOrdemServico,
+  ): ResultadoAtualizacaoOrdemServicoErp {
+    if (cenario === 'ERP_INDISPONIVEL') {
+      return {
+        codigo: 'ERP_INDISPONIVEL',
+        efeitoExternoPossivel: false,
+        resultado: 'INDISPONIVEL',
+      };
+    }
+    const efeito: EfeitoAtualizacaoOrdemServico = {
+      atendimentoId: comando.atendimentoId,
+      ordemServicoExternaId: comando.ordemServicoExternaId,
+    };
+    this.efeitosAtualizacaoOrdem.set(comando.chaveIdempotencia, efeito);
+    if (cenario === 'PERDER_RESPOSTA') {
+      return {
+        codigo: 'RESPOSTA_PERDIDA',
+        requerReconciliacao: true,
+        resultado: 'RESULTADO_INCERTO',
+      };
+    }
+    return { resultado: 'CONFIRMADO' };
+  }
+
   private criarEfeito(
     comando: ComandoCriarAtendimentoErp,
   ): EfeitoCriacaoAtendimento {
@@ -573,6 +837,39 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     ) {
       throw new ErroComandoErpInvalido();
     }
+  }
+
+  private validarContextoOrdemServico(
+    comando: ComandoReconciliarCriacaoOrdemServicoErp,
+  ): void {
+    if (
+      !IDENTIFICADOR_UUID.test(comando.atendimentoId) ||
+      !CHAVE_IDEMPOTENCIA.test(comando.chaveIdempotencia) ||
+      !textoValido(comando.clienteExternoId, 256) ||
+      !textoValido(comando.contratoExternoId, 256) ||
+      !textoValido(comando.protocoloOficial, 256)
+    ) {
+      throw new ErroComandoErpInvalido();
+    }
+  }
+
+  private validarComandoCriacaoOrdemServico(
+    comando: ComandoCriarOrdemServicoErp,
+  ): void {
+    this.validarContextoOrdemServico(comando);
+    if (
+      !textoValido(comando.assunto, 200) ||
+      !textoValido(comando.descricao, 4_000)
+    ) {
+      throw new ErroComandoErpInvalido();
+    }
+  }
+
+  private validarComandoAtualizacaoOrdemServico(
+    comando: ComandoAtualizarOrdemServicoErp,
+  ): void {
+    this.validarComandoCriacaoOrdemServico(comando);
+    this.validarIdentificadorExterno(comando.ordemServicoExternaId);
   }
 
   private clienteCorresponde(
