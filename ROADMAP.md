@@ -75,7 +75,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 051 | CONCLUÍDA | `xhigh` |
 | 052 | CONCLUÍDA | `xhigh` |
 | 053 | CONCLUÍDA | `xhigh` |
-| 054 | EM ANDAMENTO | `xhigh` |
+| 054 | CONCLUÍDA | `xhigh` |
 | 055 | PENDENTE | `xhigh` |
 | 056 | PENDENTE | `xhigh` |
 | 057 | PENDENTE | `high` |
@@ -401,6 +401,10 @@ Aceite concluído em 1º de setembro de 2026: `EventoDominio` passou a ser conve
 ### PR 053 — sincronização incremental
 
 Aceite concluído em 1º de setembro de 2026: web e mobile passaram a recuperar fatos confirmados por `sequencia_evento`, com cursor decimal validado, limite máximo de 100, ordem estrita e indicação de continuação. A identidade vem exclusivamente da sessão web ou mobile autenticada. A autorização atual é calculada no PostgreSQL antes da projeção; linha fora do escopo chega ao serviço somente com objeto vazio, mas sua sequência ainda faz o cursor avançar, impedindo tanto vazamento quanto travamento em lacunas de permissão. Cursor anterior à retenção de 30 dias exige ressincronização completa e cursor futuro é recusado. O planejador local aplica lotes de modo idempotente e só confirma o cursor depois do lote válido. Lint, tipos, 225 testes da API, 152 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-053` ficou saudável com prontidão `PRONTO`. Em staging, uma primeira página não autorizada retornou zero eventos e avançou o cursor; a página seguinte entregou somente a conversa permitida, nenhum campo protegido vazou, migration encerrou com código zero e nenhum erro de nível 50 foi emitido.
+
+### PR 054 — ressincronização completa consistente
+
+Aceite concluído em 1º de setembro de 2026: `GET /api/v1/sincronizacao/completa` passou a reconstruir a réplica autorizada em transação PostgreSQL `REPEATABLE READ` e somente-leitura. A primeira leitura captura `sequencia_base`; filas, permissões efetivas, atendimentos abertos/reabríveis, até 200 conversas recentes e 200 mensagens/notas por conversa, controles de recurso e políticas de versão observam exatamente o mesmo snapshot lógico. Fila, conversa, mensagem e nota são filtradas no banco pela autorização vigente antes da projeção. O planejador mobile substitui réplica e cursor na mesma transação SQLite e preserva rascunhos e comandos pendentes. Lint, tipos, 228 testes da API, 155 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-054` ficou saudável com prontidão `PRONTO`. Em staging, somente uma das duas filas sintéticas apareceu, a conversa negada não vazou, uma alteração concorrente permaneceu invisível na leitura antiga e seu evento posterior foi recuperado pelo incremental; migration encerrou com código zero, os dados de aceite foram removidos e nenhum erro de nível 50 foi emitido.
 
 ## 7. Mensageria Meta
 

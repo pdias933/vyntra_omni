@@ -498,6 +498,8 @@ O app substitui de forma segura sua réplica autorizada com snapshot contendo:
 
 O snapshot é produzido sob uma leitura consistente do PostgreSQL e vinculado a uma `sequencia_base` capturada no mesmo ponto lógico. O cliente aplica conteúdo e cursor na mesma transação SQLite; depois recupera estritamente eventos `> sequencia_base` pelo protocolo sem lacuna. Uma alteração concorrente fica inteira no snapshot ou inteira no backfill, nunca dividida entre os dois.
 
+A PR 054 materializa esse contrato em `GET /api/v1/sincronizacao/completa`. O backend abre uma transação `REPEATABLE READ` e somente-leitura, captura primeiro a maior `sequencia_evento` e consulta sob o mesmo snapshot lógico permissões, filas, atendimentos abertos ou reabríveis, controles e políticas. A réplica de trabalho contém até 200 conversas mais recentes autorizadas e até 200 mensagens e notas por conversa; histórico além dessa janela continua pertencendo ao PostgreSQL e será carregado sob demanda, não descartado. Os CTEs de autorização precedem qualquer leitura de conteúdo. No SQLite, substituir a réplica e persistir `sequencia_base` são duas operações da mesma transação; rascunhos e comandos pendentes ficam em armazenamento separado e seguem para reconciliação.
+
 A referência inicial é retenção de 30 dias para eventos de sincronização, sujeita a medição e política operacional. Isso não limita histórico de conversa.
 
 ### 9.3 Alteração de permissão

@@ -266,6 +266,8 @@ Ao receber `RESSINCRONIZACAO_COMPLETA_NECESSARIA`:
 5. reconciliar pendências contra o novo estado;
 6. abrir WebSocket pelo cursor base novo.
 
+A PR 054 fixa o contrato do passo 3: o snapshot retorna filas e permissões vigentes, atendimentos abertos/reabríveis, controles e políticas, além de uma janela de trabalho de até 200 conversas e 200 mensagens/notas por conversa. O histórico restante continua disponível no servidor. O plano local obrigatório executa `SUBSTITUIR_REPLICA_AUTORIZADA` e `PERSISTIR_SEQUENCIA_BASE` na mesma transação SQLite; rascunhos e comandos pendentes não pertencem à réplica substituída e são preservados para reconciliação.
+
 ## 8. Tempo real e ciclo de vida
 
 ### Primeiro plano
