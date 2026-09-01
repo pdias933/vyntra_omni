@@ -153,6 +153,13 @@ enum CategoriaMidiaMensagem {
   @@map("categoria_midia_mensagem")
 }
 
+enum EstadoEventoEntradaCanal {
+  RECEBIDO
+  PERSISTIDO
+
+  @@map("estado_evento_entrada_canal")
+}
+
 enum PapelBase {
   ADMINISTRADOR
   SUPERVISOR
@@ -835,6 +842,7 @@ model ContaWhatsApp {
   calendarioAtendimento           CalendarioAtendimento? @relation("CalendarioContaWhatsApp")
   janelasAtendimentoCanal         JanelaAtendimentoCanal[]
   mensagens                       Mensagem[]
+  eventosEntradaCanal             EventoEntradaCanal[]
 
   @@unique([portfolioEmpresarialExternoId, identificadorCanalExterno], map: "conta_whatsapp_identidade_externa_key")
   @@index([estado, nomeExibicao, id], map: "conta_whatsapp_estado_nome_idx")
@@ -1176,6 +1184,7 @@ model Mensagem {
   mensagemAlvoReacao              Mensagem?               @relation("ReacaoMensagem", fields: [mensagemAlvoReacaoId], references: [id], onDelete: Restrict)
   reacoes                         Mensagem[]               @relation("ReacaoMensagem")
   midia                           MidiaMensagem?
+  eventoEntradaCanal              EventoEntradaCanal?
 
   @@unique([contaWhatsAppId, identificadorExternoMensagem], map: "mensagem_conta_identificador_externo_key")
   @@unique([usuarioRemetenteId, mensagemClienteId], map: "mensagem_usuario_cliente_key")
@@ -1183,6 +1192,23 @@ model Mensagem {
   @@index([atendimentoId, recebidaServidorEm, id], map: "mensagem_atendimento_recebida_idx")
   @@index([estadoSaida, proximaTentativaEm, recebidaServidorEm], map: "mensagem_saida_pendente_idx")
   @@map("mensagem")
+}
+
+model EventoEntradaCanal {
+  id                            String                   @id @db.Uuid
+  contaWhatsAppId               String                   @map("conta_whatsapp_id") @db.Uuid
+  identificadorEventoExterno    String                   @map("identificador_evento_externo") @db.VarChar(256)
+  corpoHash                     String                   @map("corpo_hash") @db.Char(64)
+  estado                        EstadoEventoEntradaCanal @default(RECEBIDO)
+  recebidoEm                    DateTime                 @map("recebido_em") @db.Timestamptz(6)
+  persistidoEm                  DateTime?                @map("persistido_em") @db.Timestamptz(6)
+  mensagemId                    String?                  @unique(map: "evento_entrada_canal_mensagem_key") @map("mensagem_id") @db.Uuid
+  contaWhatsApp                 ContaWhatsApp            @relation(fields: [contaWhatsAppId], references: [id], onDelete: Restrict)
+  mensagem                      Mensagem?                @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
+
+  @@unique([contaWhatsAppId, identificadorEventoExterno], map: "evento_entrada_canal_conta_evento_key")
+  @@index([estado, recebidoEm, id], map: "evento_entrada_canal_estado_recebido_idx")
+  @@map("evento_entrada_canal")
 }
 
 model MidiaMensagem {
