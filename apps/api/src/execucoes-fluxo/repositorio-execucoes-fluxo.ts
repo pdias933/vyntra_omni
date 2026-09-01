@@ -23,6 +23,10 @@ export interface RepositorioExecucoesFluxo {
     agora: Date,
     transacao: TransacaoPrisma,
   ): Promise<readonly ExecucaoFluxoPersistida[]>;
+  listarProntasParaExecutar(
+    limite: number,
+    transacao: TransacaoPrisma,
+  ): Promise<readonly ExecucaoFluxoPersistida[]>;
   alterarCondicional(
     proxima: ExecucaoFluxoPersistida,
     estadoEsperado: ExecucaoFluxoPersistida['estado'],

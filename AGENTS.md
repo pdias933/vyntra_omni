@@ -434,3 +434,10 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - Troque estado atual, alvo, ponteiro, revisão, histórico e auditoria na mesma transação sob lock do fluxo.
 - `PUBLICAR_FLUXO` não concede `REVERTER_FLUXO`; editar não concede nenhuma das duas.
 - Não registre controller de publicação antes do validador completo da PR 071.
+- `PassoExecucaoFluxo` é diagnóstico sanitizado: nunca grave texto, opções, contexto protegido ou dados de cliente em entrada/saída do passo, auditoria ou log.
+- Nó de mensagem chama `ServicoMensagensSaida`; é proibido importar porta, adapter, SDK ou vocabulário Meta no executor.
+- Antes de criar mensagem automática, confirme execução/revisão e atendimento `AGUARDANDO/BOT/PROCESSANDO_BOT` sem responsável na mesma transação.
+- Mensagem automática não inventa usuário remetente. Mensagem, evento, caixa de saída, passo e avanço de nó confirmam juntos.
+- Lista/botões sem capacidade estruturada comprovada segue `FALLBACK` textual; não declare `SUCESSO` nem habilite formato externo por fixture.
+- Toda saída nominal (`SUCESSO`, `FALLBACK`, `FALHA_TEMPORARIA`, `FALHA_DEFINITIVA`) precisa ter exatamente uma conexão publicada.
+- Worker seleciona `EXECUTANDO` com bloqueio concorrente no PostgreSQL. Não use Redis, timer por atendimento ou reparo manual de revisão.

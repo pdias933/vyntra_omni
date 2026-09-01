@@ -13,6 +13,12 @@ export class ProvedorContextoValidacaoFluxoConservador
     _definicao: DefinicaoFluxo,
     _transacao: TransacaoPrisma,
   ): Promise<ContextoValidacaoPublicacaoFluxo> {
-    return Promise.resolve({ capacidadesHabilitadas: [], referenciasAtivas: [] });
+    return Promise.resolve({
+      capacidadesHabilitadas: [
+        'ENVIAR_MENSAGEM',
+        'ENVIAR_BOTOES_OU_LISTA',
+      ],
+      referenciasAtivas: [],
+    });
   }
 }

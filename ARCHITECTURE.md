@@ -597,6 +597,10 @@ Meta Cloud API
 
 Nenhum adapter expõe credencial, DTO bruto ou código externo ao domínio. [FLOWS.md](FLOWS.md) e [INTEGRATIONS.md](INTEGRATIONS.md) detalham os contratos.
 
+Na PR 074, o worker passa a selecionar execuções `EXECUTANDO` diretamente no PostgreSQL com `FOR UPDATE SKIP LOCKED`. O executor lê a versão fixada na execução, cria um `PassoExecucaoFluxo` sanitizado e delega qualquer saída ao contato para `ServicoMensagensSaida`. O commit reúne mensagem `NA_FILA`, evento, caixa de saída, passo final e avanço de revisão/nó. Uma queda anterior ao commit não deixa efeito parcial; depois do commit, o novo nó e a intenção de envio são recuperáveis. O executor não importa porta, adapter ou vocabulário Meta e não depende de Redis.
+
+`ENVIAR_BOTOES_OU_LISTA` degrada para texto enumerado pelo serviço de domínio enquanto não existir capacidade estruturada real comprovada e conectada. O resultado é `FALLBACK`, nunca `SUCESSO` fictício. A futura implementação do formato interativo deverá continuar entrando pelo domínio e manter a mesma saída nominal.
+
 Na PR 019, a porta de mensageria é código puro e não registra integração real no módulo da aplicação. O simulador Meta implementa a porta, normaliza estados externos e entrega eventos internos a um consumidor; repetição compatível reaproveita resultado e chave incompatível falha. Esse armazenamento em memória existe somente para teste. Produção continuará exigindo persistência/idempotência PostgreSQL, webhook autenticado e caixa de saída nos PRs próprios.
 
 Na PR 020, `AdaptadorErp` separa consultas e escritas e devolve somente modelos internos normalizados. Seu simulador contratual diferencia indisponibilidade anterior à escrita, quando não há efeito externo, de resposta perdida após possível criação. A segunda situação retorna `RESULTADO_INCERTO` e só pode avançar por reconciliação. O simulador não é provider da aplicação; `OperacaoIntegracao`, caixa de saída e protocolo persistente continuam pertencendo aos PRs de domínio.

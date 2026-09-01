@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../gerado/prisma/client.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type {
+  ContextoSaidaMensagemAutomatica,
   ContextoSaidaMensagem,
   MensagemSaidaPersistida,
 } from './modelo-mensagem.js';
@@ -61,6 +62,45 @@ export class RepositorioMensagensPrisma implements RepositorioMensagens {
       contatoId: atendimento.conversa.contatoId,
       filaId: atendimento.filaAtualId as string,
       permiteEnvio: true,
+    };
+  }
+
+  public async obterContextoSaidaAutomatica(
+    execucaoFluxoId: string,
+    atendimentoId: string,
+    revisaoExecucao: number,
+    transacao: TransacaoPrisma,
+  ): Promise<ContextoSaidaMensagemAutomatica | undefined> {
+    const execucao = await transacao.execucaoFluxo.findFirst({
+      select: {
+        atendimento: {
+          select: {
+            contaWhatsAppOrigemId: true,
+            conversa: { select: { contatoId: true } },
+            conversaId: true,
+          },
+        },
+      },
+      where: {
+        atendimento: {
+          contaWhatsAppOrigem: { estado: 'ATIVA' },
+          conversa: { contato: { estado: 'NORMAL' } },
+          estado: 'AGUARDANDO',
+          modo: 'BOT',
+          motivoEspera: 'PROCESSANDO_BOT',
+          usuarioResponsavelId: null,
+        },
+        atendimentoId,
+        estado: 'EXECUTANDO',
+        id: execucaoFluxoId,
+        revisao: revisaoExecucao,
+      },
+    });
+    if (execucao === null) return undefined;
+    return {
+      contaWhatsAppId: execucao.atendimento.contaWhatsAppOrigemId,
+      contatoId: execucao.atendimento.conversa.contatoId,
+      conversaId: execucao.atendimento.conversaId,
     };
   }
 

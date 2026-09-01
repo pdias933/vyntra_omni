@@ -74,3 +74,33 @@ test('agendamento é reconstruído do PostgreSQL sem depender do Redis', async (
   assert.match(recuperacao, /tipo: 'RETOMAR'/);
   assert.doesNotMatch(`${repositorio}\n${recuperacao}\n${worker}`, /Redis|BullMQ/);
 });
+
+test('nós de mensagem usam domínio, passos sanitizados e saídas nominais', async () => {
+  const [schema, migration, executor, mensagens, repositorioMensagens, processo] = await Promise.all([
+    ler('apps/api/prisma/schema.prisma'),
+    ler(
+      'apps/api/prisma/migrations/20260901012000_nos_mensagem_lista/migration.sql',
+    ),
+    ler('apps/api/src/execucoes-fluxo/servico-executor-nos-fluxo.ts'),
+    ler('apps/api/src/mensagens/servico-mensagens-saida.ts'),
+    ler('apps/api/src/mensagens/repositorio-mensagens-prisma.ts'),
+    ler(
+      'apps/api/src/execucoes-fluxo/processo-recuperacao-execucoes-fluxo.ts',
+    ),
+  ]);
+  assert.match(schema, /model PassoExecucaoFluxo/);
+  assert.match(schema, /revisaoExecucao/);
+  assert.match(migration, /passo_execucao_fluxo_revisao_key/);
+  assert.match(migration, /PASSO_EXECUCAO_FLUXO_TERMINAL_IMUTAVEL/);
+  assert.match(executor, /obterVersaoFixaExecucao/);
+  assert.match(executor, /ServicoMensagensSaida/);
+  assert.match(executor, /FALHA_TEMPORARIA/);
+  assert.match(executor, /FALHA_DEFINITIVA/);
+  assert.match(executor, /entradaSanitizada: \{ tipoNo: no\.tipo \}/);
+  assert.doesNotMatch(executor, /meta-cloud|Adaptador|CanalMensageria|conteudoProtegido/);
+  assert.match(repositorioMensagens, /PROCESSANDO_BOT/);
+  assert.match(mensagens, /MENSAGEM_AUTOMATICA_CRIADA/);
+  assert.match(mensagens, /destino: 'MENSAGERIA'/);
+  assert.match(processo, /executor\.executarCiclo/);
+  assert.doesNotMatch(`${executor}\n${processo}`, /Redis|BullMQ/);
+});

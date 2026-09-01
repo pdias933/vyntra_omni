@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 
 import { ErroIdempotenciaMensagemDivergente, ErroTransicaoMensagemInvalida } from '../dist/mensagens/erros-mensagem.js';
+import { ErroTextoLivreForaJanela } from '../dist/janela-canal/erros-janela-canal.js';
 import { MaquinaSaidaMensagem } from '../dist/mensagens/maquina-saida-mensagem.js';
 import { ServicoMensagensSaida } from '../dist/mensagens/servico-mensagens-saida.js';
 
@@ -79,7 +80,7 @@ test('falha temporária retorna à fila e falha definitiva ou cancelamento são 
   assert.equal(maquina.cancelar(mensagemNaFila(), new Date('2026-09-01T12:00:01Z')).estadoSaida, 'CANCELADA');
 });
 
-function criarServico() {
+function criarServico(sobrescritas = {}) {
   const estado = { caixa: [], eventos: [], mensagens: [] };
   const repositorio = {
     acrescentar: async (mensagem) => estado.mensagens.push(mensagem),
@@ -90,6 +91,14 @@ function criarServico() {
       filaId: ids.fila,
       permiteEnvio: true,
     }),
+    obterContextoSaidaAutomatica: async () =>
+      sobrescritas.contextoAutomatico === false
+        ? undefined
+        : {
+            contaWhatsAppId: ids.conta,
+            contatoId: ids.contato,
+            conversaId: ids.conversa,
+          },
     obterPorIdempotencia: async (_usuarioId, mensagemClienteId) =>
       estado.mensagens.find((mensagem) => mensagem.mensagemClienteId === mensagemClienteId),
   };
@@ -101,6 +110,9 @@ function criarServico() {
   };
   const janela = {
     autorizarSaida: async (_contato, _conta, tipo) => {
+      if (sobrescritas.foraJanela === true) {
+        throw new ErroTextoLivreForaJanela();
+      }
       assert.equal(tipo, 'TEXTO_LIVRE');
       return { estado: 'ABERTA', permitida: true, tipo };
     },
@@ -117,6 +129,73 @@ function criarServico() {
     servico: new ServicoMensagensSaida(repositorio, autorizacao, janela, eventos, caixa),
   };
 }
+
+test('automação cria texto sem usuário remetente e conserva conteúdo fora do evento', async () => {
+  const { estado, servico } = criarServico();
+  const resultado = await servico.criarAutomatica(
+    {
+      atendimentoId: ids.atendimento,
+      execucaoFluxoId: randomUUID(),
+      revisaoExecucao: 3,
+      texto: 'Mensagem do fluxo',
+      tipo: 'TEXTO',
+    },
+    {},
+    () => agora,
+  );
+  assert.equal(resultado.resultado, 'SUCESSO');
+  assert.equal(resultado.mensagem.usuarioRemetenteId, undefined);
+  assert.equal(resultado.mensagem.estadoSaida, 'NA_FILA');
+  assert.equal(estado.mensagens.length, 1);
+  assert.equal(estado.caixa.length, 1);
+  assert.equal(JSON.stringify(estado.eventos).includes('Mensagem do fluxo'), false);
+});
+
+test('lista usa fallback textual explícito enquanto saída estruturada não está comprovada', async () => {
+  const { estado, servico } = criarServico();
+  const resultado = await servico.criarAutomatica(
+    {
+      atendimentoId: ids.atendimento,
+      execucaoFluxoId: randomUUID(),
+      opcoes: [
+        { id: 'financeiro', titulo: 'Financeiro' },
+        { descricao: 'Problemas de conexão', id: 'suporte', titulo: 'Suporte' },
+      ],
+      revisaoExecucao: 4,
+      texto: 'Escolha uma opção',
+      tipo: 'LISTA',
+    },
+    {},
+    () => agora,
+  );
+  assert.equal(resultado.resultado, 'FALLBACK');
+  assert.equal(
+    estado.mensagens[0].conteudoProtegido.texto,
+    'Escolha uma opção\n\n1. Financeiro\n2. Suporte — Problemas de conexão',
+  );
+});
+
+test('automação falha fechada sem autoridade BOT ou janela do canal', async () => {
+  const cenario = criarServico({ contextoAutomatico: false });
+  const entrada = {
+    atendimentoId: ids.atendimento,
+    execucaoFluxoId: randomUUID(),
+    revisaoExecucao: 1,
+    texto: 'Não deve sair',
+    tipo: 'TEXTO',
+  };
+  assert.deepEqual(await cenario.servico.criarAutomatica(entrada, {}), {
+    codigo: 'AUTORIDADE_AUTOMACAO_PERDIDA',
+    resultado: 'FALHA_DEFINITIVA',
+  });
+  const foraJanela = criarServico({ foraJanela: true });
+  assert.deepEqual(await foraJanela.servico.criarAutomatica(entrada, {}), {
+    codigo: 'JANELA_CANAL_FECHADA',
+    resultado: 'FALHA_DEFINITIVA',
+  });
+  assert.equal(cenario.estado.mensagens.length, 0);
+  assert.equal(foraJanela.estado.mensagens.length, 0);
+});
 
 test('criação autorizada é idempotente e grava mensagem, evento e caixa de saída sem expor texto', async () => {
   const { estado, servico } = criarServico();

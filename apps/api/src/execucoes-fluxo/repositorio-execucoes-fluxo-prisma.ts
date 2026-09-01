@@ -133,6 +133,50 @@ export class RepositorioExecucoesFluxoPrisma
     return encontradas.map((execucao) => this.mapear(execucao));
   }
 
+  public async listarProntasParaExecutar(
+    limite: number,
+    transacao: TransacaoPrisma,
+  ): Promise<readonly ExecucaoFluxoPersistida[]> {
+    const encontradas = await transacao.$queryRaw<
+      Array<{
+        atendimentoId: string;
+        atualizadaEm: Date;
+        codigoFinalizacao: string | null;
+        contextoProtegido: Prisma.JsonValue;
+        estado: ExecucaoFluxoPersistida['estado'];
+        finalizadaEm: Date | null;
+        fluxoId: string;
+        id: string;
+        iniciadaEm: Date;
+        noAtualId: string;
+        retomarEm: Date | null;
+        revisao: number;
+        versaoFluxoId: string;
+      }>
+    >(Prisma.sql`
+      SELECT
+        "atendimento_id" AS "atendimentoId",
+        "atualizada_em" AS "atualizadaEm",
+        "codigo_finalizacao" AS "codigoFinalizacao",
+        "contexto_protegido" AS "contextoProtegido",
+        "estado",
+        "finalizada_em" AS "finalizadaEm",
+        "fluxo_id" AS "fluxoId",
+        "id",
+        "iniciada_em" AS "iniciadaEm",
+        "no_atual_id" AS "noAtualId",
+        "retomar_em" AS "retomarEm",
+        "revisao",
+        "versao_fluxo_id" AS "versaoFluxoId"
+      FROM "execucao_fluxo"
+      WHERE "estado" = 'EXECUTANDO'::"estado_execucao_fluxo"
+      ORDER BY "atualizada_em" ASC, "id" ASC
+      LIMIT ${limite}
+      FOR UPDATE SKIP LOCKED
+    `);
+    return encontradas.map((execucao) => this.mapear(execucao));
+  }
+
   public async alterarCondicional(
     proxima: ExecucaoFluxoPersistida,
     estadoEsperado: ExecucaoFluxoPersistida['estado'],

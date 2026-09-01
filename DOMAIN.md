@@ -830,6 +830,12 @@ Estados não terminais são `EXECUTANDO`, `AGUARDANDO_RESPOSTA`, `AGUARDANDO_SIS
 
 O contexto nasce vazio e protegido; a PR 072 não oferece escrita arbitrária nele. `PassoExecucaoFluxo`, agendamento recuperável, worker e nós permanecem fora deste PR.
 
+### Passos de execução e mensagens automáticas
+
+`PassoExecucaoFluxo` registra uma tentativa de nó pela revisão corrente da execução. O par `execucao_fluxo_id + revisao_execucao` é único. O passo nasce `INICIADO` e termina uma única vez como `CONCLUIDO` ou `FALHOU`; identidade, entrada sanitizada e histórico são imutáveis. Conteúdo de mensagem, contexto protegido e dado de cliente não pertencem ao passo.
+
+Uma mensagem automática só pode nascer quando a própria execução continua `EXECUTANDO` na revisão esperada e o atendimento permanece `AGUARDANDO/BOT/PROCESSANDO_BOT`, sem responsável humano. Ela não possui usuário remetente, preserva conversa, atendimento e conta de origem e entra em `NA_FILA`. Mensagem, evento, caixa de saída, passo e avanço do nó compartilham a transação. Perda da autoridade BOT produz falha definitiva do nó e nenhum envio.
+
 ## 18. Agendamento e recuperação de `ExecucaoFluxo`
 
 Desde a PR 073, uma execução `EXECUTANDO` pode ser agendada para um instante estritamente futuro. A transição resulta em `AGUARDANDO_SISTEMA`, persiste `retomar_em` e incrementa a revisão. `retomar_em` só pode existir nesse estado; retomada anterior ao instante é recusada pela máquina e pelo PostgreSQL.

@@ -109,6 +109,14 @@ enum EstadoExecucaoFluxo {
   @@map("estado_execucao_fluxo")
 }
 
+enum EstadoPassoExecucaoFluxo {
+  INICIADO
+  CONCLUIDO
+  FALHOU
+
+  @@map("estado_passo_execucao_fluxo")
+}
+
 enum TipoMudancaPublicacaoFluxo {
   PUBLICACAO
   ARQUIVAMENTO
@@ -781,11 +789,32 @@ model ExecucaoFluxo {
   atendimento        Atendimento         @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
   fluxo              Fluxo               @relation("FluxoExecucoes", fields: [fluxoId], references: [id], onDelete: Restrict)
   versaoFluxo        VersaoFluxo         @relation("VersaoFluxoExecucoes", fields: [versaoFluxoId, fluxoId], references: [id, fluxoId], onDelete: Restrict)
+  passos             PassoExecucaoFluxo[]
 
   @@index([atendimentoId, iniciadaEm, id], map: "execucao_fluxo_atendimento_inicio_idx")
   @@index([estado, retomarEm, atualizadaEm, id], map: "execucao_fluxo_recuperacao_idx")
   @@index([versaoFluxoId, estado, atualizadaEm], map: "execucao_fluxo_versao_estado_idx")
   @@map("execucao_fluxo")
+}
+
+model PassoExecucaoFluxo {
+  id                 String                    @id @db.Uuid
+  execucaoFluxoId    String                    @map("execucao_fluxo_id") @db.Uuid
+  revisaoExecucao    Int                       @map("revisao_execucao")
+  noId               String                    @map("no_id") @db.VarChar(64)
+  tipoNo             String                    @map("tipo_no") @db.VarChar(64)
+  estado             EstadoPassoExecucaoFluxo  @default(INICIADO)
+  entradaSanitizada  Json                      @map("entrada_sanitizada")
+  saidaSanitizada    Json?                     @map("saida_sanitizada")
+  codigoErro         String?                   @map("codigo_erro") @db.VarChar(100)
+  iniciadoEm         DateTime                  @map("iniciado_em") @db.Timestamptz(6)
+  finalizadoEm       DateTime?                 @map("finalizado_em") @db.Timestamptz(6)
+  execucaoFluxo      ExecucaoFluxo             @relation(fields: [execucaoFluxoId], references: [id], onDelete: Restrict)
+
+  @@unique([execucaoFluxoId, revisaoExecucao], map: "passo_execucao_fluxo_revisao_key")
+  @@index([execucaoFluxoId, iniciadoEm, id], map: "passo_execucao_fluxo_execucao_inicio_idx")
+  @@index([estado, iniciadoEm, id], map: "passo_execucao_fluxo_estado_inicio_idx")
+  @@map("passo_execucao_fluxo")
 }
 
 model DisponibilidadeUsuario {

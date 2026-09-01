@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { ServicoRecuperacaoExecucoesFluxo } from './servico-recuperacao-execucoes-fluxo.js';
+import { ServicoExecutorNosFluxo } from './servico-executor-nos-fluxo.js';
 
 const INTERVALO_PADRAO_MS = 1_000;
 
@@ -11,16 +12,19 @@ export class ProcessoRecuperacaoExecucoesFluxo {
   public constructor(
     @Inject(ServicoRecuperacaoExecucoesFluxo)
     private readonly recuperacao: ServicoRecuperacaoExecucoesFluxo,
+    @Inject(ServicoExecutorNosFluxo)
+    private readonly executor: ServicoExecutorNosFluxo,
   ) {}
 
   public async executar(continuar: () => boolean): Promise<void> {
     const intervaloMs = this.obterIntervalo();
     while (continuar()) {
       try {
-        const quantidade = await this.recuperacao.executarCiclo();
-        if (quantidade >= 50) continue;
+        const recuperadas = await this.recuperacao.executarCiclo();
+        const executadas = await this.executor.executarCiclo();
+        if (recuperadas >= 50 || executadas >= 50) continue;
       } catch {
-        this.logger.error('CICLO_RECUPERACAO_EXECUCOES_FLUXO_FALHOU');
+        this.logger.error('CICLO_WORKER_EXECUCOES_FLUXO_FALHOU');
       }
       await this.aguardarIntervalo(intervaloMs);
     }

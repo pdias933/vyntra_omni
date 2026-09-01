@@ -14,6 +14,7 @@ import {
 import { MaquinaEstadoExecucaoFluxo } from './maquina-estado-execucao-fluxo.js';
 import type {
   EntradaAgendamentoExecucaoFluxo,
+  EntradaAvancoNoExecucaoFluxo,
   EntradaInicioExecucaoFluxo,
   EntradaTransicaoExecucaoFluxo,
   ExecucaoFluxoPersistida,
@@ -173,6 +174,43 @@ export class ServicoExecucoesFluxo {
     return proxima;
   }
 
+  public async avancarNo(
+    entrada: EntradaAvancoNoExecucaoFluxo,
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<ExecucaoFluxoPersistida> {
+    const execucaoFluxoId = this.validarId(entrada.execucaoFluxoId);
+    const revisaoEsperada = this.validarRevisao(entrada.revisaoEsperada);
+    const proximoNoId = this.validarNoId(entrada.proximoNoId);
+    const atual = await this.repositorio.obterPorId(execucaoFluxoId, transacao);
+    if (atual === undefined) throw new ErroExecucaoFluxoInvalida();
+    if (atual.revisao !== revisaoEsperada) {
+      throw new ErroConflitoExecucaoFluxo();
+    }
+    const proxima = this.maquina.avancarNo(
+      atual,
+      proximoNoId,
+      this.obterAgora(relogio),
+    );
+    if (
+      !(await this.repositorio.alterarCondicional(
+        proxima,
+        atual.estado,
+        revisaoEsperada,
+        transacao,
+      ))
+    ) {
+      throw new ErroConflitoExecucaoFluxo();
+    }
+    await this.auditar(
+      'EXECUCAO_FLUXO_AVANCOU_NO',
+      'AVANCAR_NO_EXECUCAO_FLUXO',
+      proxima,
+      transacao,
+    );
+    return proxima;
+  }
+
   private async auditar(
     tipoEvento: string,
     acao: string,
@@ -222,6 +260,13 @@ export class ServicoExecucoesFluxo {
 
   private validarRevisao(valor: unknown): number {
     if (!Number.isInteger(valor) || typeof valor !== 'number' || valor < 1) {
+      throw new ErroExecucaoFluxoInvalida();
+    }
+    return valor;
+  }
+
+  private validarNoId(valor: unknown): string {
+    if (typeof valor !== 'string' || !IDENTIFICADOR_NO.test(valor)) {
       throw new ErroExecucaoFluxoInvalida();
     }
     return valor;

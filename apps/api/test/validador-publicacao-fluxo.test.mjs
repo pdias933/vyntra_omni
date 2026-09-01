@@ -133,7 +133,10 @@ test('variável precisa existir em todos os caminhos e sensível não sai ao cli
       no('inicio', 'INICIO'),
       no('decisao', 'CONDICAO'),
       no('definir', 'DEFINIR_VARIAVEL', { variaveisSaida: ['documento'] }),
-      no('mensagem', 'ENVIAR_MENSAGEM', { variaveisEntrada: ['documento'] }),
+      no('mensagem', 'ENVIAR_MENSAGEM', {
+        parametros: { texto: 'Documento disponível' },
+        variaveisEntrada: ['documento'],
+      }),
       no('fim', 'FIM'),
     ],
     variaveis: [
@@ -215,6 +218,41 @@ test('schema estrito recusa campo, script, URL técnica e versão desconhecida',
     assert.equal(relatorio.valido, false);
     assert.ok(codigos(relatorio).includes('DEFINICAO_ESTRUTURAL_INVALIDA'));
   }
+});
+
+test('mensagem e lista possuem parâmetros tipados e fallback limitado', () => {
+  const mensagemInvalida = definicaoBasica({
+    nos: [
+      no('inicio', 'INICIO'),
+      no('mensagem', 'ENVIAR_MENSAGEM', { parametros: { mensagem: 'campo antigo' } }),
+      no('fim', 'FIM'),
+    ],
+  });
+  assert.ok(
+    codigos(
+      new ValidadorPublicacaoFluxo().validar(mensagemInvalida, contexto()),
+    ).includes('DEFINICAO_ESTRUTURAL_INVALIDA'),
+  );
+  const listaInvalida = definicaoBasica({
+    nos: [
+      no('inicio', 'INICIO'),
+      no('lista', 'ENVIAR_BOTOES_OU_LISTA', {
+        parametros: {
+          opcoes: [
+            { id: 'duplicada', titulo: 'Primeira' },
+            { id: 'duplicada', titulo: 'Segunda' },
+          ],
+          texto: 'Escolha',
+        },
+      }),
+      no('fim', 'FIM'),
+    ],
+  });
+  assert.ok(
+    codigos(
+      new ValidadorPublicacaoFluxo().validar(listaInvalida, contexto()),
+    ).includes('DEFINICAO_ESTRUTURAL_INVALIDA'),
+  );
 });
 
 function criarCenario(definicao = definicaoBasica()) {

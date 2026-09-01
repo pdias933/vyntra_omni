@@ -252,7 +252,12 @@ export class ValidadorPublicacaoFluxo {
     const referencias = valor.referencias.map((item) =>
       this.lerReferencia(item),
     );
-    if (referencias.some((item) => item === undefined)) return undefined;
+    if (
+      referencias.some((item) => item === undefined) ||
+      !this.parametrosNoSaoValidos(valor.tipo, valor.parametros)
+    ) {
+      return undefined;
+    }
     return {
       id: valor.id,
       parametros: valor.parametros,
@@ -264,6 +269,65 @@ export class ValidadorPublicacaoFluxo {
         ? {}
         : { limiteIteracoes: valor.limiteIteracoes }),
     };
+  }
+
+  private parametrosNoSaoValidos(
+    tipo: TipoNoFluxo,
+    parametros: Readonly<Record<string, unknown>>,
+  ): boolean {
+    if (tipo === 'ENVIAR_MENSAGEM') {
+      return (
+        this.temSomenteChaves(parametros, ['texto']) &&
+        this.textoValido(parametros.texto, 4_096)
+      );
+    }
+    if (tipo === 'ENVIAR_BOTOES_OU_LISTA') {
+      if (
+        !this.temSomenteChaves(parametros, ['opcoes', 'texto']) ||
+        !this.textoValido(parametros.texto, 3_000) ||
+        !Array.isArray(parametros.opcoes) ||
+        parametros.opcoes.length < 1 ||
+        parametros.opcoes.length > 10
+      ) {
+        return false;
+      }
+      const ids = new Set<string>();
+      let tamanhoFallback = (parametros.texto as string).trim().length + 2;
+      for (const item of parametros.opcoes) {
+        if (
+          !this.ehRegistro(item) ||
+          !this.temSomenteChaves(item, ['descricao', 'id', 'titulo']) ||
+          typeof item.id !== 'string' ||
+          !/^[A-Za-z0-9_-]{1,64}$/u.test(item.id) ||
+          ids.has(item.id) ||
+          !this.textoValido(item.titulo, 80) ||
+          (item.descricao !== undefined &&
+            !this.textoValido(item.descricao, 120))
+        ) {
+          return false;
+        }
+        ids.add(item.id);
+        tamanhoFallback +=
+          String(ids.size).length +
+          2 +
+          item.titulo.trim().length +
+          (typeof item.descricao === 'string'
+            ? 3 + item.descricao.trim().length
+            : 0) +
+          1;
+      }
+      return tamanhoFallback <= 4_096;
+    }
+    return true;
+  }
+
+  private textoValido(valor: unknown, limite: number): valor is string {
+    return (
+      typeof valor === 'string' &&
+      !valor.includes('\u0000') &&
+      valor.trim().length >= 1 &&
+      valor.length <= limite
+    );
   }
 
   private lerConexao(valor: unknown): ConexaoDefinicaoFluxo | undefined {

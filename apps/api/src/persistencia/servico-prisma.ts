@@ -6,7 +6,7 @@ import { obterUrlBanco } from './obter-url-banco.js';
 import type { TransacaoPrisma } from './transacao-prisma.js';
 
 const MIGRACAO_OBRIGATORIA =
-  '20260901011500_agendamento_execucoes_fluxo';
+  '20260901012000_nos_mensagem_lista';
 
 @Injectable()
 export class ServicoPrisma implements OnModuleDestroy {

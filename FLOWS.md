@@ -527,3 +527,35 @@ revisao = revisao anterior + 1
 O worker não agenda um temporizador por execução e não usa Redis como fila autoritativa. A cada varredura curta, o PostgreSQL seleciona no máximo 50 execuções vencidas, ordenadas por `retomar_em` e UUID, usando `FOR UPDATE SKIP LOCKED`. Cada selecionada percorre `RETOMAR`, limpa `retomar_em` e fica `EXECUTANDO` com nova revisão e auditoria no mesmo commit. Outro worker ignora a linha bloqueada; uma repetição posterior não a encontra como vencida.
 
 Queda antes do commit deixa o agendamento disponível para nova varredura. Queda depois do commit deixa o estado `EXECUTANDO` persistido para o executor dos próximos PRs. Não há chamada Meta/ERP, avanço de nó ou escrita de contexto nesta etapa. Reiniciar o worker ou apagar o Redis não perde nem duplica a autoridade do job.
+
+## 22. Nós de mensagem e lista da PR 074
+
+O executor seleciona `ExecucaoFluxo.estado=EXECUTANDO` em lotes com `FOR UPDATE SKIP LOCKED`, relê exclusivamente `versao_fluxo_id` fixado e localiza `no_atual_id` nessa definição imutável. Ele suporta nesta etapa `INICIO`, `FIM`, `ENVIAR_MENSAGEM` e `ENVIAR_BOTOES_OU_LISTA`; as demais capacidades continuam negadas até sua PR.
+
+Parâmetros publicados são fechados:
+
+```text
+ENVIAR_MENSAGEM
+texto: 1..4096 caracteres
+
+ENVIAR_BOTOES_OU_LISTA
+texto: 1..3000 caracteres
+opcoes: 1..10 itens únicos
+  id: identificador controlado
+  titulo: 1..80 caracteres
+  descricao?: 1..120 caracteres
+```
+
+Campo extra, byte nulo, opção repetida ou fallback acima de 4.096 caracteres impede publicação. A execução repete a validação defensiva. Enquanto não existe capacidade estruturada real comprovada, lista/botões cria texto numerado pelo serviço de domínio e percorre `FALLBACK`. Não finge mensagem interativa.
+
+O passo usa a revisão anterior ao avanço como ordinal único. Entrada sanitizada registra somente `tipoNo`; saída registra `resultado` e, quando houve criação, `mensagemId`. Conteúdo nunca entra no passo. `INICIO` segue `SUCESSO`; `FIM` conclui a execução. Os nós de saída seguem exatamente:
+
+```text
+ENVIAR_MENSAGEM
+  SUCESSO | FALHA_TEMPORARIA | FALHA_DEFINITIVA
+
+ENVIAR_BOTOES_OU_LISTA
+  SUCESSO | FALLBACK | FALHA_TEMPORARIA | FALHA_DEFINITIVA
+```
+
+Antes de persistir, `ServicoMensagensSaida` confirma a revisão e que o atendimento ainda é BOT sem responsável. `MENSAGEM`, `EventoDominio`, `ItemCaixaSaida`, passo final, revisão e próximo nó confirmam na mesma transação. Perda de autoridade ou janela fechada não produz mensagem e segue falha definitiva. Falha técnica que impede a própria transação causa rollback e nova varredura, sem fabricar sucesso ou passo parcial.

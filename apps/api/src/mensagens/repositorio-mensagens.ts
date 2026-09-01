@@ -1,5 +1,6 @@
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type {
+  ContextoSaidaMensagemAutomatica,
   ContextoSaidaMensagem,
   MensagemSaidaPersistida,
 } from './modelo-mensagem.js';
@@ -25,6 +26,12 @@ export interface RepositorioMensagens {
     usuarioId: string,
     transacao: TransacaoPrisma,
   ): Promise<ContextoSaidaMensagem | undefined>;
+  obterContextoSaidaAutomatica(
+    execucaoFluxoId: string,
+    atendimentoId: string,
+    revisaoExecucao: number,
+    transacao: TransacaoPrisma,
+  ): Promise<ContextoSaidaMensagemAutomatica | undefined>;
   acrescentar(
     mensagem: MensagemSaidaPersistida,
     transacao: TransacaoPrisma,

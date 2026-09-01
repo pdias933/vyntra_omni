@@ -19,13 +19,13 @@ export interface MensagemSaidaPersistida {
   readonly atendimentoId: string;
   readonly contaWhatsAppId: string;
   readonly direcao: 'SAIDA';
-  readonly tipo: 'TEXTO';
+  readonly tipo: 'TEXTO' | 'INTERATIVA';
   readonly estadoSaida: EstadoSaidaMensagemDominio;
   readonly conteudoProtegido: ObjetoJsonProtegido;
   readonly conteudoHash: string;
   readonly identificadorExternoMensagem: string | undefined;
-  readonly mensagemClienteId: string;
-  readonly usuarioRemetenteId: string;
+  readonly mensagemClienteId: string | undefined;
+  readonly usuarioRemetenteId: string | undefined;
   readonly contatoRemetenteId: undefined;
   readonly criadaDispositivoEm: Date | undefined;
   readonly recebidaServidorEm: Date;
@@ -39,6 +39,28 @@ export interface MensagemSaidaPersistida {
   readonly codigoFalha: string | undefined;
   readonly versao: number;
 }
+
+export interface ContextoSaidaMensagemAutomatica {
+  readonly contatoId: string;
+  readonly contaWhatsAppId: string;
+  readonly conversaId: string;
+}
+
+export interface OpcaoMensagemAutomatica {
+  readonly id: string;
+  readonly titulo: string;
+  readonly descricao?: string | undefined;
+}
+
+export type ResultadoCriacaoMensagemAutomatica =
+  | {
+      readonly resultado: 'SUCESSO' | 'FALLBACK';
+      readonly mensagem: MensagemSaidaPersistida;
+    }
+  | {
+      readonly resultado: 'FALHA_TEMPORARIA' | 'FALHA_DEFINITIVA';
+      readonly codigo: string;
+    };
 
 export interface ContextoSaidaMensagem {
   readonly contatoId: string;

@@ -249,6 +249,28 @@ export class ServicoCatalogoFluxos {
     return versao;
   }
 
+  public async obterVersaoFixaExecucao(
+    versaoFluxoIdRecebido: unknown,
+    fluxoIdRecebido: unknown,
+    transacao: TransacaoPrisma,
+  ): Promise<VersaoFluxoPersistida> {
+    const versaoFluxoId = this.validarId(versaoFluxoIdRecebido);
+    const fluxoId = this.validarId(fluxoIdRecebido);
+    const versao = await this.repositorio.obterVersao(
+      versaoFluxoId,
+      transacao,
+    );
+    if (
+      versao === undefined ||
+      versao.fluxoId !== fluxoId ||
+      !['PUBLICADA', 'ARQUIVADA'].includes(versao.estado) ||
+      versao.publicadaEm === undefined
+    ) {
+      throw new ErroVersaoFluxoIndisponivel();
+    }
+    return versao;
+  }
+
   private async autorizar(
     sessao: ContextoSessaoAutorizacao,
     permissao: 'EDITAR_FLUXO',

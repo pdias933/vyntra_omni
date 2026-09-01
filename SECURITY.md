@@ -561,3 +561,14 @@ Testes mínimos:
 - secret scan, dependências e baseline OWASP ASVS/Mobile.
 
 Falha em teste de segurança crítico bloqueia deploy; não é candidata a feature flag.
+
+## 17. Controles dos nós de mensagem
+
+- O executor nunca chama adapter, URL ou SDK de canal; somente o serviço de domínio pode criar uma saída.
+- No instante do commit, execução e atendimento precisam conservar autoridade `EXECUTANDO` e `AGUARDANDO/BOT/PROCESSANDO_BOT`, na revisão esperada e sem responsável humano.
+- Mensagem automática não recebe usuário falso; `usuario_remetente_id` permanece nulo e a origem de automação é operacional.
+- Texto e opções são validados por schema fechado antes da publicação e novamente no serviço. Nulo, campos extras, IDs duplicados e limite excedido falham fechados.
+- `PassoExecucaoFluxo`, evento e auditoria não carregam texto, opções, contexto protegido ou dado do cliente. Somente tipo, resultado, códigos e UUID da mensagem podem aparecer.
+- Fallback estruturado não pode ser rotulado como sucesso. Falha temporária, falha definitiva e perda de autoridade possuem saídas distintas.
+- Passo e execução usam revisão/constraint no PostgreSQL; repetição da mesma revisão não cria outro efeito.
+- Mensagem, evento, caixa de saída, passo e avanço do nó pertencem à mesma transação. Falha parcial resulta em rollback.

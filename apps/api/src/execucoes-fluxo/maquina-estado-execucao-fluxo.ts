@@ -30,6 +30,31 @@ const ESTADOS_TERMINAIS = new Set<EstadoExecucaoFluxo>(
 );
 
 export class MaquinaEstadoExecucaoFluxo {
+  public avancarNo(
+    atual: ExecucaoFluxoPersistida,
+    proximoNoId: string,
+    agora: Date,
+  ): ExecucaoFluxoPersistida {
+    this.validar(atual);
+    if (
+      atual.estado !== 'EXECUTANDO' ||
+      !IDENTIFICADOR_NO.test(proximoNoId) ||
+      proximoNoId === atual.noAtualId ||
+      !Number.isFinite(agora.getTime()) ||
+      agora < atual.atualizadaEm
+    ) {
+      throw new ErroTransicaoExecucaoFluxoInvalida();
+    }
+    const proxima = {
+      ...atual,
+      atualizadaEm: agora,
+      noAtualId: proximoNoId,
+      revisao: atual.revisao + 1,
+    };
+    this.validar(proxima);
+    return proxima;
+  }
+
   public agendarRetomada(
     atual: ExecucaoFluxoPersistida,
     retomarEm: Date,

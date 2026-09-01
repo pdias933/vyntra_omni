@@ -64,3 +64,9 @@ export interface EntradaAgendamentoExecucaoFluxo {
   readonly revisaoEsperada: unknown;
   readonly retomarEm: unknown;
 }
+
+export interface EntradaAvancoNoExecucaoFluxo {
+  readonly execucaoFluxoId: unknown;
+  readonly revisaoEsperada: unknown;
+  readonly proximoNoId: unknown;
+}
