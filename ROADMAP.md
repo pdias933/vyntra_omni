@@ -101,7 +101,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 077 | CONCLUÍDA | `xhigh` |
 | 078 | CONCLUÍDA | `xhigh` |
 | 079 | CONCLUÍDA | `xhigh` |
-| 080 | EM ANDAMENTO | `xhigh` |
+| 080 | CONCLUÍDA | `xhigh` |
 | 081 | PENDENTE | `xhigh` |
 | 082 | PENDENTE | `xhigh` |
 | 083 | PENDENTE | `xhigh` |
@@ -489,6 +489,10 @@ Aceite concluído em 1º de setembro de 2026: `CONSULTAR_FATURAS` e `ENVIAR_FATU
 ### PR 079 — nó de WhatsApp Flow
 
 Aceite concluído em 1º de setembro de 2026: `SOLICITAR_FORMULARIO_WHATSAPP` passou a exigir exatamente um formulário interno ativo da conta de origem, nenhuma variável e fallback textual fechado. Sem ponte Meta real caracterizada, o runtime produz somente `FALLBACK` por `ServicoMensagensSaida`; `ENVIADO` não é fabricado e nenhum provider simulado foi registrado. A submissão normalizada deriva autoridade da mensagem de entrada, usa locks por mensagem/referência, hash canônico, duas unicidades e evento sensível sanitizado; replay compatível devolve o primeiro registro e divergência falha fechada. Lint, tipos, 375 testes da API, 202 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `20260901012500_espera_resposta_fluxo` permaneceu como marca mais recente. `vyntra/api-staging:pr-079` e duas instâncias de `vyntra/worker-fluxos-staging:pr-079` ficaram saudáveis com prontidão `PRONTO`. Em staging, três execuções concluíram nove passos únicos: o formulário ativo gerou exatamente uma mensagem e `FALLBACK`; o inativo e o de outra conta seguiram `FALHA/FORMULARIO_INDISPONIVEL` com zero mensagem. A mesma submissão retornou `PERSISTIDA` e depois `DUPLICADA`, conteúdo divergente foi recusado, e ficaram exatamente uma submissão e um evento cujo dado foi persistido como `[PROTEGIDO]`. Passos não expuseram referência/texto e os novos containers tiveram zero erro ou ocorrência de token/resposta sensível nos logs.
+
+### PR 080 — nós de protocolo e ordem de serviço
+
+Aceite concluído em 1º de setembro de 2026: `CRIAR_ATENDIMENTO` e `CRIAR_ORDEM_SERVICO` passaram a usar os serviços de domínio recuperáveis com chave estável por execução+nó e chamada ERP fora da transação do executor. A definição não aceita identificadores externos, contexto, fila ou chave; a OS exige confirmação explícita e revalida atendimento `AGUARDANDO/BOT` sem fila/responsável, execução e versão correntes, vínculo automatizável, contrato e protocolo. A ação humana continua exigindo fila e RBAC. Sem provider ERP, o motor percorre `INDISPONIVEL` sem registrar operação ou efeito simulado. Lint, tipos, 381 testes da API, 202 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. O primeiro ensaio revelou e corrigiu a incompatibilidade entre BOT e fila antes do fechamento. Não houve migration; `20260901012500_espera_resposta_fluxo` permaneceu como marca mais recente. `vyntra/api-staging:pr-080` e duas instâncias de `vyntra/worker-fluxos-staging:pr-080` ficaram saudáveis com prontidão `PRONTO`. Em staging, duas execuções concluíram sete passos únicos: protocolo oficial existente percorreu `CRIADO`, OS e protocolo sem provider percorreram `INDISPONIVEL`; houve exatamente um protocolo oficial sintético e zero protocolo fabricado, OS, operação externa ou auditoria de efeito inexistente. Passos e logs não expuseram assunto, cliente, contrato ou protocolo, e os workers tiveram zero erro.
 
 ## 7. Mensageria Meta
 
