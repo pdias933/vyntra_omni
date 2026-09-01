@@ -20,6 +20,7 @@ test('declara somente a pilha mínima e persistente de staging', () => {
     'postgres',
     'redis',
     'storage',
+    'worker_fluxos',
   ]);
   assert.deepEqual(Object.keys(compose.volumes).sort(), [
     'dados_postgresql_staging',
@@ -88,6 +89,10 @@ test('mantém banco, Redis e storage inacessíveis pelo host', () => {
   assert.deepEqual(compose.services.postgres.networks, ['rede_dados_staging']);
   assert.deepEqual(compose.services.redis.networks, ['rede_dados_staging']);
   assert.deepEqual(compose.services.storage.networks, ['rede_storage_staging']);
+  assert.deepEqual(compose.services.worker_fluxos.networks, [
+    'rede_dados_staging',
+  ]);
+  assert.equal(compose.services.worker_fluxos.ports, undefined);
 });
 
 test('separa todos os segredos e não aceita credencial de produção', () => {
@@ -154,6 +159,12 @@ test('entrega à API apenas contratos por arquivo e contexto explícito', () => 
   ]);
   assert.deepEqual(compose.services.migrar.secrets, ['url_postgresql']);
   assert.equal(compose.services.migrar.user, '1000:0');
+  assert.deepEqual(compose.services.worker_fluxos.secrets, ['url_postgresql']);
+  assert.deepEqual(compose.services.worker_fluxos.command, [
+    'node',
+    'dist/worker-fluxos.js',
+  ]);
+  assert.equal(compose.services.worker_fluxos.environment.REDIS_URL_FILE, undefined);
 });
 
 test('ordena startup por saúde e limita privilégios e logs', () => {
@@ -187,4 +198,13 @@ test('ordena startup por saúde e limita privilégios e logs', () => {
     'service_healthy',
   );
   assert.equal(compose.services.api.pull_policy, 'build');
+  assert.equal(
+    compose.services.worker_fluxos.depends_on.postgres.condition,
+    'service_healthy',
+  );
+  assert.equal(
+    compose.services.worker_fluxos.depends_on.migrar.condition,
+    'service_completed_successfully',
+  );
+  assert.equal(compose.services.worker_fluxos.pull_policy, 'build');
 });

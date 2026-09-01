@@ -18,6 +18,11 @@ export interface RepositorioExecucoesFluxo {
     atendimentoId: string,
     transacao: TransacaoPrisma,
   ): Promise<ExecucaoFluxoPersistida | undefined>;
+  listarRetomadasVencidas(
+    limite: number,
+    agora: Date,
+    transacao: TransacaoPrisma,
+  ): Promise<readonly ExecucaoFluxoPersistida[]>;
   alterarCondicional(
     proxima: ExecucaoFluxoPersistida,
     estadoEsperado: ExecucaoFluxoPersistida['estado'],

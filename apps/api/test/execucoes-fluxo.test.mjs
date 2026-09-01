@@ -9,6 +9,7 @@ import {
   ErroTransicaoExecucaoFluxoInvalida,
 } from '../dist/execucoes-fluxo/erros-execucao-fluxo.js';
 import { MaquinaEstadoExecucaoFluxo } from '../dist/execucoes-fluxo/maquina-estado-execucao-fluxo.js';
+import { ServicoRecuperacaoExecucoesFluxo } from '../dist/execucoes-fluxo/servico-recuperacao-execucoes-fluxo.js';
 import { ServicoExecucoesFluxo } from '../dist/execucoes-fluxo/servico-execucoes-fluxo.js';
 
 const inicio = new Date('2026-09-01T18:00:00.000Z');
@@ -127,6 +128,7 @@ function criarCenario(sobrescritas = {}) {
       return true;
     },
     obterAtivaPorAtendimento: async () => ativa,
+    listarRetomadasVencidas: async () => sobrescritas.vencidas ?? [],
     obterPorId: async () => atual,
   };
   const versaoPublicada = {
@@ -239,4 +241,90 @@ test('novo processo não retoma registro terminal persistido', async () => {
   );
   assert.equal(reiniciado.chamadas.alteracoes.length, 0);
   assert.equal(reiniciado.chamadas.auditoria.length, 0);
+});
+
+test('agenda instante futuro no PostgreSQL e limpa agendamento ao retomar', async () => {
+  const cenario = criarCenario({ atual: execucao() });
+  const agendada = await cenario.servico.agendarRetomada(
+    {
+      execucaoFluxoId: ids.execucao,
+      revisaoEsperada: 1,
+      retomarEm: depois(60),
+    },
+    cenario.transacao,
+    () => depois(1),
+  );
+  assert.equal(agendada.estado, 'AGUARDANDO_SISTEMA');
+  assert.deepEqual(agendada.retomarEm, depois(60));
+  assert.equal(agendada.revisao, 2);
+  assert.equal(
+    cenario.chamadas.auditoria[0][0].dadosNovos.retomarEm,
+    depois(60).toISOString(),
+  );
+
+  const retomada = new MaquinaEstadoExecucaoFluxo().transitar(
+    agendada,
+    { tipo: 'RETOMAR' },
+    depois(60),
+  );
+  assert.equal(retomada.estado, 'EXECUTANDO');
+  assert.equal(retomada.retomarEm, undefined);
+});
+
+test('recusa agendamento vencido, inválido ou fora de EXECUTANDO', async () => {
+  const maquina = new MaquinaEstadoExecucaoFluxo();
+  assert.throws(
+    () => maquina.agendarRetomada(execucao(), depois(1), depois(1)),
+    ErroTransicaoExecucaoFluxoInvalida,
+  );
+  assert.throws(
+    () =>
+      maquina.agendarRetomada(
+        execucao({ estado: 'AGUARDANDO_RESPOSTA' }),
+        depois(2),
+        depois(1),
+      ),
+    ErroTransicaoExecucaoFluxoInvalida,
+  );
+});
+
+test('recuperação retoma somente lote vencido na mesma transação', async () => {
+  const agendada = execucao({
+    estado: 'AGUARDANDO_SISTEMA',
+    retomarEm: depois(60),
+    revisao: 2,
+    atualizadaEm: depois(1),
+  });
+  const chamadas = { consultas: [], transicoes: [], transacoes: 0 };
+  const transacao = { id: 'transacao-recuperacao' };
+  const repositorio = {
+    listarRetomadasVencidas: async (...argumentos) => {
+      chamadas.consultas.push(argumentos);
+      return [agendada];
+    },
+  };
+  const execucoes = {
+    transitar: async (...argumentos) => chamadas.transicoes.push(argumentos),
+  };
+  const prisma = {
+    executarTransacao: async (operacao) => {
+      chamadas.transacoes += 1;
+      return operacao(transacao);
+    },
+  };
+  const recuperacao = new ServicoRecuperacaoExecucoesFluxo(
+    repositorio,
+    execucoes,
+    prisma,
+  );
+  assert.equal(await recuperacao.executarCiclo(25, () => depois(60)), 1);
+  assert.equal(chamadas.transacoes, 1);
+  assert.deepEqual(chamadas.consultas[0], [25, depois(60), transacao]);
+  assert.deepEqual(chamadas.transicoes[0][0], {
+    comando: { tipo: 'RETOMAR' },
+    execucaoFluxoId: ids.execucao,
+    revisaoEsperada: 2,
+  });
+  assert.equal(chamadas.transicoes[0][1], transacao);
+  assert.deepEqual(chamadas.transicoes[0][2](), depois(60));
 });

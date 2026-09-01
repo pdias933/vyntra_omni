@@ -513,3 +513,17 @@ AGUARDANDO_ATENDENTE
 Estado, revisão, instante e auditoria mudam juntos. O PostgreSQL recusa transição fora dessa matriz, identidade alterada, revisão que não seja a próxima, exclusão e qualquer update de terminal. Terminal guarda código canônico e `finalizada_em`, mantém nó/contexto para diagnóstico e nunca possui `retomar_em`.
 
 O módulo não executa nó e não cria `PassoExecucaoFluxo`. Também não agenda retomada: a semântica de `retomar_em` e os jobs reconstruíveis entram na PR 073.
+
+## 21. Agendamento e recuperação da PR 073
+
+`agendarRetomada` aceita somente uma execução `EXECUTANDO`, sua revisão atual e instante futuro. O commit resulta em:
+
+```text
+estado = AGUARDANDO_SISTEMA
+retomar_em = instante futuro
+revisao = revisao anterior + 1
+```
+
+O worker não agenda um temporizador por execução e não usa Redis como fila autoritativa. A cada varredura curta, o PostgreSQL seleciona no máximo 50 execuções vencidas, ordenadas por `retomar_em` e UUID, usando `FOR UPDATE SKIP LOCKED`. Cada selecionada percorre `RETOMAR`, limpa `retomar_em` e fica `EXECUTANDO` com nova revisão e auditoria no mesmo commit. Outro worker ignora a linha bloqueada; uma repetição posterior não a encontra como vencida.
+
+Queda antes do commit deixa o agendamento disponível para nova varredura. Queda depois do commit deixa o estado `EXECUTANDO` persistido para o executor dos próximos PRs. Não há chamada Meta/ERP, avanço de nó ou escrita de contexto nesta etapa. Reiniciar o worker ou apagar o Redis não perde nem duplica a autoridade do job.

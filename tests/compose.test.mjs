@@ -27,6 +27,7 @@ test('declara somente a pilha local e o inicializador limitado do MinIO', () => 
     'postgres',
     'preparar_volume_minio',
     'redis',
+    'worker_fluxos',
   ]);
   assert.deepEqual(Object.keys(compose.volumes).sort(), [
     'dados_minio',
@@ -113,6 +114,8 @@ test('isola dados e usa bridge própria para publicar somente em loopback', () =
     'rede_dados',
     'rede_publicada_local',
   ]);
+  assert.deepEqual(compose.services.worker_fluxos.networks, ['rede_dados']);
+  assert.equal(compose.services.worker_fluxos.ports, undefined);
 });
 
 test('usa arquivos secretos locais sem senha funcional versionada', () => {
@@ -178,6 +181,11 @@ test('ordena o startup pela prontidão publicada na PR 007', () => {
     compose.services.api.environment.STORAGE_ENDPOINT,
     'http://minio:9000',
   );
+  assert.equal(compose.services.worker_fluxos.environment.REDIS_HOST, undefined);
+  assert.deepEqual(compose.services.worker_fluxos.command, [
+    'node',
+    'dist/worker-fluxos.js',
+  ]);
 });
 
 test('remove privilégios amplos e limita logs e montagens', () => {
@@ -203,7 +211,13 @@ test('remove privilégios amplos e limita logs e montagens', () => {
     }
   }
 
-  for (const nome of ['api', 'migrar', 'minio', 'preparar_volume_minio']) {
+  for (const nome of [
+    'api',
+    'migrar',
+    'minio',
+    'preparar_volume_minio',
+    'worker_fluxos',
+  ]) {
     assert.deepEqual(compose.services[nome].cap_drop, ['ALL']);
     assert.equal(compose.services[nome].read_only, true);
   }
@@ -211,6 +225,7 @@ test('remove privilégios amplos e limita logs e montagens', () => {
   assert.equal(compose.services.minio.user, '1000:0');
   assert.equal(compose.services.api.user, '1000:0');
   assert.equal(compose.services.migrar.user, '1000:0');
+  assert.equal(compose.services.worker_fluxos.user, '1000:0');
   assert.match(dockerfileApi, /USER 1000:1000/);
   assert.match(dockerfileApi, /COPY --from=construtor --chown=node:node/);
 });

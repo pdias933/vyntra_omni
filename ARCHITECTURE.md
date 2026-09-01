@@ -631,6 +631,8 @@ Na PR 071, `ValidadorPublicacaoFluxo` é puro e recebe definição desconhecida 
 
 Na PR 072, o módulo interno `execucoes-fluxo` separa máquina pura, serviço e persistência Prisma. `ServicoExecucoesFluxo.iniciar` consulta o ponteiro publicado sob o mesmo lock de publicação; o `INSERT ... SELECT` confirma novamente atendimento automatizável, fluxo ativo e versão ainda publicada. O índice parcial no PostgreSQL arbitra inícios concorrentes. Transições usam `estado + revisao` esperados e auditoria na mesma transação. O trigger do banco replica a matriz, exige incremento unitário de revisão, torna identidade e terminais imutáveis e proíbe exclusão. Recriar API ou serviço apenas relê o registro; não existe estado de execução no Redis. Ainda não há controller, worker, fila ou executor de nó.
 
+Na PR 073, `ServicoRecuperacaoExecucoesFluxo` transforma `retomar_em` vencido em trabalho executável sem criar uma segunda autoridade. O repositório consulta o PostgreSQL em lotes com `FOR UPDATE SKIP LOCKED`; a mesma transação chama a máquina, altera por estado/revisão e audita. `worker-fluxos` é um processo Nest sem HTTP, porta, Redis ou storage e faz varreduras curtas de intervalo fixo, nunca um `sleep` por atendimento até o instante agendado. Reiniciar uma ou várias instâncias reconstrói a fila da consulta ao banco. Nesta etapa, `EXECUTANDO` significa apenas pronto para o executor futuro; nenhum nó é interpretado.
+
 ## 14. Observabilidade
 
 Quatro sinais distintos:

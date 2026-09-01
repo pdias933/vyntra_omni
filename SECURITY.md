@@ -397,6 +397,8 @@ O contexto usado para validar publicação é fornecido exclusivamente pelo back
 
 `ExecucaoFluxo` não aceita versão, nó ou contexto declarados pelo cliente. O início resolve a versão publicada no servidor e o banco confirma ponteiro, estado e pertencimento no mesmo comando de inserção. Identidade da execução é imutável; uma publicação posterior não a migra. Transição usa comando fechado, código canônico, relógio válido e revisão esperada. Contexto protegido nunca entra em auditoria. Terminal é append-only no sentido operacional: runtime não atualiza, exclui ou retoma o registro, inclusive após reinício.
 
+Agendamento aceita somente `Date` válido, instante futuro e execução `EXECUTANDO` na revisão esperada. O banco limita `retomar_em` a `AGUARDANDO_SISTEMA` e recusa retomada prematura. Workers não recebem payload, segredo ou contexto em fila externa: consultam apenas registros vencidos no PostgreSQL, sob bloqueio de linha sem espera e transição condicional. Redis apagado, job duplicado ou dois workers não ampliam autoridade nem repetem a retomada. Log de falha usa somente código canônico e auditoria não inclui contexto protegido.
+
 Exemplo de desbloqueio:
 
 ```text

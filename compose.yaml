@@ -234,6 +234,46 @@ services:
       - rede_publicada_local
     logging: *registro-local
 
+  worker_fluxos:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: execucao
+    image: vyntra/api-desenvolvimento:local
+    pull_policy: build
+    init: true
+    user: "1000:0"
+    command:
+      - node
+      - dist/worker-fluxos.js
+    depends_on:
+      migrar:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    environment:
+      AMBIENTE_APLICACAO: desenvolvimento
+      BANCO_HOST: postgres
+      BANCO_NOME: vyntra
+      BANCO_PORTA: "5432"
+      BANCO_SENHA_FILE: /run/secrets/senha_postgresql
+      BANCO_USUARIO: vyntra
+      INTERVALO_VARREDURA_FLUXOS_MS: "1000"
+      NODE_ENV: development
+    secrets:
+      - senha_postgresql
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s
+    tmpfs:
+      - /tmp:uid=1000,gid=1000,mode=0700
+    networks:
+      - rede_dados
+    logging: *registro-local
+
 networks:
   rede_dados:
     driver: bridge

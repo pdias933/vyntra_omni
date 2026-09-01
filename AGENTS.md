@@ -427,7 +427,10 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - Publicação aceita somente `EM_TESTE`; reversão aceita somente `ARQUIVADA`. Não contorne esses estados para acelerar testes ou UI.
 - `ExecucaoFluxo` fixa atendimento, fluxo e versão no início; nenhuma publicação ou retomada relê o ponteiro para migrar execução existente.
 - Estados terminais de execução são imutáveis e nunca retomam. Toda transição usa estado e revisão esperados; Redis não guarda autoridade.
-- Não escreva contexto arbitrário, não execute nó e não crie worker/agendamento antes do PR correspondente.
+- `retomar_em` só existe em `AGUARDANDO_SISTEMA`, aponta para instante futuro e é a autoridade reconstruível do agendamento.
+- Worker consulta vencidos no PostgreSQL em lote com bloqueio concorrente; não cria timer longo por atendimento e não depende de job Redis para recuperar estado.
+- Queda antes do commit conserva o agendamento; queda depois do commit conserva `EXECUTANDO`. Não reponha estado por SQL.
+- Não escreva contexto arbitrário nem execute nó antes do PR correspondente.
 - Troque estado atual, alvo, ponteiro, revisão, histórico e auditoria na mesma transação sob lock do fluxo.
 - `PUBLICAR_FLUXO` não concede `REVERTER_FLUXO`; editar não concede nenhuma das duas.
 - Não registre controller de publicação antes do validador completo da PR 071.

@@ -52,3 +52,25 @@ test('serviço seleciona ponteiro somente no início e não audita contexto', as
   assert.match(servico, /versaoFluxoId: versao\.id/);
   assert.doesNotMatch(servico, /dadosNovos:[\s\S]{0,300}contextoProtegido/);
 });
+
+test('agendamento é reconstruído do PostgreSQL sem depender do Redis', async () => {
+  const [migration, repositorio, recuperacao, worker] = await Promise.all([
+    ler(
+      'apps/api/prisma/migrations/20260901011500_agendamento_execucoes_fluxo/migration.sql',
+    ),
+    ler(
+      'apps/api/src/execucoes-fluxo/repositorio-execucoes-fluxo-prisma.ts',
+    ),
+    ler(
+      'apps/api/src/execucoes-fluxo/servico-recuperacao-execucoes-fluxo.ts',
+    ),
+    ler('apps/api/src/worker-fluxos.ts'),
+  ]);
+  assert.match(migration, /execucao_fluxo_agendamento_check/);
+  assert.match(migration, /RETOMADA_EXECUCAO_FLUXO_PREMATURA/);
+  assert.match(repositorio, /FOR UPDATE SKIP LOCKED/);
+  assert.match(repositorio, /"retomar_em" <=/);
+  assert.match(recuperacao, /executarTransacao/);
+  assert.match(recuperacao, /tipo: 'RETOMAR'/);
+  assert.doesNotMatch(`${repositorio}\n${recuperacao}\n${worker}`, /Redis|BullMQ/);
+});

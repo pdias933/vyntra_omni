@@ -13,6 +13,7 @@ import {
 } from './erros-execucao-fluxo.js';
 import { MaquinaEstadoExecucaoFluxo } from './maquina-estado-execucao-fluxo.js';
 import type {
+  EntradaAgendamentoExecucaoFluxo,
   EntradaInicioExecucaoFluxo,
   EntradaTransicaoExecucaoFluxo,
   ExecucaoFluxoPersistida,
@@ -135,6 +136,43 @@ export class ServicoExecucoesFluxo {
     return proxima;
   }
 
+  public async agendarRetomada(
+    entrada: EntradaAgendamentoExecucaoFluxo,
+    transacao: TransacaoPrisma,
+    relogio: () => Date = () => new Date(),
+  ): Promise<ExecucaoFluxoPersistida> {
+    const execucaoFluxoId = this.validarId(entrada.execucaoFluxoId);
+    const revisaoEsperada = this.validarRevisao(entrada.revisaoEsperada);
+    const retomarEm = this.validarInstante(entrada.retomarEm);
+    const atual = await this.repositorio.obterPorId(execucaoFluxoId, transacao);
+    if (atual === undefined) throw new ErroExecucaoFluxoInvalida();
+    if (atual.revisao !== revisaoEsperada) {
+      throw new ErroConflitoExecucaoFluxo();
+    }
+    const proxima = this.maquina.agendarRetomada(
+      atual,
+      retomarEm,
+      this.obterAgora(relogio),
+    );
+    if (
+      !(await this.repositorio.alterarCondicional(
+        proxima,
+        atual.estado,
+        revisaoEsperada,
+        transacao,
+      ))
+    ) {
+      throw new ErroConflitoExecucaoFluxo();
+    }
+    await this.auditar(
+      'EXECUCAO_FLUXO_AGENDADA',
+      'AGENDAR_RETOMADA_EXECUCAO_FLUXO',
+      proxima,
+      transacao,
+    );
+    return proxima;
+  }
+
   private async auditar(
     tipoEvento: string,
     acao: string,
@@ -150,6 +188,9 @@ export class ServicoExecucoesFluxo {
           fluxoId: execucao.fluxoId,
           noAtualId: execucao.noAtualId,
           revisao: execucao.revisao,
+          ...(execucao.retomarEm === undefined
+            ? {}
+            : { retomarEm: execucao.retomarEm.toISOString() }),
           versaoFluxoId: execucao.versaoFluxoId,
           ...(execucao.codigoFinalizacao === undefined
             ? {}
@@ -181,6 +222,13 @@ export class ServicoExecucoesFluxo {
 
   private validarRevisao(valor: unknown): number {
     if (!Number.isInteger(valor) || typeof valor !== 'number' || valor < 1) {
+      throw new ErroExecucaoFluxoInvalida();
+    }
+    return valor;
+  }
+
+  private validarInstante(valor: unknown): Date {
+    if (!(valor instanceof Date) || !Number.isFinite(valor.getTime())) {
       throw new ErroExecucaoFluxoInvalida();
     }
     return valor;

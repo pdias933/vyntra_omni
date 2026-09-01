@@ -829,3 +829,11 @@ Desde a PR 072, iniciar uma automação fixa `atendimento_id`, `fluxo_id`, `vers
 Estados não terminais são `EXECUTANDO`, `AGUARDANDO_RESPOSTA`, `AGUARDANDO_SISTEMA` e `AGUARDANDO_ATENDENTE`. Estados terminais são `SUSPENSA_POR_ATENDIMENTO_HUMANO`, `CONCLUIDA`, `FALHOU` e `CANCELADA`. Terminal exige instante e código de finalização, não possui `retomar_em` e é imutável. Toda transição incrementa `revisao`, preserva a versão fixada e usa alteração condicional por estado e revisão esperados. PostgreSQL repete a matriz de transição, protege a identidade e recusa update/delete terminal.
 
 O contexto nasce vazio e protegido; a PR 072 não oferece escrita arbitrária nele. `PassoExecucaoFluxo`, agendamento recuperável, worker e nós permanecem fora deste PR.
+
+## 18. Agendamento e recuperação de `ExecucaoFluxo`
+
+Desde a PR 073, uma execução `EXECUTANDO` pode ser agendada para um instante estritamente futuro. A transição resulta em `AGUARDANDO_SISTEMA`, persiste `retomar_em` e incrementa a revisão. `retomar_em` só pode existir nesse estado; retomada anterior ao instante é recusada pela máquina e pelo PostgreSQL.
+
+O job é a própria condição persistida `estado = AGUARDANDO_SISTEMA AND retomar_em <= agora`. Workers selecionam lotes ordenados com `FOR UPDATE SKIP LOCKED`, de modo que execuções distintas podem progredir em paralelo e uma execução possui somente um vencedor. A retomada muda para `EXECUTANDO`, limpa `retomar_em`, incrementa a revisão e audita na mesma transação.
+
+Não existe identidade de job mantida apenas no Redis nem temporizador longo em memória. Queda antes do commit conserva a execução agendada; queda depois do commit conserva a execução já retomada. A PR 073 não executa o nó retomado, não altera contexto e não produz efeito Meta/ERP.

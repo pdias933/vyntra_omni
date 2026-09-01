@@ -30,6 +30,29 @@ const ESTADOS_TERMINAIS = new Set<EstadoExecucaoFluxo>(
 );
 
 export class MaquinaEstadoExecucaoFluxo {
+  public agendarRetomada(
+    atual: ExecucaoFluxoPersistida,
+    retomarEm: Date,
+    agora: Date,
+  ): ExecucaoFluxoPersistida {
+    this.validar(atual);
+    if (
+      atual.estado !== 'EXECUTANDO' ||
+      !Number.isFinite(retomarEm.getTime()) ||
+      retomarEm <= agora
+    ) {
+      throw new ErroTransicaoExecucaoFluxoInvalida();
+    }
+    const aguardando = this.transitar(
+      atual,
+      { tipo: 'AGUARDAR_SISTEMA' },
+      agora,
+    );
+    const agendada = { ...aguardando, retomarEm };
+    this.validar(agendada);
+    return agendada;
+  }
+
   public transitar(
     atual: ExecucaoFluxoPersistida,
     comandoRecebido: unknown,
@@ -78,7 +101,9 @@ export class MaquinaEstadoExecucaoFluxo {
       execucao.atualizadaEm < execucao.iniciadaEm ||
       !this.ehObjetoJsonProtegido(execucao.contextoProtegido) ||
       (execucao.retomarEm !== undefined &&
-        !Number.isFinite(execucao.retomarEm.getTime())) ||
+        (!Number.isFinite(execucao.retomarEm.getTime()) ||
+          execucao.estado !== 'AGUARDANDO_SISTEMA' ||
+          execucao.retomarEm <= execucao.atualizadaEm)) ||
       terminal !== (execucao.finalizadaEm !== undefined) ||
       terminal !== (execucao.codigoFinalizacao !== undefined) ||
       (execucao.finalizadaEm !== undefined &&

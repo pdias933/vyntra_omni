@@ -14,6 +14,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "start": "node dist/main.js",
+    "start:worker-fluxos": "node dist/worker-fluxos.js",
     "test": "pnpm build && node --test test/*.test.mjs",
     "typecheck": "pnpm prisma:generate && tsc -p tsconfig.json --noEmit"
   },
