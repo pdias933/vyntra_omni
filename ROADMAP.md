@@ -99,7 +99,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 075 | CONCLUÍDA | `xhigh` |
 | 076 | CONCLUÍDA | `high` |
 | 077 | CONCLUÍDA | `xhigh` |
-| 078 | EM ANDAMENTO | `xhigh` |
+| 078 | CONCLUÍDA | `xhigh` |
 | 079 | PENDENTE | `xhigh` |
 | 080 | PENDENTE | `xhigh` |
 | 081 | PENDENTE | `xhigh` |
@@ -481,6 +481,10 @@ Aceite concluído em 1º de setembro de 2026: `CONDICAO` e `DEFINIR_VARIAVEL` pa
 ### PR 077 — nós de identidade, cliente e contrato
 
 Aceite concluído em 1º de setembro de 2026: os nós `IDENTIFICAR_CONTATO`, `SOLICITAR_DADOS_CONTATO`, `SELECIONAR_CLIENTE` e `SELECIONAR_CONTRATO` passaram a operar por contexto explícito e vínculo exato, sem inferir identidade por telefone, username, ordem ou preferência. Seleção exige UUID sensível estruturado, vínculo automatizável do mesmo contato e contrato sob o cliente atual; vínculo temporário, revogado, sem prova ou cruzado falha fechado. A mutação versionada e a auditoria compartilham a transação, e o pedido de dados usa fallback seguro enquanto não existe capacidade oficial. Lint, tipos, 361 testes da API, 200 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `vyntra/api-staging:pr-077` e duas instâncias de `vyntra/worker-fluxos-staging:pr-077` ficaram saudáveis com prontidão `PRONTO`. Em staging, quatro execuções concluíram 22 passos únicos: o vínculo exato venceu outro preferencial, temporário e revogado foram recusados, contrato cruzado não foi aplicado, o contexto válido avançou até cliente+contrato e houve exatamente uma mensagem segura de fallback. Passos não expuseram UUID selecionado nem variável; três auditorias conservaram somente referências UUID internas dos vínculos, sem dado pessoal ou identificador ERP externo.
+
+### PR 078 — nós de consulta e envio de fatura
+
+Aceite concluído em 1º de setembro de 2026: `CONSULTAR_FATURAS` e `ENVIAR_FATURA` passaram a exigir contexto financeiro exato, usar somente ERP em tempo real e executar a chamada externa fora da transação. O retorno revalida execução, revisão, nó, conta, contato, contrato e versão antes de aplicar qualquer efeito. Zero, uma e múltiplas faturas pagáveis têm caminhos distintos; o motor nunca escolhe a primeira. A seleção permanece em contexto protegido, o envio reconsulta os detalhes e a composição textual pode incluir Pix/linha protegidos sem copiá-los para passo, log ou auditoria. Sem ponte privada de PDF, o resultado integral não é fabricado. O adapter ERP continua opcional e sem provider real ou simulado no runtime. Lint, tipos, 370 testes da API, 201 testes de arquitetura, build web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de segredos foram aprovados. Não houve migration; `20260901012500_espera_resposta_fluxo` permaneceu como marca mais recente. `vyntra/api-staging:pr-078` e duas instâncias de `vyntra/worker-fluxos-staging:pr-078` ficaram saudáveis com prontidão `PRONTO`. O primeiro ensaio revelou e corrigiu o campo interno da conta de origem antes do fechamento. Na repetição, consulta e envio concluíram seis passos únicos e percorreram `ERP_INDISPONIVEL`; houve zero mensagem, composição, auditoria ou dado financeiro no diagnóstico e nenhum erro nos novos containers.
 
 ## 7. Mensageria Meta
 
