@@ -2,6 +2,7 @@ import type { LoggerService, LogLevel } from '@nestjs/common';
 import pino, { type DestinationStream, type Logger } from 'pino';
 
 import { contextoCorrelacao } from './contexto-correlacao.js';
+import { contextoRastreio } from './contexto-rastreio.js';
 import { SanitizadorLogs } from './sanitizador-logs.js';
 
 export type NivelLogTecnico = 'debug' | 'error' | 'info' | 'warn';
@@ -47,10 +48,13 @@ export class LoggerEstruturado implements LoggerService, RegistradorTecnico {
     evento: string,
     campos: Readonly<Record<string, unknown>> = {},
   ): void {
+    const rastreio = contextoRastreio.obter();
     const registro = sanitizador.sanitizarRegistro({
       ...campos,
       correlacao_id: contextoCorrelacao.obter(),
       evento,
+      span_id: rastreio?.spanId,
+      trace_id: rastreio?.traceId,
     });
 
     this.escrever(nivel, registro);

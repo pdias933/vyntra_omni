@@ -34,7 +34,10 @@ test('web usa SDK, atualização silenciosa e confirmação para reprocessar e l
     ler('packages/api-client/src/gerado/index.ts'),
   ]);
   assert.match(shell, /<SaudeReleasesWeb/);
-  assert.match(pagina, /setInterval\(\(\) => void carregarSaude\(\), 15_000\)/);
+  assert.match(pagina, /setInterval\(/);
+  assert.match(pagina, /carregarSaude\(\)/);
+  assert.match(pagina, /carregarObservabilidade\(\)/);
+  assert.match(pagina, /15_000/);
   assert.match(pagina, /Reprocessar agora/);
   assert.match(pagina, /Atualização obrigatória/);
   assert.match(pagina, /confirmar\(/);
@@ -43,4 +46,5 @@ test('web usa SDK, atualização silenciosa e confirmação para reprocessar e l
   assert.match(cliente, /reprocessarOperacaoAgora/);
   assert.match(cliente, /atualizarControleRecurso/);
   assert.match(cliente, /atualizarPoliticaVersaoMobile/);
+  assert.match(cliente, /observarOperacao/);
 });

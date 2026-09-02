@@ -3,10 +3,12 @@ import {
   atualizarPoliticaVersaoMobile,
   listarAdministracaoReleases,
   listarSaudeAdministrativa,
+  observarOperacao,
   reprocessarOperacaoAgora,
   type AdministracaoReleasesDto,
   type ControleRecursoDto,
   type PainelSaudeAdministrativaDto,
+  type PainelObservabilidadeDto,
   type PoliticaVersaoMobileDto,
 } from '@vyntra/api-client';
 import { useCallback, useEffect, useState } from 'react';
@@ -24,6 +26,8 @@ interface ConfirmacaoSaude {
 export function SaudeReleasesWeb() {
   const [saude, definirSaude] = useState<PainelSaudeAdministrativaDto>();
   const [releases, definirReleases] = useState<AdministracaoReleasesDto>();
+  const [observabilidade, definirObservabilidade] =
+    useState<PainelObservabilidadeDto>();
   const [erroSaude, definirErroSaude] = useState(false);
   const [erroReleases, definirErroReleases] = useState(false);
   const [ocupada, definirOcupada] = useState(false);
@@ -50,16 +54,32 @@ export function SaudeReleasesWeb() {
     }
   }, []);
 
+  const carregarObservabilidade = useCallback(async () => {
+    try {
+      const resposta = await observarOperacao({ throwOnError: true });
+      definirObservabilidade(resposta.data);
+    } catch {
+      definirObservabilidade(undefined);
+    }
+  }, []);
+
   useEffect(() => {
     const inicial = window.setTimeout(() => {
-      void Promise.all([carregarSaude(), carregarReleases()]);
+      void Promise.all([
+        carregarSaude(),
+        carregarReleases(),
+        carregarObservabilidade(),
+      ]);
     }, 0);
-    const atualizacao = window.setInterval(() => void carregarSaude(), 15_000);
+    const atualizacao = window.setInterval(
+      () => void Promise.all([carregarSaude(), carregarObservabilidade()]),
+      15_000,
+    );
     return () => {
       window.clearTimeout(inicial);
       window.clearInterval(atualizacao);
     };
-  }, [carregarReleases, carregarSaude]);
+  }, [carregarObservabilidade, carregarReleases, carregarSaude]);
 
   async function executar(
     acao: () => Promise<void>,
@@ -118,6 +138,35 @@ export function SaudeReleasesWeb() {
             </div>
           )}
         </section>
+
+        {observabilidade !== undefined && (
+          <section className="painel-saude painel-saude--observabilidade">
+            <header>
+              <div>
+                <span className="sobretitulo">Sinais sanitizados</span>
+                <h2>Métricas e alertas</h2>
+              </div>
+              <small>Regras v{observabilidade.versao_regras}</small>
+            </header>
+            <div className="grade-metricas-observabilidade">
+              <article><strong>{observabilidade.metricas.http.requisicoes}</strong><small>Requisições neste processo</small></article>
+              <article><strong>{observabilidade.metricas.http.falhas}</strong><small>Falhas HTTP 5xx</small></article>
+              <article><strong>{observabilidade.metricas.caixa_saida.quantidade}</strong><small>Eventos na caixa de saída</small></article>
+              <article><strong>{observabilidade.metricas.operacoes_recuperaveis.quantidade}</strong><small>Operações recuperáveis</small></article>
+            </div>
+            <div className="lista-alertas-operacionais" aria-live="polite">
+              {observabilidade.alertas.length === 0 ? (
+                <p>Nenhum alerta operacional ativo.</p>
+              ) : observabilidade.alertas.map((alerta) => (
+                <article className={`alerta-operacional alerta-operacional--${alerta.severidade.toLocaleLowerCase('pt-BR')}`} key={`${alerta.codigo}:${alerta.componente}`}>
+                  <span>{alerta.severidade}</span>
+                  <div><strong>{alerta.codigo.replaceAll('_', ' ').toLocaleLowerCase('pt-BR')}</strong><small>{alerta.componente} · {alerta.unidade === 'SEGUNDOS' ? `${formatarDuracao(alerta.valor_atual)} de atraso` : 'indisponível'}</small></div>
+                  <code>{alerta.runbook}</code>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         {saude !== undefined && (
           <section className="resumo-recuperacao" aria-label="Resumo de recuperação">
@@ -421,4 +470,10 @@ function rotuloEstadoOperacao(estado: string): string {
 
 function formatarData(valor: string): string {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(valor));
+}
+
+function formatarDuracao(segundos: number): string {
+  if (segundos < 60) return `${segundos}s`;
+  if (segundos < 3_600) return `${Math.floor(segundos / 60)}min`;
+  return `${Math.floor(segundos / 3_600)}h`;
 }

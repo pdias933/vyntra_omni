@@ -700,6 +700,10 @@ Quatro sinais distintos:
 
 Instrumentar inicialmente HTTP, webhook Meta, envio Meta, chamada MK, worker, fluxo, PostgreSQL, Redis e storage. Payload sensível nunca acompanha span ou log.
 
+A PR 111 estabelece a base executável desse contrato. O middleware HTTP aceita somente `traceparent` W3C na versão 00 e cria um novo `span_id`; entrada inválida é descartada e substituída por IDs aleatórios. `trace_id`, `span_id` e `correlacao_id` atravessam somente logs estruturados submetidos à allowlist. Métricas HTTP usam contadores e buckets fixos por processo, sem caminho, parâmetro, fila, usuário ou entidade de negócio.
+
+Backlogs são fotografias consistentes do PostgreSQL: quantidade e idade do item mais antigo para caixa de saída, operações recuperáveis e execuções vencidas do Motor de Fluxos. `ServicoObservabilidade` separa a coleta técnica interna da projeção HTTP autorizada. A rota web exige `ADMINISTRAR_INTEGRACOES`; o monitor interno emite apenas mudança de estado do alerta, permitindo que o coletor externo dispare notificação sem manter dashboard aberto. A saúde pública não recebe componente, contagem ou regra.
+
 ## 15. Evolução sem reescrita
 
 Quando a carga justificar:

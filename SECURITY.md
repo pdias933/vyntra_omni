@@ -731,6 +731,16 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - alteração e auditoria sanitizada compartilham a transação;
 - controles de recurso e política mobile continuam isolados sob `ADMINISTRAR_RELEASES`, com confirmação visual e concorrência otimista.
 
+## 28.1 Observabilidade sanitizada da PR 111
+
+- a projeção de métricas e alertas exige sessão web atual e `ADMINISTRAR_INTEGRACOES`; saúde pública continua informando apenas vivo/pronto;
+- métrica HTTP não recebe caminho, parâmetro, origem, usuário, fila, entidade, header ou corpo; somente total, 5xx e duração entram em buckets fixos;
+- `traceparent` só é aceito no formato W3C versão 00 com IDs hexadecimais; valor inválido é descartado, nunca ecoado;
+- trace, span e correlação são identificadores técnicos aleatórios e passam pela allowlist do sanitizador antes do log;
+- backlog contém somente contagem e idade, sem retornar o item mais antigo ou qualquer UUID associado;
+- alerta estruturado carrega código fechado, componente, severidade e runbook; transição não carrega conteúdo, token, URL de dependência ou detalhe de erro;
+- monitor interno não substitui alerta externo de indisponibilidade da VM, pois deixa de emitir se o processo ou host morrer.
+
 ## 29. Shell, biometria e pareamento da PR 097
 
 - a autenticação local apenas desbloqueia a interface; nunca cria sessão, permissão ou confiança no servidor;

@@ -61,6 +61,27 @@ test('preserva correlação válida e rejeita valor injetado', async () => {
   );
 });
 
+test('propaga somente traceparent válido e cria novo span técnico', async () => {
+  const traceId = '0123456789abcdef0123456789abcdef';
+  const resposta = await fetch(`${enderecoBase}/api/v1`, {
+    headers: { traceparent: `00-${traceId}-0123456789abcdef-01` },
+  });
+  const devolvido = resposta.headers.get('traceparent');
+
+  assert.match(
+    devolvido,
+    new RegExp(`^00-${traceId}-[0-9a-f]{16}-01$`, 'u'),
+  );
+  const invalida = await fetch(`${enderecoBase}/api/v1`, {
+    headers: { traceparent: 'valor-com-identificador-de-negocio' },
+  });
+  assert.match(
+    invalida.headers.get('traceparent'),
+    /^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/u,
+  );
+  assert.ok(!invalida.headers.get('traceparent').includes('negocio'));
+});
+
 test('oculta mensagem e stack de erro interno', () => {
   let respostaEnviada;
   const filtro = new FiltroExcecaoHttp(

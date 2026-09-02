@@ -132,7 +132,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 108 | CONCLUÍDA | `high` |
 | 109 | CONCLUÍDA | `xhigh` |
 | 110 | CONCLUÍDA | `high` |
-| 111 | PENDENTE | `high` |
+| 111 | CONCLUÍDA | `high` |
 | 112 | PENDENTE | `xhigh` |
 | 113 | PENDENTE | `xhigh` |
 | 114 | PENDENTE | `xhigh` |
@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR110 foram concluídas. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. A PR111 é a próxima na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR111 foram concluídas. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. A PR112 é a próxima na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -716,6 +716,10 @@ Aceite concluído em 2 de setembro de 2026: a cópia interna exige protocolo ofi
 ### PR 110 — relatórios operacionais mínimos
 
 Aceite concluído em 2 de setembro de 2026: o painel web oferece 24 horas, 7 dias e 30 dias e cobre atendimento por estado/fila, alertas SLA por nível, mensagens, Motor de Fluxos e operações ERP recuperáveis. A API autoriza cada fila ativa antes de agregar e injeta somente o conjunto permitido em todas as relações; usuário sem fila recebe zeros sem consulta a fatos. O DTO contém apenas contagens, intervalo, fórmula versionada e identificação interna da fila autorizada. A fórmula v1 documenta fotografia de estado, inclusão de `LIDA` em entregue e zero sem denominador. O web usa o SDK gerado e apresenta visão desktop responsiva sem recalcular autoridade. Não houve migration. Lint, tipos, 440 testes da API, 316 testes de arquitetura, contratos, matriz Expo, auditoria de dependências, varredura de segredos e builds web/API/iOS/Android foram aprovados. Effort `high` confirmado pelas agregações multi-domínio sob RBAC.
+
+### PR 111 — observabilidade e alertas
+
+Aceite concluído em 2 de setembro de 2026: requisições HTTP passaram a gerar `traceparent` W3C estritamente validado, novo span técnico por processo e correlação preservada, enquanto logs continuam submetidos à allowlist central. As métricas em memória têm faixas fixas e baixa cardinalidade: total, falhas 5xx, duração média e p95 aproximado, sem rota, UUID, usuário ou conteúdo. Backlogs de caixa de saída, operações recuperáveis e Motor de Fluxos são lidos do PostgreSQL como contagem e idade do item mais antigo. O painel e a rota exigem sessão atual e `ADMINISTRAR_INTEGRACOES`; a saúde pública permanece genérica. Regras v1 produzem códigos, severidade, limite e runbook, e o monitor interno registra somente transições ativo/resolvido em log estruturado para entrega pelo monitor externo, sem exigir dashboard aberto. Não houve migration ou dependência. Lint, tipos, 441 testes da API, 320 testes de arquitetura, contratos, matriz Expo, auditoria de dependências, varredura de segredos e builds web/API/iOS/Android foram aprovados. Effort `high` confirmado pelo controle de cardinalidade, rastreio validado e alertas sem dados de negócio.
 
 ## 12. Mobile
 

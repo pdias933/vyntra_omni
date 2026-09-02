@@ -10,6 +10,8 @@ const CHAVES_PERMITIDAS = new Set([
   'modulo',
   'operacao',
   'status_http',
+  'span_id',
+  'trace_id',
 ]);
 
 const EXPRESSOES_SENSIVEIS: ReadonlyArray<readonly [RegExp, string]> = [

@@ -39,7 +39,12 @@ export async function criarAplicacao(
 
   const origensWeb = aplicacao.get(ServicoOrigemWeb);
   aplicacao.enableCors({
-    allowedHeaders: ['content-type', 'x-correlation-id', 'x-csrf-token'],
+    allowedHeaders: [
+      'content-type',
+      'traceparent',
+      'x-correlation-id',
+      'x-csrf-token',
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
     origin: (

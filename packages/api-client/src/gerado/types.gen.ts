@@ -685,6 +685,42 @@ export type ResultadoPublicacaoFluxoDto = {
     versao_publicada_id?: string;
 };
 
+export type MetricaHttpDto = {
+    requisicoes: number;
+    falhas: number;
+    duracao_media_ms: number;
+    duracao_p95_aproximada_ms: number;
+};
+
+export type MetricaBacklogDto = {
+    quantidade: number;
+    idade_item_mais_antigo_segundos: number;
+};
+
+export type MetricasObservabilidadeDto = {
+    http: MetricaHttpDto;
+    caixa_saida: MetricaBacklogDto;
+    operacoes_recuperaveis: MetricaBacklogDto;
+    fluxos: MetricaBacklogDto;
+};
+
+export type AlertaOperacionalDto = {
+    codigo: 'CAIXA_SAIDA_ATRASADA' | 'DEPENDENCIA_INDISPONIVEL' | 'FLUXO_ATRASADO' | 'OPERACAO_RECUPERAVEL_ATRASADA';
+    componente: 'API' | 'POSTGRESQL' | 'REDIS' | 'STORAGE' | 'CAIXA_SAIDA' | 'OPERACOES_RECUPERAVEIS' | 'MOTOR_FLUXOS';
+    severidade: 'ALTA' | 'CRITICA' | 'MEDIA';
+    valor_atual: number;
+    limite: number;
+    unidade: 'ESTADO' | 'SEGUNDOS';
+    runbook: string;
+};
+
+export type PainelObservabilidadeDto = {
+    coletado_em: string;
+    versao_regras: 1;
+    metricas: MetricasObservabilidadeDto;
+    alertas: Array<AlertaOperacionalDto>;
+};
+
 export type EntradaAvaliacaoVersaoMobileDto = {
     plataforma: 'IOS' | 'ANDROID';
     versao_aplicativo: string;
@@ -2128,6 +2164,19 @@ export type ReverterVersaoFluxoEditorResponses = {
 };
 
 export type ReverterVersaoFluxoEditorResponse = ReverterVersaoFluxoEditorResponses[keyof ReverterVersaoFluxoEditorResponses];
+
+export type ObservarOperacaoData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/administracao/observabilidade';
+};
+
+export type ObservarOperacaoResponses = {
+    200: PainelObservabilidadeDto;
+};
+
+export type ObservarOperacaoResponse = ObservarOperacaoResponses[keyof ObservarOperacaoResponses];
 
 export type AvaliarVersaoMobileData = {
     body: EntradaAvaliacaoVersaoMobileDto;

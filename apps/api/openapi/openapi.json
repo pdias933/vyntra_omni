@@ -3462,6 +3462,33 @@
         ]
       }
     },
+    "/api/v1/administracao/observabilidade": {
+      "get": {
+        "operationId": "observarOperacao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PainelObservabilidadeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Expõe métricas e alertas agregados sem dados protegidos",
+        "tags": [
+          "observabilidade"
+        ]
+      }
+    },
     "/api/v1/configuracao/mobile/avaliar": {
       "post": {
         "operationId": "avaliarVersaoMobile",
@@ -6489,6 +6516,164 @@
           "fluxo_id",
           "tipo",
           "revisao_fluxo"
+        ]
+      },
+      "MetricaHttpDto": {
+        "type": "object",
+        "properties": {
+          "requisicoes": {
+            "type": "number",
+            "minimum": 0
+          },
+          "falhas": {
+            "type": "number",
+            "minimum": 0
+          },
+          "duracao_media_ms": {
+            "type": "number",
+            "minimum": 0
+          },
+          "duracao_p95_aproximada_ms": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "requisicoes",
+          "falhas",
+          "duracao_media_ms",
+          "duracao_p95_aproximada_ms"
+        ]
+      },
+      "MetricaBacklogDto": {
+        "type": "object",
+        "properties": {
+          "quantidade": {
+            "type": "number",
+            "minimum": 0
+          },
+          "idade_item_mais_antigo_segundos": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "quantidade",
+          "idade_item_mais_antigo_segundos"
+        ]
+      },
+      "MetricasObservabilidadeDto": {
+        "type": "object",
+        "properties": {
+          "http": {
+            "$ref": "#/components/schemas/MetricaHttpDto"
+          },
+          "caixa_saida": {
+            "$ref": "#/components/schemas/MetricaBacklogDto"
+          },
+          "operacoes_recuperaveis": {
+            "$ref": "#/components/schemas/MetricaBacklogDto"
+          },
+          "fluxos": {
+            "$ref": "#/components/schemas/MetricaBacklogDto"
+          }
+        },
+        "required": [
+          "http",
+          "caixa_saida",
+          "operacoes_recuperaveis",
+          "fluxos"
+        ]
+      },
+      "AlertaOperacionalDto": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "enum": [
+              "CAIXA_SAIDA_ATRASADA",
+              "DEPENDENCIA_INDISPONIVEL",
+              "FLUXO_ATRASADO",
+              "OPERACAO_RECUPERAVEL_ATRASADA"
+            ]
+          },
+          "componente": {
+            "type": "string",
+            "enum": [
+              "API",
+              "POSTGRESQL",
+              "REDIS",
+              "STORAGE",
+              "CAIXA_SAIDA",
+              "OPERACOES_RECUPERAVEIS",
+              "MOTOR_FLUXOS"
+            ]
+          },
+          "severidade": {
+            "type": "string",
+            "enum": [
+              "ALTA",
+              "CRITICA",
+              "MEDIA"
+            ]
+          },
+          "valor_atual": {
+            "type": "number",
+            "minimum": 0
+          },
+          "limite": {
+            "type": "number",
+            "minimum": 0
+          },
+          "unidade": {
+            "type": "string",
+            "enum": [
+              "ESTADO",
+              "SEGUNDOS"
+            ]
+          },
+          "runbook": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo",
+          "componente",
+          "severidade",
+          "valor_atual",
+          "limite",
+          "unidade",
+          "runbook"
+        ]
+      },
+      "PainelObservabilidadeDto": {
+        "type": "object",
+        "properties": {
+          "coletado_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "versao_regras": {
+            "type": "number",
+            "enum": [
+              1
+            ]
+          },
+          "metricas": {
+            "$ref": "#/components/schemas/MetricasObservabilidadeDto"
+          },
+          "alertas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertaOperacionalDto"
+            }
+          }
+        },
+        "required": [
+          "coletado_em",
+          "versao_regras",
+          "metricas",
+          "alertas"
         ]
       },
       "EntradaAvaliacaoVersaoMobileDto": {

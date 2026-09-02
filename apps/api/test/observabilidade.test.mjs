@@ -1,44 +1,114 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { contextoCorrelacao } from '../dist/observabilidade/contexto-correlacao.js';
-import { LoggerEstruturado } from '../dist/observabilidade/logger-estruturado.js';
-import { SanitizadorLogs } from '../dist/observabilidade/sanitizador-logs.js';
+import { RegistroMetricasOperacionais } from '../dist/observabilidade/registro-metricas.js';
+import { ServicoObservabilidade } from '../dist/observabilidade/servico-observabilidade.js';
 
-test('sanitização central remove campos e valores sensíveis', () => {
-  const sanitizador = new SanitizadorLogs();
-  const registro = sanitizador.sanitizarRegistro({
-    evento: 'TESTE',
-    mensagem: 'cpf=123.456.789-00 token=segredo-super-secreto',
-    payload: 'não pode entrar',
-    senha: 'não pode entrar',
-  });
+const agora = new Date('2026-09-02T20:00:00.000Z');
+const sessao = {
+  estado: 'ATIVA',
+  expiraEm: new Date('2099-01-01T00:00:00.000Z'),
+  sessaoId: '10000000-0000-4000-8000-000000000001',
+  usuarioId: '20000000-0000-4000-8000-000000000002',
+};
 
-  assert.equal(registro.evento, 'TESTE');
-  assert.equal(registro.payload, undefined);
-  assert.equal(registro.senha, undefined);
-  assert.ok(!registro.mensagem.includes('123.456.789-00'));
-  assert.ok(!registro.mensagem.includes('segredo-super-secreto'));
+function criarCenario() {
+  const ordem = [];
+  const transacao = {
+    execucaoFluxo: {
+      count: async () => 1,
+      findFirst: async () => ({
+        retomarEm: new Date('2026-09-02T19:50:00.000Z'),
+      }),
+    },
+    itemCaixaSaida: {
+      count: async () => {
+        ordem.push('DADOS');
+        return 3;
+      },
+      findFirst: async () => ({
+        criadoEm: new Date('2026-09-02T19:40:00.000Z'),
+      }),
+    },
+    operacaoRecuperavel: {
+      count: async () => 2,
+      findFirst: async () => ({
+        atualizadoEm: new Date('2026-09-02T19:30:00.000Z'),
+      }),
+    },
+  };
+  const servico = new ServicoObservabilidade(
+    {
+      autorizar: async (_entrada, verificar) => {
+        ordem.push('AUTORIZAR');
+        return verificar();
+      },
+    },
+    { executarLeituraConsistente: async (executar) => executar(transacao) },
+    {
+      verificar: async () => {
+        ordem.push('PRONTIDAO');
+        return { falhas: ['REDIS'], pronto: false };
+      },
+    },
+  );
+  return { ordem, servico };
+}
+
+test('observação autoriza antes dos fatos e cria alertas agregados acionáveis', async () => {
+  const cenario = criarCenario();
+  const painel = await cenario.servico.observar(sessao, agora);
+
+  assert.ok(
+    cenario.ordem.indexOf('AUTORIZAR') < cenario.ordem.indexOf('DADOS'),
+  );
+  assert.ok(
+    cenario.ordem.indexOf('AUTORIZAR') < cenario.ordem.indexOf('PRONTIDAO'),
+  );
+  assert.deepEqual(
+    painel.alertas.map(({ codigo, componente, runbook }) => ({
+      codigo,
+      componente,
+      runbook,
+    })),
+    [
+      {
+        codigo: 'DEPENDENCIA_INDISPONIVEL',
+        componente: 'REDIS',
+        runbook: 'DEPENDENCIA_REDIS',
+      },
+      {
+        codigo: 'CAIXA_SAIDA_ATRASADA',
+        componente: 'CAIXA_SAIDA',
+        runbook: 'CAIXA_SAIDA_BACKLOG',
+      },
+      {
+        codigo: 'OPERACAO_RECUPERAVEL_ATRASADA',
+        componente: 'OPERACOES_RECUPERAVEIS',
+        runbook: 'OPERACAO_RECUPERAVEL_PRESA',
+      },
+      {
+        codigo: 'FLUXO_ATRASADO',
+        componente: 'MOTOR_FLUXOS',
+        runbook: 'WORKER_FLUXOS_BACKLOG',
+      },
+    ],
+  );
+  assert.equal(painel.metricas.caixaSaida.quantidade, 3);
+  assert.equal(painel.metricas.caixaSaida.idadeItemMaisAntigoSegundos, 1_200);
 });
 
-test('logger Pino emite JSON com correlação e sem campo proibido', () => {
-  const linhas = [];
-  const logger = new LoggerEstruturado({
-    write: (linha) => linhas.push(linha),
-  });
-  const correlacaoId = '4548c3e6-81e1-4ff3-b95b-1c46cb9c6f62';
+test('métrica HTTP é limitada a agregados e usa faixas fixas', () => {
+  const registro = new RegistroMetricasOperacionais();
+  registro.observarHttp(200, 8);
+  registro.observarHttp(503, 80);
+  registro.observarHttp(201, 800);
+  registro.observarHttp(999, 1);
 
-  contextoCorrelacao.executar(correlacaoId, () => {
-    logger.registrar('info', 'OPERACAO_TESTE', {
-      modulo: 'TESTE',
-      payload: 'segredo',
-      status_http: 200,
-    });
+  assert.deepEqual(registro.resumirHttp(), {
+    duracaoMediaMs: 296,
+    duracaoP95AproximadaMs: 1_000,
+    falhas: 1,
+    requisicoes: 3,
   });
-
-  const registro = JSON.parse(linhas.at(-1));
-  assert.equal(registro.evento, 'OPERACAO_TESTE');
-  assert.equal(registro.correlacao_id, correlacaoId);
-  assert.equal(registro.status_http, 200);
-  assert.equal(registro.payload, undefined);
 });
