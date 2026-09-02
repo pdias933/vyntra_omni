@@ -219,8 +219,11 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - Autorização offline é envelope Ed25519 fechado, vinculado a sessão+usuário+dispositivo+instalação+versão de permissões+filas, por no máximo quatro horas e nunca concede ação ERP, exportação, dado sensível ou envio efetivo.
 - Somente snapshot mobile recebe autorização offline. A build aceita exclusivamente chaves públicas allowlisted; chave desconhecida, assinatura/vínculo inválido, expiração, integridade falha ou recuo de relógio bloqueiam a área autenticada.
 - Persistir cursor apenas depois de aplicar lote local.
+- Todo avanço de cursor deve deixar a réplica marcada para reconstrução até que autorização e snapshot de sequência igual ou posterior sejam confirmados atomicamente.
 - Após sync, WebSocket conecta com cursor e recebe backfill antes do vivo.
 - Eventos são aplicados idempotentemente por `sequencia_evento`.
+- Projeção incremental mínima nunca vira entidade completa inventada: sincronize o snapshot autorizado antes de confirmar o evento ao servidor.
+- Snapshot, autorização offline e cursor são um único commit SQLCipher; rascunhos e pendências ficam fora da substituição.
 - Push avisa; nunca vira fonte da verdade.
 - Pendência offline sincroniza antes de enviar.
 - Mudança relevante produz `REVISAO_NECESSARIA`.

@@ -249,7 +249,7 @@ A PR 099 concretiza esta custódia com `expo-sqlite` compilado com SQLCipher. Um
 
 A autorização local usa envelope versionado e assinatura Ed25519 estrita. O app aceita apenas chave pública empacotada na build, conjunto fechado de campos e escopos mínimos, e compara usuário, sessão, dispositivo e hash da instalação com o cofre nativo, além de conferir `sequencia_base` e `versao_permissoes` contra a réplica. A validade nunca supera quatro horas nem o vencimento absoluto do refresh. Expiração, assinatura desconhecida/adulterada, vínculo divergente, integridade inválida ou recuo do relógio maior que cinco minutos bloqueiam a área autenticada; não existe opção de ignorar. O snapshot web não transporta autorização offline.
 
-Esta PR ainda não preenche a réplica: a aplicação atômica do snapshot e da autorização pertence à PR 100. Portanto, uma instalação que nunca concluiu uma sincronização mobile autorizada não entra offline apenas por possuir refresh token.
+A PR 100 passa a preencher a réplica somente depois de validar estruturalmente todo o snapshot e verificar a autorização offline recebida contra usuário, sessão, dispositivo e instalação. Conteúdo substituível, autorização e `sequencia_base` entram na mesma transação SQLCipher; rascunhos e pendências permanecem fora da substituição. Uma instalação que nunca concluiu esse commit não entra offline apenas por possuir refresh token.
 
 ## 7. Sincronização
 
@@ -271,9 +271,13 @@ gateway faz backfill e depois realtime
 
 Isso fecha a lacuna entre sync e WebSocket. Se o app fechar no meio da aplicação local, o cursor não avança; o lote é repetido de forma idempotente.
 
+Na PR 100, o motor roda apenas em primeiro plano, renova silenciosamente a sessão quando o access expira e aplica reconexão exponencial limitada. Ausência de réplica, autorização próxima do fim, marca `precisa_ressincronizar`, excesso de páginas ou resposta `409 RESSINCRONIZACAO_COMPLETA_NECESSARIA` convergem para snapshot completo. A autorização é renovada cinco minutos antes de vencer. Pausar o app fecha o canal, mas não altera disponibilidade do atendente.
+
 ### 7.2 Eventos
 
 Aplicação por `sequencia_evento`, nunca apenas por relógio. Evento repetido não duplica linha. Lacuna detectada interrompe o modo ao vivo e dispara nova sincronização.
+
+Eventos mobile carregam deliberadamente apenas projeções mínimas, não mensagens, notas ou atendimentos completos. Por isso, cada avanço de cursor é primeiro registrado com `precisa_ressincronizar`; o motor obtém então um snapshot autorizado igual ou posterior e só depois confirma o evento no WebSocket. Se o processo cair entre os passos, a próxima abertura encontra a marca e força a reconstrução. Eventos já cobertos pelo snapshot são reconhecidos de forma idempotente.
 
 ### 7.3 Ressincronização completa
 
@@ -289,6 +293,8 @@ Ao receber `RESSINCRONIZACAO_COMPLETA_NECESSARIA`:
 A PR 054 fixa o contrato do passo 3: o snapshot retorna filas e permissões vigentes, atendimentos abertos/reabríveis, controles e políticas, além de uma janela de trabalho de até 200 conversas e 200 mensagens/notas por conversa. O histórico restante continua disponível no servidor. O plano local obrigatório executa `SUBSTITUIR_REPLICA_AUTORIZADA` e `PERSISTIR_SEQUENCIA_BASE` na mesma transação SQLite; rascunhos e comandos pendentes não pertencem à réplica substituída e são preservados para reconciliação.
 
 A PR 058 acrescenta `versao_permissoes` ao snapshot. Na recuperação de uma invalidação, versão e `sequencia_base` precisam ser iguais ou posteriores às do evento recebido; snapshot antigo é recusado e bloqueia a área autenticada.
+
+A PR 100 concretiza os passos locais em `user_version = 2`: tabelas de permissão, política e log de eventos mínimos acompanham a réplica. Mensagens e notas mantêm referência ao atendimento histórico sem exigir que esse atendimento encerrado pertença à janela operacional atual. O snapshot do backend limita também os atendimentos à mesma janela de conversas autorizadas, impedindo referências órfãs e expansão acidental do cache.
 
 ## 8. Tempo real e ciclo de vida
 

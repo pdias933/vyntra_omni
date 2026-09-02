@@ -71,6 +71,8 @@ A PR 016 torna o PostgreSQL autoridade do limite de dois aparelhos. Login de uma
 
 Após o commit, access e refresh daquele aparelho perdem autoridade imediatamente. Sincronização e WebSocket chamam `ServicoAutenticacaoMobile.autenticar` no handshake e novamente em heartbeat/comandos; uma conexão não conserva um contexto autenticado indefinidamente. A PR 056 materializou o gateway e a PR 058 acrescentou essa revalidação contínua: falha encerra a conexão com código privado `4003`, sem revelar o motivo interno ao cliente.
 
+A PR 100 trata toda resposta de sincronização como entrada não confiável. Snapshot, lote e mensagens WebSocket usam schemas fechados, enums/UUIDs/sequências estritos, coerência referencial e limites de coleção, profundidade e tamanho. A assinatura offline é verificada antes da transação de snapshot. Qualquer cursor avançado deixa `precisa_ressincronizar` até um snapshot autorizado igual ou posterior ser aplicado; assim, queda, payload mínimo ou confirmação perdida não transformam cache parcial em autoridade offline. `CONFIRMAR` só sai depois desse commit. Contrato adulterado, autorização inválida e sessão negada falham fechados; reconexão comum não reduz RBAC nem expõe infraestrutura.
+
 ### 4.2 Pareamento QR
 
 O QR:

@@ -695,3 +695,11 @@ Desenvolvimento e staging geram uma chave Ed25519 exclusiva, não sobrescrevem m
 Na rotação, primeiro distribuir a build contendo as chaves públicas atual e nova; depois trocar identificador e arquivo privado da API; manter a chave pública antiga na allowlist por pelo menos quatro horas após a última assinatura antiga; só então removê-la em outra build. Perda da chave privada impede novas autorizações, mas não autoriza reduzir validação. Vazamento exige retirar a chave da API, bloquear novas emissões, elevar a versão mínima para uma build sem a chave pública comprometida e tratar o intervalo residual como incidente.
 
 Esta PR não exige migration PostgreSQL e não autoriza deploy cumulativo por si só. O runbook detalhado está em [docs/operacoes/PR-099.md](docs/operacoes/PR-099.md).
+
+## 38. Operação do motor de sincronização mobile da PR 100
+
+Não há migration PostgreSQL nem dependência nova. O schema SQLCipher local avança de `user_version = 1` para `2`; como PostgreSQL é a fonte oficial, falha de migration bloqueia o cache e permite reconstrução segura, nunca fallback em SQLite sem cifra. A build precisa conter a chave pública do ambiente já descrita na PR 099.
+
+O aceite deve provar validação fechada dos contratos, snapshot/autorização/cursor no mesmo commit, preservação de rascunhos e pendências, marca de reconstrução após qualquer avanço, recuperação por `409`, REST paginado seguido do handoff sem lacuna e `CONFIRMAR` posterior ao snapshot. Em primeiro plano o canal reconecta com atraso entre um e trinta segundos; em segundo plano permanece fechado. Estado saudável não aparece na interface.
+
+Monitore somente contadores agregados de reconstrução, contrato inválido, `401/403`, desconexão `4003`, atraso de cursor e duração/tamanho do snapshot. Nunca registre token, segredo do aparelho, autorização offline, conteúdo, identificador de contato ou payload integral. Reverter a build exige uma versão que aceite `user_version = 2` ou descarte a réplica autenticada e faça snapshot novo; não rebaixe o schema local em SQL. O runbook detalhado está em [docs/operacoes/PR-100.md](docs/operacoes/PR-100.md).

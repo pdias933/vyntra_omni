@@ -19,6 +19,7 @@ import {
 import type { PoliticaVersaoAplicativo } from './atualizacao/adaptador-politica-versao-http';
 import { ServicoPoliticaVersaoAplicativo } from './atualizacao/servico-politica-versao-aplicativo';
 import { NavegacaoPrincipal } from './navegacao/NavegacaoPrincipal';
+import { ServicoSincronizacaoAplicativo } from './sincronizacao/servico-sincronizacao-aplicativo';
 import { CORES } from './tema';
 import { TelaBloqueio } from './telas/TelaBloqueio';
 import { TelaCarregamento } from './telas/TelaCarregamento';
@@ -41,6 +42,7 @@ type EstadoPoliticaVersao =
   | 'VERIFICANDO';
 const NavegacaoEntrada = createNativeStackNavigator<RotasEntrada>();
 const autenticacao = new ServicoAutenticacaoAplicativo();
+const sincronizacao = new ServicoSincronizacaoAplicativo(autenticacao);
 const politicaVersaoAplicativo = new ServicoPoliticaVersaoAplicativo();
 const TEMPO_PARA_BLOQUEAR_MS = 30_000;
 
@@ -255,8 +257,33 @@ export function Aplicacao() {
   }, [desbloquear, estadoPolitica]);
 
   useEffect(() => {
+    if (estado === 'AUTENTICADO' && AppState.currentState === 'active') {
+      sincronizacao.iniciar();
+    } else {
+      sincronizacao.pausar();
+    }
+  }, [estado, sessao?.sessaoId]);
+
+  useEffect(
+    () =>
+      sincronizacao.observar((estadoSincronizacao) => {
+        if (
+          estadoSincronizacao === 'BLOQUEADO' &&
+          sessaoAtual.current !== undefined
+        ) {
+          definirMensagemBloqueio(
+            'Sua sessão precisa ser revalidada. Conecte-se e desbloqueie novamente.',
+          );
+          definirEstado('BLOQUEADO');
+        }
+      }),
+    [],
+  );
+
+  useEffect(() => {
     function aoMudarEstado(proximo: AppStateStatus) {
       if (proximo === 'active') {
+        if (estado === 'AUTENTICADO') sincronizacao.iniciar();
         void verificarPolitica(false);
         const afastamento =
           segundoPlanoEm.current === undefined
@@ -272,6 +299,7 @@ export function Aplicacao() {
         }
         return;
       }
+      sincronizacao.pausar();
       if (estado === 'AUTENTICADO' && segundoPlanoEm.current === undefined) {
         segundoPlanoEm.current = Date.now();
       }
@@ -307,6 +335,7 @@ export function Aplicacao() {
   async function usarSenha() {
     definirDesbloqueando(true);
     try {
+      sincronizacao.pausar();
       await autenticacao.sair();
       sessaoAtual.current = undefined;
       definirSessao(undefined);
@@ -321,6 +350,7 @@ export function Aplicacao() {
     if (saindo) return;
     definirSaindo(true);
     try {
+      sincronizacao.pausar();
       await autenticacao.sair();
     } finally {
       sessaoAtual.current = undefined;

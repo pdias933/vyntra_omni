@@ -265,6 +265,7 @@ export class RepositorioRessincronizacaoPrisma
         a."versao_estado", a."versao_atribuicao", a."atualizado_em"
       FROM "atendimento" a
       JOIN filas_autorizadas fa ON fa."id"=a."fila_atual_id"
+      JOIN conversas_autorizadas ca ON ca."id"=a."conversa_id"
       WHERE a."estado"<>'ENCERRADO'
       ORDER BY a."atualizado_em" DESC, a."id"
     `);

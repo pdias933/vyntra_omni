@@ -143,6 +143,29 @@ export class VerificadorAutorizacaoOffline {
     }
   }
 
+  public async avaliarInformada(
+    autorizacao: AutorizacaoOfflineLocal,
+    credencial: CredencialPersistidaMobile,
+    identidade: IdentidadeInstalacaoMobile,
+    agora = new Date(),
+  ): Promise<ResultadoAcessoOffline> {
+    try {
+      const autoridade = await this.verificar(
+        autorizacao,
+        credencial,
+        identidade,
+        agora,
+      );
+      await this.repositorio.cofre.registrarRelogioConfiavel(agora);
+      return { autoridade, estado: 'AUTORIZADO' };
+    } catch (erro) {
+      if (erro instanceof Error && erro.message === 'AUTORIZACAO_OFFLINE_EXPIRADA') {
+        return { estado: 'EXPIRADA' };
+      }
+      return { estado: 'INVALIDA' };
+    }
+  }
+
   private async verificar(
     autorizacao: AutorizacaoOfflineLocal,
     credencial: CredencialPersistidaMobile,

@@ -5,7 +5,11 @@ import {
   ErroAutenticacaoMobile,
   type ComprovantePareamentoMobile,
 } from './adaptador-autenticacao-http';
-import { CofreSessaoMobile } from './cofre-sessao-mobile';
+import {
+  CofreSessaoMobile,
+  type CredencialPersistidaMobile,
+  type IdentidadeInstalacaoMobile,
+} from './cofre-sessao-mobile';
 import { GerenciadorSessaoMobile } from './gerenciador-sessao-mobile';
 import { RepositorioReplicaLocal } from '../offline/repositorio-replica-local';
 import { VerificadorAutorizacaoOffline } from '../offline/verificador-autorizacao-offline';
@@ -18,6 +22,14 @@ export interface SessaoAplicativo {
   readonly offlineValidaAte?: string;
   readonly sessaoId: string;
   readonly usuarioId: string;
+}
+
+export interface CredenciaisSincronizacaoAplicativo {
+  readonly credencial: CredencialPersistidaMobile;
+  readonly dispositivoId: string;
+  readonly identidade: IdentidadeInstalacaoMobile;
+  readonly segredoDispositivo: string;
+  readonly tokenAcesso: string;
 }
 
 function projetarSessao(sessao: SessaoMobileDto): SessaoAplicativo {
@@ -59,6 +71,33 @@ export class ServicoAutenticacaoAplicativo {
 
   public async possuiSessaoPersistida(): Promise<boolean> {
     return (await this.cofre.obterCredencial()) !== undefined;
+  }
+
+  public async obterCredenciaisSincronizacao(
+    forcarRenovacao = false,
+  ): Promise<CredenciaisSincronizacaoAplicativo> {
+    let tokenAcesso = this.gerenciador.obterTokenAcesso();
+    if (forcarRenovacao || tokenAcesso === undefined) {
+      const sessao = await this.restaurar();
+      if (sessao === undefined) {
+        throw new ErroAutenticacaoMobile('NAO_AUTENTICADO', 401);
+      }
+      tokenAcesso = this.gerenciador.obterTokenAcesso();
+    }
+    const [credencial, identidade] = await Promise.all([
+      this.cofre.obterCredencial(),
+      this.cofre.obterOuCriarIdentidadeInstalacao(),
+    ]);
+    if (tokenAcesso === undefined || credencial === undefined) {
+      throw new ErroAutenticacaoMobile('NAO_AUTENTICADO', 401);
+    }
+    return {
+      credencial,
+      dispositivoId: credencial.dispositivoId,
+      identidade,
+      segredoDispositivo: identidade.segredoVinculo,
+      tokenAcesso,
+    };
   }
 
   public async entrar(

@@ -121,7 +121,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 097 | CONCLUÍDA | `xhigh` |
 | 098 | CONCLUÍDA | `high` |
 | 099 | CONCLUÍDA | `xhigh` |
-| 100 | PENDENTE | `xhigh` |
+| 100 | CONCLUÍDA | `xhigh` |
 | 101 | PENDENTE | `high` |
 | 102 | PENDENTE | `high` |
 | 103 | PENDENTE | `high` |
@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR099 foram concluídas e PR100–PR107 seguem pendentes na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR100 foram concluídas e PR101–PR107 seguem pendentes na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -672,6 +672,10 @@ Aceite concluído em 2 de setembro de 2026: a política pública é avaliada ant
 ### PR 099 — SQLite e autorização offline
 
 Aceite concluído em 2 de setembro de 2026: o app recebeu réplica SQLCipher com chave aleatória de 256 bits no SecureStore, schema local versionado e separação entre dados substituíveis, rascunhos e pendências de texto. O snapshot completo mobile emite envelope Ed25519 por no máximo quatro horas e o vincula a usuário, sessão, dispositivo, instalação, sequência base, versão de permissões, filas e escopos mínimos; snapshot web não recebe esse material. O app valida assinatura estrita, allowlist de chave pública, vínculo, sequência/versão, prazo, integridade e recuo de relógio, bloqueando em qualquer divergência. Chaves privadas são geradas sem sobrescrita, montadas somente na API e possuem procedimento público de configuração/rotação. A PR não aplica ainda o snapshot: essa unidade atômica permanece na PR100. Não houve migration PostgreSQL nem deploy de servidor. Lint, tipos, 432 testes da API, 261 testes de arquitetura, matriz Expo, Gitleaks em 223 commits e builds web/API/iOS/Android foram aprovados. O advisory transitivo `GHSA-x5fp-wj9c-mxmx` foi removido com override exato de `qs@6.16.0`, sem nova exceção. Effort `xhigh` mantido pela custódia criptográfica, vínculo da autoridade e risco de exposição offline.
+
+### PR 100 — motor de sincronização mobile
+
+Aceite concluído em 2 de setembro de 2026: o app valida contratos fechados de snapshot, lote e WebSocket, verifica a autorização offline antes da escrita e aplica conteúdo, autorização e cursor numa única transação SQLCipher. Lotes e eventos são idempotentes e todo avanço de cursor deixa `precisa_ressincronizar` até um snapshot autorizado de sequência igual ou posterior remover a marca; rascunhos e pendências permanecem preservados. Como os eventos mobile são deliberadamente mínimos, o app não fabrica entidades: reconstrói a réplica antes de enviar `CONFIRMAR`. Inicialização, `409`, autorização próxima do fim, excesso de páginas, reconexão exponencial, rotação única após `401`, ciclo primeiro/segundo plano e handoff REST→WebSocket foram materializados. O snapshot do backend passou a limitar atendimentos à mesma janela de conversas autorizadas. Não houve dependência nem migration PostgreSQL nova e não foi feito deploy. Lint, tipos, 432 testes da API, 268 testes de arquitetura, matriz Expo, auditoria de dependências, Gitleaks em 224 commits e builds web/API/iOS/Android foram aprovados. Effort `xhigh` confirmado pela atomicidade local, contrato criptográfico e convergência sem lacuna.
 
 ## 12. Mobile
 

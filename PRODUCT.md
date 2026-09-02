@@ -208,6 +208,8 @@ Na PR 098, o app consulta a política antes de acessar qualquer sessão local. V
 
 Na PR 099, a fundação offline passa a usar uma réplica SQLCipher cuja chave aleatória permanece no cofre nativo. O snapshot completo solicitado por uma sessão mobile inclui uma autorização Ed25519 de curta duração, vinculada ao usuário, sessão, dispositivo, instalação, versão de permissões e filas autorizadas; o mesmo endpoint usado pela web não recebe esse material. O acesso offline só pode existir depois que a PR 100 aplicar snapshot, autorização e cursor na mesma transação local. Até lá, esta entrega prepara e valida a custódia sem apresentar dados operacionais fictícios.
 
+Na PR 100, a sincronização mobile torna essa réplica utilizável: valida o contrato recebido, verifica a autorização antes do commit, aplica snapshot/cursor atomicamente e conecta o WebSocket somente depois de convergir pelo REST. Eventos mínimos provocam reconstrução autorizada antes da confirmação, sem fabricar conteúdo ausente. Reconexão, rotação do access e renovação preventiva do acesso offline ocorrem silenciosamente; apenas estados excepcionais ficam disponíveis para a faixa humana que será ligada à lista na PR 101.
+
 ### 4.8 Motor de Fluxos e WhatsApp Flows
 
 - Motor próprio, determinístico e configurável.
