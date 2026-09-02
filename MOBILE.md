@@ -465,7 +465,7 @@ A folha de ações passa a resolver detalhes e permissões pelo backend. Cliente
 
 ## 14. Diagnóstico
 
-`Perfil → Diagnóstico` pode mostrar, sem conteúdo de conversa:
+`Perfil → Diagnóstico` mostra, sem conteúdo de conversa:
 
 ```text
 versao_app
@@ -481,6 +481,8 @@ codigos de falha recentes sanitizados
 
 Relatório enviado ao suporte deve ser sanitizado, consentido pelo usuário e limitado.
 
+Desde a PR 108, a tela existe em uma pilha própria do Perfil. O serviço aceita somente códigos canônicos em allowlist estrutural, conserva no máximo dez falhas recentes e limita o relatório a 2 KiB. Compartilhar exige prévia e confirmação explícita e exclui mensagens, contatos, filas, UUIDs de usuário/sessão/aparelho, autorização offline, tokens e segredos. O estado saudável continua invisível fora dessa tela deliberadamente técnica.
+
 ## 15. Acessibilidade e performance
 
 - leitores de tela e labels nos controles;
@@ -494,6 +496,8 @@ Relatório enviado ao suporte deve ser sanitizado, consentido pelo usuário e li
 - atualização de uma conversa não recalcula toda a lista;
 - mídia usa thumbnail/cache limitado;
 - nenhum carregamento de anos de histórico na abertura.
+
+Na PR 108, `Atendimentos`, timeline e avisos definem janela, lote inicial e tamanho de lote da lista virtualizada. Cartões de atendimento cujo conteúdo não mudou conservam identidade referencial, evitando novo trabalho quando apenas outra conversa se altera. O conjunto de respostas push já processadas fica limitado a 200 entradas e os códigos de falha a dez. A réplica continua limitada pelo servidor a 200 conversas e 200 mensagens/notas recentes por conversa, o envelope é recusado acima de 64 MiB, cada filtro retorna até 60 atendimentos e a timeline local combina no máximo 200 itens. Mídia mantém somente metadados até a confirmação e nenhum byte entra no SQLCipher.
 
 ## 16. Critérios de aceite
 

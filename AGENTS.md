@@ -247,6 +247,8 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - Só retome visualização e comandos depois de limpar avisos órfãos, receber `PRONTO` no novo WebSocket e reconciliar pendências. Falha mantém a área bloqueada; nunca restaure o cache anterior.
 - Revogação de sessão/dispositivo limpa credenciais, réplica autenticada e caixa efêmera antes de voltar ao login. Não trate isso como simples reconexão.
 - Invalidação pausa comandos dependentes, fecha realtime, aplica snapshot autorizado e só então reconecta/retoma; falha bloqueia a área autenticada e nunca restaura cache antigo.
+- Diagnóstico mobile existe somente em Perfil, usa campos técnicos fechados e códigos canônicos limitados; não inclui identidade, fila, conteúdo, UUID, token, segredo ou envio automático. Compartilhamento exige prévia e confirmação.
+- Listas operacionais devem permanecer virtualizadas e limitadas. Preserve a identidade de itens invariáveis, limite coleções efêmeras e nunca persista bytes de mídia no SQLCipher.
 - Fechar app/stream não muda disponibilidade do usuário.
 
 ## 11. Testes obrigatórios por tipo de mudança

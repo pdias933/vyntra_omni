@@ -322,7 +322,13 @@ export function TelaConversaMobile({
         <Pressable accessibilityLabel="Voltar" onPress={aoVoltar} style={estilos.acaoCabecalho}>
           <Ionicons color={CORES.texto} name="chevron-back" size={26} />
         </Pressable>
-        <Pressable onPress={aoAbrirDetalhes} style={estilos.contatoCabecalho}>
+        <Pressable
+          accessibilityHint="Abre os detalhes do contato"
+          accessibilityLabel={`${atendimento.nomeContato}. ${atendimento.identidadeSecundaria ?? atendimento.filaNome}`}
+          accessibilityRole="button"
+          onPress={aoAbrirDetalhes}
+          style={estilos.contatoCabecalho}
+        >
           <View style={estilos.avatar}>
             <Text style={estilos.iniciais}>{atendimento.nomeContato.slice(0, 1).toLocaleUpperCase('pt-BR')}</Text>
           </View>
@@ -365,8 +371,10 @@ export function TelaConversaMobile({
         <FlatList
           contentContainerStyle={estilos.timeline}
           data={itens}
+          initialNumToRender={24}
           keyExtractor={(item) => item.id}
           maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+          maxToRenderPerBatch={16}
           onContentSizeChange={() => {
             if (primeiraPosicao.current || itens.length === 0) return;
             primeiraPosicao.current = true;
@@ -388,6 +396,8 @@ export function TelaConversaMobile({
           scrollEventThrottle={80}
           showsVerticalScrollIndicator={false}
           style={estilos.listaTimeline}
+          updateCellsBatchingPeriod={32}
+          windowSize={9}
         />
       )}
       {!erro && (

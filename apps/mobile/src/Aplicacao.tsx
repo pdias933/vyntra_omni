@@ -25,6 +25,7 @@ import { ServicoAtendimentosMobile } from './atendimentos/servico-atendimentos-m
 import { AdaptadorPushExpo } from './avisos/adaptadores/push/adaptador-push-expo';
 import { CaixaAvisosMobile } from './avisos/caixa-avisos-mobile';
 import { CoordenadorAvisosMobile } from './avisos/coordenador-avisos-mobile';
+import { ServicoDiagnosticoMobile } from './diagnostico/servico-diagnostico-mobile';
 import { ServicoPendenciasSaidaMobile } from './offline/servico-pendencias-saida-mobile';
 import { ServicoPoliticaVersaoAplicativo } from './atualizacao/servico-politica-versao-aplicativo';
 import {
@@ -67,6 +68,10 @@ const pendenciasSaida = new ServicoPendenciasSaidaMobile(
 const politicaVersaoAplicativo = new ServicoPoliticaVersaoAplicativo();
 const caixaAvisos = new CaixaAvisosMobile();
 const adaptadorPush = new AdaptadorPushExpo();
+const diagnosticoMobile = new ServicoDiagnosticoMobile(
+  sincronizacao,
+  adaptadorPush,
+);
 const TEMPO_PARA_BLOQUEAR_MS = 30_000;
 
 sincronizacao.configurarSeguranca({
@@ -544,6 +549,7 @@ export function Aplicacao() {
               servicoPendencias={pendenciasSaida}
               saindo={saindo}
               servicoAtendimentos={atendimentosMobile}
+              servicoDiagnostico={diagnosticoMobile}
               sessao={sessao}
             />
           ) : (

@@ -1,6 +1,7 @@
 import type { ServicoAutenticacaoAplicativo } from '../autenticacao/servico-autenticacao-aplicativo';
 import {
   MotorSincronizacaoMobile,
+  type DiagnosticoSincronizacaoMobile,
   type EstadoSincronizacaoMobile,
   type GanchosSegurancaSincronizacaoMobile,
 } from './motor-sincronizacao-mobile';
@@ -45,6 +46,10 @@ export class ServicoSincronizacaoAplicativo {
 
   public sincronizarAgora(): void {
     this.motor.sincronizarAgora();
+  }
+
+  public obterDiagnostico(): Promise<DiagnosticoSincronizacaoMobile> {
+    return this.motor.obterDiagnostico();
   }
 
   public async sincronizarAte(sequenciaObservada: string): Promise<void> {

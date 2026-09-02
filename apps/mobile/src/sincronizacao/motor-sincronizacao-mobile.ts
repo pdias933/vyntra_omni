@@ -40,6 +40,13 @@ export interface GanchosSegurancaSincronizacaoMobile {
   reconciliarPendencias(): Promise<void>;
 }
 
+export interface DiagnosticoSincronizacaoMobile {
+  readonly codigosFalhaRecentes: readonly string[];
+  readonly estado: EstadoSincronizacaoMobile;
+  readonly estadoWebSocket: 'CONECTADO' | 'CONECTANDO' | 'DESCONECTADO';
+  readonly ultimaSequenciaAplicada: string;
+}
+
 type ObterCredenciais = (
   forcarRenovacao?: boolean,
 ) => Promise<CredenciaisSincronizacaoAplicativo>;
@@ -59,6 +66,7 @@ export class MotorSincronizacaoMobile {
   private escopoEmAtualizacao = false;
   private estado: EstadoSincronizacaoMobile = 'SEM_CONEXAO';
   private execucao: Promise<void> | undefined;
+  private readonly falhasRecentes: string[] = [];
   private geracao = 0;
   private ganchosSeguranca: GanchosSegurancaSincronizacaoMobile;
   private readonly observadores = new Set<(estado: EstadoSincronizacaoMobile) => void>();
@@ -171,6 +179,21 @@ export class MotorSincronizacaoMobile {
     this.solicitarSincronizacao(false, false);
   }
 
+  public async obterDiagnostico(): Promise<DiagnosticoSincronizacaoMobile> {
+    const estadoReplica = await this.repositorio.obterEstado();
+    return {
+      codigosFalhaRecentes: [...this.falhasRecentes],
+      estado: this.estado,
+      estadoWebSocket:
+        this.estado === 'CONECTADO'
+          ? 'CONECTADO'
+          : this.estado === 'CONECTANDO'
+            ? 'CONECTANDO'
+            : 'DESCONECTADO',
+      ultimaSequenciaAplicada: estadoReplica?.sequenciaEvento ?? '0',
+    };
+  }
+
   public aguardarSequencia(sequenciaMinima: string): Promise<void> {
     if (!/^(0|[1-9][0-9]{0,18})$/u.test(sequenciaMinima)) {
       return Promise.reject(new Error('SEQUENCIA_AVISO_INVALIDA'));
@@ -238,6 +261,7 @@ export class MotorSincronizacaoMobile {
       .catch(async (erro: unknown) => {
         if (!this.ativa || geracao !== this.geracao) return;
         if (this.escopoEmAtualizacao) return;
+        this.registrarFalha(erro);
         if (this.statusHttp(erro) === 401 && !forcarRenovacao) {
           repetirRenovando = true;
           return;
@@ -401,6 +425,13 @@ export class MotorSincronizacaoMobile {
           return;
         }
         this.conexao = undefined;
+        this.registrarFalhaCodigo(
+          motivo === 'AUTORIZACAO_INVALIDADA'
+            ? 'WS_AUTORIZACAO_INVALIDADA'
+            : motivo === 'ESCOPO_ALTERADO'
+              ? 'WS_ESCOPO_ALTERADO'
+              : `WS_ENCERRADO_${codigo}`,
+        );
         if (codigo === 4003 && motivo === 'AUTORIZACAO_INVALIDADA') {
           void this.revogarSessaoLocal();
           return;
@@ -542,6 +573,31 @@ export class MotorSincronizacaoMobile {
   private exigeRevogacaoLocal(erro: unknown): boolean {
     const status = this.statusHttp(erro);
     return status === 401 || status === 403;
+  }
+
+  private registrarFalha(erro: unknown): void {
+    if (erro instanceof ErroSincronizacaoMobile) {
+      this.registrarFalhaCodigo(erro.codigo);
+      return;
+    }
+    const status = this.statusHttp(erro);
+    if (status !== undefined) {
+      this.registrarFalhaCodigo(`HTTP_${status}`);
+      return;
+    }
+    const codigo = erro instanceof Error ? erro.message : '';
+    this.registrarFalhaCodigo(
+      /^[A-Z][A-Z0-9_]{0,63}$/u.test(codigo)
+        ? codigo
+        : 'FALHA_SINCRONIZACAO',
+    );
+  }
+
+  private registrarFalhaCodigo(codigo: string): void {
+    if (!/^[A-Z][A-Z0-9_]{0,63}$/u.test(codigo)) return;
+    if (this.falhasRecentes.at(-1) === codigo) return;
+    this.falhasRecentes.push(codigo);
+    if (this.falhasRecentes.length > 10) this.falhasRecentes.shift();
   }
 
   private async revogarSessaoLocal(): Promise<void> {

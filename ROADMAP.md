@@ -129,7 +129,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 105 | CONCLUÍDA | `xhigh` |
 | 106 | CONCLUÍDA | `high` |
 | 107 | CONCLUÍDA | `xhigh` |
-| 108 | PENDENTE | `high` |
+| 108 | CONCLUÍDA | `high` |
 | 109 | PENDENTE | `xhigh` |
 | 110 | PENDENTE | `high` |
 | 111 | PENDENTE | `high` |
@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR107 foram concluídas e a PR108 é a próxima na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR108 foram concluídas e a PR109 é a próxima na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -704,6 +704,10 @@ Aceite concluído em 2 de setembro de 2026: o receptor Expo passou a existir som
 ### PR 107 — revogação e perda de permissão mobile
 
 Aceite concluído em 2 de setembro de 2026: o coordenador de invalidação passou a integrar o motor real para eventos vindos tanto do WebSocket quanto de lotes REST. A réplica perde imediatamente a autorização offline e a UI entra em `ESCOPO_ATUALIZANDO`; o snapshot seguinte precisa alcançar sequência e versão do evento, substitui atomicamente o conjunto autorizado, poda rascunhos/pendências sem escopo e remove avisos órfãos. O novo WebSocket só é considerado conectado depois de `PRONTO`, e a reconciliação antecede a retomada dos comandos. Eventos são vinculados ao usuário autenticado e invalidações concorrentes convergem pela maior sequência. Revogação de sessão/dispositivo ou autorização recusada após renovação limpa cofre, réplica e avisos antes de voltar ao login. Não houve migration, dependência ou mudança OpenAPI nesta PR. O deploy cumulativo `pr-107`, no commit `9982633`, reconheceu 55 migrations sem pendência e deixou API, web, proxy, PostgreSQL, Redis, Object Storage e dois workers saudáveis. Smoke público/privado, prontidão `PRONTO`, desafio MFA, login TOTP, QR e sessão mobile foram aprovados em `https://omni.up100.com.br`; a chave Ed25519 exclusiva de staging foi criada pelo runbook sem exibição. Effort `xhigh` confirmado pelo tratamento fail-closed nos dois transportes, corte imediato do cache offline e distinção entre redução de escopo e revogação integral.
+
+### PR 108 — diagnóstico, acessibilidade e desempenho mobile
+
+Aceite concluído em 2 de setembro de 2026: `Perfil → Diagnóstico` gera localmente uma prévia limitada a 2 KiB, com versão do app, aparelho, sistema, conectividade, push, sincronização, sequência e no máximo dez códigos fechados, sem mensagem, contato, credencial ou identificador de conta. Compartilhar exige confirmação explícita e usa a folha nativa. Listas de atendimentos, timeline e avisos receberam janelas de virtualização limitadas; cartões de atendimento invariáveis preservam referência e deixam de redesenhar quando outra conversa muda. Códigos recentes, respostas push, snapshot, timeline e avisos possuem tetos explícitos, e bytes de mídia não entram no SQLCipher. Rótulos semânticos e caminhos sem animação mantêm o resultado com leitor de tela, fonte ampliada ou “Reduzir Movimento”. Não houve migration, dependência, OpenAPI, imagem de servidor nem publicação em loja. Lint, tipos, 435 testes da API, 310 testes de arquitetura, contratos, matriz Expo, auditoria de dependências, Gitleaks em 234 commits e builds web/API/iOS/Android foram aprovados. Effort `high` confirmado pela contenção de dados diagnósticos, acessibilidade e estabilidade das listas sob atualização em tempo real.
 
 ## 12. Mobile
 

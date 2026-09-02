@@ -753,3 +753,9 @@ O badge conta grupos em memória e não deve ser tratado como métrica de entreg
 Redução de escopo deve bloquear a réplica imediatamente, alcançar a sequência e a versão da invalidação e só então liberar o novo conjunto autorizado. Revogação de sessão ou aparelho exige limpeza de cofre, réplica, pendências, rascunhos e notificações antes do login. Nunca reativar autorização offline removida nem corrigir cursor, versão ou escopo por SQL.
 
 O deploy cumulativo usa imagens imutáveis `pr-107` para API, web, proxy, migração e dois workers homogêneos. A chave privada Ed25519 fica somente no cofre da VM; a build mobile recebe exclusivamente a chave pública. Reversão de servidor não pode regressar contratos já consumidos pelo app. O procedimento e as evidências ficam em [docs/operacoes/PR-107.md](docs/operacoes/PR-107.md).
+
+## 46. Operação do diagnóstico e desempenho mobile da PR 108
+
+Não há migration, endpoint, dependência, telemetria ou envio automático. Antes de distribuir a build, testar leitores de tela, fonte ampliada, contraste, áreas de toque e todos os caminhos com “Reduzir Movimento”. Exercitar lista, timeline e avisos nos tetos documentados e confirmar que uma conversa alterada não redesenha os demais cartões nem mostra infraestrutura no estado saudável.
+
+O usuário precisa abrir `Perfil → Diagnóstico`, revisar e confirmar antes de compartilhar. O relatório deve permanecer abaixo de 2 KiB e nunca conter nome, contato, fila, UUID, mensagem, nota, formulário, credencial, token, segredo, autorização offline ou payload. Monitorar travamento e uso agregado de memória apenas pelo mecanismo aprovado no piloto; não adicionar SDK de telemetria por conveniência. Rollback remove a tela e os ajustes de apresentação sem alterar SQLCipher ou servidor. O runbook detalhado está em [docs/operacoes/PR-108.md](docs/operacoes/PR-108.md).

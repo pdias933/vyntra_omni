@@ -14,6 +14,7 @@ import type { ServicoAtendimentosMobile } from '../atendimentos/servico-atendime
 import type { CaixaAvisosMobile } from '../avisos/caixa-avisos-mobile';
 import type { AvisoMobileRecebido } from '../avisos/modelo-aviso-mobile';
 import { MarcaVyntra } from '../componentes/MarcaVyntra';
+import type { ServicoDiagnosticoMobile } from '../diagnostico/servico-diagnostico-mobile';
 import type {
   RepositorioReplicaLocal,
   ResumoAtendimentoLocal,
@@ -24,6 +25,7 @@ import { TelaListaAtendimentos } from '../telas/TelaListaAtendimentos';
 import { TelaNotificacoesMobile } from '../telas/TelaNotificacoesMobile';
 import { TelaConversaMobile } from '../telas/TelaConversaMobile';
 import { TelaDetalhesContatoMobile } from '../telas/TelaDetalhesContatoMobile';
+import { TelaDiagnosticoMobile } from '../telas/TelaDiagnosticoMobile';
 import { CORES, ESPACOS, RAIOS } from '../tema';
 
 type NomeIcone = ComponentProps<typeof Ionicons>['name'];
@@ -36,11 +38,13 @@ export type RotasPrincipais = {
   Atendimentos: NavigatorScreenParams<RotasAtendimentos> | undefined;
   Contatos: undefined;
   Notificações: undefined;
-  Perfil: undefined;
+  Perfil: NavigatorScreenParams<RotasPerfil> | undefined;
 };
+type RotasPerfil = { Diagnostico: undefined; Resumo: undefined };
 
 const Abas = createBottomTabNavigator<RotasPrincipais>();
 const PilhaAtendimentos = createNativeStackNavigator<RotasAtendimentos>();
+const PilhaPerfil = createNativeStackNavigator<RotasPerfil>();
 
 function FluxoAtendimentos({
   acessoOffline,
@@ -142,6 +146,7 @@ function TelaVazia({
 
 function Perfil({
   abrindoLoja,
+  aoAbrirDiagnostico,
   aoAtualizar,
   aoSair,
   carregando,
@@ -150,6 +155,7 @@ function Perfil({
   sessao,
 }: {
   readonly abrindoLoja: boolean;
+  readonly aoAbrirDiagnostico: () => void;
   readonly aoAtualizar: () => void;
   readonly aoSair: () => void;
   readonly carregando: boolean;
@@ -218,6 +224,26 @@ function Perfil({
           </View>
         </View>
         <Pressable
+          accessibilityHint="Mostra informações técnicas sem conteúdo de conversa"
+          accessibilityRole="button"
+          onPress={aoAbrirDiagnostico}
+          style={({ pressed }) => [
+            estilos.opcaoPerfil,
+            pressed && estilos.opcaoPerfilPressionada,
+          ]}
+        >
+          <View style={estilos.iconeOpcaoPerfil}>
+            <Ionicons color={CORES.info} name="pulse-outline" size={21} />
+          </View>
+          <View style={estilos.textoOpcaoPerfil}>
+            <Text style={estilos.tituloOpcaoPerfil}>Diagnóstico</Text>
+            <Text style={estilos.descricaoOpcaoPerfil}>
+              Conexão, versão e falhas sanitizadas
+            </Text>
+          </View>
+          <Ionicons color={CORES.textoSecundario} name="chevron-forward" size={19} />
+        </Pressable>
+        <Pressable
           accessibilityRole="button"
           disabled={carregando}
           onPress={aoSair}
@@ -228,6 +254,59 @@ function Perfil({
         </Pressable>
       </View>
     </SafeAreaView>
+  );
+}
+
+function FluxoPerfil({
+  abrindoLoja,
+  aoAtualizar,
+  aoSair,
+  carregando,
+  erroAtualizacao,
+  politicaVersao,
+  servicoDiagnostico,
+  sessao,
+}: {
+  readonly abrindoLoja: boolean;
+  readonly aoAtualizar: () => void;
+  readonly aoSair: () => void;
+  readonly carregando: boolean;
+  readonly erroAtualizacao?: string;
+  readonly politicaVersao?: PoliticaVersaoAplicativo;
+  readonly servicoDiagnostico: ServicoDiagnosticoMobile;
+  readonly sessao: SessaoAplicativo;
+}) {
+  const reduzirMovimento = useReducedMotion();
+  return (
+    <PilhaPerfil.Navigator
+      screenOptions={{
+        animation: reduzirMovimento ? 'none' : 'slide_from_right',
+        headerShown: false,
+      }}
+    >
+      <PilhaPerfil.Screen name="Resumo">
+        {({ navigation }) => (
+          <Perfil
+            abrindoLoja={abrindoLoja}
+            aoAbrirDiagnostico={() => navigation.navigate('Diagnostico')}
+            aoAtualizar={aoAtualizar}
+            aoSair={aoSair}
+            carregando={carregando}
+            {...(erroAtualizacao === undefined ? {} : { erroAtualizacao })}
+            {...(politicaVersao === undefined ? {} : { politicaVersao })}
+            sessao={sessao}
+          />
+        )}
+      </PilhaPerfil.Screen>
+      <PilhaPerfil.Screen name="Diagnostico">
+        {({ navigation }) => (
+          <TelaDiagnosticoMobile
+            aoVoltar={() => navigation.goBack()}
+            servico={servicoDiagnostico}
+          />
+        )}
+      </PilhaPerfil.Screen>
+    </PilhaPerfil.Navigator>
   );
 }
 
@@ -242,6 +321,7 @@ export function NavegacaoPrincipal({
   politicaVersao,
   repositorio,
   servicoAtendimentos,
+  servicoDiagnostico,
   servicoPendencias,
   saindo,
   sessao,
@@ -256,6 +336,7 @@ export function NavegacaoPrincipal({
   readonly politicaVersao?: PoliticaVersaoAplicativo;
   readonly repositorio: RepositorioReplicaLocal;
   readonly servicoAtendimentos: ServicoAtendimentosMobile;
+  readonly servicoDiagnostico: ServicoDiagnosticoMobile;
   readonly servicoPendencias: ServicoPendenciasSaidaMobile;
   readonly saindo: boolean;
   readonly sessao: SessaoAplicativo;
@@ -334,13 +415,14 @@ export function NavegacaoPrincipal({
       </Abas.Screen>
       <Abas.Screen name="Perfil">
         {() => (
-          <Perfil
+          <FluxoPerfil
             abrindoLoja={abrindoLoja}
             aoAtualizar={aoAtualizar}
             aoSair={aoSair}
             carregando={saindo}
             {...(erroAtualizacao === undefined ? {} : { erroAtualizacao })}
             {...(politicaVersao === undefined ? {} : { politicaVersao })}
+            servicoDiagnostico={servicoDiagnostico}
             sessao={sessao}
           />
         )}
@@ -360,15 +442,19 @@ const estilos = StyleSheet.create({
   cabecalho: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: ESPACOS.grande, paddingVertical: 18 },
   cartaoPerfil: { alignItems: 'center', backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: RAIOS.cartao, borderWidth: 1, flexDirection: 'row', gap: 16, padding: 18 },
   contexto: { color: CORES.textoSecundario, fontSize: 13, marginTop: 2 },
+  descricaoOpcaoPerfil: { color: CORES.textoSecundario, fontSize: 12, marginTop: 2 },
   descricaoVazio: { color: CORES.textoSecundario, fontSize: 14, lineHeight: 21, maxWidth: 290, textAlign: 'center' },
   descricaoAtualizacao: { color: CORES.textoSecundario, fontSize: 12, lineHeight: 17, marginTop: 2 },
   erroAtualizacao: { color: CORES.alerta, fontSize: 12, marginTop: 5 },
   estadoVazio: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: 28 },
   iconeVazio: { alignItems: 'center', backgroundColor: CORES.acaoClara, borderRadius: RAIOS.cartao, height: 68, justifyContent: 'center', marginBottom: 18, width: 68 },
   iconeAtualizacao: { alignItems: 'center', backgroundColor: '#E7EDFF', borderRadius: RAIOS.pílula, height: 38, justifyContent: 'center', width: 38 },
+  iconeOpcaoPerfil: { alignItems: 'center', backgroundColor: '#F3F6FF', borderRadius: RAIOS.pílula, height: 38, justifyContent: 'center', width: 38 },
   identidade: { flex: 1 },
   iniciais: { color: CORES.textoInvertido, fontSize: 20, fontWeight: '700' },
   nome: { color: CORES.texto, fontSize: 19, fontWeight: '700' },
+  opcaoPerfil: { alignItems: 'center', backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: RAIOS.campo, borderWidth: 1, flexDirection: 'row', gap: 11, minHeight: 58, paddingHorizontal: 14, paddingVertical: 9 },
+  opcaoPerfilPressionada: { backgroundColor: '#F5F8F6' },
   perfilConteudo: { gap: ESPACOS.medio, padding: ESPACOS.grande },
   protegida: { alignItems: 'center', flexDirection: 'row', gap: 6, marginTop: 7 },
   rotuloAba: { fontSize: 11, fontWeight: '600' },
@@ -378,9 +464,11 @@ const estilos = StyleSheet.create({
   textoProtegida: { color: CORES.acao, flexShrink: 1, fontSize: 12, fontWeight: '600' },
   textoAtualizacao: { flex: 1 },
   textoAtualizar: { color: CORES.info, fontSize: 12, fontWeight: '700' },
+  textoOpcaoPerfil: { flex: 1 },
   textoSair: { color: CORES.alerta, fontSize: 15, fontWeight: '600' },
   textoSubstituicao: { color: CORES.info, flex: 1, fontSize: 13, lineHeight: 19 },
   tituloTela: { color: CORES.texto, fontSize: 29, fontWeight: '800', letterSpacing: -0.8 },
   tituloAtualizacao: { color: CORES.texto, fontSize: 14, fontWeight: '700' },
+  tituloOpcaoPerfil: { color: CORES.texto, fontSize: 14, fontWeight: '700' },
   tituloVazio: { color: CORES.texto, fontSize: 18, fontWeight: '700', marginBottom: 7 },
 });

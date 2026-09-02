@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -115,11 +115,11 @@ function SkeletonLista() {
   );
 }
 
-function CartaoAtendimento({
-  aoAbrir,
+const CartaoAtendimento = memo(function CartaoAtendimento({
+  aoAbrirAtendimento,
   item,
 }: {
-  readonly aoAbrir: () => void;
+  readonly aoAbrirAtendimento: (atendimento: ResumoAtendimentoLocal) => void;
   readonly item: ResumoAtendimentoLocal;
 }) {
   const limite = item.slaEm ?? item.janelaExpiraEm;
@@ -127,8 +127,9 @@ function CartaoAtendimento({
   return (
     <Pressable
       accessibilityHint="Abre a conversa"
+      accessibilityLabel={`${item.nomeContato}. ${item.ultimaMensagemResumo}. Fila ${item.filaNome}.${item.quantidadeNaoLida > 0 ? ` ${item.quantidadeNaoLida} não lidas.` : ''}`}
       accessibilityRole="button"
-      onPress={aoAbrir}
+      onPress={() => aoAbrirAtendimento(item)}
       style={({ pressed }) => [estilos.cartao, pressed && estilos.cartaoPressionado]}
     >
       <View style={estilos.avatar}>
@@ -178,6 +179,22 @@ function CartaoAtendimento({
       </View>
     </Pressable>
   );
+});
+
+function preservarItensInalterados(
+  atuais: readonly ResumoAtendimentoLocal[],
+  proximos: readonly ResumoAtendimentoLocal[],
+): readonly ResumoAtendimentoLocal[] {
+  const anteriores = new Map(atuais.map((item) => [item.conversaId, item]));
+  return proximos.map((proximo) => {
+    const anterior = anteriores.get(proximo.conversaId);
+    if (anterior === undefined) return proximo;
+    const chaves = Object.keys(proximo) as (keyof ResumoAtendimentoLocal)[];
+    return Object.keys(anterior).length === chaves.length &&
+      chaves.every((chave) => anterior[chave] === proximo[chave])
+      ? anterior
+      : proximo;
+  });
 }
 
 export function TelaListaAtendimentos({
@@ -207,7 +224,7 @@ export function TelaListaAtendimentos({
         repositorio.contarFiltrosAtendimentos(usuarioId),
       ]);
       if (requisicao.current !== atual) return;
-      definirItens(lista);
+      definirItens((atuais) => preservarItensInalterados(atuais, lista));
       definirContagens(totais);
       definirFalhou(false);
     } catch {
@@ -230,6 +247,15 @@ export function TelaListaAtendimentos({
   }, [carregar, repositorio]);
 
   const conexao = ESTADOS_CONEXAO[estadoSincronizacao];
+  const renderizarItem = useCallback(
+    ({ item }: { readonly item: ResumoAtendimentoLocal }) => (
+      <CartaoAtendimento
+        aoAbrirAtendimento={aoAbrirAtendimento}
+        item={item}
+      />
+    ),
+    [aoAbrirAtendimento],
+  );
   return (
     <SafeAreaView edges={['top']} style={estilos.tela}>
       {conexao !== undefined && (
@@ -295,10 +321,12 @@ export function TelaListaAtendimentos({
         <Animated.FlatList
           contentContainerStyle={itens.length === 0 ? estilos.listaVazia : estilos.lista}
           data={itens}
+          initialNumToRender={12}
           {...(reduzirMovimento
             ? {}
             : { itemLayoutAnimation: LinearTransition.duration(180) })}
           keyExtractor={(item) => item.conversaId}
+          maxToRenderPerBatch={10}
           ListEmptyComponent={
             <View style={estilos.vazio}>
               <View style={estilos.iconeVazio}>
@@ -310,13 +338,10 @@ export function TelaListaAtendimentos({
               </Text>
             </View>
           }
-          renderItem={({ item }) => (
-            <CartaoAtendimento
-              aoAbrir={() => aoAbrirAtendimento(item)}
-              item={item}
-            />
-          )}
+          renderItem={renderizarItem}
           showsVerticalScrollIndicator={false}
+          updateCellsBatchingPeriod={32}
+          windowSize={7}
         />
       )}
     </SafeAreaView>

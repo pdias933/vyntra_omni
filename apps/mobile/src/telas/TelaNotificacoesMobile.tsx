@@ -115,7 +115,9 @@ export function TelaNotificacoesMobile({
           grupos.length === 0 ? estilos.listaVazia : estilos.lista
         }
         data={grupos}
+        initialNumToRender={12}
         keyExtractor={(grupo) => grupo.aviso.chaveAgrupamento}
+        maxToRenderPerBatch={10}
         ListEmptyComponent={
           <View style={estilos.vazio}>
             <View style={estilos.iconeVazio}>
@@ -178,6 +180,8 @@ export function TelaNotificacoesMobile({
             </Pressable>
           );
         }}
+        updateCellsBatchingPeriod={32}
+        windowSize={7}
       />
     </SafeAreaView>
   );

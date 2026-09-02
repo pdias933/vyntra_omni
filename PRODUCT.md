@@ -219,6 +219,8 @@ Na PR 103, o composer mobile mantém o rascunho por conversa exclusivamente no S
 
 Na PR 104, tocar em enviar sem conexão transforma o rascunho em pendência criptografada `AGUARDANDO_CONEXAO`, sem aparência de mensagem enviada. Depois de REST e WebSocket convergirem, o app reautentica a sessão vinculada ao aparelho e o backend serializa a autoridade do atendimento antes de comparar sequência da timeline, versões de atribuição, estado e contexto, além da janela Meta observada. Somente ausência total de mudança permite o envio automático. Qualquer divergência relevante produz `REVISAO_NECESSARIA` e oferece exatamente `Editar`, `Descartar` e `Enviar mesmo assim`; a última opção cria um novo comando submetido à autorização corrente, nunca um bypass. Falha transitória conserva a pendência e mídia offline avançada continua fora da V1.
 
+Na PR 108, `Perfil → Diagnóstico` apresenta somente versão do app/sistema, classe do aparelho, servidor público, estados de WebSocket/push/sincronização, última sequência e até dez códigos canônicos recentes. O relatório tem prévia, teto de 2 KiB e confirmação antes de compartilhar; não inclui conteúdo, pessoa, fila, UUID, credencial ou segredo. Lista, timeline e avisos usam virtualização com lotes pequenos, cartões inalterados preservam a referência para evitar novo trabalho e respostas push processadas possuem teto. O snapshot continua restrito às 200 conversas recentes, com até 200 mensagens e notas por conversa, sem bytes de mídia no SQLCipher. Acessibilidade preserva fonte dinâmica, áreas de toque, rótulos e resultado idêntico com “Reduzir Movimento”.
+
 ### 4.8 Motor de Fluxos e WhatsApp Flows
 
 - Motor próprio, determinístico e configurável.
