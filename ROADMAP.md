@@ -741,6 +741,10 @@ Aceite de engenharia concluído em 2 de setembro de 2026: o go/no-go passou a te
 
 Aceite de engenharia concluído em 2 de setembro de 2026: o plano de piloto é versionado e validado no deploy, nasce integralmente `DESATIVADO` e não contém usuário, conta WhatsApp, janela ou plantão fictício. Ativação limita o escopo a dez usuários e duas contas internas, exige janela e responsável, preserva RBAC e os controles auditados do backend e mede erro 5xx, backlog, operações incertas, atraso de eventos e disponibilidade. Reversão desliga recursos primeiro e decide retorno à release anterior em até dez minutos sem desfazer migration. O piloto real não foi iniciado e continua bloqueado pela PR115. Não houve migration nem dependência. Effort recomendado e confirmado: `high`, pela coordenação de escopo, métricas, plantão e retorno seguro.
 
+### Deploy cumulativo PR 108–116
+
+Concluído em staging em 2 de setembro de 2026 com a release imutável `pr-116-7f77efb`. Os portões locais aprovaram lint, tipos, contratos, testes completos, matriz Expo, dependências, segredos e builds web/API/iOS/Android. O job único encontrou 56 migrations concluídas e nenhuma pendência depois de aplicar `20260902000500_copia_segura_atendimento`; os dois gatilhos de proteção dessa tabela foram confirmados. API, web, proxy, PostgreSQL, Redis e Garage ficaram saudáveis, duas réplicas do worker permaneceram ativas e o smoke privado/público, S3 e o aceite MFA/QR/sessão mobile passaram. No ensaio controlado, Redis e worker não derrubaram a saúde e a API única retornou em aproximadamente 2,3 segundos; os erros de borda durante a interrupção intencional cessaram após a recuperação. As fontes de backup — dump PostgreSQL, snapshot/metadados e blocos de mídia — foram pré-validadas. A cópia/restauração externa continua pendente porque nenhum segundo destino/cofre foi fornecido; a mesma VM não foi apresentada como domínio de falha independente. O piloto continua `DESATIVADO` e produção permanece bloqueada pelo checklist da PR115.
+
 ## 12. Mobile
 
 | PR | Objetivo | Aceite principal |
