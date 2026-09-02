@@ -2,10 +2,8 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { parse } from 'yaml';
-
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const configuracao = parse(await readFile(resolve(raiz, 'infra/staging/piloto.yaml'), 'utf8'));
+const configuracao = JSON.parse(await readFile(resolve(raiz, 'infra/staging/piloto.json'), 'utf8'));
 const recursosObrigatorios = Object.freeze([
   'PILOTO_META_REAL',
   'PILOTO_MK_REAL',

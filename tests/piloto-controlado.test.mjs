@@ -3,9 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { parse } from 'yaml';
-
-const piloto = parse(await readFile('infra/staging/piloto.yaml', 'utf8'));
+const piloto = JSON.parse(await readFile('infra/staging/piloto.json', 'utf8'));
 const validador = await readFile('scripts/piloto-controlado.mjs', 'utf8');
 const deploy = await readFile('scripts/deploy-compativel.mjs', 'utf8');
 
