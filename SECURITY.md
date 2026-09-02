@@ -741,6 +741,16 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - alerta estruturado carrega código fechado, componente, severidade e runbook; transição não carrega conteúdo, token, URL de dependência ou detalhe de erro;
 - monitor interno não substitui alerta externo de indisponibilidade da VM, pois deixa de emitir se o processo ou host morrer.
 
+## 28.2 Deploy compatível da PR 112
+
+- release aceita somente identificador curto allowlisted e confirmação literal vinculada ao alvo;
+- o orquestrador recusa contexto Docker remoto e não aceita socket, host ou arquivo Compose vindo da entrada;
+- migration usa imagem própria, conexão por arquivo secreto, execução efêmera e ocorre uma única vez antes do candidato;
+- prontidão cai antes do fechamento de streams, impedindo novas conexões durante drenagem;
+- SSE e WebSocket fecham sem conteúdo, preservando apenas o cursor já aplicado no cliente;
+- worker termina a unidade corrente e não força estado por SQL ao ser interrompido;
+- reversão troca somente imagens para uma versão previamente conhecida; nunca reverte migration aditiva nem restaura banco implicitamente.
+
 ## 29. Shell, biometria e pareamento da PR 097
 
 - a autenticação local apenas desbloqueia a interface; nunca cria sessão, permissão ou confiança no servidor;

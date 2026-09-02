@@ -123,7 +123,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: migracao
-    image: vyntra/migracoes-staging:pr-107
+    image: vyntra/migracoes-staging:${VYNTRA_RELEASE:-pr-112}
     pull_policy: build
     restart: "no"
     init: true
@@ -154,7 +154,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/provisionamento-staging:pr-107
+    image: vyntra/provisionamento-staging:${VYNTRA_RELEASE:-pr-112}
     pull_policy: build
     restart: "no"
     init: true
@@ -200,7 +200,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/api-staging:pr-107
+    image: vyntra/api-staging:${VYNTRA_RELEASE:-pr-112}
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -244,7 +244,7 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
-    stop_grace_period: 20s
+    stop_grace_period: 25s
     tmpfs:
       - /tmp:uid=1000,gid=1000,mode=0700
     healthcheck:
@@ -275,7 +275,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/worker-fluxos-staging:pr-107
+    image: vyntra/worker-fluxos-staging:${VYNTRA_RELEASE:-pr-112}
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -301,7 +301,7 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
-    stop_grace_period: 20s
+    stop_grace_period: 30s
     tmpfs:
       - /tmp:uid=1000,gid=1000,mode=0700
     networks:
@@ -313,7 +313,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       target: conteudo
-    image: vyntra/web-staging:pr-107
+    image: vyntra/web-staging:${VYNTRA_RELEASE:-pr-112}
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -346,7 +346,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       target: borda
-    image: vyntra/proxy-staging:pr-107
+    image: vyntra/proxy-staging:${VYNTRA_RELEASE:-pr-112}
     pull_policy: build
     restart: *reinicio-staging
     init: true

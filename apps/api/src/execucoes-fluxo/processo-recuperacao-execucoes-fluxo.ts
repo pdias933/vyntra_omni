@@ -8,6 +8,8 @@ const INTERVALO_PADRAO_MS = 1_000;
 @Injectable()
 export class ProcessoRecuperacaoExecucoesFluxo {
   private readonly logger = new Logger(ProcessoRecuperacaoExecucoesFluxo.name);
+  private continuar = true;
+  private acordar: (() => void) | undefined;
 
   public constructor(
     @Inject(ServicoRecuperacaoExecucoesFluxo)
@@ -16,9 +18,9 @@ export class ProcessoRecuperacaoExecucoesFluxo {
     private readonly executor: ServicoExecutorNosFluxo,
   ) {}
 
-  public async executar(continuar: () => boolean): Promise<void> {
+  public async executar(): Promise<void> {
     const intervaloMs = this.obterIntervalo();
-    while (continuar()) {
+    while (this.continuar) {
       try {
         const recuperadas = await this.recuperacao.executarCiclo();
         const executadas = await this.executor.executarCiclo();
@@ -28,6 +30,12 @@ export class ProcessoRecuperacaoExecucoesFluxo {
       }
       await this.aguardarIntervalo(intervaloMs);
     }
+  }
+
+  public solicitarDrenagem(): void {
+    this.continuar = false;
+    this.acordar?.();
+    this.acordar = undefined;
   }
 
   private obterIntervalo(): number {
@@ -42,7 +50,14 @@ export class ProcessoRecuperacaoExecucoesFluxo {
 
   private async aguardarIntervalo(intervaloMs: number): Promise<void> {
     await new Promise<void>((resolver) => {
-      setTimeout(resolver, intervaloMs);
+      const temporizador = setTimeout(() => {
+        this.acordar = undefined;
+        resolver();
+      }, intervaloMs);
+      this.acordar = () => {
+        clearTimeout(temporizador);
+        resolver();
+      };
     });
   }
 }

@@ -41,6 +41,7 @@ import {
 import { ServicoSincronizacaoIncremental } from './servico-sincronizacao-incremental.js';
 import { ServicoAutorizacaoOffline } from './servico-autorizacao-offline.js';
 import { ServicoRessincronizacaoCompleta } from './servico-ressincronizacao-completa.js';
+import { RegistroConexoesSse } from './registro-conexoes-sse.js';
 
 function obterTokenAcesso(cabecalho: string): string {
   const resultado = /^Bearer ([A-Za-z0-9_-]{43})$/u.exec(cabecalho);
@@ -64,6 +65,8 @@ export class ControladorSincronizacao {
     private readonly coordenadorSse: CoordenadorSseSemLacuna,
     @Inject(ServicoAutorizacaoOffline)
     private readonly autorizacaoOffline: ServicoAutorizacaoOffline,
+    @Inject(RegistroConexoesSse)
+    private readonly conexoesSse: RegistroConexoesSse,
   ) {}
 
   @Sse('eventos')
@@ -86,8 +89,13 @@ export class ControladorSincronizacao {
     const tokenSessao = obterTokenSessaoWeb(cookies);
     const sessao = await this.autenticacaoWeb.autenticar(tokenSessao);
     return new Observable<MessageEvent>((assinante) => {
+      let removerRegistro: (() => void) | undefined;
       try {
-        return this.coordenadorSse.abrir(
+        const removerRegistroAtual = this.conexoesSse.registrar(() =>
+          assinante.complete(),
+        );
+        removerRegistro = removerRegistroAtual;
+        const fecharCoordenador = this.coordenadorSse.abrir(
           sessao.contexto,
           ultimoEvento,
           {
@@ -108,7 +116,12 @@ export class ControladorSincronizacao {
             },
           },
         );
+        return () => {
+          removerRegistroAtual();
+          fecharCoordenador();
+        };
       } catch (erro) {
+        removerRegistro?.();
         assinante.error(erro);
         return undefined;
       }

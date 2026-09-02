@@ -133,7 +133,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 109 | CONCLUÍDA | `xhigh` |
 | 110 | CONCLUÍDA | `high` |
 | 111 | CONCLUÍDA | `high` |
-| 112 | PENDENTE | `xhigh` |
+| 112 | CONCLUÍDA | `xhigh` |
 | 113 | PENDENTE | `xhigh` |
 | 114 | PENDENTE | `xhigh` |
 | 115 | PENDENTE | `high` |
@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR111 foram concluídas. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. A PR112 é a próxima na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR112 foram concluídas. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. A PR113 é a próxima na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -720,6 +720,10 @@ Aceite concluído em 2 de setembro de 2026: o painel web oferece 24 horas, 7 dia
 ### PR 111 — observabilidade e alertas
 
 Aceite concluído em 2 de setembro de 2026: requisições HTTP passaram a gerar `traceparent` W3C estritamente validado, novo span técnico por processo e correlação preservada, enquanto logs continuam submetidos à allowlist central. As métricas em memória têm faixas fixas e baixa cardinalidade: total, falhas 5xx, duração média e p95 aproximado, sem rota, UUID, usuário ou conteúdo. Backlogs de caixa de saída, operações recuperáveis e Motor de Fluxos são lidos do PostgreSQL como contagem e idade do item mais antigo. O painel e a rota exigem sessão atual e `ADMINISTRAR_INTEGRACOES`; a saúde pública permanece genérica. Regras v1 produzem códigos, severidade, limite e runbook, e o monitor interno registra somente transições ativo/resolvido em log estruturado para entrega pelo monitor externo, sem exigir dashboard aberto. Não houve migration ou dependência. Lint, tipos, 441 testes da API, 320 testes de arquitetura, contratos, matriz Expo, auditoria de dependências, varredura de segredos e builds web/API/iOS/Android foram aprovados. Effort `high` confirmado pelo controle de cardinalidade, rastreio validado e alertas sem dados de negócio.
+
+### PR 112 — produção e deploy compatível
+
+Aceite concluído em 2 de setembro de 2026: as imagens de migration, API, worker, web e proxy passaram a usar um identificador de release explícito e validado. O orquestrador local recusa Docker remoto, exige confirmação vinculada ao release, valida a composição, constrói imagens, executa exatamente um job efêmero de migration e só ativa API/web/worker e proxy depois da prontidão. Falha após migration reativa as imagens anteriores; reversão explícita nunca desfaz schema aditivo. Em `SIGTERM`/`SIGINT`, a API deixa `/saude/pronto`, encerra SSE pelo registro central, fecha WebSocket com código de reinício e limita o fechamento a 15 segundos dentro dos 25 segundos do contêiner. O worker acorda, termina apenas o ciclo já adquirido e fecha dentro de seu prazo de 30 segundos. Não houve migration nem dependência. Lint, tipos, 444 testes da API, 324 testes de arquitetura, contratos, matriz Expo, auditoria de dependências, varredura de segredos e builds web/API/iOS/Android foram aprovados. Effort `xhigh` mantido pela coordenação de migration, prontidão, streams, worker e retorno compatível.
 
 ## 12. Mobile
 

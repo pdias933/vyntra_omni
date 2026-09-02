@@ -9,17 +9,15 @@ const aplicacao = await NestFactory.createApplicationContext(
   ModuloWorkerFluxos,
   { abortOnError: true },
 );
-let continuar = true;
+const processo = aplicacao.get(ProcessoRecuperacaoExecucoesFluxo);
 const encerrar = (): void => {
-  continuar = false;
+  processo.solicitarDrenagem();
 };
 process.once('SIGINT', encerrar);
 process.once('SIGTERM', encerrar);
 
 try {
-  await aplicacao
-    .get(ProcessoRecuperacaoExecucoesFluxo)
-    .executar(() => continuar);
+  await processo.executar();
 } finally {
   await aplicacao.close();
 }

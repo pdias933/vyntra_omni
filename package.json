@@ -17,6 +17,7 @@
     "ambiente:validar": "node scripts/ambiente-local.mjs validar",
     "build": "node scripts/executar-turbo.mjs build",
     "dev": "node scripts/executar-turbo.mjs dev",
+    "deploy:staging": "node scripts/deploy-compativel.mjs",
     "gerar:contratos": "node scripts/gerar-contratos.mjs",
     "lint": "node scripts/executar-turbo.mjs lint && eslint scripts tests --max-warnings 0",
     "staging:estado": "node scripts/ambiente-staging.mjs estado",

@@ -706,6 +706,23 @@ Backlogs são fotografias consistentes do PostgreSQL: quantidade e idade do item
 
 ## 15. Evolução sem reescrita
 
+### 14.1 Ciclo de vida e deploy compatível
+
+A PR 112 torna a prontidão parte do estado de ciclo de vida: ao receber sinal, a instância primeiro declara `DRENAGEM_APLICACAO`, depois encerra os registros SSE, fecha WebSockets com indicação de reinício e aguarda recursos Nest/HTTP até o limite. O cliente retoma do último `sequencia_evento` aplicado, portanto a troca de imagem não cria uma segunda autoridade nem exige preservar a conexão antiga.
+
+O worker para de adquirir novo lote assim que recebe o sinal, mas deixa o ciclo corrente terminar. Estados, concessões e agendamentos continuam no PostgreSQL; encerramento forçado depois do prazo mantém o mesmo caminho de recuperação já aprovado.
+
+```text
+construir release imutável
+  → job único de migration aditiva
+  → subir candidato e aguardar PRONTO
+  → manter proxy no nome estável
+  → smoke
+falhou após migration
+  → reativar imagens anteriores compatíveis
+  → nunca desfazer schema
+```
+
 Quando a carga justificar:
 
 1. separar PostgreSQL/Redis da VM de aplicação;

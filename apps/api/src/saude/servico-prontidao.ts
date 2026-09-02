@@ -93,11 +93,16 @@ async function conectar(alvo: AlvoDependencia): Promise<boolean> {
 
 @Injectable()
 export class ServicoProntidao {
+  private drenando = false;
+
   public constructor(
     @Inject(ServicoPrisma) private readonly prisma: ServicoPrisma,
   ) {}
 
   public async verificar(): Promise<ResultadoProntidao> {
+    if (this.drenando) {
+      return { falhas: ['DRENAGEM_APLICACAO'], pronto: false };
+    }
     try {
       const alvos = await this.obterAlvos();
       const resultados = await Promise.all(
@@ -127,6 +132,10 @@ export class ServicoProntidao {
         pronto: false,
       };
     }
+  }
+
+  public iniciarDrenagem(): void {
+    this.drenando = true;
   }
 
   private async obterAlvos(): Promise<AlvoDependencia[]> {
