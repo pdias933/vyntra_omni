@@ -120,7 +120,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096 | CONCLUÍDA | `xhigh` |
 | 097 | CONCLUÍDA | `xhigh` |
 | 098 | CONCLUÍDA | `high` |
-| 099 | PENDENTE | `xhigh` |
+| 099 | CONCLUÍDA | `xhigh` |
 | 100 | PENDENTE | `xhigh` |
 | 101 | PENDENTE | `high` |
 | 102 | PENDENTE | `high` |
@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097 e PR098 foram concluídas e PR099–PR107 seguem pendentes na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR099 foram concluídas e PR100–PR107 seguem pendentes na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -668,6 +668,10 @@ Aceite concluído em 2 de setembro de 2026: o aplicativo real iOS/Android materi
 ### PR 098 — política de versão mobile
 
 Aceite concluído em 2 de setembro de 2026: a política pública é avaliada antes de acessar o cofre e somente `PERMITIDA` alcança autenticação ou shell. Versão abaixo da mínima abre bloqueio global sem adiamento; respostas `426 ATUALIZACAO_OBRIGATORIA` de login, restauração ou QR convergem para a mesma tela. O link externo aceita somente HTTPS e o host oficial da loja correspondente. Atualização apenas recomendada continua não bloqueante e aparece discretamente somente em Perfil. Retorno ao primeiro plano reavalia em silêncio e indisponibilidade não relaxa bloqueio já conhecido. A rota pública de staging respondeu de forma válida para Android `0.0.0`, sem mudar política. Não houve migration, dependência nova, imagem de servidor nem publicação de binário. Lint, tipos, 426 testes da API, 253 testes de arquitetura, Expo, dependências, Gitleaks e builds web/API/iOS/Android foram aprovados. Effort `high` confirmado pela convergência de todos os caminhos de autenticação e pelo fail-closed pré-login.
+
+### PR 099 — SQLite e autorização offline
+
+Aceite concluído em 2 de setembro de 2026: o app recebeu réplica SQLCipher com chave aleatória de 256 bits no SecureStore, schema local versionado e separação entre dados substituíveis, rascunhos e pendências de texto. O snapshot completo mobile emite envelope Ed25519 por no máximo quatro horas e o vincula a usuário, sessão, dispositivo, instalação, sequência base, versão de permissões, filas e escopos mínimos; snapshot web não recebe esse material. O app valida assinatura estrita, allowlist de chave pública, vínculo, sequência/versão, prazo, integridade e recuo de relógio, bloqueando em qualquer divergência. Chaves privadas são geradas sem sobrescrita, montadas somente na API e possuem procedimento público de configuração/rotação. A PR não aplica ainda o snapshot: essa unidade atômica permanece na PR100. Não houve migration PostgreSQL nem deploy de servidor. Lint, tipos, 432 testes da API, 261 testes de arquitetura, matriz Expo, Gitleaks em 223 commits e builds web/API/iOS/Android foram aprovados. O advisory transitivo `GHSA-x5fp-wj9c-mxmx` foi removido com override exato de `qs@6.16.0`, sem nova exceção. Effort `xhigh` mantido pela custódia criptográfica, vínculo da autoridade e risco de exposição offline.
 
 ## 12. Mobile
 

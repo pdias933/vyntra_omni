@@ -746,3 +746,16 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - o adapter de loja aceita somente HTTPS, sem credenciais, no host exato da loja correspondente à plataforma;
 - versão, mínima e recomendada usam forma semântica validada, mas a API continua sendo a autoridade;
 - nenhuma atualização remota de código, publicação de loja ou execução dinâmica foi introduzida.
+
+## 31. Réplica e autorização offline da PR 099
+
+- o banco local usa SQLCipher e chave aleatória de 256 bits custodiada no SecureStore com acesso restrito ao aparelho; a chave não entra no SQLite, configuração pública, log ou telemetria;
+- a API assina somente snapshots completos autenticados por sessão mobile; cookie web nunca recebe autorização offline;
+- Ed25519 usa chave privada exclusiva por ambiente montada como segredo e chave pública allowlisted na build; identificador desconhecido falha fechado;
+- o envelope assinado possui versão e campos fechados, vinculando sessão, usuário, dispositivo, hash da instalação, sequência base, versão de permissões, filas, escopos, emissão e validade;
+- validade é limitada ao menor valor entre quatro horas e o vencimento absoluto do refresh;
+- escopos offline não incluem ERP, exportação, vínculo, dado sensível, mídia nova nem envio efetivo; possuir permissão online não amplia essa lista fechada;
+- assinatura, vínculo, prazo duplicado no SQLite, formato, integridade ou relógio divergentes bloqueiam o acesso; recuo superior a cinco minutos em relação ao último relógio confiável também bloqueia;
+- login novo, pareamento concluído, logout e substituição da instalação não podem herdar réplica da identidade anterior;
+- rotação conserva temporariamente a chave pública anterior somente até vencer a última autorização já emitida; a chave privada anterior deixa de assinar imediatamente e é retirada depois desse prazo;
+- a PR 099 não aplica snapshots: somente a transação da PR 100 poderá persistir conteúdo, autorização e cursor como uma unidade.

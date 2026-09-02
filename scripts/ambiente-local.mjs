@@ -10,6 +10,12 @@ import {
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  obterConfiguracaoPublicaMobile,
+  prepararChaveAutorizacaoOffline,
+  validarChaveAutorizacaoOffline,
+} from './chave-autorizacao-offline.mjs';
+
 const caminhoScript = fileURLToPath(import.meta.url);
 const raizRepositorio = resolve(dirname(caminhoScript), '..');
 const diretorioSegredosPadrao = join(
@@ -19,6 +25,7 @@ const diretorioSegredosPadrao = join(
 );
 const caminhoCompose = join(raizRepositorio, 'compose.yaml');
 const nomeProjetoPadrao = 'vyntra-desenvolvimento';
+const identificadorChaveAutorizacaoOffline = 'desenvolvimento-1';
 
 function gerarValorAleatorio() {
   return randomBytes(32).toString('base64url');
@@ -277,6 +284,7 @@ function executarDockerCompose(argumentos, { capturar = false } = {}) {
 
 async function validarAmbiente() {
   await validarSegredos();
+  await validarChaveAutorizacaoOffline(diretorioSegredosPadrao);
   executarDockerCompose(['version'], { capturar: true });
   executarDockerCompose(['config', '--quiet']);
 }
@@ -285,8 +293,17 @@ async function executarComando(comando) {
   switch (comando) {
     case 'preparar': {
       const criados = await prepararSegredos();
+      await prepararChaveAutorizacaoOffline(diretorioSegredosPadrao);
       const resumo = criados.length === 0 ? 'já estavam prontos' : 'foram criados';
       console.log(`Segredos locais ${resumo}; nenhum valor foi exibido.`);
+      break;
+    }
+    case 'configuracao-mobile': {
+      const configuracao = await obterConfiguracaoPublicaMobile(
+        diretorioSegredosPadrao,
+        identificadorChaveAutorizacaoOffline,
+      );
+      console.log(`EXPO_PUBLIC_CHAVES_AUTORIZACAO_OFFLINE='${configuracao}'`);
       break;
     }
     case 'validar':
@@ -295,6 +312,7 @@ async function executarComando(comando) {
       break;
     case 'subir':
       await prepararSegredos();
+      await prepararChaveAutorizacaoOffline(diretorioSegredosPadrao);
       await validarAmbiente();
       executarDockerCompose(['up', '--build', '--wait']);
       console.log('Ambiente local saudável.');
@@ -308,7 +326,7 @@ async function executarComando(comando) {
       break;
     default:
       throw new Error(
-        'COMANDO_INVALIDO; use preparar, validar, subir, estado ou parar',
+        'COMANDO_INVALIDO; use preparar, configuracao-mobile, validar, subir, estado ou parar',
       );
   }
 }
@@ -330,6 +348,7 @@ export {
   arquivosSegredos,
   diretorioSegredosPadrao,
   endpointDockerEhLocal,
+  identificadorChaveAutorizacaoOffline,
   prepararSegredos,
   validarSegredos,
 };

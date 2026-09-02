@@ -245,6 +245,12 @@ Dados locais sensíveis devem usar criptografia/proteção compatível com a pla
 
 Offline nunca permite ação ERP, exportação, criação de vínculo, visualização integral de dado sensível, obtenção de nova URL de mídia ou envio efetivo. Ao retornar, o app sincroniza e reautoriza antes de qualquer pendência. Token expirado, falha de integridade local ou relógio recuado além da tolerância bloqueiam a área autenticada. Revogação conhecida invalida imediatamente cache e pendências; um aparelho totalmente offline bloqueia no máximo ao fim das 4 horas e conclui a limpeza ao reconectar.
 
+A PR 099 concretiza esta custódia com `expo-sqlite` compilado com SQLCipher. Uma chave aleatória de 256 bits fica no SecureStore e é aplicada antes de qualquer consulta; verificação de integridade, chaves estrangeiras e WAL antecedem o uso. A réplica separa tabelas substituíveis de filas, conversas, atendimentos, mensagens, notas e controles das tabelas preserváveis de rascunhos e pendências de texto. Logout e troca de identidade limpam todo o conteúdo autenticado.
+
+A autorização local usa envelope versionado e assinatura Ed25519 estrita. O app aceita apenas chave pública empacotada na build, conjunto fechado de campos e escopos mínimos, e compara usuário, sessão, dispositivo e hash da instalação com o cofre nativo, além de conferir `sequencia_base` e `versao_permissoes` contra a réplica. A validade nunca supera quatro horas nem o vencimento absoluto do refresh. Expiração, assinatura desconhecida/adulterada, vínculo divergente, integridade inválida ou recuo do relógio maior que cinco minutos bloqueiam a área autenticada; não existe opção de ignorar. O snapshot web não transporta autorização offline.
+
+Esta PR ainda não preenche a réplica: a aplicação atômica do snapshot e da autorização pertence à PR 100. Portanto, uma instalação que nunca concluiu uma sincronização mobile autorizada não entra offline apenas por possuir refresh token.
+
 ## 7. Sincronização
 
 ### 7.1 Inicialização/reconexão

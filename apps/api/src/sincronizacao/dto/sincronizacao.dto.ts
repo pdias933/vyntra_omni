@@ -8,6 +8,7 @@ import type {
   PayloadEventoMobile,
   PayloadEventoWeb,
 } from '../modelo-projecao-evento.js';
+import type { AutorizacaoOfflineEmitida } from '../servico-autorizacao-offline.js';
 
 export class LoteSincronizacaoDto {
   @ApiProperty({ items: { type: 'object' }, type: 'array' })
@@ -60,7 +61,16 @@ export class SnapshotSincronizacaoDto {
   @ApiProperty({ items: { type: 'object' }, type: 'array' })
   public readonly politicas_versao: SnapshotSincronizacaoCompleta['politicasVersao'];
 
-  public constructor(snapshot: SnapshotSincronizacaoCompleta) {
+  @ApiProperty({ required: false })
+  public readonly autorizacao_offline?: string;
+
+  @ApiProperty({ format: 'date-time', required: false })
+  public readonly autorizacao_offline_valida_ate?: string;
+
+  public constructor(
+    snapshot: SnapshotSincronizacaoCompleta,
+    autorizacaoOffline?: AutorizacaoOfflineEmitida,
+  ) {
     this.atendimentos = snapshot.atendimentos;
     this.controles_recurso = snapshot.controlesRecurso;
     this.conversas = snapshot.conversas;
@@ -72,5 +82,9 @@ export class SnapshotSincronizacaoDto {
     this.politicas_versao = snapshot.politicasVersao;
     this.sequencia_base = snapshot.sequenciaBase;
     this.versao_permissoes = snapshot.versaoPermissoes;
+    if (autorizacaoOffline !== undefined) {
+      this.autorizacao_offline = autorizacaoOffline.token;
+      this.autorizacao_offline_valida_ate = autorizacaoOffline.validaAte;
+    }
   }
 }

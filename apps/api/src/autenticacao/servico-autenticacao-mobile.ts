@@ -259,7 +259,9 @@ export class ServicoAutenticacaoMobile {
         usuarioId: sessao.usuarioId,
       },
       dispositivoId: sessao.dispositivoId,
+      identificadorInstalacaoHash: sessao.identificadorInstalacaoHash,
       nomeExibicao: sessao.nomeExibicao,
+      refreshExpiraEm: sessao.refreshExpiraEm,
     };
   }
 

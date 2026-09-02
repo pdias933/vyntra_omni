@@ -7,19 +7,26 @@ import {
 } from './adaptador-autenticacao-http';
 import { CofreSessaoMobile } from './cofre-sessao-mobile';
 import { GerenciadorSessaoMobile } from './gerenciador-sessao-mobile';
+import { RepositorioReplicaLocal } from '../offline/repositorio-replica-local';
+import { VerificadorAutorizacaoOffline } from '../offline/verificador-autorizacao-offline';
 
 export interface SessaoAplicativo {
+  readonly acessoOffline: boolean;
   readonly dispositivoId: string;
   readonly dispositivoSubstituido: boolean;
   readonly nomeExibicao: string;
+  readonly offlineValidaAte?: string;
+  readonly sessaoId: string;
   readonly usuarioId: string;
 }
 
 function projetarSessao(sessao: SessaoMobileDto): SessaoAplicativo {
   return {
+    acessoOffline: false,
     dispositivoId: sessao.dispositivo_id,
     dispositivoSubstituido: sessao.dispositivo_substituido,
     nomeExibicao: sessao.nome_exibicao,
+    sessaoId: sessao.sessao_id,
     usuarioId: sessao.usuario_id,
   };
 }
@@ -41,6 +48,10 @@ function aguardarIntervalo(sinal?: AbortSignal): Promise<void> {
 export class ServicoAutenticacaoAplicativo {
   public readonly cofre = new CofreSessaoMobile();
   public readonly gerenciador = new GerenciadorSessaoMobile(this.cofre);
+  public readonly replica = new RepositorioReplicaLocal();
+  public readonly autorizacaoOffline = new VerificadorAutorizacaoOffline(
+    this.replica,
+  );
 
   public constructor(
     private readonly adaptador = new AdaptadorAutenticacaoHttp(),
@@ -62,11 +73,15 @@ export class ServicoAutenticacaoAplicativo {
       identidade,
       codigoMfa,
     );
+    await this.replica.limparReplicaAutenticada();
     await this.gerenciador.ativar({
       acessoExpiraEm: sessao.acesso_expira_em,
       dispositivoId: sessao.dispositivo_id,
+      nomeExibicao: sessao.nome_exibicao,
+      sessaoId: sessao.sessao_id,
       tokenAcesso: sessao.token_acesso,
       tokenRefresh: sessao.token_refresh,
+      usuarioId: sessao.usuario_id,
     });
     return projetarSessao(sessao);
   }
@@ -87,8 +102,11 @@ export class ServicoAutenticacaoAplicativo {
       await this.gerenciador.ativar({
         acessoExpiraEm: sessao.acesso_expira_em,
         dispositivoId: sessao.dispositivo_id,
+        nomeExibicao: sessao.nome_exibicao,
+        sessaoId: sessao.sessao_id,
         tokenAcesso: sessao.token_acesso,
         tokenRefresh: sessao.token_refresh,
+        usuarioId: sessao.usuario_id,
       });
       return projetarSessao(sessao);
     } catch (erro) {
@@ -112,6 +130,28 @@ export class ServicoAutenticacaoAplicativo {
     }
   }
 
+  public async restaurarOffline(): Promise<SessaoAplicativo | undefined> {
+    const [identidade, credencial] = await Promise.all([
+      this.cofre.obterOuCriarIdentidadeInstalacao(),
+      this.cofre.obterCredencial(),
+    ]);
+    if (credencial === undefined) return undefined;
+    const resultado = await this.autorizacaoOffline.avaliar(
+      credencial,
+      identidade,
+    );
+    if (resultado.estado !== 'AUTORIZADO') return undefined;
+    return {
+      acessoOffline: true,
+      dispositivoId: credencial.dispositivoId,
+      dispositivoSubstituido: false,
+      nomeExibicao: credencial.nomeExibicao,
+      offlineValidaAte: resultado.autoridade.validaAte,
+      sessaoId: credencial.sessaoId,
+      usuarioId: credencial.usuarioId,
+    };
+  }
+
   public async sair(): Promise<void> {
     const [tokenAcesso, vinculo] = await Promise.all([
       Promise.resolve(this.gerenciador.obterTokenAcesso()),
@@ -127,7 +167,10 @@ export class ServicoAutenticacaoAplicativo {
         );
       }
     } finally {
-      await this.gerenciador.limparSessao();
+      await Promise.all([
+        this.gerenciador.limparSessao(),
+        this.replica.limparReplicaAutenticada(),
+      ]);
     }
   }
 
@@ -159,11 +202,15 @@ export class ServicoAutenticacaoAplicativo {
           comprovante,
           identidade,
         );
+        await this.replica.limparReplicaAutenticada();
         await this.gerenciador.ativar({
           acessoExpiraEm: sessao.acesso_expira_em,
           dispositivoId: sessao.dispositivo_id,
+          nomeExibicao: sessao.nome_exibicao,
+          sessaoId: sessao.sessao_id,
           tokenAcesso: sessao.token_acesso,
           tokenRefresh: sessao.token_refresh,
+          usuarioId: sessao.usuario_id,
         });
         return projetarSessao(sessao);
       }

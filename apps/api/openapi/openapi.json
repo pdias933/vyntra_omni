@@ -5754,6 +5754,13 @@
             "items": {
               "type": "object"
             }
+          },
+          "autorizacao_offline": {
+            "type": "string"
+          },
+          "autorizacao_offline_valida_ate": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [

@@ -39,6 +39,7 @@ import {
   ErroRessincronizacaoCompletaNecessaria,
 } from './erros-sincronizacao.js';
 import { ServicoSincronizacaoIncremental } from './servico-sincronizacao-incremental.js';
+import { ServicoAutorizacaoOffline } from './servico-autorizacao-offline.js';
 import { ServicoRessincronizacaoCompleta } from './servico-ressincronizacao-completa.js';
 
 function obterTokenAcesso(cabecalho: string): string {
@@ -61,6 +62,8 @@ export class ControladorSincronizacao {
     private readonly ressincronizacao: ServicoRessincronizacaoCompleta,
     @Inject(CoordenadorSseSemLacuna)
     private readonly coordenadorSse: CoordenadorSseSemLacuna,
+    @Inject(ServicoAutorizacaoOffline)
+    private readonly autorizacaoOffline: ServicoAutorizacaoOffline,
   ) {}
 
   @Sse('eventos')
@@ -134,8 +137,10 @@ export class ControladorSincronizacao {
         dispositivoId,
         segredoDispositivo,
       );
+      const snapshot = await this.ressincronizacao.reconstruir(sessao.contexto);
       return new SnapshotSincronizacaoDto(
-        await this.ressincronizacao.reconstruir(sessao.contexto),
+        snapshot,
+        await this.autorizacaoOffline.emitir(sessao, snapshot),
       );
     }
     const sessao = await this.autenticacaoWeb.autenticar(

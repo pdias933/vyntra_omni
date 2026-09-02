@@ -216,6 +216,8 @@ services:
         condition: service_healthy
     environment:
       AMBIENTE_APLICACAO: staging
+      AUTORIZACAO_OFFLINE_CHAVE_ID: staging-2026-09
+      AUTORIZACAO_OFFLINE_CHAVE_PRIVADA_FILE: /run/secrets/chave_autorizacao_offline
       BANCO_URL_FILE: /run/secrets/url_postgresql
       DADOS_PERMITIDOS: sinteticos_ou_sanitizados
       ENDERECO_HTTP: 0.0.0.0
@@ -231,6 +233,7 @@ services:
       STORAGE_FORCE_PATH_STYLE: "true"
       STORAGE_REGION: vyntra-staging
     secrets:
+      - chave_autorizacao_offline
       - chave_protecao_mfa
       - chave_storage_id
       - chave_storage_secreta
@@ -406,6 +409,8 @@ networks:
     internal: false
 
 secrets:
+  chave_autorizacao_offline:
+    file: ./.segredos/staging/chave-autorizacao-offline.pem
   chave_protecao_mfa:
     file: ./.segredos/staging/chave-protecao-mfa
   chave_storage_id:

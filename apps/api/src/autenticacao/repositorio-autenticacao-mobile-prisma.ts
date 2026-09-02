@@ -387,6 +387,7 @@ export class RepositorioAutenticacaoMobilePrisma
       dispositivo: {
         select: {
           estado: true,
+          identificadorInstalacaoHash: true,
           plataforma: true,
           segredoVinculoHash: true,
           versaoAplicativo: true,
@@ -408,6 +409,7 @@ export class RepositorioAutenticacaoMobilePrisma
     readonly acessoExpiraEm: Date;
     readonly dispositivo: {
       readonly estado: string;
+      readonly identificadorInstalacaoHash: string;
       readonly plataforma: 'ANDROID' | 'IOS';
       readonly segredoVinculoHash: string;
       readonly versaoAplicativo: string;
@@ -428,6 +430,8 @@ export class RepositorioAutenticacaoMobilePrisma
       dispositivoId: sessao.dispositivoId,
       estado: sessao.estado === 'ATIVA' ? 'ATIVA' : 'REVOGADA',
       id: sessao.id,
+      identificadorInstalacaoHash:
+        sessao.dispositivo.identificadorInstalacaoHash,
       nomeExibicao: sessao.usuario.nomeExibicao,
       plataforma: sessao.dispositivo.plataforma,
       refreshExpiraEm: sessao.refreshExpiraEm,

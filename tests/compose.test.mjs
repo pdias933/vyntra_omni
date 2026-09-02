@@ -120,6 +120,7 @@ test('isola dados e usa bridge própria para publicar somente em loopback', () =
 
 test('usa arquivos secretos locais sem senha funcional versionada', () => {
   assert.deepEqual(Object.keys(compose.secrets).sort(), [
+    'chave_autorizacao_offline',
     'redis_acl',
     'senha_minio',
     'senha_postgresql',
@@ -139,6 +140,15 @@ test('usa arquivos secretos locais sem senha funcional versionada', () => {
     compose.services.minio.environment.MINIO_ROOT_PASSWORD_FILE,
     '/run/secrets/senha_minio',
   );
+  assert.equal(
+    compose.services.api.environment.AUTORIZACAO_OFFLINE_CHAVE_PRIVADA_FILE,
+    '/run/secrets/chave_autorizacao_offline',
+  );
+  assert.equal(
+    compose.services.api.environment.AUTORIZACAO_OFFLINE_CHAVE_ID,
+    'desenvolvimento-1',
+  );
+  assert.ok(compose.services.api.secrets.includes('chave_autorizacao_offline'));
   assert.equal(compose.services.redis.environment, undefined);
   assert.ok(!conteudoCompose.includes('minioadmin'));
   assert.ok(!conteudoCompose.includes('POSTGRES_HOST_AUTH_METHOD'));

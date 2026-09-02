@@ -687,3 +687,11 @@ Não há migration, imagem de servidor ou binário de loja publicado por esta PR
 O aceite comprova avaliação antes do cofre, bloqueio sem adiamento, promoção de respostas 426 vindas de login/refresh/QR, allowlist da loja, aviso recomendado apenas no Perfil e reavaliação silenciosa no primeiro plano. Indisponibilidade da avaliação na abertura fria fecha o acesso; indisponibilidade posterior preserva a última política válida.
 
 Monitorar códigos agregados de falha da avaliação e proporção de `ATUALIZACAO_OBRIGATORIA`, sem usuário, token ou identificador do aparelho. Reverter a build só é seguro enquanto a versão anterior permanece permitida. O runbook detalhado está em [docs/operacoes/PR-098.md](docs/operacoes/PR-098.md).
+
+## 37. Operação da réplica e autorização offline da PR 099
+
+Desenvolvimento e staging geram uma chave Ed25519 exclusiva, não sobrescrevem material existente e montam a chave privada somente na API. `pnpm ambiente:configuracao-mobile` e `pnpm staging:configuracao-mobile` exibem exclusivamente a variável pública que deve ser injetada na build correspondente; nenhuma chave privada é impressa. Produção deve fornecer o mesmo contrato por cofre aprovado, com identificador de chave único e backup protegido.
+
+Na rotação, primeiro distribuir a build contendo as chaves públicas atual e nova; depois trocar identificador e arquivo privado da API; manter a chave pública antiga na allowlist por pelo menos quatro horas após a última assinatura antiga; só então removê-la em outra build. Perda da chave privada impede novas autorizações, mas não autoriza reduzir validação. Vazamento exige retirar a chave da API, bloquear novas emissões, elevar a versão mínima para uma build sem a chave pública comprometida e tratar o intervalo residual como incidente.
+
+Esta PR não exige migration PostgreSQL e não autoriza deploy cumulativo por si só. O runbook detalhado está em [docs/operacoes/PR-099.md](docs/operacoes/PR-099.md).

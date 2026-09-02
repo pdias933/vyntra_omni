@@ -8,6 +8,12 @@
       "expo-camera",
       "expo-notifications",
       [
+        "expo-sqlite",
+        {
+          "useSQLCipher": true
+        }
+      ],
+      [
         "expo-local-authentication",
         {
           "faceIDPermission": "Permita que a Vyntra Omni use o Face ID para desbloquear seu atendimento."

@@ -128,6 +128,7 @@ test('mantém banco, Redis e storage inacessíveis pelo host', () => {
 
 test('separa todos os segredos e não aceita credencial de produção', () => {
   assert.deepEqual(Object.keys(compose.secrets).sort(), [
+    'chave_autorizacao_offline',
     'chave_protecao_mfa',
     'chave_storage_id',
     'chave_storage_secreta',
@@ -179,6 +180,11 @@ test('entrega à API apenas contratos por arquivo e contexto explícito', () => 
   assert.equal(ambiente.NODE_ENV, 'production');
   assert.equal(ambiente.BANCO_URL_FILE, '/run/secrets/url_postgresql');
   assert.equal(
+    ambiente.AUTORIZACAO_OFFLINE_CHAVE_PRIVADA_FILE,
+    '/run/secrets/chave_autorizacao_offline',
+  );
+  assert.equal(ambiente.AUTORIZACAO_OFFLINE_CHAVE_ID, 'staging-2026-09');
+  assert.equal(
     ambiente.MFA_CHAVE_PROTECAO_FILE,
     '/run/secrets/chave_protecao_mfa',
   );
@@ -191,6 +197,7 @@ test('entrega à API apenas contratos por arquivo e contexto explícito', () => 
     '/run/secrets/chave_storage_secreta',
   );
   assert.deepEqual([...compose.services.api.secrets].sort(), [
+    'chave_autorizacao_offline',
     'chave_protecao_mfa',
     'chave_storage_id',
     'chave_storage_secreta',

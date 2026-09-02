@@ -215,6 +215,9 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 ## 10. Mobile e sincronização
 
 - SQLite é réplica/cache.
+- A réplica autenticada usa SQLCipher; a chave fica somente no cofre nativo e deve ser aplicada antes de qualquer consulta. Refresh/access token nunca entram nela.
+- Autorização offline é envelope Ed25519 fechado, vinculado a sessão+usuário+dispositivo+instalação+versão de permissões+filas, por no máximo quatro horas e nunca concede ação ERP, exportação, dado sensível ou envio efetivo.
+- Somente snapshot mobile recebe autorização offline. A build aceita exclusivamente chaves públicas allowlisted; chave desconhecida, assinatura/vínculo inválido, expiração, integridade falha ou recuo de relógio bloqueiam a área autenticada.
 - Persistir cursor apenas depois de aplicar lote local.
 - Após sync, WebSocket conecta com cursor e recebe backfill antes do vivo.
 - Eventos são aplicados idempotentemente por `sequencia_evento`.

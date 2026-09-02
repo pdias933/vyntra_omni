@@ -64,6 +64,7 @@ export interface SessaoMobilePersistida {
   readonly usuarioAtivo: boolean;
   readonly dispositivoId: string;
   readonly dispositivoAtivo: boolean;
+  readonly identificadorInstalacaoHash: string;
   readonly plataforma: PlataformaMobile;
   readonly versaoAplicativo: string;
   readonly segredoVinculoHash: string;
@@ -97,7 +98,9 @@ export type ResultadoEmissaoSessaoMobile =
 export interface SessaoMobileAutenticada {
   readonly contexto: ContextoSessaoAutorizacao;
   readonly dispositivoId: string;
+  readonly identificadorInstalacaoHash: string;
   readonly nomeExibicao: string;
+  readonly refreshExpiraEm: Date;
 }
 
 export interface RegistroTentativaLoginMobile {

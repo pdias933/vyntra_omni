@@ -11,6 +11,12 @@ import {
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  obterConfiguracaoPublicaMobile,
+  prepararChaveAutorizacaoOffline,
+  validarChaveAutorizacaoOffline,
+} from './chave-autorizacao-offline.mjs';
+
 const caminhoScript = fileURLToPath(import.meta.url);
 const raizRepositorio = resolve(dirname(caminhoScript), '..');
 const diretorioSegredosPadrao = join(raizRepositorio, '.segredos', 'staging');
@@ -29,6 +35,7 @@ const nomeChaveStorage = 'vyntra-staging-aplicacao';
 const nomeBucketStorage = 'vyntra-staging-midias';
 const origemWebStaging = 'https://omni.up100.com.br';
 const confirmacaoObrigatoria = 'STAGING_ISOLADO_SEM_DADOS_DE_PRODUCAO';
+const identificadorChaveAutorizacaoOffline = 'staging-2026-09';
 
 function gerarValorAleatorio() {
   return randomBytes(32).toString('base64url');
@@ -705,6 +712,7 @@ function exigirConfirmacao() {
 async function validarAmbiente() {
   await validarSegredosBase();
   await validarArquivo(diretorioSegredosPadrao, arquivoChaveProtecaoMfa);
+  await validarChaveAutorizacaoOffline(diretorioSegredosPadrao);
   const estadoCredencial = await obterEstadoCredencialStorage();
 
   if (estadoCredencial === 'PRESENTE') {
@@ -816,13 +824,23 @@ async function executarComando(comando) {
     case 'preparar': {
       const criados = await prepararSegredosBase();
       await prepararChaveProtecaoMfa();
+      await prepararChaveAutorizacaoOffline(diretorioSegredosPadrao);
       const resumo = criados.length === 0 ? 'já estavam prontos' : 'foram criados';
       console.log(`Segredos-base de staging ${resumo}; nenhum valor foi exibido.`);
+      break;
+    }
+    case 'configuracao-mobile': {
+      const configuracao = await obterConfiguracaoPublicaMobile(
+        diretorioSegredosPadrao,
+        identificadorChaveAutorizacaoOffline,
+      );
+      console.log(`EXPO_PUBLIC_CHAVES_AUTORIZACAO_OFFLINE='${configuracao}'`);
       break;
     }
     case 'preparar-administrador': {
       await prepararSegredosBase();
       await prepararChaveProtecaoMfa();
+      await prepararChaveAutorizacaoOffline(diretorioSegredosPadrao);
       const criados = await prepararAdministradorStaging();
       const resumo = criados.length === 0 ? 'já estavam prontos' : 'foram criados';
       console.log(
@@ -838,6 +856,7 @@ async function executarComando(comando) {
       exigirConfirmacao();
       await prepararSegredosBase();
       await prepararChaveProtecaoMfa();
+      await prepararChaveAutorizacaoOffline(diretorioSegredosPadrao);
       await validarAmbiente();
       executarDockerCompose([
         'up',
@@ -879,7 +898,7 @@ async function executarComando(comando) {
       break;
     default:
       throw new Error(
-        'COMANDO_INVALIDO; use preparar, preparar-administrador, validar, subir, smoke, estado ou parar',
+        'COMANDO_INVALIDO; use preparar, configuracao-mobile, preparar-administrador, validar, subir, smoke, estado ou parar',
       );
   }
 }
@@ -905,6 +924,7 @@ export {
   confirmacaoObrigatoria,
   diretorioSegredosPadrao,
   endpointDockerEhLocal,
+  identificadorChaveAutorizacaoOffline,
   obterEstadoCredencialStorage,
   prepararAdministradorStaging,
   prepararChaveProtecaoMfa,

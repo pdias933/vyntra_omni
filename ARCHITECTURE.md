@@ -514,6 +514,10 @@ O snapshot é produzido sob uma leitura consistente do PostgreSQL e vinculado a 
 
 A PR 054 materializa esse contrato em `GET /api/v1/sincronizacao/completa`. O backend abre uma transação `REPEATABLE READ` e somente-leitura, captura primeiro a maior `sequencia_evento` e consulta sob o mesmo snapshot lógico permissões, filas, atendimentos abertos ou reabríveis, controles e políticas. A réplica de trabalho contém até 200 conversas mais recentes autorizadas e até 200 mensagens e notas por conversa; histórico além dessa janela continua pertencendo ao PostgreSQL e será carregado sob demanda, não descartado. Os CTEs de autorização precedem qualquer leitura de conteúdo. No SQLite, substituir a réplica e persistir `sequencia_base` são duas operações da mesma transação; rascunhos e comandos pendentes ficam em armazenamento separado e seguem para reconciliação.
 
+A PR 099 acrescenta ao snapshot completo mobile uma autorização interna assinada Ed25519; chamadas web mantêm o contrato sem esse campo. O payload fechado vincula usuário, sessão, dispositivo, hash da instalação, `sequencia_base`, `versao_permissoes`, filas, escopos mínimos e validade. A API lê a chave privada exclusivamente por arquivo secreto e o aplicativo conhece apenas uma allowlist versionada de chaves públicas empacotadas. O prazo é o menor entre quatro horas e a validade absoluta do refresh. Assinatura não substitui RBAC online: ela limita somente leitura da réplica, rascunho e criação local de pendência de texto; ação externa, dado sensível e exportação não são escopos emitidos.
+
+No cliente, SQLCipher protege o arquivo SQLite com chave aleatória no SecureStore. A abertura aplica a chave antes de ler schema/dados, valida integridade e executa migrations locais por `user_version`. A PR 100 deverá substituir réplica, autorização e `sequencia_base` em uma única transação; a existência isolada do refresh token nunca cria cache offline autorizado.
+
 A referência inicial é retenção de 30 dias para eventos de sincronização, sujeita a medição e política operacional. Isso não limita histórico de conversa.
 
 ### 9.3 Alteração de permissão

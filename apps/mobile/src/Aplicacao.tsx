@@ -44,6 +44,15 @@ const autenticacao = new ServicoAutenticacaoAplicativo();
 const politicaVersaoAplicativo = new ServicoPoliticaVersaoAplicativo();
 const TEMPO_PARA_BLOQUEAR_MS = 30_000;
 
+function falhaPermiteAcessoOffline(erro: unknown): boolean {
+  return (
+    erro instanceof ErroAutenticacaoMobile &&
+    (erro.codigo === 'SERVICO_INDISPONIVEL' ||
+      erro.statusHttp === undefined ||
+      erro.statusHttp >= 500)
+  );
+}
+
 const TEMA_NAVEGACAO: Theme = {
   dark: false,
   colors: {
@@ -190,6 +199,15 @@ export function Aplicacao() {
       definirEstado('AUTENTICADO');
     } catch (erro) {
       if (exigirAtualizacao(erro)) return;
+      if (falhaPermiteAcessoOffline(erro)) {
+        const sessaoOffline = await autenticacao.restaurarOffline();
+        if (sessaoOffline !== undefined) {
+          sessaoAtual.current = sessaoOffline;
+          definirSessao(sessaoOffline);
+          definirEstado('AUTENTICADO');
+          return;
+        }
+      }
       const aindaPossuiSessao = await autenticacao.possuiSessaoPersistida();
       if (!aindaPossuiSessao) {
         definirSessao(undefined);
@@ -262,6 +280,29 @@ export function Aplicacao() {
     const assinatura = AppState.addEventListener('change', aoMudarEstado);
     return () => assinatura.remove();
   }, [desbloquear, estado, verificarPolitica]);
+
+  useEffect(() => {
+    if (
+      estado !== 'AUTENTICADO' ||
+      sessao?.acessoOffline !== true ||
+      sessao.offlineValidaAte === undefined
+    ) {
+      return;
+    }
+    const restante = new Date(sessao.offlineValidaAte).getTime() - Date.now();
+    const bloquear = () => {
+      definirMensagemBloqueio(
+        'O acesso offline expirou. Conecte-se para revalidar sua sessão.',
+      );
+      definirEstado('BLOQUEADO');
+    };
+    if (restante <= 0) {
+      const temporizador = setTimeout(bloquear, 0);
+      return () => clearTimeout(temporizador);
+    }
+    const temporizador = setTimeout(bloquear, restante);
+    return () => clearTimeout(temporizador);
+  }, [estado, sessao]);
 
   async function usarSenha() {
     definirDesbloqueando(true);

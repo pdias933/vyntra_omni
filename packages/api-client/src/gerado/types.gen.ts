@@ -746,6 +746,8 @@ export type SnapshotSincronizacaoDto = {
     politicas_versao: Array<{
         [key: string]: unknown;
     }>;
+    autorizacao_offline?: string;
+    autorizacao_offline_valida_ate?: string;
 };
 
 export type LoteSincronizacaoDto = {

@@ -10,6 +10,7 @@
   "packageManager": "pnpm@11.24.0",
   "scripts": {
     "ambiente:estado": "node scripts/ambiente-local.mjs estado",
+    "ambiente:configuracao-mobile": "node scripts/ambiente-local.mjs configuracao-mobile",
     "ambiente:parar": "node scripts/ambiente-local.mjs parar",
     "ambiente:preparar": "node scripts/ambiente-local.mjs preparar",
     "ambiente:subir": "node scripts/ambiente-local.mjs subir",
@@ -19,6 +20,7 @@
     "gerar:contratos": "node scripts/gerar-contratos.mjs",
     "lint": "node scripts/executar-turbo.mjs lint && eslint scripts tests --max-warnings 0",
     "staging:estado": "node scripts/ambiente-staging.mjs estado",
+    "staging:configuracao-mobile": "node scripts/ambiente-staging.mjs configuracao-mobile",
     "staging:parar": "node scripts/ambiente-staging.mjs parar",
     "staging:preparar": "node scripts/ambiente-staging.mjs preparar",
     "staging:preparar-administrador": "node scripts/ambiente-staging.mjs preparar-administrador",

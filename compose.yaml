@@ -190,6 +190,8 @@ services:
         condition: service_healthy
     environment:
       AMBIENTE_APLICACAO: desenvolvimento
+      AUTORIZACAO_OFFLINE_CHAVE_ID: desenvolvimento-1
+      AUTORIZACAO_OFFLINE_CHAVE_PRIVADA_FILE: /run/secrets/chave_autorizacao_offline
       BANCO_HOST: postgres
       BANCO_NOME: vyntra
       BANCO_PORTA: "5432"
@@ -203,6 +205,7 @@ services:
       REDIS_PORTA: "6379"
       STORAGE_ENDPOINT: http://minio:9000
     secrets:
+      - chave_autorizacao_offline
       - senha_postgresql
     read_only: true
     cap_drop:
@@ -283,6 +286,8 @@ networks:
     internal: false
 
 secrets:
+  chave_autorizacao_offline:
+    file: ./.segredos/desenvolvimento/chave-autorizacao-offline.pem
   redis_acl:
     file: ./.segredos/desenvolvimento/redis.acl
   senha_minio:

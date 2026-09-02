@@ -11,6 +11,7 @@ import { RepositorioSincronizacaoPrisma } from './repositorio-sincronizacao-pris
 import { REPOSITORIO_RESSINCRONIZACAO } from './repositorio-ressincronizacao.js';
 import { RepositorioRessincronizacaoPrisma } from './repositorio-ressincronizacao-prisma.js';
 import { ServicoRessincronizacaoCompleta } from './servico-ressincronizacao-completa.js';
+import { ServicoAutorizacaoOffline } from './servico-autorizacao-offline.js';
 import { ServicoSincronizacaoIncremental } from './servico-sincronizacao-incremental.js';
 
 @Module({
@@ -23,6 +24,7 @@ import { ServicoSincronizacaoIncremental } from './servico-sincronizacao-increme
     GatewayEventosMobile,
     RepositorioSincronizacaoPrisma,
     RepositorioRessincronizacaoPrisma,
+    ServicoAutorizacaoOffline,
     ServicoRessincronizacaoCompleta,
     ServicoSincronizacaoIncremental,
     {

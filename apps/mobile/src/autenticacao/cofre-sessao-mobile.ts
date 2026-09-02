@@ -5,6 +5,9 @@ const CHAVE_IDENTIFICADOR_INSTALACAO = 'autenticacao.identificador-instalacao';
 const CHAVE_SEGREDO_VINCULO = 'autenticacao.segredo-vinculo';
 const CHAVE_DISPOSITIVO_ID = 'autenticacao.dispositivo-id';
 const CHAVE_TOKEN_REFRESH = 'autenticacao.token-refresh';
+const CHAVE_SESSAO_ID = 'autenticacao.sessao-id';
+const CHAVE_USUARIO_ID = 'autenticacao.usuario-id';
+const CHAVE_NOME_EXIBICAO = 'autenticacao.nome-exibicao';
 const OPCOES_COFRE: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
 };
@@ -16,7 +19,10 @@ export interface IdentidadeInstalacaoMobile {
 
 export interface CredencialPersistidaMobile {
   readonly dispositivoId: string;
+  readonly nomeExibicao: string;
+  readonly sessaoId: string;
   readonly tokenRefresh: string;
+  readonly usuarioId: string;
 }
 
 function codificarBase64Url(bytes: Uint8Array): string {
@@ -83,23 +89,41 @@ export class CofreSessaoMobile {
         credencial.tokenRefresh,
         OPCOES_COFRE,
       ),
+      SecureStore.setItemAsync(CHAVE_SESSAO_ID, credencial.sessaoId, OPCOES_COFRE),
+      SecureStore.setItemAsync(CHAVE_USUARIO_ID, credencial.usuarioId, OPCOES_COFRE),
+      SecureStore.setItemAsync(
+        CHAVE_NOME_EXIBICAO,
+        credencial.nomeExibicao,
+        OPCOES_COFRE,
+      ),
     ]);
   }
 
   public async obterCredencial(): Promise<CredencialPersistidaMobile | undefined> {
-    const [dispositivoId, tokenRefresh] = await Promise.all([
+    const [dispositivoId, nomeExibicao, sessaoId, tokenRefresh, usuarioId] =
+      await Promise.all([
       SecureStore.getItemAsync(CHAVE_DISPOSITIVO_ID),
+      SecureStore.getItemAsync(CHAVE_NOME_EXIBICAO),
+      SecureStore.getItemAsync(CHAVE_SESSAO_ID),
       SecureStore.getItemAsync(CHAVE_TOKEN_REFRESH),
+      SecureStore.getItemAsync(CHAVE_USUARIO_ID),
     ]);
-    return dispositivoId === null || tokenRefresh === null
+    return dispositivoId === null ||
+      nomeExibicao === null ||
+      sessaoId === null ||
+      tokenRefresh === null ||
+      usuarioId === null
       ? undefined
-      : { dispositivoId, tokenRefresh };
+      : { dispositivoId, nomeExibicao, sessaoId, tokenRefresh, usuarioId };
   }
 
   public async limparCredencial(): Promise<void> {
     await Promise.all([
       SecureStore.deleteItemAsync(CHAVE_DISPOSITIVO_ID),
+      SecureStore.deleteItemAsync(CHAVE_NOME_EXIBICAO),
+      SecureStore.deleteItemAsync(CHAVE_SESSAO_ID),
       SecureStore.deleteItemAsync(CHAVE_TOKEN_REFRESH),
+      SecureStore.deleteItemAsync(CHAVE_USUARIO_ID),
     ]);
   }
 
@@ -108,7 +132,10 @@ export class CofreSessaoMobile {
       SecureStore.deleteItemAsync(CHAVE_IDENTIFICADOR_INSTALACAO),
       SecureStore.deleteItemAsync(CHAVE_SEGREDO_VINCULO),
       SecureStore.deleteItemAsync(CHAVE_DISPOSITIVO_ID),
+      SecureStore.deleteItemAsync(CHAVE_NOME_EXIBICAO),
+      SecureStore.deleteItemAsync(CHAVE_SESSAO_ID),
       SecureStore.deleteItemAsync(CHAVE_TOKEN_REFRESH),
+      SecureStore.deleteItemAsync(CHAVE_USUARIO_ID),
     ]);
     return this.obterOuCriarIdentidadeInstalacao();
   }
