@@ -11,6 +11,10 @@ import {
   AdaptadorSincronizacaoHttp,
   ErroSincronizacaoMobile,
 } from './adaptador-sincronizacao-http';
+import {
+  CoordenadorInvalidacaoEscopoMobile,
+  type EventoInvalidacaoEscopoMobile,
+} from './coordenador-invalidacao-escopo';
 import type {
   EventoSincronizacaoMobile,
   SnapshotMobileValidado,
@@ -22,11 +26,19 @@ const LIMITE_PAGINAS_INCREMENTAIS = 100;
 const PRAZO_ABERTURA_AVISO_MS = 30_000;
 
 export type EstadoSincronizacaoMobile =
+  | 'ACESSO_REVOGADO'
   | 'BLOQUEADO'
   | 'CONECTADO'
   | 'CONECTANDO'
+  | 'ESCOPO_ATUALIZANDO'
   | 'SEM_CONEXAO'
   | 'SINCRONIZANDO';
+
+export interface GanchosSegurancaSincronizacaoMobile {
+  aoEscopoSubstituido(snapshot: SnapshotMobileValidado): Promise<void>;
+  aoSessaoRevogada(): Promise<void>;
+  reconciliarPendencias(): Promise<void>;
+}
 
 type ObterCredenciais = (
   forcarRenovacao?: boolean,
@@ -40,12 +52,21 @@ interface EstadoConvergenteMobile {
 export class MotorSincronizacaoMobile {
   private ativa = false;
   private conexao: ConexaoEventosMobile | undefined;
+  private readonly coordenadorInvalidacao: CoordenadorInvalidacaoEscopoMobile<SnapshotMobileValidado>;
+  private credenciaisInvalidacao:
+    | CredenciaisSincronizacaoAplicativo
+    | undefined;
+  private escopoEmAtualizacao = false;
   private estado: EstadoSincronizacaoMobile = 'SEM_CONEXAO';
   private execucao: Promise<void> | undefined;
   private geracao = 0;
+  private ganchosSeguranca: GanchosSegurancaSincronizacaoMobile;
   private readonly observadores = new Set<(estado: EstadoSincronizacaoMobile) => void>();
   private repeticao = 0;
+  private revogacaoEmCurso: Promise<void> | undefined;
+  private snapshotInvalidacao: SnapshotMobileValidado | undefined;
   private temporizador: ReturnType<typeof setTimeout> | undefined;
+  private versaoConexao = 0;
 
   public constructor(
     private readonly repositorio: RepositorioReplicaLocal,
@@ -53,7 +74,73 @@ export class MotorSincronizacaoMobile {
     private readonly obterCredenciais: ObterCredenciais,
     private readonly http = new AdaptadorSincronizacaoHttp(),
     private readonly eventos = new AdaptadorEventosWebSocketMobile(),
-  ) {}
+    aoSessaoRevogada: () => Promise<void> = async () => undefined,
+  ) {
+    this.ganchosSeguranca = {
+      aoEscopoSubstituido: async () => undefined,
+      aoSessaoRevogada,
+      reconciliarPendencias: async () => undefined,
+    };
+    this.coordenadorInvalidacao =
+      new CoordenadorInvalidacaoEscopoMobile<SnapshotMobileValidado>({
+        abrirTempoReal: async (apos) => {
+          const credenciais = this.credenciaisInvalidacao;
+          if (credenciais === undefined) {
+            throw new Error('CREDENCIAIS_INVALIDACAO_AUSENTES');
+          }
+          await this.abrirTempoReal(apos, credenciais, this.geracao);
+        },
+        bloquearAreaAutenticada: async () => {
+          this.publicarEstado('BLOQUEADO');
+        },
+        fecharTempoReal: async () => {
+          this.fecharTempoReal();
+        },
+        invalidarReplicaLocal: async (evento) => {
+          await this.repositorio.invalidarAutorizacaoEscopo(
+            evento.sequenciaEvento,
+            evento.dados.versaoPermissoes,
+          );
+        },
+        obterSnapshotAutorizado: async (evento) => {
+          const credenciais = await this.obterCredenciais(false);
+          this.validarDestinoInvalidacao(evento, credenciais);
+          this.credenciaisInvalidacao = credenciais;
+          return this.obterSnapshotValidado(
+            credenciais,
+            evento.sequenciaEvento,
+          );
+        },
+        pausarComandosDependentes: async () => {
+          this.cancelarTemporizador();
+          this.publicarEstado('ESCOPO_ATUALIZANDO');
+        },
+        reconciliarPendencias: async () => {
+          await this.ganchosSeguranca.reconciliarPendencias();
+        },
+        retomarComandosAutorizados: async () => {
+          const snapshot = this.snapshotInvalidacao;
+          if (snapshot === undefined) {
+            throw new Error('SNAPSHOT_INVALIDACAO_AUSENTE');
+          }
+          this.agendarRenovacao(snapshot.autorizacaoOfflineValidaAte);
+          this.publicarEstado('CONECTADO');
+          this.credenciaisInvalidacao = undefined;
+          this.snapshotInvalidacao = undefined;
+        },
+        substituirReplicaRemovendoAusentes: async (snapshot) => {
+          await this.repositorio.aplicarSnapshot(snapshot, true);
+          this.snapshotInvalidacao = snapshot;
+          await this.ganchosSeguranca.aoEscopoSubstituido(snapshot);
+        },
+      });
+  }
+
+  public configurarGanchosSeguranca(
+    ganchos: Partial<GanchosSegurancaSincronizacaoMobile>,
+  ): void {
+    this.ganchosSeguranca = { ...this.ganchosSeguranca, ...ganchos };
+  }
 
   public iniciar(): void {
     if (this.ativa) return;
@@ -148,10 +235,15 @@ export class MotorSincronizacaoMobile {
       .then(() => {
         this.repeticao = 0;
       })
-      .catch((erro: unknown) => {
+      .catch(async (erro: unknown) => {
         if (!this.ativa || geracao !== this.geracao) return;
+        if (this.escopoEmAtualizacao) return;
         if (this.statusHttp(erro) === 401 && !forcarRenovacao) {
           repetirRenovando = true;
+          return;
+        }
+        if (this.exigeRevogacaoLocal(erro)) {
+          await this.revogarSessaoLocal();
           return;
         }
         if (this.bloqueiaAcesso(erro)) {
@@ -229,6 +321,13 @@ export class MotorSincronizacaoMobile {
         }
         throw erro;
       }
+      const invalidacao = this.ultimaInvalidacao(lote.eventos, credenciais);
+      if (invalidacao !== undefined) {
+        return this.aplicarInvalidacaoDuranteSincronizacao(
+          invalidacao,
+          credenciais,
+        );
+      }
       await this.repositorio.aplicarLote(
         cursor,
         lote.eventos,
@@ -254,6 +353,18 @@ export class MotorSincronizacaoMobile {
     credenciais: CredenciaisSincronizacaoAplicativo,
     sequenciaMinima = '0',
   ): Promise<SnapshotMobileValidado> {
+    const snapshot = await this.obterSnapshotValidado(
+      credenciais,
+      sequenciaMinima,
+    );
+    await this.repositorio.aplicarSnapshot(snapshot);
+    return snapshot;
+  }
+
+  private async obterSnapshotValidado(
+    credenciais: CredenciaisSincronizacaoAplicativo,
+    sequenciaMinima = '0',
+  ): Promise<SnapshotMobileValidado> {
     const snapshot = await this.http.obterSnapshot(credenciais);
     if (BigInt(snapshot.sequenciaBase) < BigInt(sequenciaMinima)) {
       throw new Error('SNAPSHOT_SINCRONIZACAO_DESATUALIZADO');
@@ -271,7 +382,6 @@ export class MotorSincronizacaoMobile {
     if (resultado.estado !== 'AUTORIZADO') {
       throw new Error('AUTORIZACAO_OFFLINE_RECEBIDA_INVALIDA');
     }
-    await this.repositorio.aplicarSnapshot(snapshot);
     return snapshot;
   }
 
@@ -280,10 +390,28 @@ export class MotorSincronizacaoMobile {
     credenciais: CredenciaisSincronizacaoAplicativo,
     geracao: number,
   ): Promise<void> {
+    const versaoConexao = ++this.versaoConexao;
     const conexao = await this.eventos.abrir(cursor, credenciais, {
-      aoEncerrar: (codigo) => {
-        if (!this.ativa || geracao !== this.geracao) return;
+      aoEncerrar: (codigo, motivo) => {
+        if (
+          !this.ativa ||
+          geracao !== this.geracao ||
+          versaoConexao !== this.versaoConexao
+        ) {
+          return;
+        }
         this.conexao = undefined;
+        if (codigo === 4003 && motivo === 'AUTORIZACAO_INVALIDADA') {
+          void this.revogarSessaoLocal();
+          return;
+        }
+        if (
+          codigo === 4003 &&
+          motivo === 'ESCOPO_ALTERADO' &&
+          this.escopoEmAtualizacao
+        ) {
+          return;
+        }
         this.publicarEstado('SEM_CONEXAO');
         this.agendarReconexao(codigo === 4003);
       },
@@ -311,6 +439,10 @@ export class MotorSincronizacaoMobile {
       conexao.fechar();
       throw new Error('SINCRONIZACAO_PAUSADA');
     }
+    if (versaoConexao !== this.versaoConexao) {
+      conexao.fechar();
+      return;
+    }
     this.conexao = conexao;
   }
 
@@ -321,6 +453,21 @@ export class MotorSincronizacaoMobile {
     const estado = await this.repositorio.obterEstado();
     if (estado === undefined) throw new Error('ESTADO_REPLICA_LOCAL_AUSENTE');
     if (BigInt(evento.sequenciaEvento) <= BigInt(estado.sequenciaEvento)) return;
+    if (evento.tipo === 'PERMISSOES_ALTERADAS') {
+      const invalidacao = this.projetarInvalidacao(evento, credenciais);
+      this.escopoEmAtualizacao = true;
+      try {
+        await this.coordenadorInvalidacao.invalidar(invalidacao);
+      } catch (erro) {
+        if (this.exigeRevogacaoLocal(erro)) {
+          await this.revogarSessaoLocal();
+        }
+        throw erro;
+      } finally {
+        this.escopoEmAtualizacao = false;
+      }
+      return;
+    }
     await this.repositorio.aplicarLote(
       estado.sequenciaEvento,
       [evento],
@@ -365,8 +512,10 @@ export class MotorSincronizacaoMobile {
   }
 
   private fecharTempoReal(): void {
-    this.conexao?.fechar();
+    this.versaoConexao += 1;
+    const conexao = this.conexao;
     this.conexao = undefined;
+    conexao?.fechar();
   }
 
   private cancelarTemporizador(): void {
@@ -388,6 +537,107 @@ export class MotorSincronizacaoMobile {
         (erro.message === 'AUTORIZACAO_OFFLINE_RECEBIDA_INVALIDA' ||
           erro.message === 'CONTRATO_SINCRONIZACAO_INVALIDO'))
     );
+  }
+
+  private exigeRevogacaoLocal(erro: unknown): boolean {
+    const status = this.statusHttp(erro);
+    return status === 401 || status === 403;
+  }
+
+  private async revogarSessaoLocal(): Promise<void> {
+    if (this.revogacaoEmCurso !== undefined) return this.revogacaoEmCurso;
+    this.revogacaoEmCurso = (async () => {
+      this.ativa = false;
+      this.geracao += 1;
+      this.cancelarTemporizador();
+      this.fecharTempoReal();
+      this.publicarEstado('ESCOPO_ATUALIZANDO');
+      try {
+        await this.ganchosSeguranca.aoSessaoRevogada();
+        this.publicarEstado('ACESSO_REVOGADO');
+      } catch {
+        this.publicarEstado('BLOQUEADO');
+      }
+    })().finally(() => {
+      this.revogacaoEmCurso = undefined;
+    });
+    return this.revogacaoEmCurso;
+  }
+
+  private projetarInvalidacao(
+    evento: EventoSincronizacaoMobile,
+    credenciais: CredenciaisSincronizacaoAplicativo,
+  ): EventoInvalidacaoEscopoMobile {
+    const versaoPermissoes = evento.dados.versaoPermissoes;
+    if (
+      evento.tipo !== 'PERMISSOES_ALTERADAS' ||
+      evento.entidadeTipo !== 'USUARIO' ||
+      evento.entidadeId !== credenciais.credencial.usuarioId ||
+      typeof versaoPermissoes !== 'number' ||
+      !Number.isSafeInteger(versaoPermissoes) ||
+      versaoPermissoes < 2
+    ) {
+      throw new Error('EVENTO_INVALIDACAO_ESCOPO_INVALIDO');
+    }
+    return {
+      dados: { versaoPermissoes },
+      entidadeId: evento.entidadeId,
+      sequenciaEvento: evento.sequenciaEvento,
+      tipo: 'PERMISSOES_ALTERADAS',
+    };
+  }
+
+  private validarDestinoInvalidacao(
+    evento: EventoInvalidacaoEscopoMobile,
+    credenciais: CredenciaisSincronizacaoAplicativo,
+  ): void {
+    if (evento.entidadeId !== credenciais.credencial.usuarioId) {
+      throw new Error('DESTINO_INVALIDACAO_ESCOPO_DIVERGENTE');
+    }
+  }
+
+  private ultimaInvalidacao(
+    eventos: readonly EventoSincronizacaoMobile[],
+    credenciais: CredenciaisSincronizacaoAplicativo,
+  ): EventoInvalidacaoEscopoMobile | undefined {
+    let ultima: EventoInvalidacaoEscopoMobile | undefined;
+    for (const evento of eventos) {
+      if (evento.tipo !== 'PERMISSOES_ALTERADAS') continue;
+      const candidata = this.projetarInvalidacao(evento, credenciais);
+      if (
+        ultima === undefined ||
+        BigInt(candidata.sequenciaEvento) > BigInt(ultima.sequenciaEvento)
+      ) {
+        ultima = candidata;
+      }
+    }
+    return ultima;
+  }
+
+  private async aplicarInvalidacaoDuranteSincronizacao(
+    evento: EventoInvalidacaoEscopoMobile,
+    credenciais: CredenciaisSincronizacaoAplicativo,
+  ): Promise<SnapshotMobileValidado> {
+    this.escopoEmAtualizacao = true;
+    this.publicarEstado('ESCOPO_ATUALIZANDO');
+    try {
+      await this.repositorio.invalidarAutorizacaoEscopo(
+        evento.sequenciaEvento,
+        evento.dados.versaoPermissoes,
+      );
+      const snapshot = await this.obterSnapshotValidado(
+        credenciais,
+        evento.sequenciaEvento,
+      );
+      if (snapshot.versaoPermissoes < evento.dados.versaoPermissoes) {
+        throw new Error('SNAPSHOT_ESCOPO_DESATUALIZADO');
+      }
+      await this.repositorio.aplicarSnapshot(snapshot, true);
+      await this.ganchosSeguranca.aoEscopoSubstituido(snapshot);
+      return snapshot;
+    } finally {
+      this.escopoEmAtualizacao = false;
+    }
   }
 
   private statusHttp(erro: unknown): number | undefined {

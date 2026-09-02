@@ -68,6 +68,25 @@ export class CaixaAvisosMobile {
     this.publicar();
   }
 
+  public reterDestinosAutorizados(entrada: {
+    readonly atendimentos: ReadonlySet<string>;
+    readonly conversas: ReadonlySet<string>;
+  }): void {
+    let alterou = false;
+    for (const [chave, grupo] of this.grupos) {
+      const atendimentoAutorizado =
+        grupo.aviso.atendimentoId === undefined ||
+        entrada.atendimentos.has(grupo.aviso.atendimentoId);
+      const conversaAutorizada =
+        grupo.aviso.conversaId === undefined ||
+        entrada.conversas.has(grupo.aviso.conversaId);
+      if (atendimentoAutorizado && conversaAutorizada) continue;
+      this.grupos.delete(chave);
+      alterou = true;
+    }
+    if (alterou) this.publicar();
+  }
+
   private publicar(): void {
     for (const observador of this.observadores) observador();
   }

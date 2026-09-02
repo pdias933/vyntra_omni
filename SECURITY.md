@@ -817,3 +817,16 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - rajadas convergem pelo maior `sequencia_observada`; abertura exige cursor local igual ou posterior, réplica íntegra e WebSocket conectado;
 - depois da sincronização, o destino é relido no escopo autorizado. Ausência, revogação, timeout ou falha de rede não abrem conversa antiga e conservam o aviso para nova tentativa;
 - o receptor existe somente em sessão autenticada e a caixa é limpa no logout/troca de usuário; resposta nativa é deduplicada e só é removida após abertura bem-sucedida.
+
+## 37. Revogação e perda de permissão mobile da PR 107
+
+- `PERMISSOES_ALTERADAS` é aceito somente para o UUID do usuário autenticado, com sequência decimal e versão inteira válida; payload divergente falha fechado;
+- o primeiro commit local marca a réplica para ressincronização, apaga o envelope offline utilizável e bloqueia a apresentação antes de solicitar o novo snapshot;
+- WebSocket e lotes REST recebem a mesma defesa; uma invalidação nunca é persistida como projeção incremental comum;
+- snapshot novo precisa ter `sequencia_base` e `versao_permissoes` iguais ou posteriores ao evento, além da assinatura e dos vínculos já exigidos pela PR 099;
+- substituição SQLCipher remove filas, conversas, atendimentos, mensagens, notas, permissões e índices ausentes, preservando rascunhos e pendências apenas para revisão autorizada;
+- avisos efêmeros cujo atendimento ou conversa saiu do snapshot são apagados; push nunca preserva acesso ao destino antigo;
+- comandos só retomam depois de snapshot, novo WebSocket com `PRONTO` processado e reconciliação conservadora das pendências;
+- falha intermediária mantém a área bloqueada e a autorização offline inutilizada, sem rollback para o cache antigo;
+- `AUTORIZACAO_INVALIDADA`, sessão/aparelho revogado ou `401`/`403` confirmado depois da renovação limpa cofre de sessão, réplica e avisos antes de retornar ao login;
+- aparelho sem rede continua limitado pelo envelope anterior e bloqueia no máximo em quatro horas; a próxima conexão executa a limpeza conforme a autoridade atual.

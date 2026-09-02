@@ -20,7 +20,10 @@ export interface ExecutorInvalidacaoEscopoMobile<
 > {
   bloquearAreaAutenticada(): Promise<void>;
   fecharTempoReal(): Promise<void>;
-  obterSnapshotAutorizado(): Promise<Snapshot>;
+  invalidarReplicaLocal(evento: EventoInvalidacaoEscopoMobile): Promise<void>;
+  obterSnapshotAutorizado(
+    evento: EventoInvalidacaoEscopoMobile,
+  ): Promise<Snapshot>;
   abrirTempoReal(apos: string): Promise<void>;
   pausarComandosDependentes(): Promise<void>;
   reconciliarPendencias(): Promise<void>;
@@ -32,6 +35,7 @@ export class CoordenadorInvalidacaoEscopoMobile<
   Snapshot extends SnapshotAutorizadoMobile,
 > {
   private invalidacaoEmCurso: Promise<void> | undefined;
+  private eventoPendente: EventoInvalidacaoEscopoMobile | undefined;
 
   public constructor(
     private readonly executor: ExecutorInvalidacaoEscopoMobile<Snapshot>,
@@ -39,19 +43,33 @@ export class CoordenadorInvalidacaoEscopoMobile<
 
   public invalidar(evento: EventoInvalidacaoEscopoMobile): Promise<void> {
     this.validarEvento(evento);
-    this.invalidacaoEmCurso ??= this.executar(evento).finally(() => {
+    if (
+      this.eventoPendente === undefined ||
+      BigInt(evento.sequenciaEvento) >
+        BigInt(this.eventoPendente.sequenciaEvento)
+    ) {
+      this.eventoPendente = evento;
+    }
+    this.invalidacaoEmCurso ??= this.executarPendentes().finally(() => {
       this.invalidacaoEmCurso = undefined;
     });
     return this.invalidacaoEmCurso;
   }
 
-  private async executar(
-    evento: EventoInvalidacaoEscopoMobile,
-  ): Promise<void> {
+  private async executarPendentes(): Promise<void> {
+    while (this.eventoPendente !== undefined) {
+      const evento = this.eventoPendente;
+      this.eventoPendente = undefined;
+      await this.executar(evento);
+    }
+  }
+
+  private async executar(evento: EventoInvalidacaoEscopoMobile): Promise<void> {
     await this.executor.pausarComandosDependentes();
     try {
+      await this.executor.invalidarReplicaLocal(evento);
       await this.executor.fecharTempoReal();
-      const snapshot = await this.executor.obterSnapshotAutorizado();
+      const snapshot = await this.executor.obterSnapshotAutorizado(evento);
       if (
         snapshot.versaoPermissoes < evento.dados.versaoPermissoes ||
         BigInt(snapshot.sequenciaBase) < BigInt(evento.sequenciaEvento)
@@ -59,8 +77,8 @@ export class CoordenadorInvalidacaoEscopoMobile<
         throw new Error('SNAPSHOT_ESCOPO_DESATUALIZADO');
       }
       await this.executor.substituirReplicaRemovendoAusentes(snapshot);
-      await this.executor.reconciliarPendencias();
       await this.executor.abrirTempoReal(snapshot.sequenciaBase);
+      await this.executor.reconciliarPendencias();
       await this.executor.retomarComandosAutorizados();
     } catch (erro) {
       await this.executor.bloquearAreaAutenticada();

@@ -234,6 +234,7 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - A caixa de notificações é efêmera e limitada, não uma tabela de domínio. Limpe-a em logout, troca de usuário e revogação integral.
 - Pendência offline nasce somente com autorização assinada vigente, captura sequência, versões de atribuição/estado/contexto e janela observadas, e sincroniza antes de enviar.
 - Reconciliação automática só começa após REST convergir e o WebSocket alcançar `CONECTADO`; `CONECTANDO` ou `SINCRONIZANDO` nunca executa pendência.
+- `CONECTADO` exige o marcador `PRONTO` já validado e aplicado; abertura física do WebSocket não basta.
 - O backend adquire `autoridade-saida:<atendimento_id>` e revalida sessão, aparelho, RBAC, fila, recurso, responsabilidade, estado, contexto, timeline e janela antes de criar a mensagem.
 - Mudança relevante produz `REVISAO_NECESSARIA`; falha transitória conserva `AGUARDANDO_CONEXAO`.
 - “Enviar mesmo assim” cria novo comando idempotente e não ignora autorização, janela, estado ou atribuição.
@@ -242,7 +243,9 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - Ações ERP no app exibem origem dos dados. Financeiro só usa `TEMPO_REAL`; indisponibilidade não cai para snapshot.
 - Toda ação ERP com efeito exige seleção, prévia, confirmação, chave idempotente e revalidação no backend. Resultado incerto nunca vira sucesso visual.
 - Conexão, segunda via/Pix, Flow ou nota sem caso de uso ponta a ponta permanecem desabilitados; não acrescente stub que simule efeito.
-- Perda de permissão remove/inutiliza dado local correspondente.
+- Perda de permissão entra em `ESCOPO_ATUALIZANDO`, invalida a autorização offline local antes da rede e substitui a réplica por snapshot de versão/sequência suficientes; cubra evento vindo de WebSocket e de lote REST.
+- Só retome visualização e comandos depois de limpar avisos órfãos, receber `PRONTO` no novo WebSocket e reconciliar pendências. Falha mantém a área bloqueada; nunca restaure o cache anterior.
+- Revogação de sessão/dispositivo limpa credenciais, réplica autenticada e caixa efêmera antes de voltar ao login. Não trate isso como simples reconexão.
 - Invalidação pausa comandos dependentes, fecha realtime, aplica snapshot autorizado e só então reconecta/retoma; falha bloqueia a área autenticada e nunca restaura cache antigo.
 - Fechar app/stream não muda disponibilidade do usuário.
 

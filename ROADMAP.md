@@ -128,7 +128,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 104 | CONCLUÍDA | `xhigh` |
 | 105 | CONCLUÍDA | `xhigh` |
 | 106 | CONCLUÍDA | `high` |
-| 107 | PENDENTE | `xhigh` |
+| 107 | CONCLUÍDA | `xhigh` |
 | 108 | PENDENTE | `high` |
 | 109 | PENDENTE | `xhigh` |
 | 110 | PENDENTE | `high` |
@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR106 foram concluídas e a PR107 segue pendente na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR107 foram concluídas e a PR108 é a próxima na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -700,6 +700,10 @@ Aceite concluído em 2 de setembro de 2026: o composer usa o seletor nativo para
 ### PR 106 — notificações mobile
 
 Aceite concluído em 2 de setembro de 2026: o receptor Expo passou a existir somente durante sessão autenticada e a aba `Notificações` apresenta exatamente nova mensagem própria, novo pendente, cliente aguardando, janela próxima de expirar e transferência direta. A caixa efêmera limita cem grupos, agrega rajadas pela conversa/contato, conserva a maior sequência e nunca persiste payload ou conteúdo no SQLCipher. O badge conta grupos, e cada card usa texto genérico. Recebimento em primeiro plano solicita sincronização coalescida; toque e abertura a frio aguardam cursor igual ou posterior a `sequencia_observada`, réplica íntegra e WebSocket conectado, relendo então o destino autorizado. Falha, timeout ou alvo removido não navegam e preservam o aviso; logout/troca de usuário limpam a caixa. Não houve migration, dependência, OpenAPI ou deploy; o adapter real de entrega permanece fechado sem configuração aprovada. Lint, tipos, 435 testes da API, 302 testes de arquitetura, matriz Expo, auditoria de dependências, varredura de segredos e builds web/API/iOS/Android foram aprovados. Effort `high` confirmado pela convergência por sequência, agrupamento seguro e navegação sem estado antigo.
+
+### PR 107 — revogação e perda de permissão mobile
+
+Aceite concluído em 2 de setembro de 2026: o coordenador de invalidação passou a integrar o motor real para eventos vindos tanto do WebSocket quanto de lotes REST. A réplica perde imediatamente a autorização offline e a UI entra em `ESCOPO_ATUALIZANDO`; o snapshot seguinte precisa alcançar sequência e versão do evento, substitui atomicamente o conjunto autorizado, poda rascunhos/pendências sem escopo e remove avisos órfãos. O novo WebSocket só é considerado conectado depois de `PRONTO`, e a reconciliação antecede a retomada dos comandos. Eventos são vinculados ao usuário autenticado e invalidações concorrentes convergem pela maior sequência. Revogação de sessão/dispositivo ou autorização recusada após renovação limpa cofre, réplica e avisos antes de voltar ao login. Não houve migration, dependência, OpenAPI ou deploy. Effort `xhigh` confirmado pelo tratamento fail-closed nos dois transportes, corte imediato do cache offline e distinção entre redução de escopo e revogação integral.
 
 ## 12. Mobile
 

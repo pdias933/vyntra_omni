@@ -696,7 +696,10 @@ export class RepositorioReplicaLocal {
     this.publicarMudanca();
   }
 
-  public async aplicarSnapshot(snapshot: SnapshotMobileValidado): Promise<void> {
+  public async aplicarSnapshot(
+    snapshot: SnapshotMobileValidado,
+    limparDadosForaDoEscopo = false,
+  ): Promise<void> {
     const banco = await this.abrir();
     await banco.withExclusiveTransactionAsync(async (transacao) => {
       await transacao.execAsync(`
@@ -829,6 +832,9 @@ export class RepositorioReplicaLocal {
         'INSERT INTO permissao (codigo) VALUES (?)',
         snapshot.permissoes.map((codigo) => [codigo]),
       );
+      if (limparDadosForaDoEscopo) {
+        await this.removerDadosPrivadosForaDoEscopo(transacao, snapshot);
+      }
       await executarPreparado(
         transacao,
         `INSERT INTO politica_versao
@@ -940,6 +946,60 @@ export class RepositorioReplicaLocal {
       autorizacao.token,
       autorizacao.validaAte,
     );
+  }
+
+  private async removerDadosPrivadosForaDoEscopo(
+    transacao: SQLite.SQLiteDatabase,
+    snapshot: SnapshotMobileValidado,
+  ): Promise<void> {
+    if (snapshot.permissoes.includes('ENVIAR_MENSAGEM')) {
+      await transacao.execAsync(`
+        DELETE FROM pendencia_saida_texto
+          WHERE NOT EXISTS (
+            SELECT 1 FROM conversa
+            WHERE conversa.id = pendencia_saida_texto.conversa_id
+          );
+        DELETE FROM rascunho
+          WHERE NOT EXISTS (
+            SELECT 1 FROM conversa
+            WHERE conversa.id = rascunho.conversa_id
+          );
+      `);
+      return;
+    }
+    await transacao.execAsync(`
+      DELETE FROM pendencia_saida_texto;
+      DELETE FROM rascunho;
+    `);
+  }
+
+  public async invalidarAutorizacaoEscopo(
+    sequenciaEvento: string,
+    versaoPermissoes: number,
+  ): Promise<void> {
+    if (
+      !/^[1-9][0-9]{0,18}$/u.test(sequenciaEvento) ||
+      !Number.isInteger(versaoPermissoes) ||
+      versaoPermissoes < 2
+    ) {
+      throw new Error('INVALIDACAO_ESCOPO_LOCAL_INVALIDA');
+    }
+    const banco = await this.abrir();
+    const resultado = await banco.runAsync(
+      `UPDATE estado_replica SET
+        precisa_ressincronizar = 1,
+        autorizacao_offline = '',
+        autorizacao_offline_valida_ate = ?,
+        versao_permissoes = MAX(versao_permissoes, ?)
+       WHERE id = ?`,
+      new Date(0).toISOString(),
+      versaoPermissoes,
+      1,
+    );
+    if (resultado.changes !== 1) {
+      throw new Error('ESTADO_REPLICA_LOCAL_AUSENTE');
+    }
+    this.publicarMudanca();
   }
 
   public async limparReplicaAutenticada(): Promise<void> {

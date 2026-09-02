@@ -2,6 +2,7 @@ import type { ServicoAutenticacaoAplicativo } from '../autenticacao/servico-aute
 import {
   MotorSincronizacaoMobile,
   type EstadoSincronizacaoMobile,
+  type GanchosSegurancaSincronizacaoMobile,
 } from './motor-sincronizacao-mobile';
 
 export class ServicoSincronizacaoAplicativo {
@@ -13,7 +14,19 @@ export class ServicoSincronizacaoAplicativo {
       autenticacao.autorizacaoOffline,
       (forcarRenovacao) =>
         autenticacao.obterCredenciaisSincronizacao(forcarRenovacao),
+      undefined,
+      undefined,
+      () => autenticacao.invalidarSessaoLocal(),
     );
+  }
+
+  public configurarSeguranca(
+    ganchos: Pick<
+      GanchosSegurancaSincronizacaoMobile,
+      'aoEscopoSubstituido' | 'reconciliarPendencias'
+    >,
+  ): void {
+    this.motor.configurarGanchosSeguranca(ganchos);
   }
 
   public iniciar(): void {

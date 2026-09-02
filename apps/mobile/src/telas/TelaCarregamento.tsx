@@ -12,7 +12,11 @@ import { useEffect } from 'react';
 import { MarcaVyntra } from '../componentes/MarcaVyntra';
 import { CORES, RAIOS } from '../tema';
 
-export function TelaCarregamento() {
+export function TelaCarregamento({
+  rotulo = 'Abrindo Vyntra Omni',
+}: {
+  readonly rotulo?: string;
+}) {
   const opacidade = useSharedValue(0.38);
   useEffect(() => {
     opacidade.value = withRepeat(
@@ -28,7 +32,7 @@ export function TelaCarregamento() {
   const estiloAnimado = useAnimatedStyle(() => ({ opacity: opacidade.value }));
 
   return (
-    <View accessibilityLabel="Abrindo Vyntra Omni" style={estilos.tela}>
+    <View accessibilityLabel={rotulo} style={estilos.tela}>
       <MarcaVyntra />
       <Animated.View style={[estilos.indicador, estiloAnimado]} />
     </View>

@@ -69,6 +69,16 @@ const caixaAvisos = new CaixaAvisosMobile();
 const adaptadorPush = new AdaptadorPushExpo();
 const TEMPO_PARA_BLOQUEAR_MS = 30_000;
 
+sincronizacao.configurarSeguranca({
+  aoEscopoSubstituido: async (snapshot) => {
+    caixaAvisos.reterDestinosAutorizados({
+      atendimentos: new Set(snapshot.atendimentos.map((item) => item.id)),
+      conversas: new Set(snapshot.conversas.map((item) => item.id)),
+    });
+  },
+  reconciliarPendencias: () => pendenciasSaida.reconciliarAguardando(),
+});
+
 async function aguardarNavegacaoPronta(): Promise<void> {
   if (referenciaNavegacao.isReady()) return;
   await new Promise<void>((resolver, rejeitar) => {
@@ -376,6 +386,12 @@ export function Aplicacao() {
           );
           definirEstado('BLOQUEADO');
         }
+        if (estadoSincronizacao === 'ACESSO_REVOGADO') {
+          coordenadorAvisos.limpar();
+          sessaoAtual.current = undefined;
+          definirSessao(undefined);
+          definirEstado('SEM_SESSAO');
+        }
       }),
     [],
   );
@@ -499,6 +515,9 @@ export function Aplicacao() {
             />
           ) : estado === 'CARREGANDO' ? (
             <TelaCarregamento />
+          ) : estadoSincronizacao === 'ESCOPO_ATUALIZANDO' &&
+            estado === 'AUTENTICADO' ? (
+            <TelaCarregamento rotulo="Atualizando seu acesso" />
           ) : estado === 'BLOQUEADO' ? (
             <TelaBloqueio
               aoDesbloquear={() => void desbloquear()}

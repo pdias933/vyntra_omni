@@ -58,6 +58,62 @@ test('snapshot autorizado carrega a versão e o mobile substitui a réplica remo
     execucao.indexOf('substituirReplicaRemovendoAusentes') <
       execucao.indexOf('abrirTempoReal'),
   );
+  assert.ok(
+    execucao.indexOf('abrirTempoReal') <
+      execucao.indexOf('reconciliarPendencias'),
+  );
+  assert.match(coordenador, /eventoPendente/);
+  assert.match(coordenador, /invalidarReplicaLocal/);
   assert.match(coordenador, /bloquearAreaAutenticada/);
   assert.ok(!/push|Redis/iu.test(coordenador));
+});
+
+test('motor mobile invalida o cache antes de trocar o escopo e cobre realtime e lote', async () => {
+  const [motor, replica] = await Promise.all([
+    ler('apps/mobile/src/sincronizacao/motor-sincronizacao-mobile.ts'),
+    ler('apps/mobile/src/offline/repositorio-replica-local.ts'),
+  ]);
+  assert.match(motor, /CoordenadorInvalidacaoEscopoMobile/);
+  assert.match(motor, /evento\.tipo === 'PERMISSOES_ALTERADAS'/);
+  assert.match(motor, /ultimaInvalidacao\(lote\.eventos, credenciais\)/);
+  assert.match(motor, /evento\.entidadeTipo !== 'USUARIO'/);
+  assert.match(motor, /credenciais\.credencial\.usuarioId/);
+  assert.match(motor, /publicarEstado\('ESCOPO_ATUALIZANDO'\)/);
+  assert.match(motor, /motivo === 'AUTORIZACAO_INVALIDADA'/);
+  assert.match(motor, /publicarEstado\('ACESSO_REVOGADO'\)/);
+  assert.match(replica, /invalidarAutorizacaoEscopo/);
+  assert.match(replica, /precisa_ressincronizar = 1/);
+  assert.match(replica, /autorizacao_offline = ''/);
+  assert.match(replica, /limparDadosForaDoEscopo/);
+  assert.match(replica, /DELETE FROM pendencia_saida_texto/);
+  assert.match(replica, /DELETE FROM rascunho/);
+  assert.match(motor, /aplicarSnapshot\(snapshot, true\)/);
+});
+
+test('troca de escopo remove avisos órfãos e revogação integral volta ao login', async () => {
+  const [aplicacao, autenticacao, caixa] = await Promise.all([
+    ler('apps/mobile/src/Aplicacao.tsx'),
+    ler('apps/mobile/src/autenticacao/servico-autenticacao-aplicativo.ts'),
+    ler('apps/mobile/src/avisos/caixa-avisos-mobile.ts'),
+  ]);
+  assert.match(aplicacao, /sincronizacao\.configurarSeguranca/);
+  assert.match(aplicacao, /reterDestinosAutorizados/);
+  assert.match(aplicacao, /estadoSincronizacao === 'ESCOPO_ATUALIZANDO'/);
+  assert.match(aplicacao, /estadoSincronizacao === 'ACESSO_REVOGADO'/);
+  assert.match(aplicacao, /definirEstado\('SEM_SESSAO'\)/);
+  assert.match(autenticacao, /invalidarSessaoLocal/);
+  assert.match(autenticacao, /this\.gerenciador\.limparSessao\(\)/);
+  assert.match(autenticacao, /this\.replica\.limparReplicaAutenticada\(\)/);
+  assert.match(caixa, /reterDestinosAutorizados/);
+  assert.match(caixa, /entrada\.atendimentos\.has/);
+  assert.match(caixa, /entrada\.conversas\.has/);
+});
+
+test('WebSocket só declara conectado depois do marcador PRONTO processado', async () => {
+  const adapter = await ler(
+    'apps/mobile/src/sincronizacao/adaptador-eventos-websocket-mobile.ts',
+  );
+  const pronto = adapter.slice(adapter.indexOf("if (lida.tipo === 'PRONTO')"));
+  assert.ok(pronto.indexOf('await ouvinte.aoPronto') < pronto.indexOf('resolver(controle)'));
+  assert.match(adapter, /if \(!pronta\)/);
 });

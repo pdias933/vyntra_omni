@@ -413,9 +413,11 @@ Ao receber `PERMISSOES_ALTERADAS` ou `403 ESCOPO_ATUALIZADO`:
 - refazer snapshot se necessário;
 - não manter timeline antiga acessível por tela offline.
 
-`CoordenadorInvalidacaoEscopoMobile` coalesce invalidações simultâneas, pausa comandos dependentes, fecha o WebSocket, obtém snapshot autorizado, substitui a réplica removendo itens ausentes, reconcilia pendências e reconecta por `sequencia_base`. Só então retoma os comandos ainda autorizados. Falha em qualquer etapa bloqueia a área autenticada e nunca restaura o cache anterior.
+Desde a PR 107, `CoordenadorInvalidacaoEscopoMobile` participa do motor real. O app entra em `ESCOPO_ATUALIZANDO`, deixa de renderizar a área autenticada e marca a autorização local como inválida antes de qualquer acesso à rede. Invalidações simultâneas convergem pela maior `sequencia_evento`; eventos recebidos tanto no WebSocket quanto em lotes REST passam pela mesma validação de usuário e versão.
 
-Perda de uma fila ou permissão não encerra necessariamente a sessão nem apaga dados de outros escopos: o snapshot decide o conjunto remanescente. Revogação da sessão/dispositivo, por outro lado, limpa toda a réplica autenticada e retorna ao login. Se estiver totalmente offline, a autorização offline expira e bloqueia o cache; a próxima conexão confirma a mudança e conclui a limpeza.
+No caminho em tempo real, o coordenador fecha o WebSocket antigo, obtém e verifica um snapshot com versão e sequência suficientes, substitui atomicamente a réplica removendo ausentes, elimina rascunhos/pendências sem conversa autorizada — ou todos quando `ENVIAR_MENSAGEM` foi removida —, limpa avisos órfãos, abre um novo WebSocket até receber `PRONTO` e só então reconcilia as pendências remanescentes. Depois disso retoma os comandos autorizados. Falha em qualquer etapa bloqueia a área autenticada e nunca restaura o cache anterior.
+
+Perda de uma fila ou permissão não encerra necessariamente a sessão nem apaga dados de outros escopos: o snapshot decide o conjunto remanescente. Revogação da sessão/dispositivo ou `401`/`403` confirmado após a tentativa única de renovação, por outro lado, limpa credenciais, toda a réplica autenticada e a caixa efêmera antes de retornar ao login. Se estiver totalmente offline, a autorização offline expira e bloqueia o cache; a próxima conexão confirma a mudança e conclui a limpeza.
 
 ## 11. Leitura e não lida
 

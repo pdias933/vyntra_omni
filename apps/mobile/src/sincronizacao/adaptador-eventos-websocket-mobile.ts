@@ -80,7 +80,14 @@ export class AdaptadorEventosWebSocketMobile {
       let aberta = false;
       let encerradaIntencionalmente = false;
       let falhou = false;
+      let pronta = false;
       let fila = Promise.resolve();
+      const controle: ConexaoEventosMobile = {
+        fechar: () => {
+          encerradaIntencionalmente = true;
+          conexao.close(1000, 'PAUSADO');
+        },
+      };
       const limiteAbertura = setTimeout(() => {
         rejeitar(new Error('WEBSOCKET_MOBILE_INDISPONIVEL'));
         conexao.close();
@@ -91,22 +98,15 @@ export class AdaptadorEventosWebSocketMobile {
         conexao.close(1008, 'CONTRATO_INVALIDO');
       };
       conexao.onopen = () => {
-        clearTimeout(limiteAbertura);
         aberta = true;
-        resolver({
-          fechar: () => {
-            encerradaIntencionalmente = true;
-            conexao.close(1000, 'PAUSADO');
-          },
-        });
       };
       conexao.onerror = () => {
         clearTimeout(limiteAbertura);
-        if (!aberta) rejeitar(new Error('WEBSOCKET_MOBILE_INDISPONIVEL'));
+        if (!pronta) rejeitar(new Error('WEBSOCKET_MOBILE_INDISPONIVEL'));
       };
       conexao.onclose = (evento) => {
         clearTimeout(limiteAbertura);
-        if (!aberta) rejeitar(new Error('WEBSOCKET_MOBILE_INDISPONIVEL'));
+        if (!pronta) rejeitar(new Error('WEBSOCKET_MOBILE_INDISPONIVEL'));
         if (!encerradaIntencionalmente) {
           ouvinte.aoEncerrar(evento.code ?? 1006, evento.reason ?? '');
         }
@@ -123,8 +123,14 @@ export class AdaptadorEventosWebSocketMobile {
             }
             const lida = objeto(JSON.parse(mensagem.data) as unknown);
             if (lida.tipo === 'PRONTO') {
+              if (!aberta || pronta) {
+                throw new Error('MENSAGEM_WEBSOCKET_MOBILE_INVALIDA');
+              }
               exigirChaves(lida, ['sequencia_servidor', 'tipo']);
               await ouvinte.aoPronto(lerSequencia(lida.sequencia_servidor));
+              pronta = true;
+              clearTimeout(limiteAbertura);
+              resolver(controle);
               return;
             }
             if (lida.tipo === 'CONFIRMADO') {

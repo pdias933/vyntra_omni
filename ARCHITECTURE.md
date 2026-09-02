@@ -880,3 +880,23 @@ comparar atribuição + estado + contexto + janela + eventos da conversa
 O cliente não decide se a observação ainda é válida. A rota mobile autentica bearer, dispositivo e segredo do vínculo, e `ServicoMensagensSaida` adquire a mesma trava transacional usada por resgate, transferência e despacho automático antes de autorizar e comparar a observação. Qualquer evento da conversa posterior à sequência capturada é conservadoramente relevante; versões impedem que transferir e devolver, fechar e reabrir ou trocar e restaurar contexto aparentem igualdade.
 
 Falha transitória não altera a pendência. Revisão local permite editar ou descartar; “enviar mesmo assim” usa o envio normal com nova chave idempotente e continua sujeito ao estado, responsabilidade, RBAC e janela Meta atuais. Mídia não entra nessa caixa local.
+
+### 13.26 Invalidação de escopo mobile
+
+A PR 107 liga `PERMISSOES_ALTERADAS` ao motor de sincronização em vez de tratá-lo como atualização comum. O evento precisa pertencer ao usuário autenticado e carregar versão inteira crescente. Antes de consultar o servidor, o repositório marca `precisa_ressincronizar`, inutiliza a autorização offline e o shell deixa de renderizar a réplica anterior.
+
+```text
+PERMISSOES_ALTERADAS (WebSocket ou lote REST)
+  ↓ validar usuário + sequência + versão
+invalidar autorização local → ESCOPO_ATUALIZANDO
+  ↓
+snapshot autenticado e assinado, sem recursos ausentes
+  ↓ commit SQLCipher único + poda de rascunhos/pendências sem escopo
+limpar avisos órfãos → novo WebSocket → PRONTO
+  ↓
+reconciliar pendências → CONECTADO
+```
+
+No caminho WebSocket, o coordenador fecha a conexão que carregava a autoridade anterior e abre outra pelo cursor do snapshot. O adapter só resolve a abertura após processar `PRONTO`; portanto, socket fisicamente aberto não dispara comandos pendentes. No caminho REST incremental, encontrar qualquer invalidação abandona a projeção parcial e força snapshot igual ou posterior ao maior evento do lote.
+
+Perda de fila/permissão conserva somente os outros escopos presentes no snapshot. Rascunho ou pendência cuja conversa saiu do conjunto também é apagado; ausência de `ENVIAR_MENSAGEM` elimina toda a caixa de saída e seus rascunhos. `AUTORIZACAO_INVALIDADA` no canal, ou `401`/`403` depois da renovação prevista, representa revogação integral: o serviço para o motor, limpa sessão e réplica e publica `ACESSO_REVOGADO`; o shell então retorna à entrada. Nenhum desses estados depende de Redis, push ou decisão do cliente.

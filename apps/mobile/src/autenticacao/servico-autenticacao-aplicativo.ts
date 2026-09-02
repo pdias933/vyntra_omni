@@ -213,6 +213,13 @@ export class ServicoAutenticacaoAplicativo {
     }
   }
 
+  public async invalidarSessaoLocal(): Promise<void> {
+    await Promise.all([
+      this.gerenciador.limparSessao(),
+      this.replica.limparReplicaAutenticada(),
+    ]);
+  }
+
   public async resgatarPareamento(
     tokenQr: string,
   ): Promise<ComprovantePareamentoMobile> {
