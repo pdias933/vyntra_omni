@@ -7,11 +7,13 @@ export function BotaoPrimario({
   desabilitado = false,
   onPress,
   texto,
+  variante = 'primario',
 }: {
   readonly carregando?: boolean;
   readonly desabilitado?: boolean;
   readonly onPress: () => void;
   readonly texto: string;
+  readonly variante?: 'primario' | 'secundario';
 }) {
   const indisponivel = carregando || desabilitado;
   return (
@@ -21,14 +23,29 @@ export function BotaoPrimario({
       onPress={onPress}
       style={({ pressed }) => [
         estilos.botao,
+        variante === 'secundario' && estilos.secundario,
         indisponivel && estilos.desabilitado,
-        pressed && !indisponivel && estilos.pressionado,
+        pressed && !indisponivel &&
+          (variante === 'secundario'
+            ? estilos.secundarioPressionado
+            : estilos.pressionado),
       ]}
     >
       {carregando ? (
-        <ActivityIndicator color={CORES.textoInvertido} />
+        <ActivityIndicator
+          color={
+            variante === 'secundario' ? CORES.acao : CORES.textoInvertido
+          }
+        />
       ) : (
-        <Text style={estilos.texto}>{texto}</Text>
+        <Text
+          style={[
+            estilos.texto,
+            variante === 'secundario' && estilos.textoSecundario,
+          ]}
+        >
+          {texto}
+        </Text>
       )}
     </Pressable>
   );
@@ -45,5 +62,8 @@ const estilos = StyleSheet.create({
   },
   desabilitado: { opacity: 0.48 },
   pressionado: { backgroundColor: CORES.acaoPressionada, transform: [{ scale: 0.99 }] },
+  secundario: { backgroundColor: CORES.superficie, borderColor: CORES.borda, borderWidth: 1 },
+  secundarioPressionado: { backgroundColor: CORES.acaoClara, transform: [{ scale: 0.99 }] },
   texto: { color: CORES.textoInvertido, fontSize: 16, fontWeight: '700' },
+  textoSecundario: { color: CORES.acao },
 });

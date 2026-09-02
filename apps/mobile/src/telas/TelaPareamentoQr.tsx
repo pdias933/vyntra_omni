@@ -19,6 +19,7 @@ import type { RotasEntrada } from './TelaEntrada';
 
 type Propriedades = NativeStackScreenProps<RotasEntrada, 'PareamentoQr'> & {
   readonly aoAutenticar: (sessao: SessaoAplicativo) => void;
+  readonly aoExigirAtualizacao: (erro: unknown) => boolean;
   readonly autenticacao: ServicoAutenticacaoAplicativo;
 };
 
@@ -27,6 +28,7 @@ const TOKEN_QR = /^[A-Za-z0-9_-]{43}$/u;
 
 export function TelaPareamentoQr({
   aoAutenticar,
+  aoExigirAtualizacao,
   autenticacao,
   navigation,
 }: Propriedades) {
@@ -69,6 +71,7 @@ export function TelaPareamentoQr({
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       aoAutenticar(sessao);
     } catch (falha) {
+      if (aoExigirAtualizacao(falha)) return;
       if (
         falha instanceof ErroAutenticacaoMobile &&
         falha.codigo === 'PAREAMENTO_CANCELADO'

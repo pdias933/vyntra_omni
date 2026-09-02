@@ -9,24 +9,39 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { desbloquearLocalmente } from './autenticacao/biometria-mobile';
 import {
+  ErroAutenticacaoMobile,
+} from './autenticacao/adaptador-autenticacao-http';
+import {
   mensagemAutenticacao,
   ServicoAutenticacaoAplicativo,
   type SessaoAplicativo,
 } from './autenticacao/servico-autenticacao-aplicativo';
+import type { PoliticaVersaoAplicativo } from './atualizacao/adaptador-politica-versao-http';
+import { ServicoPoliticaVersaoAplicativo } from './atualizacao/servico-politica-versao-aplicativo';
 import { NavegacaoPrincipal } from './navegacao/NavegacaoPrincipal';
 import { CORES } from './tema';
 import { TelaBloqueio } from './telas/TelaBloqueio';
 import { TelaCarregamento } from './telas/TelaCarregamento';
 import { TelaEntrada, type RotasEntrada } from './telas/TelaEntrada';
 import { TelaPareamentoQr } from './telas/TelaPareamentoQr';
+import {
+  TelaAtualizacaoObrigatoria,
+  TelaFalhaVerificacaoVersao,
+} from './telas/TelaAtualizacaoObrigatoria';
 
 type EstadoAplicativo =
   | 'AUTENTICADO'
   | 'BLOQUEADO'
   | 'CARREGANDO'
   | 'SEM_SESSAO';
+type EstadoPoliticaVersao =
+  | 'FALHA'
+  | 'OBRIGATORIA'
+  | 'PERMITIDA'
+  | 'VERIFICANDO';
 const NavegacaoEntrada = createNativeStackNavigator<RotasEntrada>();
 const autenticacao = new ServicoAutenticacaoAplicativo();
+const politicaVersaoAplicativo = new ServicoPoliticaVersaoAplicativo();
 const TEMPO_PARA_BLOQUEAR_MS = 30_000;
 
 const TEMA_NAVEGACAO: Theme = {
@@ -50,6 +65,13 @@ const TEMA_NAVEGACAO: Theme = {
 export function Aplicacao() {
   const reduzirMovimento = useReducedMotion();
   const [estado, definirEstado] = useState<EstadoAplicativo>('CARREGANDO');
+  const [estadoPolitica, definirEstadoPolitica] =
+    useState<EstadoPoliticaVersao>('VERIFICANDO');
+  const [politicaVersao, definirPoliticaVersao] =
+    useState<PoliticaVersaoAplicativo>();
+  const [verificandoPolitica, definirVerificandoPolitica] = useState(true);
+  const [abrindoLoja, definirAbrindoLoja] = useState(false);
+  const [erroPolitica, definirErroPolitica] = useState<string>();
   const [sessao, definirSessao] = useState<SessaoAplicativo>();
   const [mensagemBloqueio, definirMensagemBloqueio] = useState<string>();
   const [biometriaIndisponivel, definirBiometriaIndisponivel] = useState(false);
@@ -58,6 +80,78 @@ export function Aplicacao() {
   const desbloqueioEmCurso = useRef(false);
   const segundoPlanoEm = useRef<number | undefined>(undefined);
   const sessaoAtual = useRef<SessaoAplicativo | undefined>(undefined);
+  const politicaAtual = useRef<PoliticaVersaoAplicativo | undefined>(undefined);
+  const verificacaoPoliticaEmCurso = useRef(false);
+
+  const verificarPolitica = useCallback(async (exibirCarregamento: boolean) => {
+    if (verificacaoPoliticaEmCurso.current) return;
+    verificacaoPoliticaEmCurso.current = true;
+    definirVerificandoPolitica(true);
+    definirErroPolitica(undefined);
+    if (exibirCarregamento && politicaAtual.current === undefined) {
+      definirEstadoPolitica('VERIFICANDO');
+    }
+
+    try {
+      const politica = await politicaVersaoAplicativo.avaliar();
+      politicaAtual.current = politica;
+      definirPoliticaVersao(politica);
+      definirEstadoPolitica(
+        politica.atualizacaoObrigatoria ? 'OBRIGATORIA' : 'PERMITIDA',
+      );
+    } catch {
+      if (politicaAtual.current === undefined) {
+        definirEstadoPolitica('FALHA');
+      } else if (politicaAtual.current.atualizacaoObrigatoria) {
+        definirErroPolitica(
+          'Não foi possível confirmar a nova versão. Atualize o aplicativo e tente novamente.',
+        );
+      }
+    } finally {
+      verificacaoPoliticaEmCurso.current = false;
+      definirVerificandoPolitica(false);
+    }
+  }, []);
+
+  const exigirAtualizacao = useCallback(
+    (erro: unknown): boolean => {
+      if (
+        !(erro instanceof ErroAutenticacaoMobile) ||
+        (erro.codigo !== 'ATUALIZACAO_OBRIGATORIA' && erro.statusHttp !== 426)
+      ) {
+        return false;
+      }
+
+      const politica = politicaAtual.current;
+      if (politica !== undefined) {
+        const obrigatoria = { ...politica, atualizacaoObrigatoria: true };
+        politicaAtual.current = obrigatoria;
+        definirPoliticaVersao(obrigatoria);
+        definirEstadoPolitica('OBRIGATORIA');
+      } else {
+        definirEstadoPolitica('VERIFICANDO');
+      }
+      void verificarPolitica(false);
+      return true;
+    },
+    [verificarPolitica],
+  );
+
+  const abrirLoja = useCallback(async () => {
+    const politica = politicaAtual.current;
+    if (politica === undefined || abrindoLoja) return;
+    definirAbrindoLoja(true);
+    definirErroPolitica(undefined);
+    try {
+      await politicaVersaoAplicativo.abrirLoja(politica);
+    } catch {
+      definirErroPolitica(
+        'Não foi possível abrir a loja. Verifique a conexão e tente novamente.',
+      );
+    } finally {
+      definirAbrindoLoja(false);
+    }
+  }, [abrindoLoja]);
 
   const desbloquear = useCallback(async () => {
     if (desbloqueioEmCurso.current) return;
@@ -95,6 +189,7 @@ export function Aplicacao() {
       definirSessao(sessaoRestaurada);
       definirEstado('AUTENTICADO');
     } catch (erro) {
+      if (exigirAtualizacao(erro)) return;
       const aindaPossuiSessao = await autenticacao.possuiSessaoPersistida();
       if (!aindaPossuiSessao) {
         definirSessao(undefined);
@@ -107,9 +202,15 @@ export function Aplicacao() {
       desbloqueioEmCurso.current = false;
       definirDesbloqueando(false);
     }
-  }, []);
+  }, [exigirAtualizacao]);
 
   useEffect(() => {
+    const temporizador = setTimeout(() => void verificarPolitica(true), 0);
+    return () => clearTimeout(temporizador);
+  }, [verificarPolitica]);
+
+  useEffect(() => {
+    if (estadoPolitica !== 'PERMITIDA') return;
     let ativa = true;
     void autenticacao
       .possuiSessaoPersistida()
@@ -133,11 +234,12 @@ export function Aplicacao() {
     return () => {
       ativa = false;
     };
-  }, [desbloquear]);
+  }, [desbloquear, estadoPolitica]);
 
   useEffect(() => {
     function aoMudarEstado(proximo: AppStateStatus) {
       if (proximo === 'active') {
+        void verificarPolitica(false);
         const afastamento =
           segundoPlanoEm.current === undefined
             ? 0
@@ -159,7 +261,7 @@ export function Aplicacao() {
 
     const assinatura = AppState.addEventListener('change', aoMudarEstado);
     return () => assinatura.remove();
-  }, [desbloquear, estado]);
+  }, [desbloquear, estado, verificarPolitica]);
 
   async function usarSenha() {
     definirDesbloqueando(true);
@@ -197,7 +299,23 @@ export function Aplicacao() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <NavigationContainer theme={TEMA_NAVEGACAO}>
-          {estado === 'CARREGANDO' ? (
+          {estadoPolitica === 'VERIFICANDO' ? (
+            <TelaCarregamento />
+          ) : estadoPolitica === 'FALHA' ? (
+            <TelaFalhaVerificacaoVersao
+              aoTentarNovamente={() => void verificarPolitica(true)}
+              verificando={verificandoPolitica}
+            />
+          ) : estadoPolitica === 'OBRIGATORIA' && politicaVersao !== undefined ? (
+            <TelaAtualizacaoObrigatoria
+              abrindoLoja={abrindoLoja}
+              aoAbrirLoja={() => void abrirLoja()}
+              aoVerificar={() => void verificarPolitica(false)}
+              {...(erroPolitica === undefined ? {} : { erro: erroPolitica })}
+              politica={politicaVersao}
+              verificando={verificandoPolitica}
+            />
+          ) : estado === 'CARREGANDO' ? (
             <TelaCarregamento />
           ) : estado === 'BLOQUEADO' ? (
             <TelaBloqueio
@@ -211,7 +329,13 @@ export function Aplicacao() {
             />
           ) : estado === 'AUTENTICADO' && sessao !== undefined ? (
             <NavegacaoPrincipal
+              abrindoLoja={abrindoLoja}
+              aoAtualizar={() => void abrirLoja()}
               aoSair={() => void sair()}
+              {...(erroPolitica === undefined
+                ? {}
+                : { erroAtualizacao: erroPolitica })}
+              {...(politicaVersao === undefined ? {} : { politicaVersao })}
               saindo={saindo}
               sessao={sessao}
             />
@@ -227,6 +351,7 @@ export function Aplicacao() {
                   <TelaEntrada
                     {...propriedades}
                     aoAutenticar={autenticar}
+                    aoExigirAtualizacao={exigirAtualizacao}
                     entrar={(identificador, senha, codigoMfa) =>
                       autenticacao.entrar(identificador, senha, codigoMfa)
                     }
@@ -238,6 +363,7 @@ export function Aplicacao() {
                   <TelaPareamentoQr
                     {...propriedades}
                     aoAutenticar={autenticar}
+                    aoExigirAtualizacao={exigirAtualizacao}
                     autenticacao={autenticacao}
                   />
                 )}

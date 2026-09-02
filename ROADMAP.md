@@ -119,7 +119,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 095 | CONCLUÍDA | `xhigh` |
 | 096 | CONCLUÍDA | `xhigh` |
 | 097 | CONCLUÍDA | `xhigh` |
-| 098 | PENDENTE | `high` |
+| 098 | CONCLUÍDA | `high` |
 | 099 | PENDENTE | `xhigh` |
 | 100 | PENDENTE | `xhigh` |
 | 101 | PENDENTE | `high` |
@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; a PR097 foi concluída e PR098–PR107 seguem pendentes na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097 e PR098 foram concluídas e PR099–PR107 seguem pendentes na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -664,6 +664,10 @@ Aceite concluído em 2 de setembro de 2026: o console passou a reconhecer o cód
 ### PR 097 — shell, login e biometria mobile
 
 Aceite concluído em 2 de setembro de 2026: o aplicativo real iOS/Android materializa `CARREGANDO`, `SEM_SESSAO`, `BLOQUEADO` e `AUTENTICADO`, mantém access token somente em memória e refresh/vínculo exclusivamente no cofre nativo, exige biometria ou credencial do aparelho antes da restauração e volta ao bloqueio após trinta segundos em segundo plano. O shell possui as quatro abas aprovadas sem dados operacionais fictícios; haptics e animações breves respeitam “Reduzir Movimento”. O console web gera QR efêmero em módulo carregado sob demanda, mostra a prévia sanitizada e exige confirmação explícita. O ensaio público confirmou desafio MFA corrigido pela PR096C, login TOTP, geração e resgate do QR, estado `AGUARDANDO_CONFIRMACAO`, confirmação web, conclusão e consulta da sessão mobile; as sessões de web e mobile foram revogadas ao final. As imagens `pr-097` deixaram API, web, proxy, PostgreSQL, Redis, Object Storage e dois workers saudáveis, com smoke público/privado aprovado e tela pública carregada em `https://omni.up100.com.br`. Não houve migration. Lint, tipos, 426 testes da API, 247 testes de arquitetura, builds web/API/iOS/Android, Expo, dependências e Gitleaks 8.30.0 sobre o histórico completo foram aprovados. Effort `xhigh` confirmado pela custódia nativa, bloqueio local, protocolo QR e dois clientes coordenados.
+
+### PR 098 — política de versão mobile
+
+Aceite concluído em 2 de setembro de 2026: a política pública é avaliada antes de acessar o cofre e somente `PERMITIDA` alcança autenticação ou shell. Versão abaixo da mínima abre bloqueio global sem adiamento; respostas `426 ATUALIZACAO_OBRIGATORIA` de login, restauração ou QR convergem para a mesma tela. O link externo aceita somente HTTPS e o host oficial da loja correspondente. Atualização apenas recomendada continua não bloqueante e aparece discretamente somente em Perfil. Retorno ao primeiro plano reavalia em silêncio e indisponibilidade não relaxa bloqueio já conhecido. A rota pública de staging respondeu de forma válida para Android `0.0.0`, sem mudar política. Não houve migration, dependência nova, imagem de servidor nem publicação de binário. Lint, tipos, 426 testes da API, 253 testes de arquitetura, Expo, dependências, Gitleaks e builds web/API/iOS/Android foram aprovados. Effort `high` confirmado pela convergência de todos os caminhos de autenticação e pelo fail-closed pré-login.
 
 ## 12. Mobile
 

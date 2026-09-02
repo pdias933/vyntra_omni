@@ -679,3 +679,11 @@ O aceite precisa compilar/exportar as duas plataformas, validar a matriz Expo, c
 Monitorar apenas códigos agregados de autenticação e pareamento. Falha de biometria é local e não deve virar log remoto com identidade. Rollback do app exige nova build instalada; rollback do web pode retirar a superfície de geração sem invalidar sessões mobile existentes. Reverter API não é permitido para versão anterior aos contratos de autenticação já aceitos.
 
 O procedimento detalhado, os estados locais, a custódia da sessão e as evidências de staging ficam em [docs/operacoes/PR-097.md](docs/operacoes/PR-097.md).
+
+## 36. Operação da política de versão mobile da PR 098
+
+Não há migration, imagem de servidor ou binário de loja publicado por esta PR. A build mobile deve declarar `EXPO_PUBLIC_VERSAO_APLICATIVO` igual à versão distribuída. Antes de elevar a mínima, cadastrar mensagem curta e URL HTTPS no host oficial da loja da plataforma, revisar a prévia e confirmar com a revisão esperada. Fazer rollout da nova build e observar adoção antes de bloquear versões antigas, salvo correção crítica de segurança.
+
+O aceite comprova avaliação antes do cofre, bloqueio sem adiamento, promoção de respostas 426 vindas de login/refresh/QR, allowlist da loja, aviso recomendado apenas no Perfil e reavaliação silenciosa no primeiro plano. Indisponibilidade da avaliação na abertura fria fecha o acesso; indisponibilidade posterior preserva a última política válida.
+
+Monitorar códigos agregados de falha da avaliação e proporção de `ATUALIZACAO_OBRIGATORIA`, sem usuário, token ou identificador do aparelho. Reverter a build só é seguro enquanto a versão anterior permanece permitida. O runbook detalhado está em [docs/operacoes/PR-098.md](docs/operacoes/PR-098.md).

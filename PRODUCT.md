@@ -204,6 +204,8 @@ A PR 091 acrescenta busca na conversa e galeria de `Mídias`, `Links` e `Documen
 
 Na PR 097, o shell nativo materializa entrada por credencial com desafio MFA quando exigido, pareamento QR confirmado na web, restauração da sessão e bloqueio local por biometria ou código seguro do aparelho. Access token permanece somente em memória; o fluxo QR guarda token e comprovante somente enquanto a tela está ativa. As quatro abas existem como estrutura real, mas não exibem massa fictícia nem antecipam lista, timeline, composer, offline ou diagnóstico. A web passa a gerar, acompanhar e confirmar o QR com prévia do aparelho; fechar antes da confirmação cancela a tentativa.
 
+Na PR 098, o app consulta a política antes de acessar qualquer sessão local. Versão incompatível cobre toda a experiência com uma ação única para a loja oficial e sem adiamento; a mesma decisão é aplicada se o backend responder `426` durante login, QR ou restauração. Atualização recomendada é não bloqueante e fica em Perfil, preservando lista e conversa limpas. Retorno ao primeiro plano reavalia em silêncio, sem expor sincronização ou infraestrutura.
+
 ### 4.8 Motor de Fluxos e WhatsApp Flows
 
 - Motor próprio, determinístico e configurável.

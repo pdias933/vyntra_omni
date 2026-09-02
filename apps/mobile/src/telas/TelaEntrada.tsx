@@ -30,6 +30,7 @@ export type RotasEntrada = {
 
 type Propriedades = NativeStackScreenProps<RotasEntrada, 'Entrada'> & {
   readonly aoAutenticar: (sessao: SessaoAplicativo) => void;
+  readonly aoExigirAtualizacao: (erro: unknown) => boolean;
   readonly entrar: (
     identificador: string,
     senha: string,
@@ -37,7 +38,12 @@ type Propriedades = NativeStackScreenProps<RotasEntrada, 'Entrada'> & {
   ) => Promise<SessaoAplicativo>;
 };
 
-export function TelaEntrada({ aoAutenticar, entrar, navigation }: Propriedades) {
+export function TelaEntrada({
+  aoAutenticar,
+  aoExigirAtualizacao,
+  entrar,
+  navigation,
+}: Propriedades) {
   const [identificador, definirIdentificador] = useState('');
   const [senha, definirSenha] = useState('');
   const [codigoMfa, definirCodigoMfa] = useState('');
@@ -64,6 +70,7 @@ export function TelaEntrada({ aoAutenticar, entrar, navigation }: Propriedades) 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       aoAutenticar(sessao);
     } catch (falha) {
+      if (aoExigirAtualizacao(falha)) return;
       if (
         falha instanceof ErroAutenticacaoMobile &&
         falha.codigo === 'MFA_NECESSARIO'

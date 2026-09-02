@@ -735,3 +735,14 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - a sessão web criadora consulta uma prévia e confirma explicitamente; fechar antes de confirmar tenta cancelar o QR;
 - câmera é solicitada somente na tela correspondente; negação não reduz segurança nem habilita entrada alternativa;
 - haptics e animações não alteram ordem, autorização ou resultado e obedecem Reduzir Movimento.
+
+## 30. Política de versão mobile da PR 098
+
+- a avaliação pública antecede leitura do cofre e não retorna permissão ou controle de recurso do usuário;
+- somente `PERMITIDA` inicializa autenticação; falha inicial fecha o acesso sem revelar a existência de sessão;
+- `426 ATUALIZACAO_OBRIGATORIA` em credencial, refresh ou QR converge para o bloqueio global;
+- falha de rede não relaxa política obrigatória já conhecida;
+- a tela obrigatória não possui adiamento e não pode ser contornada por navegação;
+- o adapter de loja aceita somente HTTPS, sem credenciais, no host exato da loja correspondente à plataforma;
+- versão, mínima e recomendada usam forma semântica validada, mas a API continua sendo a autoridade;
+- nenhuma atualização remota de código, publicação de loja ou execução dinâmica foi introduzida.

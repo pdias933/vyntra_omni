@@ -798,3 +798,17 @@ GerenciadorSessaoMobile
 ```
 
 React Navigation fornece pilha e abas, Gesture Handler delimita a raiz nativa, Reanimated aplica transições reduzíveis e Safe Area/Screens preservam o comportamento de cada plataforma. Nenhuma dessas bibliotecas participa de autorização. O QR é renderizado no web a partir do token emitido pelo backend e lido pela câmera mobile; nenhum cliente cria, prolonga, confirma sozinho ou persiste essa autoridade.
+
+### 13.22 Política de versão no cliente mobile
+
+Na PR 098, `ServicoPoliticaVersaoAplicativo` coordena dois adapters finos: o primeiro usa exclusivamente o SDK OpenAPI para a avaliação pública; o segundo conhece `Linking` e a allowlist das lojas. A composição raiz impede que a inicialização da autenticação execute antes de uma avaliação `PERMITIDA`.
+
+```text
+Aplicacao
+  ├── ServicoPoliticaVersaoAplicativo
+  │     ├── AdaptadorPoliticaVersaoHttp → SDK gerado → API
+  │     └── AdaptadorLojaAplicativo → App Store / Google Play
+  └── autenticação e shell somente quando PERMITIDA
+```
+
+A decisão local serve à experiência, não à autoridade: todos os portões autenticados continuam exigindo a versão no backend. Um `426` vindo de credencial, refresh ou pareamento converge para o mesmo estado global obrigatório. Reavaliação em primeiro plano conserva a última política válida quando a rede falha, impedindo que indisponibilidade remova um bloqueio já conhecido.

@@ -215,6 +215,12 @@ Controle de recurso é autoridade do backend. O app não habilita funcionalidade
 
 O painel web não publica binário nas lojas; controla apenas recursos já presentes e política de versão.
 
+Na PR 098, a avaliação pública acontece antes de qualquer leitura do cofre ou tentativa de restauração. A máquina local separa `VERIFICANDO`, `FALHA`, `PERMITIDA` e `OBRIGATORIA`; só `PERMITIDA` alcança autenticação e shell. A falha inicial fecha o acesso e permite nova tentativa sem revelar se existe sessão no aparelho. Uma política obrigatória conhecida nunca é relaxada por indisponibilidade posterior.
+
+Login, rotação, resgate/conclusão de QR ou outra autenticação que retorne `426 ATUALIZACAO_OBRIGATORIA` promovem imediatamente o bloqueio global e disparam nova avaliação pública. A tela não possui fechar, voltar ou “lembrar depois”. O botão abre somente URL HTTPS no host oficial da App Store ou Google Play para a plataforma. Ao retornar ao primeiro plano, o app reavalia silenciosamente.
+
+Atualização apenas recomendada não interrompe o atendimento, não abre modal e não ocupa a lista ou a conversa: aparece de forma discreta em Perfil e declara que o trabalho pode continuar. A administração configura mínima, recomendada, mensagem e URL; ela não publica binário.
+
 ## 6. Armazenamento local
 
 SQLite é réplica/cache, nunca fonte oficial. Guarda somente o necessário ao usuário autorizado:

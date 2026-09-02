@@ -7,6 +7,7 @@ import { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { SessaoAplicativo } from '../autenticacao/servico-autenticacao-aplicativo';
+import type { PoliticaVersaoAplicativo } from '../atualizacao/adaptador-politica-versao-http';
 import { MarcaVyntra } from '../componentes/MarcaVyntra';
 import { CORES, ESPACOS, RAIOS } from '../tema';
 
@@ -52,12 +53,20 @@ function TelaVazia({
 }
 
 function Perfil({
+  abrindoLoja,
+  aoAtualizar,
   aoSair,
   carregando,
+  erroAtualizacao,
+  politicaVersao,
   sessao,
 }: {
+  readonly abrindoLoja: boolean;
+  readonly aoAtualizar: () => void;
   readonly aoSair: () => void;
   readonly carregando: boolean;
+  readonly erroAtualizacao?: string;
+  readonly politicaVersao?: PoliticaVersaoAplicativo;
   readonly sessao: SessaoAplicativo;
 }) {
   const iniciais = sessao.nomeExibicao
@@ -81,6 +90,31 @@ function Perfil({
             <Text style={estilos.textoSubstituicao}>
               O aparelho mais antigo foi desconectado para manter o limite de dois dispositivos.
             </Text>
+          </View>
+        )}
+        {politicaVersao?.atualizacaoRecomendada === true && (
+          <View accessibilityLiveRegion="polite" style={estilos.avisoAtualizacao}>
+            <View style={estilos.iconeAtualizacao}>
+              <Ionicons color={CORES.info} name="arrow-up-circle-outline" size={22} />
+            </View>
+            <View style={estilos.textoAtualizacao}>
+              <Text style={estilos.tituloAtualizacao}>Atualização disponível</Text>
+              <Text style={estilos.descricaoAtualizacao}>
+                Versão recomendada {politicaVersao.versaoRecomendada}. Você pode continuar trabalhando.
+              </Text>
+              {erroAtualizacao !== undefined && (
+                <Text style={estilos.erroAtualizacao}>{erroAtualizacao}</Text>
+              )}
+            </View>
+            <Pressable
+              accessibilityLabel="Abrir loja para atualizar"
+              accessibilityRole="button"
+              disabled={abrindoLoja}
+              onPress={aoAtualizar}
+              style={({ pressed }) => [estilos.atualizar, pressed && estilos.atualizarPressionado]}
+            >
+              <Text style={estilos.textoAtualizar}>{abrindoLoja ? 'Abrindo…' : 'Atualizar'}</Text>
+            </Pressable>
           </View>
         )}
         <View style={estilos.cartaoPerfil}>
@@ -110,11 +144,19 @@ function Perfil({
 }
 
 export function NavegacaoPrincipal({
+  abrindoLoja,
+  aoAtualizar,
   aoSair,
+  erroAtualizacao,
+  politicaVersao,
   saindo,
   sessao,
 }: {
+  readonly abrindoLoja: boolean;
+  readonly aoAtualizar: () => void;
   readonly aoSair: () => void;
+  readonly erroAtualizacao?: string;
+  readonly politicaVersao?: PoliticaVersaoAplicativo;
   readonly saindo: boolean;
   readonly sessao: SessaoAplicativo;
 }) {
@@ -172,22 +214,38 @@ export function NavegacaoPrincipal({
         )}
       </Abas.Screen>
       <Abas.Screen name="Perfil">
-        {() => <Perfil aoSair={aoSair} carregando={saindo} sessao={sessao} />}
+        {() => (
+          <Perfil
+            abrindoLoja={abrindoLoja}
+            aoAtualizar={aoAtualizar}
+            aoSair={aoSair}
+            carregando={saindo}
+            {...(erroAtualizacao === undefined ? {} : { erroAtualizacao })}
+            {...(politicaVersao === undefined ? {} : { politicaVersao })}
+            sessao={sessao}
+          />
+        )}
       </Abas.Screen>
     </Abas.Navigator>
   );
 }
 
 const estilos = StyleSheet.create({
+  atualizar: { alignItems: 'center', borderColor: CORES.info, borderRadius: RAIOS.pílula, borderWidth: 1, justifyContent: 'center', minHeight: 36, paddingHorizontal: 12 },
+  atualizarPressionado: { backgroundColor: '#EAF0FF' },
   avatar: { alignItems: 'center', backgroundColor: CORES.acao, borderRadius: RAIOS.pílula, height: 62, justifyContent: 'center', width: 62 },
+  avisoAtualizacao: { alignItems: 'center', backgroundColor: '#F3F6FF', borderColor: '#DDE5FA', borderRadius: RAIOS.campo, borderWidth: 1, flexDirection: 'row', gap: 11, padding: 14 },
   avisoSubstituicao: { alignItems: 'center', backgroundColor: '#EAF0FF', borderRadius: RAIOS.campo, flexDirection: 'row', gap: 10, padding: 14 },
   barraAbas: { borderTopColor: CORES.borda, height: 76, paddingBottom: 9, paddingTop: 7 },
   cabecalho: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: ESPACOS.grande, paddingVertical: 18 },
   cartaoPerfil: { alignItems: 'center', backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: RAIOS.cartao, borderWidth: 1, flexDirection: 'row', gap: 16, padding: 18 },
   contexto: { color: CORES.textoSecundario, fontSize: 13, marginTop: 2 },
   descricaoVazio: { color: CORES.textoSecundario, fontSize: 14, lineHeight: 21, maxWidth: 290, textAlign: 'center' },
+  descricaoAtualizacao: { color: CORES.textoSecundario, fontSize: 12, lineHeight: 17, marginTop: 2 },
+  erroAtualizacao: { color: CORES.alerta, fontSize: 12, marginTop: 5 },
   estadoVazio: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: 28 },
   iconeVazio: { alignItems: 'center', backgroundColor: CORES.acaoClara, borderRadius: RAIOS.cartao, height: 68, justifyContent: 'center', marginBottom: 18, width: 68 },
+  iconeAtualizacao: { alignItems: 'center', backgroundColor: '#E7EDFF', borderRadius: RAIOS.pílula, height: 38, justifyContent: 'center', width: 38 },
   identidade: { flex: 1 },
   iniciais: { color: CORES.textoInvertido, fontSize: 20, fontWeight: '700' },
   nome: { color: CORES.texto, fontSize: 19, fontWeight: '700' },
@@ -198,8 +256,11 @@ const estilos = StyleSheet.create({
   sairPressionado: { backgroundColor: CORES.alertaClara },
   tela: { backgroundColor: CORES.fundo, flex: 1 },
   textoProtegida: { color: CORES.acao, flexShrink: 1, fontSize: 12, fontWeight: '600' },
+  textoAtualizacao: { flex: 1 },
+  textoAtualizar: { color: CORES.info, fontSize: 12, fontWeight: '700' },
   textoSair: { color: CORES.alerta, fontSize: 15, fontWeight: '600' },
   textoSubstituicao: { color: CORES.info, flex: 1, fontSize: 13, lineHeight: 19 },
   tituloTela: { color: CORES.texto, fontSize: 29, fontWeight: '800', letterSpacing: -0.8 },
+  tituloAtualizacao: { color: CORES.texto, fontSize: 14, fontWeight: '700' },
   tituloVazio: { color: CORES.texto, fontSize: 18, fontWeight: '700', marginBottom: 7 },
 });
