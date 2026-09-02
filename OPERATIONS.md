@@ -292,7 +292,7 @@ DEPLOY PRODUÇÃO
 
 Produção nunca recebe auto-deploy apenas por push/merge. O botão/ação de deploy é explícito e auditável.
 
-A PR 115 materializa o go/no-go em `infra/producao/checklist.yaml`. `pnpm verificar:checklist-producao` valida o catálogo e `pnpm liberar:producao` falha enquanto qualquer requisito não tiver evidência e aprovação. O mecanismo não converte runbook em prova de execução e não libera produção pelo simples fato de staging estar saudável. Veja [docs/operacoes/PR-115.md](docs/operacoes/PR-115.md).
+A PR 115 materializa o go/no-go em `infra/producao/checklist.json`. `pnpm verificar:checklist-producao` valida o catálogo e `pnpm liberar:producao` falha enquanto qualquer requisito não tiver evidência e aprovação. O mecanismo não converte runbook em prova de execução e não libera produção pelo simples fato de staging estar saudável. Veja [docs/operacoes/PR-115.md](docs/operacoes/PR-115.md).
 
 A integração contínua inicial implementa somente os portões anteriores a staging: qualidade, tipos, testes, dependências, segredos, build e smoke efêmero do Docker Compose com reinício/persistência. Ela roda em pull requests, em alterações da `main` e semanalmente para detectar nova vulnerabilidade sem depender de outro commit. O workflow não recebe permissão de escrita, não persiste credencial do checkout, não publica artefato e não executa deploy.
 

@@ -3,9 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { parse } from 'yaml';
-
-const checklist = parse(await readFile('infra/producao/checklist.yaml', 'utf8'));
+const checklist = JSON.parse(await readFile('infra/producao/checklist.json', 'utf8'));
 const validador = await readFile('scripts/checklist-producao.mjs', 'utf8');
 
 test('checklist é fechado, versionado e default deny', () => {

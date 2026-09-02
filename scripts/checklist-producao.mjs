@@ -2,10 +2,8 @@ import { access, readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { parse } from 'yaml';
-
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const caminho = resolve(raiz, 'infra/producao/checklist.yaml');
+const caminho = resolve(raiz, 'infra/producao/checklist.json');
 const idsObrigatorios = Object.freeze([
   'DECISOES_PORTAO_ZERO',
   'SEGREDOS_COFRE_ROTACAO',
@@ -32,7 +30,7 @@ function falhar(codigo) {
   throw new Error(`CHECKLIST_PRODUCAO_INVALIDO:${codigo}`);
 }
 
-const documento = parse(await readFile(caminho, 'utf8'));
+const documento = JSON.parse(await readFile(caminho, 'utf8'));
 if (documento?.versao !== 1 || documento?.ambiente !== 'producao' || documento?.politica !== 'default-deny') {
   falhar('CABECALHO');
 }
