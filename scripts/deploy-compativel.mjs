@@ -69,7 +69,7 @@ function validar(alvo) {
 }
 
 function ativarImagens(alvo) {
-  executarCompose(['up', '--detach', '--no-build', '--no-deps', '--wait', 'api', 'web', 'worker_fluxos'], alvo);
+  executarCompose(['up', '--detach', '--no-build', '--no-deps', '--wait', '--scale', 'worker_fluxos=2', 'api', 'web', 'worker_fluxos'], alvo);
   executarCompose(['up', '--detach', '--no-build', '--no-deps', '--wait', 'proxy'], alvo);
   executarCompose(['exec', '--no-TTY', 'api', 'node', '-e', "fetch('http://127.0.0.1:3000/api/v1/saude/pronto').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"], alvo);
 }

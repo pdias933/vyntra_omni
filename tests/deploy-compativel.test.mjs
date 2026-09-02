@@ -43,5 +43,6 @@ test('API drena prontidão, SSE e WebSocket antes do limite do contêiner', () =
 test('worker acorda, conclui o ciclo adquirido e recebe prazo próprio', () => {
   assert.match(worker, /solicitarDrenagem/u);
   assert.match(worker, /clearTimeout\(temporizador\)/u);
+  assert.match(deploy, /'--scale', 'worker_fluxos=2'/u);
   assert.equal(compose.services.worker_fluxos.stop_grace_period, '30s');
 });
