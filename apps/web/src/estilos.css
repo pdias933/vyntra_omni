@@ -158,6 +158,31 @@ a {
 .perfil-shell button { height: 28px; color: #819087; border: 0; border-radius: 8px; background: transparent; cursor: pointer; }
 .perfil-shell button:hover { color: white; background: rgba(255,255,255,.06); }
 
+.pareamento-celular { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(7,16,12,.58); backdrop-filter: blur(10px); }
+.pareamento-celular > section { width: min(460px, 100%); max-height: calc(100vh - 48px); overflow: auto; padding: 24px; border: 1px solid #dfe7e2; border-radius: 24px; background: #fff; box-shadow: 0 30px 80px rgba(9,28,19,.25); }
+.pareamento-celular header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.pareamento-celular header span { color: #3e7059; font-size: 11px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+.pareamento-celular header h2 { margin: 5px 0 0; color: #12201a; font-size: 25px; letter-spacing: -.03em; }
+.pareamento-celular header button { width: 34px; height: 34px; border: 0; border-radius: 10px; color: #5f6d66; background: #f1f5f3; font-size: 22px; cursor: pointer; }
+.pareamento-leitura, .pareamento-confirmacao, .pareamento-sucesso { display: flex; align-items: center; flex-direction: column; padding: 24px 8px 8px; text-align: center; }
+.pareamento-leitura > p, .pareamento-confirmacao > p, .pareamento-sucesso > p { max-width: 350px; margin: 0; color: #65736c; font-size: 13px; line-height: 1.6; }
+.quadro-qr { display: grid; place-items: center; width: 256px; height: 256px; margin: 20px 0 14px; border: 1px solid #dfe7e2; border-radius: 22px; background: #fff; box-shadow: 0 12px 36px rgba(17,50,35,.08); }
+.skeleton-qr { width: 224px; height: 224px; border-radius: 12px; background: linear-gradient(100deg,#eef2f0 20%,#f8faf9 45%,#eef2f0 70%); background-size: 240% 100%; animation: skeleton-lista 1.2s ease-in-out infinite; }
+.pareamento-leitura small { max-width: 330px; color: #7a8780; font-size: 11px; line-height: 1.5; }
+.icone-aparelho, .pareamento-sucesso > span { display: grid; place-items: center; width: 68px; height: 68px; margin-bottom: 16px; border-radius: 22px; color: #176b4d; background: #e4f4ed; font-size: 34px; font-weight: 800; }
+.pareamento-confirmacao h3, .pareamento-sucesso h3 { margin: 0 0 8px; color: #12201a; font-size: 20px; }
+.pareamento-confirmacao dl { align-self: stretch; margin: 20px 0 12px; border: 1px solid #e3e9e5; border-radius: 15px; overflow: hidden; text-align: left; }
+.pareamento-confirmacao dl div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 13px; border-bottom: 1px solid #edf1ef; }
+.pareamento-confirmacao dl div:last-child { border-bottom: 0; }
+.pareamento-confirmacao dt { color: #69766f; font-size: 11px; }
+.pareamento-confirmacao dd { margin: 0; color: #17221d; font-size: 11px; font-weight: 700; }
+.pareamento-confirmacao .botao, .pareamento-sucesso .botao { align-self: stretch; margin-top: 20px; }
+.pareamento-celular .erro-login { margin-top: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-qr { animation: none; }
+}
+
 .shell-web__conteudo { position: relative; min-width: 0; min-height: 0; }
 .shell-web__conteudo > .editor-fluxo { position: absolute; inset: 0; }
 .faixa-escopo { position: absolute; z-index: 50; top: 12px; left: 50%; padding: 9px 14px; border: 1px solid #cde2d4; border-radius: 10px; background: rgba(245, 253, 248, .96); box-shadow: var(--sombra); color: #256343; font-size: 12px; transform: translateX(-50%); }

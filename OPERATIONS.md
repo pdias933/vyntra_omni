@@ -667,3 +667,13 @@ O shell depende de API e SSE sob a mesma origem autorizada. Monitore falhas de a
 ## 34. Operação da lista web da PR 087
 
 A migration `20260901014000_marcador_leitura_web` é aditiva e passa a ser a marca de prontidão. A lista limita cada consulta a 60 itens e filtra no PostgreSQL depois de resolver filas autorizadas. Monitore latência por filtro e plano dos índices de atendimento, conversa, mensagem, SLA, janela e marcador pessoal. Reversão de imagem preserva a tabela e não requer apagar marcadores.
+
+## 35. Operação do shell e autenticação mobile da PR 097
+
+Não há migration. O app usa `EXPO_PUBLIC_API_URL`, com `https://omni.up100.com.br` como staging padrão, e `EXPO_PUBLIC_VERSAO_APLICATIVO`; HTTP é aceito somente para host local em Development Build. Os identificadores nativos são `br.com.up100.vyntraomni` em iOS e Android. Publicação em loja continua fora desta PR.
+
+O aceite precisa compilar/exportar as duas plataformas, validar a matriz Expo, confirmar no código e em teste que access token não é persistido, exercitar login comum/MFA, rotação, logout, bloqueio local e os estados QR `AGUARDANDO_CONFIRMACAO → CONFIRMADO`. O ensaio web deve gerar um token, apresentar a prévia do mesmo aparelho, exigir confirmação e comprovar que fechar/cancelar, expirar ou reutilizar não cria segunda sessão. Nunca registrar token, senha, MFA, QR ou comprovante em evidência.
+
+Monitorar apenas códigos agregados de autenticação e pareamento. Falha de biometria é local e não deve virar log remoto com identidade. Rollback do app exige nova build instalada; rollback do web pode retirar a superfície de geração sem invalidar sessões mobile existentes. Reverter API não é permitido para versão anterior aos contratos de autenticação já aceitos.
+
+O procedimento detalhado, os estados locais, a custódia da sessão e as evidências de staging ficam em [docs/operacoes/PR-097.md](docs/operacoes/PR-097.md).

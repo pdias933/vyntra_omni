@@ -4,7 +4,7 @@ import {
   sairSessaoWeb,
   type SessaoWebDto,
 } from '@vyntra/api-client';
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 
 import { AplicacaoEditorFluxos } from '../Aplicacao';
@@ -13,6 +13,11 @@ import { AdministracaoOperacionalWeb } from './administracao/AdministracaoOperac
 import { ListaAtendimentosWeb } from './atendimentos/ListaAtendimentosWeb';
 import { SaudeReleasesWeb } from './saude/SaudeReleasesWeb';
 import { obterCsrf } from './seguranca-web';
+
+const PareamentoCelularWeb = lazy(async () => {
+  const modulo = await import('./PareamentoCelularWeb');
+  return { default: modulo.PareamentoCelularWeb };
+});
 
 type RotaWeb =
   | '/administracao/fluxos'
@@ -37,6 +42,8 @@ function rotaAtual(): RotaWeb {
 
 function codigoErro(erro: unknown): string | undefined {
   if (typeof erro !== 'object' || erro === null) return undefined;
+  const codigoDireto = Reflect.get(erro, 'codigo');
+  if (typeof codigoDireto === 'string') return codigoDireto;
   const resposta = Reflect.get(erro, 'response');
   if (typeof resposta !== 'object' || resposta === null) return undefined;
   const dados = Reflect.get(resposta, 'data');
@@ -80,6 +87,7 @@ export function ShellWeb() {
   const [estado, definirEstado] = useState<'AUTENTICANDO' | 'PRONTO' | 'SEM_SESSAO'>('AUTENTICANDO');
   const [rota, definirRota] = useState<RotaWeb>(rotaAtual);
   const [avisoEscopo, definirAvisoEscopo] = useState<string>();
+  const [pareamentoCelular, definirPareamentoCelular] = useState(false);
 
   const autenticar = useCallback(async () => {
     try {
@@ -182,6 +190,14 @@ export function ShellWeb() {
             <small>Sessão protegida</small>
           </div>
           <button
+            aria-label="Conectar celular"
+            onClick={() => definirPareamentoCelular(true)}
+            title="Conectar celular"
+            type="button"
+          >
+            ▯
+          </button>
+          <button
             aria-label="Sair"
             onClick={() => {
               void sairSessaoWeb({
@@ -205,6 +221,25 @@ export function ShellWeb() {
         )}
         <ConteudoRota rota={rota} />
       </div>
+      {pareamentoCelular && (
+        <Suspense fallback={<CarregamentoPareamento />}>
+          <PareamentoCelularWeb aoFechar={() => definirPareamentoCelular(false)} />
+        </Suspense>
+      )}
+    </div>
+  );
+}
+
+function CarregamentoPareamento() {
+  return (
+    <div className="pareamento-celular" role="presentation">
+      <section aria-label="Abrindo conexão do celular" aria-modal="true" role="dialog">
+        <div className="pareamento-leitura">
+          <div className="quadro-qr">
+            <div aria-label="Carregando" className="skeleton-qr" />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

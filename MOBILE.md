@@ -151,6 +151,12 @@ Na implementação da PR 015, o access token vale 15 minutos e permanece somente
 
 Novo login é forçado em troca de senha, dispositivo revogado, suspeita, restauração indevida ou política administrativa.
 
+#### Shell materializado na PR 097
+
+O app inicia em uma máquina local explícita: `CARREGANDO`, `SEM_SESSAO`, `BLOQUEADO` ou `AUTENTICADO`. Em abertura fria com refresh existente, a interface exige primeiro autenticação local e somente então rotaciona a sessão no backend. Depois de 30 segundos em segundo plano, volta bloqueada; se o access token em memória ainda for válido, o desbloqueio não depende de uma chamada desnecessária, e se expirou usa a rotação normal. Aparelho sem biometria ou código seguro cadastrado não abre o cache autenticado e oferece sair para entrar novamente.
+
+O shell usa uma pilha nativa para entrada/QR e abas nativas para `Atendimentos`, `Contatos`, `Notificações` e `Perfil`. As áreas ainda não entregues permanecem vazias sem contatos, contadores, mensagens ou estados inventados. Reanimated aplica somente transições curtas com `ReduceMotion.System`; haptics confirma ação sem atrasar navegação ou aplicação de sessão.
+
 ### 4.2 Pareamento QR
 
 Fluxo:
@@ -172,6 +178,8 @@ O QR não contém credencial permanente, vale 90 segundos e é de uso único. Ex
 Após ler o QR, o app troca imediatamente o token por um comprovante diferente e mantém ambos apenas pelo tempo necessário ao fluxo; nenhum deles vai para SQLite, AsyncStorage, log ou telemetria. Consulta e conclusão reapresentam o comprovante e o mesmo vínculo da instalação. A tela mostra uma prévia clara do aparelho na web e aguarda confirmação sem revelar token técnico. Expiração, cancelamento, logout web, troca de aparelho durante o fluxo ou replay encerram a tentativa e oferecem gerar/ler um novo QR, nunca repetem silenciosamente o vínculo.
 
 Somente depois de `CONFIRMADO` o app solicita a conclusão. Access e refresh retornam exclusivamente nessa resposta mobile e passam ao mesmo `GerenciadorSessaoMobile`/cofre nativo do login por credencial. `AGUARDANDO_CONFIRMACAO` é estado normal e pode usar progresso discreto; erro técnico não deve aparecer como estado permanente de sincronização.
+
+Na PR 097, a câmera existe somente na tela de pareamento. O scanner aceita exclusivamente o token opaco de 43 caracteres, impede leituras concorrentes, resgata uma vez e mantém token/comprovante em memória. A web mostra o QR, consulta o estado, apresenta plataforma/modelo/versão disponíveis e exige confirmação humana recente. Sair da tela interrompe a espera local; fechar a janela web antes da confirmação cancela a tentativa no backend.
 
 ### 4.3 Limite
 

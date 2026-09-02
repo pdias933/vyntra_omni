@@ -118,7 +118,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 094 | CONCLUÍDA | `high` |
 | 095 | CONCLUÍDA | `xhigh` |
 | 096 | CONCLUÍDA | `xhigh` |
-| 097 | PENDENTE | `xhigh` |
+| 097 | EM ANDAMENTO | `xhigh` |
 | 098 | PENDENTE | `high` |
 | 099 | PENDENTE | `xhigh` |
 | 100 | PENDENTE | `xhigh` |
@@ -146,7 +146,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096A | CONCLUÍDA | `high` |
 | 096B | CONCLUÍDA | `xhigh` |
 
-`096A` e `096B` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging; PR097–PR107 permanecem pausadas até novo direcionamento.
+`096A` e `096B` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. O lote mobile foi retomado em 2 de setembro de 2026; a PR097 está em andamento e PR098–PR107 seguem pendentes na ordem aprovada.
 
 ## 2. Portão zero
 

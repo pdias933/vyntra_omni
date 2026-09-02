@@ -782,3 +782,19 @@ A PR 096 separa saúde pública mínima de diagnóstico administrativo. `/saude/
 `Reprocessar agora` não executa integração no processo HTTP e não altera o estado da operação. Sob revisão esperada, apenas antecipa `proxima_acao_em` para operações em `AGUARDANDO_NOVA_TENTATIVA` ou `RESULTADO_INCERTO`, preservando respectivamente os caminhos de execução e reconciliação do worker. Estado terminal não reabre. A antecipação e sua auditoria são atômicas.
 
 O painel desktop consome esse contrato e os contratos de release já existentes exclusivamente pelo SDK gerado. Saúde atualiza silenciosamente; controles de recurso, desligamento emergencial e políticas mobile exigem preview e confirmação. O PostgreSQL continua autoridade para rollout e versão mínima obrigatória.
+
+### 13.21 Shell e autenticação mobile
+
+A PR 097 conecta o app ao contrato OpenAPI existente por um único `AdaptadorAutenticacaoHttp`. A composição `ServicoAutenticacaoAplicativo → GerenciadorSessaoMobile → CofreSessaoMobile` mantém regra de transporte, token em memória e custódia nativa separados. O adapter conhece os nomes HTTP; telas e navegação recebem somente sessão projetada em português e nunca importam DTO de Meta/MK.
+
+```text
+Tela de entrada / QR / bloqueio
+  ↓ ServicoAutenticacaoAplicativo
+AdaptadorAutenticacaoHttp ── SDK OpenAPI ── API
+  ↓
+GerenciadorSessaoMobile
+  ├── access token somente em memória
+  └── CofreSessaoMobile: refresh + instalação + dispositivo + vínculo
+```
+
+React Navigation fornece pilha e abas, Gesture Handler delimita a raiz nativa, Reanimated aplica transições reduzíveis e Safe Area/Screens preservam o comportamento de cada plataforma. Nenhuma dessas bibliotecas participa de autorização. O QR é renderizado no web a partir do token emitido pelo backend e lido pela câmera mobile; nenhum cliente cria, prolonga, confirma sozinho ou persiste essa autoridade.

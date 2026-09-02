@@ -202,6 +202,8 @@ A PR 091 acrescenta busca na conversa e galeria de `Mídias`, `Links` e `Documen
 - Reconciliação multi-dispositivo e estado `REVISAO_NECESSARIA` quando a conversa ou atribuição mudou.
 - Atualização obrigatória comandada pelo backend quando houver incompatibilidade ou risco de segurança.
 
+Na PR 097, o shell nativo materializa entrada por credencial com desafio MFA quando exigido, pareamento QR confirmado na web, restauração da sessão e bloqueio local por biometria ou código seguro do aparelho. Access token permanece somente em memória; o fluxo QR guarda token e comprovante somente enquanto a tela está ativa. As quatro abas existem como estrutura real, mas não exibem massa fictícia nem antecipam lista, timeline, composer, offline ou diagnóstico. A web passa a gerar, acompanhar e confirmar o QR com prévia do aparelho; fechar antes da confirmação cancela a tentativa.
+
 ### 4.8 Motor de Fluxos e WhatsApp Flows
 
 - Motor próprio, determinístico e configurável.

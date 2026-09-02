@@ -722,3 +722,16 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - nenhum adapter ou efeito externo é chamado pela rota administrativa;
 - alteração e auditoria sanitizada compartilham a transação;
 - controles de recurso e política mobile continuam isolados sob `ADMINISTRAR_RELEASES`, com confirmação visual e concorrência otimista.
+
+## 29. Shell, biometria e pareamento da PR 097
+
+- a autenticação local apenas desbloqueia a interface; nunca cria sessão, permissão ou confiança no servidor;
+- abertura fria lê a existência do refresh, exige biometria/código seguro e só então solicita rotação; access token continua somente em memória;
+- após 30 segundos fora do primeiro plano, conteúdo autenticado volta a ficar coberto pela tela de bloqueio;
+- SecureStore usa custódia restrita ao aparelho e backup Android desativado; SQLite e AsyncStorage continuam fora da autenticação;
+- login por credencial suporta MFA sem gravar senha/código; falhas recebem mensagens canônicas sem enumeração adicional;
+- somente o adapter HTTP usa o SDK OpenAPI e a origem mobile recusa HTTP fora de Development Build local;
+- scanner QR aceita a forma opaca exata, coalesce leituras e mantém token/comprovante somente em memória;
+- a sessão web criadora consulta uma prévia e confirma explicitamente; fechar antes de confirmar tenta cancelar o QR;
+- câmera é solicitada somente na tela correspondente; negação não reduz segurança nem habilita entrada alternativa;
+- haptics e animações não alteram ordem, autorização ou resultado e obedecem Reduzir Movimento.

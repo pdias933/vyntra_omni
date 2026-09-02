@@ -123,7 +123,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: migracao
-    image: vyntra/migracoes-staging:pr-096b
+    image: vyntra/migracoes-staging:pr-097
     pull_policy: build
     restart: "no"
     init: true
@@ -154,7 +154,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/provisionamento-staging:pr-096b
+    image: vyntra/provisionamento-staging:pr-097
     pull_policy: build
     restart: "no"
     init: true
@@ -200,7 +200,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/api-staging:pr-096b
+    image: vyntra/api-staging:pr-097
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -272,7 +272,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/worker-fluxos-staging:pr-096b
+    image: vyntra/worker-fluxos-staging:pr-097
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -310,7 +310,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       target: conteudo
-    image: vyntra/web-staging:pr-096b
+    image: vyntra/web-staging:pr-097
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -343,7 +343,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       target: borda
-    image: vyntra/proxy-staging:pr-096b
+    image: vyntra/proxy-staging:pr-097
     pull_policy: build
     restart: *reinicio-staging
     init: true

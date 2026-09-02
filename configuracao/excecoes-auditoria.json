@@ -6,16 +6,25 @@
       "severidade": "moderate",
       "versoes": ["7.0.3"],
       "raiz_caminho": "apps__mobile",
-      "entradas_caminho": ["expo", "expo-crypto", "expo-dev-client"],
+      "entradas_caminho": [
+        "@expo/vector-icons",
+        "expo",
+        "expo-camera",
+        "expo-crypto",
+        "expo-dev-client"
+      ],
       "segmentos_caminho_permitidos": [
         "apps__mobile",
+        "@expo/vector-icons",
         "expo",
+        "expo-camera",
         "expo-crypto",
         "expo-dev-client",
         "expo-dev-launcher",
         "expo-dev-menu",
         "expo-dev-menu-interface",
         "expo-manifests",
+        "expo-font",
         "@expo/cli",
         "@expo/config",
         "@expo/config-plugins",
@@ -35,7 +44,7 @@
       "dependencia_desenvolvimento": false,
       "dependencia_opcional": false,
       "expira_em": "2026-09-29",
-      "documento": "docs/dependencias/PR-002.md"
+      "documento": "docs/dependencias/PR-097.md"
     }
   ]
 }
