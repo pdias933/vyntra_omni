@@ -247,6 +247,8 @@ Mensalmente ou em intervalo formal equivalente:
 
 Backup sem restauração comprovada não satisfaz a V1.
 
+Desde a PR 113, staging dispõe de backup cifrado/autenticado de PostgreSQL, mídias com snapshot de metadados, segredos/chaves e configuração. O destino externo é obrigatório e o timer persistente executa a cada quatro horas; o alerta operacional deve disparar antes de 4 h desde o último sucesso. A restauração exige diretório novo, valida hashes e autenticação dos artefatos e carrega o dump em PostgreSQL efêmero sem rede para medir o RTO. O procedimento completo está em [docs/operacoes/PR-113.md](docs/operacoes/PR-113.md). Produção só pode reutilizar o mecanismo após definir cofre, storage externo, retenção e monitor independente reais.
+
 ### 9.2 Runbook de desastre
 
 O runbook deve cobrir:

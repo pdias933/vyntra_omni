@@ -25,6 +25,7 @@ const codigoVerificacaoS3 = await readFile(
 test('declara a pilha persistente de staging com publicação web separada', () => {
   assert.deepEqual(Object.keys(compose.services).sort(), [
     'api',
+    'backup_exportador',
     'migrar',
     'postgres',
     'provisionar_administrador',
@@ -51,7 +52,7 @@ test('declara a pilha persistente de staging com publicação web separada', () 
   for (const [nome, servico] of Object.entries(compose.services)) {
     assert.equal(
       servico.restart,
-      ['migrar', 'provisionar_administrador'].includes(nome)
+      ['backup_exportador', 'migrar', 'provisionar_administrador'].includes(nome)
         ? 'no'
         : 'unless-stopped',
     );

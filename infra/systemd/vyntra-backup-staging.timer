@@ -1,0 +1,12 @@
+[Unit]
+Description=Executa backup Vyntra staging no máximo a cada quatro horas
+
+[Timer]
+OnCalendar=*-*-* 00/4:00:00
+Persistent=true
+RandomizedDelaySec=10m
+AccuracySec=1m
+Unit=vyntra-backup-staging.service
+
+[Install]
+WantedBy=timers.target
