@@ -21,6 +21,7 @@
     "deploy:staging": "node scripts/deploy-compativel.mjs",
     "gerar:contratos": "node scripts/gerar-contratos.mjs",
     "lint": "node scripts/executar-turbo.mjs lint && eslint scripts tests --max-warnings 0",
+    "liberar:producao": "node scripts/checklist-producao.mjs --exigir-aprovado",
     "staging:estado": "node scripts/ambiente-staging.mjs estado",
     "staging:configuracao-mobile": "node scripts/ambiente-staging.mjs configuracao-mobile",
     "staging:parar": "node scripts/ambiente-staging.mjs parar",
@@ -37,6 +38,7 @@
     "verificar:dependencias": "node scripts/verificar-dependencias.mjs",
     "verificar:contratos": "node scripts/verificar-contratos.mjs",
     "verificar:expo": "pnpm --filter @vyntra/mobile verificar:expo",
+    "verificar:checklist-producao": "node scripts/checklist-producao.mjs",
     "verificar:segredos": "node scripts/verificar-segredos.mjs"
   },
   "devDependencies": {
