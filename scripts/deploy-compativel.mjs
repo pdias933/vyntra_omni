@@ -60,6 +60,11 @@ function confirmar(esperada) {
 }
 
 function validar(alvo) {
+  const piloto = spawnSync(process.execPath, [resolve(raiz, 'scripts', 'piloto-controlado.mjs')], {
+    cwd: raiz,
+    encoding: 'utf8',
+  });
+  if (piloto.status !== 0) throw new Error('CONFIGURACAO_PILOTO_INVALIDA');
   executarCompose(['config', '--quiet'], alvo);
 }
 

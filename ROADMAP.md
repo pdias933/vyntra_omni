@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR115 foram concluídas. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. A PR116 é a próxima na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR116 tiveram a engenharia concluída. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. O piloto real permanece desligado até os bloqueios externos da PR115 serem resolvidos; o próximo passo autorizado é o deploy cumulativo em staging.
 
 ## 2. Portão zero
 
@@ -736,6 +736,10 @@ Aceite de engenharia concluído em 2 de setembro de 2026: um portão curto e nom
 ### PR 115 — checklist de produção
 
 Aceite de engenharia concluído em 2 de setembro de 2026: o go/no-go passou a ter catálogo versionado, fechado e `default-deny`, com responsável, estado, instante e evidências verificáveis. O comando estrutural aceita pendências explícitas; o comando de liberação retorna bloqueio enquanto qualquer requisito não estiver aprovado. Decisões do Portão Zero estão registradas, enquanto cofre, WAF, monitor externo, backup externo ensaiado, capacidade, integrações reais, lojas, jurídico/DPO, reinício da VM e aprovação final permanecem honestamente pendentes. Staging não é promovido implicitamente. Não houve migration nem dependência. Effort recomendado e confirmado: `high`, pela coordenação multidisciplinar e prevenção de aprovação documental sem prova operacional.
+
+### PR 116 — piloto controlado
+
+Aceite de engenharia concluído em 2 de setembro de 2026: o plano de piloto é versionado e validado no deploy, nasce integralmente `DESATIVADO` e não contém usuário, conta WhatsApp, janela ou plantão fictício. Ativação limita o escopo a dez usuários e duas contas internas, exige janela e responsável, preserva RBAC e os controles auditados do backend e mede erro 5xx, backlog, operações incertas, atraso de eventos e disponibilidade. Reversão desliga recursos primeiro e decide retorno à release anterior em até dez minutos sem desfazer migration. O piloto real não foi iniciado e continua bloqueado pela PR115. Não houve migration nem dependência. Effort recomendado e confirmado: `high`, pela coordenação de escopo, métricas, plantão e retorno seguro.
 
 ## 12. Mobile
 
