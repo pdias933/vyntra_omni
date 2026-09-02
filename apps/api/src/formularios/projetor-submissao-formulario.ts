@@ -17,16 +17,11 @@ export class ProjetorSubmissaoFormulario {
     ) {
       throw new Error('SUBMISSAO_FORMULARIO_INVALIDA');
     }
-    const camposMascarados: Record<string, string> = {};
-    for (const campo of formulario.campos) {
-      const valor = submissao.dadosProtegidos[campo.chave];
-      if (!['string', 'number', 'boolean'].includes(typeof valor)) continue;
-      const texto = String(valor);
-      camposMascarados[campo.rotulo] =
-        campo.classificacao === 'SENSIVEL' && !podeVerDadoSensivel
-          ? this.mascara(texto)
-          : texto;
-    }
+    const camposMascarados = this.projetarCamposMascarados(
+      formulario.campos,
+      submissao.dadosProtegidos,
+      podeVerDadoSensivel,
+    );
     return {
       acao: 'VER_FORMULARIO',
       camposMascarados,
@@ -38,6 +33,31 @@ export class ProjetorSubmissaoFormulario {
       tipo: 'FORMULARIO',
       visibilidade: 'SOMENTE_EQUIPE',
     };
+  }
+
+  public projetarCamposMascarados(
+    campos: readonly FormularioCanalDefinido['campos'][number][],
+    dadosRecebidos: unknown,
+    podeVerDadoSensivel: boolean,
+  ): Readonly<Record<string, string>> {
+    if (
+      dadosRecebidos === null ||
+      typeof dadosRecebidos !== 'object' ||
+      Array.isArray(dadosRecebidos)
+    ) {
+      return {};
+    }
+    const camposMascarados: Record<string, string> = {};
+    for (const campo of campos) {
+      const valor = Reflect.get(dadosRecebidos, campo.chave);
+      if (!['string', 'number', 'boolean'].includes(typeof valor)) continue;
+      const texto = String(valor);
+      camposMascarados[campo.rotulo] =
+        campo.classificacao === 'SENSIVEL' && !podeVerDadoSensivel
+          ? this.mascara(texto)
+          : texto;
+    }
+    return camposMascarados;
   }
 
   private mascara(valor: string): string {

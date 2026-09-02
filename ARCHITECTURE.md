@@ -824,3 +824,19 @@ Aplicacao
 ```
 
 A decisão local serve à experiência, não à autoridade: todos os portões autenticados continuam exigindo a versão no backend. Um `426` vindo de credencial, refresh ou pareamento converge para o mesmo estado global obrigatório. Reavaliação em primeiro plano conserva a última política válida quando a rede falha, impedindo que indisponibilidade remova um bloqueio já conhecido.
+
+### 13.23 Timeline e detalhes no mobile
+
+`ControladorConsoleMobile` expõe timeline, marcador, detalhes, financeiro e troca de contexto usando bearer, UUID do dispositivo e segredo do vínculo. Leituras autenticam antes de delegar aos mesmos serviços autorizados do console; mutações revalidam sessão e aparelho dentro da transação. Depois da troca de contexto, uma segunda autenticação antecede a projeção devolvida, fechando a janela de revogação entre escrita e leitura.
+
+```text
+TelaConversaMobile / TelaDetalhesContatoMobile
+  ↓ ServicoAtendimentosMobile (renovação única após 401)
+AdaptadorAtendimentosHttp → SDK OpenAPI gerado
+  ↓ bearer + vínculo do aparelho
+ControladorConsoleMobile
+  ├── ServicoTimelineWeb → timeline única autorizada
+  └── ServicoContatoAcoesWeb → contexto, Snapshot e ERP em tempo real
+```
+
+A réplica SQLCipher fornece somente a janela recente já incluída no snapshot autorizado. Histórico anterior é paginado no PostgreSQL e nunca inventado a partir de eventos mínimos. A pilha nativa conserva a instância da conversa enquanto Detalhes está aberta. Formulários passam pelo projetor central: somente campos declarados na estrutura interna entram no DTO e `VISUALIZAR_DADO_SENSIVEL` decide revelar ou mascarar o valor. O JSON protegido integral, referência externa e identificadores do ERP não chegam ao app ou à web.

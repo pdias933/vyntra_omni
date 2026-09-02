@@ -763,3 +763,16 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - login novo, pareamento concluído, logout e substituição da instalação não podem herdar réplica da identidade anterior;
 - rotação conserva temporariamente a chave pública anterior somente até vencer a última autorização já emitida; a chave privada anterior deixa de assinar imediatamente e é retirada depois desse prazo;
 - a PR 099 não aplica snapshots: somente a transação da PR 100 poderá persistir conteúdo, autorização e cursor como uma unidade.
+
+## 32. Timeline e detalhes mobile da PR 102
+
+- rotas mobile aceitam exclusivamente bearer atual, UUID do dispositivo e segredo do vínculo; cookie web, usuário, papel ou permissão declarados pelo app não são identidade;
+- leitura e mutação reutilizam os serviços centralizados de timeline, contato, contexto e ERP, mantendo autorização por sessão, fila, recurso e permissão no PostgreSQL;
+- confirmação de leitura e troca de contexto revalidam sessão e aparelho dentro da transação; a projeção posterior à troca autentica novamente antes da leitura;
+- a réplica local devolve apenas mensagens e notas da conversa presentes no snapshot autorizado e nunca fabrica evento operacional ou conteúdo de formulário ausente;
+- histórico paginado, notas e formulários seguem as permissões transversal, de nota e de dado sensível independentes; conteúdo negado não chega ao cliente;
+- formulário projeta somente chaves declaradas na estrutura interna, limita quantidade/tamanho e mascara campo `SENSIVEL` sem `VISUALIZAR_DADO_SENSIVEL`; o JSON protegido integral nunca entra no DTO;
+- BSUID depende de `VISUALIZAR_DADO_SENSIVEL`, telefone permanece mascarado e username continua opcional; nenhum deles prova cliente ERP;
+- dados de cadastro declaram `SNAPSHOT`; financeiro usa `TEMPO_REAL` ou falha explícita e nunca cai para snapshot;
+- troca de cliente/contrato exige `ALTERAR_CONTEXTO_CLIENTE`, pertencimento exato, versão esperada e confirmação visual; esconder o controle no app não substitui a autorização;
+- marcador local de não lida só é limpo após sucesso do servidor, impedindo sucesso aparente durante falha ou revogação.

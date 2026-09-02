@@ -212,6 +212,8 @@ Na PR 100, a sincronização mobile torna essa réplica utilizável: valida o co
 
 Na PR 101, `Atendimentos` deixa de ser um placeholder e passa a exibir a projeção autorizada do SQLCipher com os seis filtros únicos aprovados. Uma atualização confirmada altera prévia, não lidas e posição automaticamente; o movimento é curto, preserva a identidade visual da conversa e desaparece sob “Reduzir Movimento”. Não existem cards-resumo, pull-to-refresh, horário de atualização ou estado técnico saudável. A faixa superior aparece somente em perda de conexão, tentativa de conexão ou sincronização excepcional e some ao normalizar.
 
+Na PR 102, a lista abre uma conversa mobile paginada sobre a timeline única do contato. Mensagens, atendimentos, origem empresarial, notas, eventos e submissões permanecem tipos visuais distintos; a janela Meta usa countdown e o marcador de leitura só avança após confirmação online. `Ver formulário` revela apenas campos declarados e já mascarados pelo backend. Tocar no contato abre Detalhes em pilha nativa, preservando a posição da conversa; identidade opcional, vínculos, contrato, endereço, histórico e situação financeira aparecem conforme RBAC, com `Snapshot` e `Tempo real` claramente separados. Trocar contexto exige seleção e confirmação e não altera a identidade WhatsApp.
+
 ### 4.8 Motor de Fluxos e WhatsApp Flows
 
 - Motor próprio, determinístico e configurável.

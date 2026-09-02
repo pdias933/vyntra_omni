@@ -74,6 +74,8 @@ export class ItemTimelineWebDto {
   public readonly tipo: ItemTimelineWeb['tipo'];
   @ApiProperty({ format: 'date-time' }) public readonly ocorrido_em: string;
   @ApiProperty({ format: 'uuid' }) public readonly atendimento_id: string;
+  @ApiProperty({ required: false, type: 'array', items: { type: 'object', required: ['rotulo', 'valor'], properties: { rotulo: { type: 'string' }, valor: { type: 'string' } } } })
+  public readonly campos_formulario?: readonly { readonly rotulo: string; readonly valor: string }[];
   @ApiProperty({ required: false }) public readonly conta_whatsapp_nome?: string;
   @ApiProperty({ enum: ['ENTRADA', 'SAIDA'], required: false }) public readonly direcao?: 'ENTRADA' | 'SAIDA';
   @ApiProperty({ required: false }) public readonly estado_mensagem?: string;
@@ -91,6 +93,7 @@ export class ItemTimelineWebDto {
     this.tipo = item.tipo;
     this.ocorrido_em = item.ocorridoEm.toISOString();
     this.atendimento_id = item.atendimentoId;
+    if (item.camposFormulario !== undefined) this.campos_formulario = item.camposFormulario;
     if (item.contaWhatsAppNome !== undefined) this.conta_whatsapp_nome = item.contaWhatsAppNome;
     if (item.direcao !== undefined) this.direcao = item.direcao;
     if (item.estadoMensagem !== undefined) this.estado_mensagem = item.estadoMensagem;

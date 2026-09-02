@@ -5,6 +5,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { CodigoPermissaoAutorizacao, ContextoSessaoAutorizacao } from '../autorizacao/modelo-autorizacao.js';
 import { ErroPermissaoNegada } from '../autorizacao/erros-autorizacao.js';
 import { ServicoAutorizacao } from '../autorizacao/servico-autorizacao.js';
+import type { CampoFormularioCanal } from '../formularios/modelo-formulario.js';
+import { ProjetorSubmissaoFormulario } from '../formularios/projetor-submissao-formulario.js';
 import type { Prisma } from '../gerado/prisma/client.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
@@ -22,6 +24,8 @@ interface DadosMarcador {
 
 @Injectable()
 export class ServicoTimelineWeb {
+  private readonly projetorFormulario = new ProjetorSubmissaoFormulario();
+
   public constructor(
     @Inject(ServicoPrisma) private readonly prisma: ServicoPrisma,
     @Inject(ServicoAutorizacao) private readonly autorizacao: ServicoAutorizacao,
@@ -40,6 +44,7 @@ export class ServicoTimelineWeb {
       const filasNotasAutorizadas = await this.resolverFilasAutorizadas(sessao, 'VISUALIZAR_NOTA_INTERNA', transacao);
       const historicoTransversal = await this.temPermissaoTransversal(sessao, atendimentoId, 'VISUALIZAR_HISTORICO_TRANSVERSAL', transacao);
       const notasTransversais = await this.temPermissaoTransversal(sessao, atendimentoId, 'VISUALIZAR_NOTAS_TRANSVERSAIS', transacao);
+      const podeVerDadoSensivel = await this.temPermissaoTransversal(sessao, atendimentoId, 'VISUALIZAR_DADO_SENSIVEL', transacao);
       const atendimentos = await transacao.atendimento.findMany({
         orderBy: [{ iniciadoEm: 'asc' }, { id: 'asc' }],
         select: {
@@ -79,7 +84,12 @@ export class ServicoTimelineWeb {
             recebidaServidorEm: true,
             reacoes: { select: { atendimentoId: true, conteudoProtegido: true } },
             respondeAMensagem: { select: { atendimentoId: true, conteudoProtegido: true, id: true, tipo: true } },
-            submissaoFormulario: { select: { formulario: { select: { nome: true } } } },
+            submissaoFormulario: {
+              select: {
+                dadosProtegidos: true,
+                formulario: { select: { estruturaProtegida: true, nome: true } },
+              },
+            },
             tipo: true,
           },
           take: LIMITE + 1,
@@ -128,6 +138,16 @@ export class ServicoTimelineWeb {
       for (const mensagem of mensagens) {
         const conteudo = this.objeto(mensagem.conteudoProtegido);
         const formulario = mensagem.submissaoFormulario?.formulario.nome;
+        const camposFormulario = mensagem.submissaoFormulario === null
+          ? []
+          : Object.entries(this.projetorFormulario.projetarCamposMascarados(
+              this.camposFormulario(mensagem.submissaoFormulario.formulario.estruturaProtegida),
+              mensagem.submissaoFormulario.dadosProtegidos,
+              podeVerDadoSensivel,
+            )).slice(0, 100).map(([rotulo, valor]) => ({
+              rotulo: rotulo.slice(0, 200),
+              valor: valor.slice(0, 1_000),
+            }));
         const alvoResposta = mensagem.respondeAMensagem !== null && idsAtendimentos.includes(mensagem.respondeAMensagem.atendimentoId)
           ? mensagem.respondeAMensagem
           : undefined;
@@ -141,6 +161,7 @@ export class ServicoTimelineWeb {
         });
         itens.push({
           atendimentoId: mensagem.atendimentoId,
+          ...(camposFormulario.length === 0 ? {} : { camposFormulario }),
           contaWhatsAppNome: mensagem.contaWhatsApp.nomeExibicao,
           direcao: mensagem.direcao,
           ...(mensagem.estadoSaida === null ? {} : { estadoMensagem: mensagem.estadoSaida }),
@@ -265,7 +286,7 @@ export class ServicoTimelineWeb {
   private async temPermissaoTransversal(
     sessao: ContextoSessaoAutorizacao,
     atendimentoId: string,
-    permissao: Extract<CodigoPermissaoAutorizacao, 'VISUALIZAR_HISTORICO_TRANSVERSAL' | 'VISUALIZAR_NOTAS_TRANSVERSAIS'>,
+    permissao: Extract<CodigoPermissaoAutorizacao, 'VISUALIZAR_DADO_SENSIVEL' | 'VISUALIZAR_HISTORICO_TRANSVERSAL' | 'VISUALIZAR_NOTAS_TRANSVERSAIS'>,
     transacao: TransacaoPrisma,
   ): Promise<boolean> {
     try {
@@ -305,6 +326,39 @@ export class ServicoTimelineWeb {
 
   private objeto(valor: Prisma.JsonValue): Readonly<Record<string, unknown>> {
     return typeof valor === 'object' && valor !== null && !Array.isArray(valor) ? valor as Readonly<Record<string, unknown>> : {};
+  }
+
+  private camposFormulario(valor: Prisma.JsonValue): readonly CampoFormularioCanal[] {
+    const campos = this.objeto(valor).campos;
+    if (!Array.isArray(campos) || campos.length > 100) return [];
+    return campos.flatMap((item) => {
+      if (item === null || typeof item !== 'object' || Array.isArray(item)) return [];
+      const chave = Reflect.get(item, 'chave');
+      const rotulo = Reflect.get(item, 'rotulo');
+      const classificacao = Reflect.get(item, 'classificacao');
+      if (
+        typeof chave !== 'string' ||
+        chave.length < 1 ||
+        chave.length > 200 ||
+        typeof rotulo !== 'string' ||
+        rotulo.length < 1 ||
+        rotulo.length > 200 ||
+        !this.classificacaoCampoValida(classificacao)
+      ) {
+        return [];
+      }
+      return [{
+        chave,
+        classificacao,
+        rotulo,
+      }];
+    });
+  }
+
+  private classificacaoCampoValida(
+    valor: unknown,
+  ): valor is CampoFormularioCanal['classificacao'] {
+    return valor === 'OPERACIONAL' || valor === 'PESSOAL' || valor === 'SENSIVEL';
   }
 
   private codificarCursor(item: ItemTimelineWeb): string {

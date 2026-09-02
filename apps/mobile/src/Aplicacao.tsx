@@ -17,6 +17,7 @@ import {
   type SessaoAplicativo,
 } from './autenticacao/servico-autenticacao-aplicativo';
 import type { PoliticaVersaoAplicativo } from './atualizacao/adaptador-politica-versao-http';
+import { ServicoAtendimentosMobile } from './atendimentos/servico-atendimentos-mobile';
 import { ServicoPoliticaVersaoAplicativo } from './atualizacao/servico-politica-versao-aplicativo';
 import { NavegacaoPrincipal } from './navegacao/NavegacaoPrincipal';
 import { ServicoSincronizacaoAplicativo } from './sincronizacao/servico-sincronizacao-aplicativo';
@@ -44,6 +45,7 @@ type EstadoPoliticaVersao =
 const NavegacaoEntrada = createNativeStackNavigator<RotasEntrada>();
 const autenticacao = new ServicoAutenticacaoAplicativo();
 const sincronizacao = new ServicoSincronizacaoAplicativo(autenticacao);
+const atendimentosMobile = new ServicoAtendimentosMobile(autenticacao);
 const politicaVersaoAplicativo = new ServicoPoliticaVersaoAplicativo();
 const TEMPO_PARA_BLOQUEAR_MS = 30_000;
 
@@ -414,6 +416,7 @@ export function Aplicacao() {
               {...(politicaVersao === undefined ? {} : { politicaVersao })}
               repositorio={autenticacao.replica}
               saindo={saindo}
+              servicoAtendimentos={atendimentosMobile}
               sessao={sessao}
             />
           ) : (

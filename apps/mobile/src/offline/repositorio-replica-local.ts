@@ -54,6 +54,25 @@ interface LinhaResumoAtendimentoLocal {
   readonly usuario_responsavel_id: string | null;
 }
 
+interface LinhaMensagemTimelineLocal {
+  readonly atendimento_id: string;
+  readonly citacao_conteudo_json: string | null;
+  readonly conteudo_json: string;
+  readonly direcao: 'ENTRADA' | 'SAIDA';
+  readonly estado_saida: string | null;
+  readonly id: string;
+  readonly ocorrido_em: string;
+  readonly responde_a_mensagem_id: string | null;
+  readonly tipo_mensagem: string;
+}
+
+interface LinhaNotaTimelineLocal {
+  readonly atendimento_id: string;
+  readonly conteudo_json: string;
+  readonly id: string;
+  readonly ocorrido_em: string;
+}
+
 export interface ResumoAtendimentoLocal {
   readonly atendimentoId: string;
   readonly contatoId: string;
@@ -72,6 +91,20 @@ export interface ResumoAtendimentoLocal {
   readonly ultimaMensagemDirecao?: 'ENTRADA' | 'SAIDA';
   readonly ultimaMensagemResumo: string;
   readonly usuarioResponsavelId?: string;
+}
+
+export interface ItemTimelineLocal {
+  readonly atendimentoId: string;
+  readonly citacaoTexto?: string;
+  readonly direcao?: 'ENTRADA' | 'SAIDA';
+  readonly estadoMensagem?: string;
+  readonly id: string;
+  readonly mensagemTipo?: string;
+  readonly ocorridoEm: string;
+  readonly respondeAMensagemId?: string;
+  readonly somenteEquipe?: true;
+  readonly texto?: string;
+  readonly tipo: 'MENSAGEM' | 'NOTA_INTERNA';
 }
 
 export interface EstadoReplicaLocal {
@@ -253,6 +286,114 @@ export class RepositorioReplicaLocal {
       PENDENTES: linha?.pendentes ?? 0,
       SLA: linha?.sla ?? 0,
     };
+  }
+
+  public async obterResumoAtendimento(
+    atendimentoId: string,
+  ): Promise<ResumoAtendimentoLocal | undefined> {
+    const banco = await this.abrir();
+    const linha = await banco.getFirstAsync<LinhaResumoAtendimentoLocal>(
+      `SELECT atendimento_id, contato_id, conversa_id, estado, fila_id,
+        fila_nome, identidade_secundaria, janela_expira_em, modo,
+        motivo_espera, nome_contato, quantidade_nao_lida, sla_em,
+        ultima_atividade_em, ultima_mensagem_direcao,
+        ultima_mensagem_resumo, usuario_responsavel_id
+       FROM resumo_atendimento WHERE atendimento_id = ?`,
+      atendimentoId,
+    );
+    return linha === null ? undefined : this.mapearResumoAtendimento(linha);
+  }
+
+  public async listarTimeline(
+    conversaId: string,
+  ): Promise<readonly ItemTimelineLocal[]> {
+    const banco = await this.abrir();
+    const [mensagens, notas] = await Promise.all([
+      banco.getAllAsync<LinhaMensagemTimelineLocal>(
+        `SELECT m.id, m.atendimento_id, m.direcao,
+          m.tipo AS tipo_mensagem, m.estado_saida,
+          m.conteudo_json, m.responde_a_mensagem_id,
+          citada.conteudo_json AS citacao_conteudo_json,
+          m.recebida_servidor_em AS ocorrido_em
+         FROM mensagem m
+         LEFT JOIN mensagem citada ON citada.id = m.responde_a_mensagem_id
+         WHERE m.conversa_id = ? AND m.tipo <> 'REACAO'
+         ORDER BY m.recebida_servidor_em DESC, m.id DESC
+         LIMIT 200`,
+        conversaId,
+      ),
+      banco.getAllAsync<LinhaNotaTimelineLocal>(
+        `SELECT id, atendimento_id, conteudo_json,
+          criada_em AS ocorrido_em
+         FROM nota_interna WHERE conversa_id = ?
+         ORDER BY criada_em DESC, id DESC
+         LIMIT 200`,
+        conversaId,
+      ),
+    ]);
+    const itens: ItemTimelineLocal[] = [
+      ...mensagens.map((linha) => {
+        const conteudo = this.lerObjetoJson(linha.conteudo_json);
+        const citacao = this.lerObjetoJson(linha.citacao_conteudo_json);
+        return {
+          atendimentoId: linha.atendimento_id,
+          direcao: linha.direcao,
+          ...(linha.estado_saida === null
+            ? {}
+            : { estadoMensagem: linha.estado_saida }),
+          id: linha.id,
+          mensagemTipo: linha.tipo_mensagem,
+          ocorridoEm: linha.ocorrido_em,
+          ...(linha.responde_a_mensagem_id === null
+            ? {}
+            : {
+                citacaoTexto:
+                  typeof citacao.texto === 'string'
+                    ? citacao.texto.slice(0, 120)
+                    : 'Mensagem',
+                respondeAMensagemId: linha.responde_a_mensagem_id,
+              }),
+          ...(typeof conteudo.texto === 'string'
+            ? { texto: conteudo.texto.slice(0, 8_000) }
+            : {}),
+          tipo: 'MENSAGEM' as const,
+        };
+      }),
+      ...notas.map((linha) => {
+        const conteudo = this.lerObjetoJson(linha.conteudo_json);
+        return {
+          atendimentoId: linha.atendimento_id,
+          id: linha.id,
+          ocorridoEm: linha.ocorrido_em,
+          somenteEquipe: true as const,
+          texto:
+            typeof conteudo.texto === 'string'
+              ? conteudo.texto.slice(0, 4_000)
+              : 'Nota interna',
+          tipo: 'NOTA_INTERNA' as const,
+        };
+      }),
+    ];
+    return itens
+      .sort(
+        (a, b) =>
+          a.ocorridoEm.localeCompare(b.ocorridoEm) || a.id.localeCompare(b.id),
+      )
+      .slice(-200);
+  }
+
+  public async confirmarLeituraLocal(
+    atendimentoId: string,
+    conversaId: string,
+  ): Promise<void> {
+    const banco = await this.abrir();
+    await banco.runAsync(
+      `UPDATE resumo_atendimento SET quantidade_nao_lida = 0
+       WHERE atendimento_id = ? AND conversa_id = ?`,
+      atendimentoId,
+      conversaId,
+    );
+    this.publicarMudanca();
   }
 
   public async aplicarSnapshot(snapshot: SnapshotMobileValidado): Promise<void> {
@@ -758,5 +899,49 @@ export class RepositorioReplicaLocal {
 
   private publicarMudanca(): void {
     for (const observador of this.observadores) observador();
+  }
+
+  private lerObjetoJson(valor: string | null): Readonly<Record<string, unknown>> {
+    if (valor === null) return {};
+    try {
+      const lido: unknown = JSON.parse(valor);
+      return typeof lido === 'object' && lido !== null && !Array.isArray(lido)
+        ? (lido as Readonly<Record<string, unknown>>)
+        : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private mapearResumoAtendimento(
+    linha: LinhaResumoAtendimentoLocal,
+  ): ResumoAtendimentoLocal {
+    return {
+      atendimentoId: linha.atendimento_id,
+      contatoId: linha.contato_id,
+      conversaId: linha.conversa_id,
+      estado: linha.estado,
+      filaId: linha.fila_id,
+      filaNome: linha.fila_nome,
+      ...(linha.identidade_secundaria === null
+        ? {}
+        : { identidadeSecundaria: linha.identidade_secundaria }),
+      ...(linha.janela_expira_em === null
+        ? {}
+        : { janelaExpiraEm: linha.janela_expira_em }),
+      modo: linha.modo,
+      motivoEspera: linha.motivo_espera,
+      nomeContato: linha.nome_contato,
+      quantidadeNaoLida: linha.quantidade_nao_lida,
+      ...(linha.sla_em === null ? {} : { slaEm: linha.sla_em }),
+      ultimaAtividadeEm: linha.ultima_atividade_em,
+      ...(linha.ultima_mensagem_direcao === null
+        ? {}
+        : { ultimaMensagemDirecao: linha.ultima_mensagem_direcao }),
+      ultimaMensagemResumo: linha.ultima_mensagem_resumo,
+      ...(linha.usuario_responsavel_id === null
+        ? {}
+        : { usuarioResponsavelId: linha.usuario_responsavel_id }),
+    };
   }
 }

@@ -802,7 +802,7 @@ export class ServicoAutenticacaoMobile {
     );
   }
 
-  private async executarComSessaoAtual<T>(
+  public async executarComSessaoAtual<T>(
     tokenAcesso: string,
     dispositivoId: string,
     segredoVinculo: string,

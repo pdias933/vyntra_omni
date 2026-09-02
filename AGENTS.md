@@ -92,7 +92,9 @@ Não propague DTOs/nomenclatura Meta ou MK para domínio, UI ou Motor de Fluxos.
 - Mensagens suportam swipe para responder/citar, toque longo, navegação até a citação original, áudio, mídia em tela cheia, PDF, busca e estados de envio/entrega/leitura/falha.
 - Nota ou evento interno deve ser impossível de confundir com mensagem ao cliente e trazer `Somente equipe`.
 - Timeline continua por contato; origem, data, atendimento e protocolo aparecem como metadados/separadores discretos.
+- Timeline mobile combina apenas a janela recente do snapshot autorizado com páginas online autorizadas; evento incremental mínimo nunca é transformado em item inventado. Abrir Detalhes deve preservar a instância, posição e rascunho da conversa.
 - App e web exibem card de WhatsApp Flow com `Ver formulário` e mascaramento/permissão.
+- `Ver formulário` só pode usar campos declarados e projetados pelo backend; JSON protegido integral nunca chega ao cliente, e ausência offline deve ser explícita.
 - Usar cor para estado e ação, não decoração.
 - Reanimated, Gesture Handler, haptics, skeletons e microinterações não podem bloquear trabalho e devem respeitar “Reduzir Movimento”.
 - UI oculta ou desabilitada nunca substitui autorização no backend.

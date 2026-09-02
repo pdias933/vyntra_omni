@@ -290,6 +290,38 @@ export type ResultadoAlteracaoAcessoUsuarioDto = {
     versao_permissoes: number;
 };
 
+export type ItemTimelineWebDto = {
+    id: string;
+    tipo: 'EVENTO_OPERACIONAL' | 'FORMULARIO' | 'MENSAGEM' | 'NOTA_INTERNA' | 'SEPARADOR_ATENDIMENTO';
+    ocorrido_em: string;
+    atendimento_id: string;
+    campos_formulario?: Array<{
+        rotulo: string;
+        valor: string;
+    }>;
+    conta_whatsapp_nome?: string;
+    direcao?: 'ENTRADA' | 'SAIDA';
+    estado_mensagem?: string;
+    mensagem_tipo?: string;
+    texto?: string;
+    rotulo?: string;
+    somente_equipe?: boolean;
+    responde_a_mensagem_id?: string;
+    citacao_texto?: string;
+    reacoes?: Array<{
+        emoji?: string;
+        somente_interna?: boolean;
+    }>;
+};
+
+export type PaginaTimelineWebDto = {
+    itens: Array<ItemTimelineWebDto>;
+    proximo_cursor?: string;
+    marcador: {
+        [key: string]: unknown;
+    };
+};
+
 export type IdentidadeContatoWebDto = {
     bsuid?: string;
     nome_perfil?: string;
@@ -340,12 +372,6 @@ export type DetalhesContatoWebDto = {
     vinculos: Array<VinculoContatoWebDto>;
 };
 
-export type EntradaAlterarContextoWebDto = {
-    vinculo_cliente_id: string;
-    vinculo_contrato_id?: string;
-    versao_esperada: number;
-};
-
 export type ResultadoFinanceiroContatoWebDto = {
     origem: 'INDISPONIVEL' | 'TEMPO_REAL';
     codigo?: string;
@@ -355,6 +381,21 @@ export type ResultadoFinanceiroContatoWebDto = {
         valor_centavos?: number;
         vencimento?: string;
     }>;
+};
+
+export type EntradaLeituraTimelineWebDto = {
+    mensagem_id: string;
+    versao_esperada: number;
+};
+
+export type MarcadorLeituraWebDto = {
+    versao: number;
+};
+
+export type EntradaAlterarContextoWebDto = {
+    vinculo_cliente_id: string;
+    vinculo_contrato_id?: string;
+    versao_esperada: number;
 };
 
 export type EntradaPrepararAcaoErpWebDto = {
@@ -476,43 +517,6 @@ export type EntradaEnvioModeloWebDto = {
     mensagem_cliente_id: string;
     modelo_id: string;
     parametros: Array<string>;
-};
-
-export type ItemTimelineWebDto = {
-    id: string;
-    tipo: 'EVENTO_OPERACIONAL' | 'FORMULARIO' | 'MENSAGEM' | 'NOTA_INTERNA' | 'SEPARADOR_ATENDIMENTO';
-    ocorrido_em: string;
-    atendimento_id: string;
-    conta_whatsapp_nome?: string;
-    direcao?: 'ENTRADA' | 'SAIDA';
-    estado_mensagem?: string;
-    mensagem_tipo?: string;
-    texto?: string;
-    rotulo?: string;
-    somente_equipe?: boolean;
-    responde_a_mensagem_id?: string;
-    citacao_texto?: string;
-    reacoes?: Array<{
-        emoji?: string;
-        somente_interna?: boolean;
-    }>;
-};
-
-export type PaginaTimelineWebDto = {
-    itens: Array<ItemTimelineWebDto>;
-    proximo_cursor?: string;
-    marcador: {
-        [key: string]: unknown;
-    };
-};
-
-export type EntradaLeituraTimelineWebDto = {
-    mensagem_id: string;
-    versao_esperada: number;
-};
-
-export type MarcadorLeituraWebDto = {
-    versao: number;
 };
 
 export type EntradaMarcarNaoLidaWebDto = {
@@ -1288,6 +1292,103 @@ export type AlterarAcessoUsuarioAdministracaoResponses = {
 };
 
 export type AlterarAcessoUsuarioAdministracaoResponse = AlterarAcessoUsuarioAdministracaoResponses[keyof AlterarAcessoUsuarioAdministracaoResponses];
+
+export type ObterTimelineMobileData = {
+    body?: never;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: {
+        cursor?: string;
+    };
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/timeline';
+};
+
+export type ObterTimelineMobileResponses = {
+    200: PaginaTimelineWebDto;
+};
+
+export type ObterTimelineMobileResponse = ObterTimelineMobileResponses[keyof ObterTimelineMobileResponses];
+
+export type ObterDetalhesContatoMobileData = {
+    body?: never;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/contato';
+};
+
+export type ObterDetalhesContatoMobileResponses = {
+    200: DetalhesContatoWebDto;
+};
+
+export type ObterDetalhesContatoMobileResponse = ObterDetalhesContatoMobileResponses[keyof ObterDetalhesContatoMobileResponses];
+
+export type ConsultarFinanceiroContatoMobileData = {
+    body?: never;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/financeiro';
+};
+
+export type ConsultarFinanceiroContatoMobileResponses = {
+    200: ResultadoFinanceiroContatoWebDto;
+};
+
+export type ConsultarFinanceiroContatoMobileResponse = ConsultarFinanceiroContatoMobileResponses[keyof ConsultarFinanceiroContatoMobileResponses];
+
+export type ConfirmarLeituraTimelineMobileData = {
+    body: EntradaLeituraTimelineWebDto;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/leitura';
+};
+
+export type ConfirmarLeituraTimelineMobileResponses = {
+    200: MarcadorLeituraWebDto;
+};
+
+export type ConfirmarLeituraTimelineMobileResponse = ConfirmarLeituraTimelineMobileResponses[keyof ConfirmarLeituraTimelineMobileResponses];
+
+export type AlterarContextoContatoMobileData = {
+    body: EntradaAlterarContextoWebDto;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/contexto';
+};
+
+export type AlterarContextoContatoMobileResponses = {
+    200: DetalhesContatoWebDto;
+};
+
+export type AlterarContextoContatoMobileResponse = AlterarContextoContatoMobileResponses[keyof AlterarContextoContatoMobileResponses];
 
 export type ObterDetalhesContatoWebData = {
     body?: never;

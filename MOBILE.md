@@ -107,6 +107,10 @@ Timeline:
 - paginação ao rolar para cima;
 - busca e navegação até ocorrência/mensagem citada.
 
+Na PR 102, a conversa abre primeiro a janela recente já autorizada da réplica e, conectada, substitui-a pela projeção paginada do PostgreSQL. Páginas antigas são inseridas no topo preservando o item visível; abrir Detalhes usa uma pilha nativa e não desmonta a conversa, portanto posição e futuro rascunho continuam no lugar ao voltar. O marcador pessoal só é limpo localmente depois da confirmação do servidor. A janela Meta mostra countdown humano e atualizado somente enquanto estiver aberta.
+
+Formulários recebidos usam card próprio e `Ver formulário` abre uma folha com os campos declarados. O backend aplica `VISUALIZAR_DADO_SENSIVEL` antes de projetar valores e mascara campos sensíveis quando ausente; conteúdo não declarado na definição nunca atravessa. Cópia offline sem a projeção de campos informa a limitação em vez de exibir o objeto protegido.
+
 Composer:
 
 - anexo;
@@ -136,6 +140,8 @@ Tocar nome/avatar abre uma tela contextual sem descartar posição ou rascunho:
 - tags e vínculos.
 
 Contato sem identificação mostra `Vincular a cliente`. Quando houver múltiplos vínculos, a tela permite escolher e trocar o cliente/contrato ativo sem alterar a identidade do WhatsApp. Ações mutáveis de ERP continuam no menu de ações da conversa, não espalhadas na ficha.
+
+Na PR 102, Detalhes usa somente a rota mobile autenticada por sessão e vínculo do aparelho. Cliente, documento mascarado, contratos, serviços e endereço vêm do `Customer Snapshot` autorizado e identificam explicitamente `Snapshot`; situação financeira é consultada em tempo real ou aparece indisponível. A troca de contexto exige seleção, preview, confirmação, versão esperada e nova leitura autenticada antes de devolver o estado atualizado. BSUID só aparece com a permissão sensível; username e telefone continuam opcionais.
 
 ## 4. Autenticação e dispositivo
 

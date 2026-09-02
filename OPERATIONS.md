@@ -711,3 +711,11 @@ Não há migration PostgreSQL nem dependência nova. O schema SQLCipher avança 
 O aceite deve validar os seis filtros, limite de 60 itens, ordenação por `ultima_atividade_em`, contagens, prévia, não lidas, SLA e janela Meta. Uma alteração confirmada deve mover a conversa pelo `conversa_id` estável sem pull-to-refresh e sem faixa técnica em operação saudável. Com “Reduzir Movimento”, a atualização permanece imediata sem animação espacial. Simule também `SEM_CONEXAO`, `CONECTANDO` e `SINCRONIZANDO`, comprovando que a faixa desaparece ao normalizar e que cache sujo não é apresentado offline.
 
 Monitore duração e tamanho do snapshot e tempo das consultas locais, sempre de forma agregada. Não registre nomes, telefones, prévias, contatos, conversas ou filtros associados a usuário. O runbook detalhado está em [docs/operacoes/PR-101.md](docs/operacoes/PR-101.md).
+
+## 40. Operação da timeline e detalhes mobile da PR 102
+
+Não há migration PostgreSQL ou dependência nova. API, SDK, web e app devem vir do mesmo commit porque a timeline compartilhada passa a incluir a projeção opcional `campos_formulario`, enquanto o mobile acrescenta rotas próprias autenticadas pelo vínculo do aparelho. O schema SQLCipher permanece em `user_version = 3`.
+
+O aceite deve provar paginação para cima sem salto visual, retorno de Detalhes na mesma posição, marcador confirmado online, countdown da janela Meta, separadores de atendimento/origem, notas e eventos `Somente equipe` e formulário aberto com mascaramento. Testar identidade sem username/telefone, BSUID permitido/negado, contato sem vínculo, múltiplos vínculos, conflito de versão na troca, ERP indisponível e funcionamento da janela recente offline.
+
+Monitore latência e códigos agregados das cinco rotas mobile, sem IDs, nomes, mensagens, formulário, documento, token ou segredo. Reversão de API/web deve ser coordenada com a build instalada; cliente novo tolera ausência de `campos_formulario`, mas rotas mobile ausentes retiram detalhes/paginação online. A conversa recente autorizada continua disponível offline até o vencimento da autorização. O runbook detalhado está em [docs/operacoes/PR-102.md](docs/operacoes/PR-102.md).

@@ -495,7 +495,7 @@ function ItemTimeline({ aoReagir, aoResponder, item, mostrarData }: { readonly a
       {item.mensagem_tipo !== undefined && ['IMAGEM', 'AUDIO', 'VIDEO', 'PDF'].includes(item.mensagem_tipo)
         ? <MidiaMensagemWeb item={item} />
         : <p>{item.texto ?? (item.tipo === 'FORMULARIO' ? item.rotulo : rotuloMidia(item.mensagem_tipo))}</p>}
-      {item.tipo === 'FORMULARIO' && <button type="button">Ver formulário</button>}
+      {item.tipo === 'FORMULARIO' && <details className="detalhes-formulario"><summary>Ver formulário</summary>{item.campos_formulario === undefined ? <p>Os campos não estão disponíveis nesta cópia.</p> : <dl>{item.campos_formulario.map((campo, indice) => <div key={`${campo.rotulo}-${indice}`}><dt>{campo.rotulo}</dt><dd>{campo.valor}</dd></div>)}</dl>}<small>Dados sensíveis são mascarados conforme suas permissões.</small></details>}
       <small>{item.conta_whatsapp_nome} · {hora(item.ocorrido_em)} {item.direcao === 'SAIDA' && `· ${estadoMensagem(item.estado_mensagem)}`}</small>
       {item.reacoes !== undefined && item.reacoes.length > 0 && <div className="reacoes-mensagem">{item.reacoes.map((reacao, indice) => <span key={`${reacao.emoji}-${indice}`} title={reacao.somente_interna ? 'Somente equipe' : undefined}>{reacao.emoji}{reacao.somente_interna && <i>equipe</i>}</span>)}</div>}
       <div className="acoes-mensagem"><button onClick={aoResponder} type="button">Responder</button>{(['👍', '❤️', '😂', '😮', '😢', '🙏'] as const).map((emoji) => <button aria-label={`Reagir com ${emoji}`} key={emoji} onClick={() => aoReagir(emoji)} type="button">{emoji}</button>)}</div>

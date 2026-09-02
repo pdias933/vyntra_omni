@@ -123,7 +123,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 099 | CONCLUÍDA | `xhigh` |
 | 100 | CONCLUÍDA | `xhigh` |
 | 101 | CONCLUÍDA | `high` |
-| 102 | PENDENTE | `high` |
+| 102 | CONCLUÍDA | `high` |
 | 103 | PENDENTE | `high` |
 | 104 | PENDENTE | `xhigh` |
 | 105 | PENDENTE | `xhigh` |
@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR101 foram concluídas e PR102–PR107 seguem pendentes na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR102 foram concluídas e PR103–PR107 seguem pendentes na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -680,6 +680,10 @@ Aceite concluído em 2 de setembro de 2026: o app valida contratos fechados de s
 ### PR 101 — lista de atendimentos mobile
 
 Aceite concluído em 2 de setembro de 2026: a aba `Atendimentos` passou a ler uma projeção autorizada do SQLCipher, limitada a 60 itens e ordenada por atividade confirmada. Os filtros únicos `Meus`, `Pendentes`, `Não lidos`, `SLA`, `Expirando` e `Em automação` usam consultas locais parametrizadas e contagens derivadas; não existem cards-resumo, atualização manual nem timestamp técnico. O snapshot calcula nome, fila, prévia, marcador pessoal, SLA, janela Meta e identidade mascarada depois de resolver usuário, permissão, fila e conversa dentro da mesma leitura consistente. O schema local avançou para `user_version = 3` e força reconstrução antes de liberar uma réplica migrada ou parcial offline. Commits da réplica atualizam e reordenam a lista automaticamente pelo `conversa_id` estável; eventos saudáveis não exibem infraestrutura, e a faixa aparece apenas em `Sem conexão`, `Conectando...` ou `Sincronizando...`. A animação curta é removida por “Reduzir Movimento”. Não houve dependência nem migration PostgreSQL nova e não foi feito deploy. Lint, tipos, 432 testes da API, 273 testes de arquitetura, matriz Expo, auditoria de dependências, Gitleaks em 225 commits e builds web/API/iOS/Android foram aprovados. Effort `high` confirmado pela projeção autorizada e pela experiência de mensageria silenciosa.
+
+### PR 102 — timeline e detalhes mobile
+
+Aceite concluído em 2 de setembro de 2026: a lista abre uma pilha nativa com conversa e Detalhes do Contato, preservando a instância e a posição da timeline ao voltar. A conversa usa a janela recente autorizada do SQLCipher e substitui-a pela projeção online paginada; páginas anteriores entram no topo sem salto, o marcador local só é limpo depois do servidor e falha online não conserva conteúdo antigo como sucesso. Cabeçalho, countdown da janela Meta, separadores de data/atendimento/origem, estados de mensagem, citações, reações, notas e eventos `Somente equipe` e cards de formulário permanecem visualmente distintos. `Ver formulário` funciona no app e na web com somente campos declarados, limite de projeção e mascaramento por `VISUALIZAR_DADO_SENSIVEL`. Detalhes concentra identidade opcional, BSUID condicionado, vínculos, documento mascarado, contratos/serviços/endereço, contexto versionado, protocolo, contagens e financeiro exclusivamente em tempo real; contato não identificado exibe `Vincular a cliente`. Trocar contexto exige seleção, confirmação e revalidação da sessão vinculada ao aparelho antes e depois da escrita. Não houve dependência, migration PostgreSQL ou deploy. Lint, tipos, 432 testes da API, 279 testes de arquitetura, matriz Expo, auditoria de dependências, Gitleaks em 226 commits e builds web/API/iOS/Android foram aprovados. Effort `high` confirmado pela paginação autorizada, preservação de navegação e projeção sensível compartilhada.
 
 ## 12. Mobile
 

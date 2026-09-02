@@ -10,6 +10,7 @@ import { ModuloAutorizacao } from './autorizacao/modulo-autorizacao.js';
 import { ModuloCalendarios } from './calendarios/modulo-calendarios.js';
 import { ModuloContasWhatsApp } from './contas-whatsapp/modulo-contas-whatsapp.js';
 import { ModuloContatos } from './contatos/modulo-contatos.js';
+import { ModuloConsoleMobile } from './console-mobile/modulo-console-mobile.js';
 import { ModuloConsoleWeb } from './console-web/modulo-console-web.js';
 import { ModuloContextosCliente } from './contextos-cliente/modulo-contextos-cliente.js';
 import { ModuloConversas } from './conversas/modulo-conversas.js';
@@ -58,6 +59,7 @@ import { ModuloSincronizacao } from './sincronizacao/modulo-sincronizacao.js';
     ModuloCalendarios,
     ModuloContasWhatsApp,
     ModuloContatos,
+    ModuloConsoleMobile,
     ModuloConsoleWeb,
     ModuloContextosCliente,
     ModuloConversas,

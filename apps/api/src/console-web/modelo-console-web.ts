@@ -40,6 +40,10 @@ export interface ItemTimelineWeb {
   readonly tipo: TipoItemTimelineWeb;
   readonly ocorridoEm: Date;
   readonly atendimentoId: string;
+  readonly camposFormulario?: readonly {
+    readonly rotulo: string;
+    readonly valor: string;
+  }[];
   readonly contaWhatsAppNome?: string;
   readonly direcao?: 'ENTRADA' | 'SAIDA';
   readonly estadoMensagem?: string;

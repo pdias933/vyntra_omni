@@ -115,11 +115,22 @@ function SkeletonLista() {
   );
 }
 
-function CartaoAtendimento({ item }: { readonly item: ResumoAtendimentoLocal }) {
+function CartaoAtendimento({
+  aoAbrir,
+  item,
+}: {
+  readonly aoAbrir: () => void;
+  readonly item: ResumoAtendimentoLocal;
+}) {
   const limite = item.slaEm ?? item.janelaExpiraEm;
   const marcadorPrazo = limite === undefined ? undefined : prazo(limite);
   return (
-    <View style={estilos.cartao}>
+    <Pressable
+      accessibilityHint="Abre a conversa"
+      accessibilityRole="button"
+      onPress={aoAbrir}
+      style={({ pressed }) => [estilos.cartao, pressed && estilos.cartaoPressionado]}
+    >
       <View style={estilos.avatar}>
         <Text style={estilos.iniciais}>{iniciais(item.nomeContato)}</Text>
         <View style={estilos.canal}>
@@ -165,15 +176,17 @@ function CartaoAtendimento({ item }: { readonly item: ResumoAtendimentoLocal }) 
           )}
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
 export function TelaListaAtendimentos({
+  aoAbrirAtendimento,
   estadoSincronizacao,
   repositorio,
   usuarioId,
 }: {
+  readonly aoAbrirAtendimento: (atendimento: ResumoAtendimentoLocal) => void;
   readonly estadoSincronizacao: EstadoSincronizacaoMobile;
   readonly repositorio: RepositorioReplicaLocal;
   readonly usuarioId: string;
@@ -297,7 +310,12 @@ export function TelaListaAtendimentos({
               </Text>
             </View>
           }
-          renderItem={({ item }) => <CartaoAtendimento item={item} />}
+          renderItem={({ item }) => (
+            <CartaoAtendimento
+              aoAbrir={() => aoAbrirAtendimento(item)}
+              item={item}
+            />
+          )}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -310,6 +328,7 @@ const estilos = StyleSheet.create({
   cabecalho: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 14, paddingHorizontal: ESPACOS.grande, paddingTop: 17 },
   canal: { alignItems: 'center', backgroundColor: '#20B95A', borderColor: CORES.superficie, borderRadius: RAIOS.pílula, borderWidth: 2, bottom: -2, height: 20, justifyContent: 'center', position: 'absolute', right: -3, width: 20 },
   cartao: { alignItems: 'center', backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: 18, borderWidth: 1, flexDirection: 'row', gap: 13, marginBottom: 9, padding: 14 },
+  cartaoPressionado: { backgroundColor: '#F5F8F6', transform: [{ scale: 0.995 }] },
   contagemFiltro: { color: CORES.textoSecundario, fontSize: 11, fontWeight: '700' },
   contagemFiltroAtiva: { color: '#CDEBDE' },
   corpoCartao: { flex: 1, gap: 5 },

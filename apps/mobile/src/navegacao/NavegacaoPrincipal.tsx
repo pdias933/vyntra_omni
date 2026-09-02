@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
 import type { ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -8,10 +9,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { SessaoAplicativo } from '../autenticacao/servico-autenticacao-aplicativo';
 import type { PoliticaVersaoAplicativo } from '../atualizacao/adaptador-politica-versao-http';
+import type { ServicoAtendimentosMobile } from '../atendimentos/servico-atendimentos-mobile';
 import { MarcaVyntra } from '../componentes/MarcaVyntra';
-import type { RepositorioReplicaLocal } from '../offline/repositorio-replica-local';
+import type {
+  RepositorioReplicaLocal,
+  ResumoAtendimentoLocal,
+} from '../offline/repositorio-replica-local';
 import type { EstadoSincronizacaoMobile } from '../sincronizacao/motor-sincronizacao-mobile';
 import { TelaListaAtendimentos } from '../telas/TelaListaAtendimentos';
+import { TelaConversaMobile } from '../telas/TelaConversaMobile';
+import { TelaDetalhesContatoMobile } from '../telas/TelaDetalhesContatoMobile';
 import { CORES, ESPACOS, RAIOS } from '../tema';
 
 type NomeIcone = ComponentProps<typeof Ionicons>['name'];
@@ -23,6 +30,75 @@ type RotasPrincipais = {
 };
 
 const Abas = createBottomTabNavigator<RotasPrincipais>();
+type RotasAtendimentos = {
+  Conversa: { atendimento: ResumoAtendimentoLocal };
+  Detalhes: { atendimento: ResumoAtendimentoLocal };
+  Lista: undefined;
+};
+const PilhaAtendimentos = createNativeStackNavigator<RotasAtendimentos>();
+
+function FluxoAtendimentos({
+  acessoOffline,
+  estadoSincronizacao,
+  repositorio,
+  servico,
+  usuarioId,
+}: {
+  readonly acessoOffline: boolean;
+  readonly estadoSincronizacao: EstadoSincronizacaoMobile;
+  readonly repositorio: RepositorioReplicaLocal;
+  readonly servico: ServicoAtendimentosMobile;
+  readonly usuarioId: string;
+}) {
+  const reduzirMovimento = useReducedMotion();
+  return (
+    <PilhaAtendimentos.Navigator
+      screenOptions={{
+        animation: reduzirMovimento ? 'none' : 'slide_from_right',
+        headerShown: false,
+      }}
+    >
+      <PilhaAtendimentos.Screen name="Lista">
+        {({ navigation }) => (
+          <TelaListaAtendimentos
+            aoAbrirAtendimento={(atendimento) =>
+              navigation.navigate('Conversa', { atendimento })
+            }
+            estadoSincronizacao={estadoSincronizacao}
+            repositorio={repositorio}
+            usuarioId={usuarioId}
+          />
+        )}
+      </PilhaAtendimentos.Screen>
+      <PilhaAtendimentos.Screen name="Conversa">
+        {({ navigation, route }) => (
+          <TelaConversaMobile
+            acessoOffline={acessoOffline}
+            aoAbrirDetalhes={() =>
+              navigation.navigate('Detalhes', {
+                atendimento: route.params.atendimento,
+              })
+            }
+            aoVoltar={() => navigation.goBack()}
+            atendimento={route.params.atendimento}
+            repositorio={repositorio}
+            servico={servico}
+          />
+        )}
+      </PilhaAtendimentos.Screen>
+      <PilhaAtendimentos.Screen name="Detalhes">
+        {({ navigation, route }) => (
+          <TelaDetalhesContatoMobile
+            acessoOffline={acessoOffline}
+            aoVoltar={() => navigation.goBack()}
+            atendimento={route.params.atendimento}
+            servico={servico}
+          />
+        )}
+      </PilhaAtendimentos.Screen>
+    </PilhaAtendimentos.Navigator>
+  );
+}
 
 function TelaVazia({
   descricao,
@@ -154,6 +230,7 @@ export function NavegacaoPrincipal({
   estadoSincronizacao,
   politicaVersao,
   repositorio,
+  servicoAtendimentos,
   saindo,
   sessao,
 }: {
@@ -164,6 +241,7 @@ export function NavegacaoPrincipal({
   readonly estadoSincronizacao: EstadoSincronizacaoMobile;
   readonly politicaVersao?: PoliticaVersaoAplicativo;
   readonly repositorio: RepositorioReplicaLocal;
+  readonly servicoAtendimentos: ServicoAtendimentosMobile;
   readonly saindo: boolean;
   readonly sessao: SessaoAplicativo;
 }) {
@@ -195,9 +273,11 @@ export function NavegacaoPrincipal({
     >
       <Abas.Screen name="Atendimentos">
         {() => (
-          <TelaListaAtendimentos
+          <FluxoAtendimentos
+            acessoOffline={sessao.acessoOffline}
             estadoSincronizacao={estadoSincronizacao}
             repositorio={repositorio}
+            servico={servicoAtendimentos}
             usuarioId={sessao.usuarioId}
           />
         )}
