@@ -733,3 +733,11 @@ Não há migration PostgreSQL nem dependência nova. O schema SQLCipher avança 
 O aceite deve colocar uma pendência offline e, antes da reconexão, cobrir separadamente mensagem do cliente, mensagem pela web, transferência e retorno, encerramento/reabertura, troca de contexto, janela expirada, perda de acesso e falha transitória. Somente a observação invariável pode entrar em `NA_FILA`; os demais casos mostram `Revisão necessária` com `Editar`, `Descartar` e `Enviar mesmo assim`. Confirmar que a reconciliação não começa em `Conectando...`/`Sincronizando...`, que novo comando continua recusável pelo backend e que mídia não cria pendência.
 
 Monitorar somente contagens e resultados agregados de reconciliação, latência e códigos canônicos, sem texto, contato, conversa, atendimento, observações, token ou segredo do aparelho. Para rollback, usar uma build que reconheça `user_version = 4` ou descartar a réplica autenticada e obter snapshot novo; nunca reduzir o schema local por SQL. O runbook detalhado está em [docs/operacoes/PR-104.md](docs/operacoes/PR-104.md).
+
+## 43. Operação de mídia e ações ERP mobile da PR 105
+
+Não há migration PostgreSQL nem mudança de schema SQLCipher. `expo-file-system` passa a ser dependência direta do app para o seletor nativo, embora já estivesse resolvido no conjunto Expo. API, OpenAPI/SDK e app precisam ser distribuídos do mesmo commit; esta PR não executa deploy nem publica binário.
+
+O aceite deve testar todos os formatos permitidos, arquivo acima de cada teto, MIME divergente, cancelamento, falha de upload, sessão/aparelho revogado e janela Meta encerrada. Para ERP, cobrir permissão ausente, contexto alterado entre prévia e confirmação, ERP indisponível, repetição idempotente e resultado em reconciliação. Faturas nunca podem cair para snapshot e capacidades sem caso de uso permanecem desabilitadas.
+
+Observar somente volume, latência, tamanho/categoria agregados e códigos canônicos; nunca registrar arquivo, nome, mensagem, fatura, contrato, protocolo, resposta ERP, token ou segredo. Rollback é coordenado entre API e app; mídia já aceita permanece no pipeline normal e operações ERP persistidas continuam sua reconciliação. O runbook detalhado está em [docs/operacoes/PR-105.md](docs/operacoes/PR-105.md).

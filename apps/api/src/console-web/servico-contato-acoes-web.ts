@@ -158,7 +158,7 @@ export class ServicoContatoAcoesWeb {
       const contexto = await transacao.contextoAtendimento.findUnique({ select: { clienteExternoAtivoId: true, contratoExternoAtivoId: true }, where: { atendimentoId } });
       const protocolo = await transacao.protocoloErp.findUnique({ select: { protocoloOficial: true }, where: { atendimentoId } });
       if (contexto === null || contexto.contratoExternoAtivoId === null || (acao === 'CRIAR_ORDEM_SERVICO' && protocolo?.protocoloOficial == null)) throw new ErroPermissaoNegada();
-      return { clienteExternoId: contexto.clienteExternoAtivoId, contratoExternoId: contexto.contratoExternoAtivoId, filaId: escopo.filaId, protocolo: protocolo?.protocoloOficial ?? '', resumo: [{ rotulo: 'Atendimento', valor: atendimentoId }, { rotulo: 'Contrato ativo', valor: 'Contexto atual confirmado' }, ...(acao === 'CRIAR_ORDEM_SERVICO' ? [{ rotulo: 'Protocolo', valor: 'Protocolo oficial confirmado' }] : [])] };
+      return { clienteExternoId: contexto.clienteExternoAtivoId, contratoExternoId: contexto.contratoExternoAtivoId, filaId: escopo.filaId, protocolo: protocolo?.protocoloOficial ?? '', resumo: [{ rotulo: 'Atendimento', valor: 'Atendimento atual' }, { rotulo: 'Contrato ativo', valor: 'Contexto atual confirmado' }, { rotulo: 'Origem dos dados', valor: 'ERP em tempo real' }, ...(acao === 'CRIAR_ORDEM_SERVICO' ? [{ rotulo: 'Protocolo', valor: 'Protocolo oficial confirmado' }] : [])] };
     });
   }
 

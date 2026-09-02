@@ -455,6 +455,10 @@ O app nunca chama MK/Meta diretamente. Botão invisível não é segurança; a A
 
 Na PR 103, a folha do composer organiza capacidades em `Cliente e financeiro`, `Suporte` e `Atendimento`. Somente abrir Detalhes e os envios de texto/modelo já possuem caso de uso ativo; anexo e ações ERP/Flow/notas permanecem desabilitados até suas entregas próprias. Fora da janela Meta, a interface carrega exclusivamente o catálogo de modelos aprovados devolvido pelo backend, exige todos os parâmetros declarados e não oferece texto livre como atalho. Folhas usam deslocamento curto ou `fade` quando “Reduzir Movimento” estiver ativo.
 
+Na PR 105, o anexo usa o seletor nativo e aceita somente JPEG, PNG, WebP, MP3, OGG, MP4 e PDF nos tetos publicados. A escolha produz prévia local com nome, tamanho e origem; nenhum byte sai do aparelho antes de `Confirmar envio`. O backend reautentica sessão e vínculo do dispositivo, revalida o atendimento e inspeciona MIME e assinatura real. Cancelamento ou falha conserva a escolha para nova tentativa. Sem conexão ou com a janela Meta encerrada, a seleção fica bloqueada; mídia offline avançada continua fora da V1.
+
+A folha de ações passa a resolver detalhes e permissões pelo backend. Cliente abre Detalhes; faturas exibem `Dados do ERP em tempo real` ou `ERP indisponível — nenhum snapshot usado`; desbloqueio e ordem de serviço exigem prévia e confirmação explícita, e toda execução recebe chave idempotente nova. Resultado ambíguo é apresentado como processamento/reconciliação, nunca como sucesso. Segunda via, Pix, conexão, WhatsApp Flow e nota permanecem indisponíveis até terem caso de uso autorizado ponta a ponta.
+
 ## 14. Diagnóstico
 
 `Perfil → Diagnóstico` pode mostrar, sem conteúdo de conversa:

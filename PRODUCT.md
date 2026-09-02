@@ -245,6 +245,7 @@ Na PR 104, tocar em enviar sem conexão transforma o rascunho em pendência crip
 - Snapshot nunca autoriza ação mutável ou decisão financeira atual.
 - `AccessSessionAdapter` separado do ERP; o contrato faz parte da V1. A integração real só entra se uma fonte confiável for validada sem bloquear o lançamento.
 - Link público de transcrição continua desativado e não é gerado nem enviado ao ERP enquanto faltarem aprovação jurídica/DPO e caracterização real da capacidade.
+- No app, consultar faturas identifica explicitamente `TEMPO_REAL` ou indisponibilidade, sem trocar para snapshot financeiro. Desbloqueio e criação de ordem de serviço passam por seleção, prévia e confirmação e reutilizam os casos de uso idempotentes do backend. Segunda via, Pix, conexão e capacidades ainda não conectadas permanecem indisponíveis, sem sucesso simulado.
 
 ### 4.10 Segurança, auditoria e operação
 
@@ -253,6 +254,7 @@ Na PR 104, tocar em enviar sem conexão transforma o rascunho em pendência crip
 - Idempotência nas operações sensíveis.
 - Mídias somente nos tipos aprovados, com validação real e storage privado.
 - Tetos internos iniciais: imagem 8 MB, áudio 16 MB, vídeo 32 MB e PDF 20 MB; prevalece o menor limite validado com o provedor.
+- No mobile, mídia da V1 é escolhida no aparelho, validada antes do upload, apresentada em prévia local e enviada somente após confirmação. Não existe fila offline de mídia nesta versão.
 - QR de pareamento com 90 segundos, uso único e um token ativo por sessão web.
 - Pareamento confirmado somente pela sessão web criadora com autenticação recente; token/comprovante persistidos apenas como hash e sessão entregue somente ao aparelho que resgatou.
 - Senha de 12–128 caracteres, bloqueio de credenciais comprometidas e MFA obrigatório para usuários privilegiados.

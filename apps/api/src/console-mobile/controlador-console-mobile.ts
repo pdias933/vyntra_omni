@@ -1,7 +1,20 @@
-import { Body, Controller, Get, Headers, Inject, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Inject,
+  Param,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiHeader,
   ApiOkResponse,
   ApiOperation,
@@ -22,13 +35,17 @@ import {
   EntradaAlterarContextoWebDto,
   EntradaEnvioModeloWebDto,
   EntradaEnvioTextoWebDto,
+  EntradaExecutarAcaoErpWebDto,
   EntradaLeituraTimelineWebDto,
+  EntradaPrepararAcaoErpWebDto,
   MarcadorLeituraWebDto,
   MensagemCriadaWebDto,
   ModeloAprovadoWebDto,
   PaginaTimelineWebDto,
+  PreviaAcaoErpWebDto,
   RespostaRapidaWebDto,
   ResultadoFinanceiroContatoWebDto,
+  ResultadoAcaoErpWebDto,
 } from '../console-web/dto/console-web.dto.js';
 import { ServicoComposerWeb } from '../console-web/servico-composer-web.js';
 import { ServicoContatoAcoesWeb } from '../console-web/servico-contato-acoes-web.js';
@@ -297,6 +314,124 @@ export class ControladorConsoleMobile {
     return new ResultadoFinanceiroContatoWebDto(
       await this.contato.consultarFinanceiro(sessao.contexto, atendimentoId),
     );
+  }
+
+  @Post('atendimentos/:atendimentoId/acoes-erp/preparar')
+  @ApiBody({ type: EntradaPrepararAcaoErpWebDto })
+  @ApiOperation({
+    operationId: 'prepararAcaoErpContatoMobile',
+    summary: 'Revalida e prepara uma ação ERP no aplicativo',
+  })
+  @ApiOkResponse({ type: PreviaAcaoErpWebDto })
+  public async prepararAcaoErp(
+    @Param('atendimentoId') atendimentoId: string,
+    @Body() entrada: EntradaPrepararAcaoErpWebDto,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<PreviaAcaoErpWebDto> {
+    const sessao = await this.autenticar(autorizacao, dispositivoId, segredo);
+    return new PreviaAcaoErpWebDto(
+      await this.contato.prepararAcao(
+        sessao.contexto,
+        atendimentoId,
+        entrada.acao,
+      ),
+    );
+  }
+
+  @Post('atendimentos/:atendimentoId/acoes-erp/executar')
+  @ApiBody({ type: EntradaExecutarAcaoErpWebDto })
+  @ApiOperation({
+    operationId: 'executarAcaoErpContatoMobile',
+    summary: 'Executa uma ação ERP confirmada no aplicativo',
+  })
+  @ApiOkResponse({ type: ResultadoAcaoErpWebDto })
+  public async executarAcaoErp(
+    @Param('atendimentoId') atendimentoId: string,
+    @Body() entrada: EntradaExecutarAcaoErpWebDto,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<ResultadoAcaoErpWebDto> {
+    const sessao = await this.autenticar(autorizacao, dispositivoId, segredo);
+    return new ResultadoAcaoErpWebDto(
+      await this.contato.executarAcao(sessao.contexto, atendimentoId, {
+        acao: entrada.acao,
+        chaveIdempotencia: entrada.chave_idempotencia,
+        confirmacaoExplicita: true,
+        ...(entrada.assunto === undefined
+          ? {}
+          : { assunto: entrada.assunto }),
+        ...(entrada.descricao === undefined
+          ? {}
+          : { descricao: entrada.descricao }),
+      }),
+    );
+  }
+
+  @Post('atendimentos/:atendimentoId/mensagens/midia')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      properties: {
+        arquivo: { format: 'binary', type: 'string' },
+        mensagem_cliente_id: { format: 'uuid', type: 'string' },
+      },
+      required: ['arquivo', 'mensagem_cliente_id'],
+      type: 'object',
+    },
+  })
+  @ApiOperation({
+    operationId: 'enviarMidiaMobile',
+    summary: 'Valida e enfileira uma mídia online pelo aplicativo',
+  })
+  @ApiOkResponse({ type: MensagemCriadaWebDto })
+  @UseInterceptors(
+    FileInterceptor('arquivo', {
+      limits: { fileSize: 32 * 1024 * 1024, files: 1 },
+    }),
+  )
+  public async enviarMidia(
+    @Param('atendimentoId') atendimentoId: string,
+    @UploadedFile()
+    arquivo:
+      | {
+          readonly buffer: Buffer;
+          readonly mimetype: string;
+          readonly originalname: string;
+        }
+      | undefined,
+    @Body('mensagem_cliente_id') mensagemClienteId: string | undefined,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<MensagemCriadaWebDto> {
+    if (arquivo === undefined || mensagemClienteId === undefined) {
+      throw new ExcecaoHttpCanonica(
+        400,
+        'MIDIA_INVALIDA',
+        'Selecione um arquivo permitido.',
+      );
+    }
+    const mensagem = await this.autenticacao.executarComSessaoAtual(
+      tokenAcesso(autorizacao),
+      cabecalhoObrigatorio(dispositivoId),
+      cabecalhoObrigatorio(segredo),
+      (sessao, _agora, transacao) =>
+        this.composer.enviarMidia(
+          contexto(sessao),
+          atendimentoId,
+          {
+            conteudo: arquivo.buffer,
+            mensagemClienteId,
+            mime: arquivo.mimetype,
+            nomeArquivo: arquivo.originalname,
+          },
+          transacao,
+        ),
+    );
+    return new MensagemCriadaWebDto(mensagem);
   }
 
   @Post('atendimentos/:atendimentoId/leitura')

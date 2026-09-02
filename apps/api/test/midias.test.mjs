@@ -34,6 +34,17 @@ test('recusa MIME declarado divergente, assinatura desconhecida e tamanho inform
   assert.throws(() => validador.validar(pdf, 'application/pdf', 99), ErroMidiaInvalida);
 });
 
+test('aplica o teto de 8 MB para imagem antes de persistir ou enviar', () => {
+  const validador = new ValidadorMidia();
+  const imagem = new Uint8Array(8 * 1024 * 1024 + 1);
+  imagem.set([0xff, 0xd8, 0xff]);
+  assert.throws(
+    () => validador.validar(imagem, 'image/jpeg'),
+    (erro) =>
+      erro instanceof ErroMidiaInvalida && erro.message === 'MIDIA_EXCEDE_LIMITE',
+  );
+});
+
 test('serviço usa chave opaca em bucket privado e persiste somente metadados verificados', async () => {
   const estado = { armazenadas: [], persistidas: [] };
   const armazenamento = {

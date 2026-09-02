@@ -126,7 +126,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 102 | CONCLUÍDA | `high` |
 | 103 | CONCLUÍDA | `high` |
 | 104 | CONCLUÍDA | `xhigh` |
-| 105 | PENDENTE | `xhigh` |
+| 105 | CONCLUÍDA | `xhigh` |
 | 106 | PENDENTE | `high` |
 | 107 | PENDENTE | `xhigh` |
 | 108 | PENDENTE | `high` |
@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR104 foram concluídas e PR105–PR107 seguem pendentes na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR105 foram concluídas e PR106–PR107 seguem pendentes na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -692,6 +692,10 @@ Aceite concluído em 2 de setembro de 2026: o composer persiste rascunho por con
 ### PR 104 — offline e reconciliação mobile
 
 Aceite concluído em 2 de setembro de 2026: enviar sem rede cria no SQLCipher uma pendência `AGUARDANDO_CONEXAO`, captura sequência e versões observadas e remove o rascunho no mesmo commit, sem aparentar envio. A reconciliação começa apenas depois de REST e WebSocket convergirem. A rota mobile reautentica sessão e aparelho; o serviço de mensagens serializa pela mesma trava de autoridade usada por transferência/resgate/automação e compara timeline, atribuição, estado, contexto e janela Meta no PostgreSQL. Somente observação invariável envia automaticamente. Mudança relevante produz `REVISAO_NECESSARIA` com `Editar`, `Descartar` e `Enviar mesmo assim`; este último gera novo comando e continua sujeito à autorização atual. Falha transitória mantém a pendência. O schema local avançou para `user_version = 4`; não houve migration PostgreSQL, dependência ou deploy. Lint, tipos, 434 testes da API, 290 testes de arquitetura, matriz Expo, auditoria de dependências, Gitleaks no histórico e builds web/API/iOS/Android foram aprovados. Effort `xhigh` confirmado pela convergência multi-dispositivo, prevenção de TOCTOU e recuperação segura sem duplicar mensagem.
+
+### PR 105 — mídia e ações ERP mobile
+
+Aceite concluído em 2 de setembro de 2026: o composer usa o seletor nativo para JPEG, PNG, WebP, MP3, OGG, MP4 e PDF, aplica os tetos 8/16/32/20 MB antes do upload e apresenta prévia local com nome, tamanho e origem. Somente a confirmação materializa e envia o arquivo; falha preserva a seleção, e offline ou janela Meta encerrada bloqueiam mídia sem criar pendência. A rota mobile reautentica sessão e aparelho na escrita e reutiliza validação por assinatura real, storage privado, timeline e caixa de saída centrais. A folha contextual resolve permissões no backend: faturas declaram ERP em tempo real ou indisponibilidade sem snapshot, e desbloqueio/OS usam prévia, confirmação, idempotência e reconciliação sem sucesso presumido. Capacidades sem caminho ponta a ponta permanecem indisponíveis. `expo-file-system ~57.0.6`, já transitivo no Expo, tornou-se dependência direta; não houve migration PostgreSQL, mudança SQLCipher ou deploy. Lint, tipos, 435 testes da API, 296 testes de arquitetura, matriz Expo, auditoria de dependências, varredura de segredos e builds web/API/iOS/Android foram aprovados. Effort `xhigh` confirmado pela fronteira nativa, upload seguro e reuso das operações ERP recuperáveis.
 
 ## 12. Mobile
 

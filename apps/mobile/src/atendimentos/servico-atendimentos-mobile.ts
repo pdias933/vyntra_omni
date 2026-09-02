@@ -3,12 +3,48 @@ import {
   AdaptadorAtendimentosHttp,
   ErroAtendimentoMobile,
 } from './adaptador-atendimentos-http';
+import type { AcaoErpMobile } from './modelo-atendimento-mobile';
 
 export class ServicoAtendimentosMobile {
   public constructor(
     private readonly autenticacao: ServicoAutenticacaoAplicativo,
     private readonly adaptador = new AdaptadorAtendimentosHttp(),
   ) {}
+
+  public enviarMidia(
+    atendimentoId: string,
+    arquivo: globalThis.File,
+    mensagemClienteId: string,
+  ) {
+    return this.executar((credenciais) =>
+      this.adaptador.enviarMidia(
+        credenciais,
+        atendimentoId,
+        arquivo,
+        mensagemClienteId,
+      ),
+    );
+  }
+
+  public prepararAcaoErp(atendimentoId: string, acao: AcaoErpMobile) {
+    return this.executar((credenciais) =>
+      this.adaptador.prepararAcaoErp(credenciais, atendimentoId, acao),
+    );
+  }
+
+  public executarAcaoErp(
+    atendimentoId: string,
+    entrada: {
+      readonly acao: AcaoErpMobile;
+      readonly assunto?: string;
+      readonly chaveIdempotencia: string;
+      readonly descricao?: string;
+    },
+  ) {
+    return this.executar((credenciais) =>
+      this.adaptador.executarAcaoErp(credenciais, atendimentoId, entrada),
+    );
+  }
 
   public obterTimeline(atendimentoId: string, cursor?: string) {
     return this.executar((credenciais) =>

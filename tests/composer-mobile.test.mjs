@@ -58,13 +58,16 @@ test('composer abre barra de respostas, preserva texto em falha e prioriza envio
 });
 
 test('janela encerrada oferece mensagem aprovada e ações usam folha categorizada', async () => {
-  const composer = await ler('apps/mobile/src/componentes/ComposerMobile.tsx');
+  const [composer, folhaAcoes] = await Promise.all([
+    ler('apps/mobile/src/componentes/ComposerMobile.tsx'),
+    ler('apps/mobile/src/componentes/FolhaAcoesSistemaMobile.tsx'),
+  ]);
   assert.match(composer, /Janela Meta encerrada/u);
   assert.match(composer, /Escolher mensagem/u);
   assert.match(composer, /Mensagens aprovadas/u);
-  assert.match(composer, /Cliente e financeiro/u);
-  assert.match(composer, /Suporte/u);
-  assert.match(composer, /Atendimento/u);
+  assert.match(folhaAcoes, /Cliente e financeiro/u);
+  assert.match(folhaAcoes, /Suporte/u);
+  assert.match(folhaAcoes, /Atendimento/u);
   assert.match(composer, /useReducedMotion/u);
   assert.match(composer, /reduzirMovimento \? 'fade' : 'slide'/u);
   assert.doesNotMatch(composer, /fetch\(/u);

@@ -798,3 +798,13 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - qualquer mudança relevante produz revisão conservadora sem criar mensagem; falha transitória permanece aguardando em vez de aparentar falha terminal ou sucesso;
 - “enviar mesmo assim” cria novo comando idempotente pela rota normal e nunca ignora autorização, atribuição, estado ou janela atuais;
 - texto, motivos associados ao contato, UUIDs e observações da pendência não entram em log, auditoria ou telemetria; somente resultado e contadores agregados podem ser observados.
+
+## 35. Mídia e ações ERP mobile da PR 105
+
+- o seletor do aparelho aceita allowlist fechada; extensão, nome ou MIME declarado não substituem a validação de assinatura e tamanho no backend;
+- tetos são aplicados no cliente e no servidor: imagem 8 MB, áudio 16 MB, vídeo 32 MB e PDF 20 MB; o interceptor também limita a uma parte e 32 MB totais por arquivo;
+- a prévia é local e o upload começa somente após confirmação; mídia não entra em SQLCipher, autorização offline, fila de pendências, log ou telemetria;
+- a rota reautentica bearer, identificador do dispositivo e segredo do vínculo dentro da escrita e delega ao composer central; app não recebe credencial de Meta ou S3;
+- fatura mobile usa somente ERP em tempo real e declara indisponibilidade sem snapshot financeiro;
+- desbloqueio e OS exigem permissão, contexto, preparação, confirmação explícita e chave idempotente; a execução revalida o estado no backend e resposta incerta nunca aparece como sucesso;
+- segunda via, Pix, sessão de acesso, Flow e nota continuam negados até existir caso de uso autorizado ponta a ponta; visibilidade ou estado do botão não é controle de segurança.

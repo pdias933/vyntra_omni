@@ -14,13 +14,13 @@ const iniciaCom = (amostra: Uint8Array, assinatura: readonly number[]): boolean 
   assinatura.every((byte, indice) => amostra[indice] === byte);
 
 const ASSINATURAS: readonly AssinaturaMidia[] = [
-  { categoria: 'IMAGEM', limiteBytes: 16 * 1024 * 1024, mime: 'image/jpeg', detectar: (b) => iniciaCom(b, [0xff, 0xd8, 0xff]) },
-  { categoria: 'IMAGEM', limiteBytes: 16 * 1024 * 1024, mime: 'image/png', detectar: (b) => iniciaCom(b, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]) },
-  { categoria: 'IMAGEM', limiteBytes: 16 * 1024 * 1024, mime: 'image/webp', detectar: (b) => iniciaCom(b, [0x52, 0x49, 0x46, 0x46]) && String.fromCharCode(...b.slice(8, 12)) === 'WEBP' },
+  { categoria: 'IMAGEM', limiteBytes: 8 * 1024 * 1024, mime: 'image/jpeg', detectar: (b) => iniciaCom(b, [0xff, 0xd8, 0xff]) },
+  { categoria: 'IMAGEM', limiteBytes: 8 * 1024 * 1024, mime: 'image/png', detectar: (b) => iniciaCom(b, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]) },
+  { categoria: 'IMAGEM', limiteBytes: 8 * 1024 * 1024, mime: 'image/webp', detectar: (b) => iniciaCom(b, [0x52, 0x49, 0x46, 0x46]) && String.fromCharCode(...b.slice(8, 12)) === 'WEBP' },
   { categoria: 'AUDIO', limiteBytes: 16 * 1024 * 1024, mime: 'audio/mpeg', detectar: (b) => iniciaCom(b, [0x49, 0x44, 0x33]) || (b[0] === 0xff && (b[1] ?? 0) >= 0xe0) },
   { categoria: 'AUDIO', limiteBytes: 16 * 1024 * 1024, mime: 'audio/ogg', detectar: (b) => iniciaCom(b, [0x4f, 0x67, 0x67, 0x53]) },
-  { categoria: 'VIDEO', limiteBytes: 64 * 1024 * 1024, mime: 'video/mp4', detectar: (b) => String.fromCharCode(...b.slice(4, 8)) === 'ftyp' },
-  { categoria: 'PDF', limiteBytes: 32 * 1024 * 1024, mime: 'application/pdf', detectar: (b) => iniciaCom(b, [0x25, 0x50, 0x44, 0x46, 0x2d]) },
+  { categoria: 'VIDEO', limiteBytes: 32 * 1024 * 1024, mime: 'video/mp4', detectar: (b) => String.fromCharCode(...b.slice(4, 8)) === 'ftyp' },
+  { categoria: 'PDF', limiteBytes: 20 * 1024 * 1024, mime: 'application/pdf', detectar: (b) => iniciaCom(b, [0x25, 0x50, 0x44, 0x46, 0x2d]) },
 ];
 
 export class ValidadorMidia {

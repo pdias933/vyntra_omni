@@ -234,6 +234,11 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - O backend adquire `autoridade-saida:<atendimento_id>` e revalida sessão, aparelho, RBAC, fila, recurso, responsabilidade, estado, contexto, timeline e janela antes de criar a mensagem.
 - Mudança relevante produz `REVISAO_NECESSARIA`; falha transitória conserva `AGUARDANDO_CONEXAO`.
 - “Enviar mesmo assim” cria novo comando idempotente e não ignora autorização, janela, estado ou atribuição.
+- Mídia mobile é online na V1: seletor nativo, allowlist/teto local, prévia e confirmação; não grave bytes, nome ou pendência de mídia no SQLCipher.
+- Upload mobile usa o SDK OpenAPI gerado e o composer central; nunca chame S3, Meta ou URL externa diretamente do app.
+- Ações ERP no app exibem origem dos dados. Financeiro só usa `TEMPO_REAL`; indisponibilidade não cai para snapshot.
+- Toda ação ERP com efeito exige seleção, prévia, confirmação, chave idempotente e revalidação no backend. Resultado incerto nunca vira sucesso visual.
+- Conexão, segunda via/Pix, Flow ou nota sem caso de uso ponta a ponta permanecem desabilitados; não acrescente stub que simule efeito.
 - Perda de permissão remove/inutiliza dado local correspondente.
 - Invalidação pausa comandos dependentes, fecha realtime, aplica snapshot autorizado e só então reconecta/retoma; falha bloqueia a área autenticada e nunca restaura cache antigo.
 - Fechar app/stream não muda disponibilidade do usuário.

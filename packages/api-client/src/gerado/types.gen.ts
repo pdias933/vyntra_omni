@@ -432,21 +432,6 @@ export type ResultadoFinanceiroContatoWebDto = {
     }>;
 };
 
-export type EntradaLeituraTimelineWebDto = {
-    mensagem_id: string;
-    versao_esperada: number;
-};
-
-export type MarcadorLeituraWebDto = {
-    versao: number;
-};
-
-export type EntradaAlterarContextoWebDto = {
-    vinculo_cliente_id: string;
-    vinculo_contrato_id?: string;
-    versao_esperada: number;
-};
-
 export type EntradaPrepararAcaoErpWebDto = {
     acao: 'CRIAR_ORDEM_SERVICO' | 'EXECUTAR_DESBLOQUEIO';
 };
@@ -473,6 +458,21 @@ export type EntradaExecutarAcaoErpWebDto = {
 export type ResultadoAcaoErpWebDto = {
     situacao: string;
     operacao_id?: string;
+};
+
+export type EntradaLeituraTimelineWebDto = {
+    mensagem_id: string;
+    versao_esperada: number;
+};
+
+export type MarcadorLeituraWebDto = {
+    versao: number;
+};
+
+export type EntradaAlterarContextoWebDto = {
+    vinculo_cliente_id: string;
+    vinculo_contrato_id?: string;
+    versao_esperada: number;
 };
 
 export type ResultadoBuscaConversaWebDto = {
@@ -1467,6 +1467,66 @@ export type ConsultarFinanceiroContatoMobileResponses = {
 };
 
 export type ConsultarFinanceiroContatoMobileResponse = ConsultarFinanceiroContatoMobileResponses[keyof ConsultarFinanceiroContatoMobileResponses];
+
+export type PrepararAcaoErpContatoMobileData = {
+    body: EntradaPrepararAcaoErpWebDto;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/acoes-erp/preparar';
+};
+
+export type PrepararAcaoErpContatoMobileResponses = {
+    200: PreviaAcaoErpWebDto;
+};
+
+export type PrepararAcaoErpContatoMobileResponse = PrepararAcaoErpContatoMobileResponses[keyof PrepararAcaoErpContatoMobileResponses];
+
+export type ExecutarAcaoErpContatoMobileData = {
+    body: EntradaExecutarAcaoErpWebDto;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/acoes-erp/executar';
+};
+
+export type ExecutarAcaoErpContatoMobileResponses = {
+    200: ResultadoAcaoErpWebDto;
+};
+
+export type ExecutarAcaoErpContatoMobileResponse = ExecutarAcaoErpContatoMobileResponses[keyof ExecutarAcaoErpContatoMobileResponses];
+
+export type EnviarMidiaMobileData = {
+    body: {
+        arquivo: Blob | File;
+        mensagem_cliente_id: string;
+    };
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/mensagens/midia';
+};
+
+export type EnviarMidiaMobileResponses = {
+    200: MensagemCriadaWebDto;
+};
+
+export type EnviarMidiaMobileResponse = EnviarMidiaMobileResponses[keyof EnviarMidiaMobileResponses];
 
 export type ConfirmarLeituraTimelineMobileData = {
     body: EntradaLeituraTimelineWebDto;

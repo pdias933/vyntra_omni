@@ -4,9 +4,12 @@ import {
   confirmarLeituraTimelineMobile,
   consultarFinanceiroContatoMobile,
   enviarModeloAprovadoMobile,
+  enviarMidiaMobile,
   enviarTextoMobile,
+  executarAcaoErpContatoMobile,
   obterDetalhesContatoMobile,
   obterTimelineMobile,
+  prepararAcaoErpContatoMobile,
   reconciliarTextoMobile,
   listarModelosAprovadosMobile,
   listarRespostasRapidasMobile,
@@ -19,17 +22,22 @@ import {
   normalizarMensagemCriadaMobile,
   normalizarModelosAprovadosMobile,
   normalizarPaginaTimelineMobile,
+  normalizarPreviaAcaoErpMobile,
   normalizarRespostasRapidasMobile,
   normalizarResultadoReconciliacaoTextoMobile,
+  normalizarResultadoAcaoErpMobile,
   normalizarResumoFinanceiroMobile,
   normalizarVersaoMarcador,
   type DetalhesContatoMobile,
+  type AcaoErpMobile,
   type MensagemCriadaMobile,
   type ModeloAprovadoMobile,
   type PaginaTimelineMobile,
+  type PreviaAcaoErpMobile,
   type RespostaRapidaMobile,
   type ResumoFinanceiroContatoMobile,
   type ResultadoReconciliacaoTextoMobile,
+  type ResultadoAcaoErpMobile,
 } from './modelo-atendimento-mobile';
 
 interface RespostaSdk<T> {
@@ -84,6 +92,76 @@ function opcoesAutenticadas(credenciais: CredenciaisSincronizacaoAplicativo) {
 client.setConfig({ baseUrl: CONFIGURACAO_APLICATIVO.servidor });
 
 export class AdaptadorAtendimentosHttp {
+  public async enviarMidia(
+    credenciais: CredenciaisSincronizacaoAplicativo,
+    atendimentoId: string,
+    arquivo: globalThis.File,
+    mensagemClienteId: string,
+  ): Promise<MensagemCriadaMobile> {
+    const resposta = await enviarMidiaMobile({
+      ...opcoesAutenticadas(credenciais),
+      body: { arquivo, mensagem_cliente_id: mensagemClienteId },
+      path: { atendimentoId },
+    });
+    try {
+      return normalizarMensagemCriadaMobile(exigirDado(resposta));
+    } catch (erro) {
+      if (erro instanceof ErroAtendimentoMobile) throw erro;
+      throw new ErroAtendimentoMobile('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+    }
+  }
+
+  public async prepararAcaoErp(
+    credenciais: CredenciaisSincronizacaoAplicativo,
+    atendimentoId: string,
+    acao: AcaoErpMobile,
+  ): Promise<PreviaAcaoErpMobile> {
+    const resposta = await prepararAcaoErpContatoMobile({
+      ...opcoesAutenticadas(credenciais),
+      body: { acao },
+      path: { atendimentoId },
+    });
+    try {
+      return normalizarPreviaAcaoErpMobile(exigirDado(resposta));
+    } catch (erro) {
+      if (erro instanceof ErroAtendimentoMobile) throw erro;
+      throw new ErroAtendimentoMobile('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+    }
+  }
+
+  public async executarAcaoErp(
+    credenciais: CredenciaisSincronizacaoAplicativo,
+    atendimentoId: string,
+    entrada: {
+      readonly acao: AcaoErpMobile;
+      readonly assunto?: string;
+      readonly chaveIdempotencia: string;
+      readonly descricao?: string;
+    },
+  ): Promise<ResultadoAcaoErpMobile> {
+    const resposta = await executarAcaoErpContatoMobile({
+      ...opcoesAutenticadas(credenciais),
+      body: {
+        acao: entrada.acao,
+        chave_idempotencia: entrada.chaveIdempotencia,
+        confirmacao_explicita: true,
+        ...(entrada.assunto === undefined
+          ? {}
+          : { assunto: entrada.assunto }),
+        ...(entrada.descricao === undefined
+          ? {}
+          : { descricao: entrada.descricao }),
+      },
+      path: { atendimentoId },
+    });
+    try {
+      return normalizarResultadoAcaoErpMobile(exigirDado(resposta));
+    } catch (erro) {
+      if (erro instanceof ErroAtendimentoMobile) throw erro;
+      throw new ErroAtendimentoMobile('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+    }
+  }
+
   public async listarRespostasRapidas(
     credenciais: CredenciaisSincronizacaoAplicativo,
     atendimentoId: string,

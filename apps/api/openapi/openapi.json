@@ -1689,6 +1689,206 @@
         ]
       }
     },
+    "/api/v1/mobile/atendimentos/{atendimentoId}/acoes-erp/preparar": {
+      "post": {
+        "operationId": "prepararAcaoErpContatoMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaPrepararAcaoErpWebDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviaAcaoErpWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Revalida e prepara uma ação ERP no aplicativo",
+        "tags": [
+          "console-mobile"
+        ]
+      }
+    },
+    "/api/v1/mobile/atendimentos/{atendimentoId}/acoes-erp/executar": {
+      "post": {
+        "operationId": "executarAcaoErpContatoMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaExecutarAcaoErpWebDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoAcaoErpWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Executa uma ação ERP confirmada no aplicativo",
+        "tags": [
+          "console-mobile"
+        ]
+      }
+    },
+    "/api/v1/mobile/atendimentos/{atendimentoId}/mensagens/midia": {
+      "post": {
+        "operationId": "enviarMidiaMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "arquivo": {
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "mensagem_cliente_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "arquivo",
+                  "mensagem_cliente_id"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MensagemCriadaWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Valida e enfileira uma mídia online pelo aplicativo",
+        "tags": [
+          "console-mobile"
+        ]
+      }
+    },
     "/api/v1/mobile/atendimentos/{atendimentoId}/leitura": {
       "post": {
         "operationId": "confirmarLeituraTimelineMobile",
@@ -5186,55 +5386,6 @@
           "faturas"
         ]
       },
-      "EntradaLeituraTimelineWebDto": {
-        "type": "object",
-        "properties": {
-          "mensagem_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "versao_esperada": {
-            "type": "number",
-            "minimum": 0
-          }
-        },
-        "required": [
-          "mensagem_id",
-          "versao_esperada"
-        ]
-      },
-      "MarcadorLeituraWebDto": {
-        "type": "object",
-        "properties": {
-          "versao": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "versao"
-        ]
-      },
-      "EntradaAlterarContextoWebDto": {
-        "type": "object",
-        "properties": {
-          "vinculo_cliente_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "vinculo_contrato_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "versao_esperada": {
-            "type": "number",
-            "minimum": 1
-          }
-        },
-        "required": [
-          "vinculo_cliente_id",
-          "versao_esperada"
-        ]
-      },
       "EntradaPrepararAcaoErpWebDto": {
         "type": "object",
         "properties": {
@@ -5338,6 +5489,55 @@
         },
         "required": [
           "situacao"
+        ]
+      },
+      "EntradaLeituraTimelineWebDto": {
+        "type": "object",
+        "properties": {
+          "mensagem_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versao_esperada": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "mensagem_id",
+          "versao_esperada"
+        ]
+      },
+      "MarcadorLeituraWebDto": {
+        "type": "object",
+        "properties": {
+          "versao": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "versao"
+        ]
+      },
+      "EntradaAlterarContextoWebDto": {
+        "type": "object",
+        "properties": {
+          "vinculo_cliente_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vinculo_contrato_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versao_esperada": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "vinculo_cliente_id",
+          "versao_esperada"
         ]
       },
       "ResultadoBuscaConversaWebDto": {

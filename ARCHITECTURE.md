@@ -679,6 +679,10 @@ Na PR 072, o módulo interno `execucoes-fluxo` separa máquina pura, serviço e 
 
 Na PR 073, `ServicoRecuperacaoExecucoesFluxo` transforma `retomar_em` vencido em trabalho executável sem criar uma segunda autoridade. O repositório consulta o PostgreSQL em lotes com `FOR UPDATE SKIP LOCKED`; a mesma transação chama a máquina, altera por estado/revisão e audita. `worker-fluxos` é um processo Nest sem HTTP, porta, Redis ou storage e faz varreduras curtas de intervalo fixo, nunca um `sleep` por atendimento até o instante agendado. Reiniciar uma ou várias instâncias reconstrói a fila da consulta ao banco. Nesta etapa, `EXECUTANDO` significa apenas pronto para o executor futuro; nenhum nó é interpretado.
 
+Na PR 105, o mobile consome somente rotas próprias e o SDK OpenAPI gerado. `AdaptadorSelecaoMidiaNativa` é a fronteira local com o seletor do sistema; ele valida a allowlist e o teto, conserva apenas metadados para a prévia e materializa o `File` somente na confirmação. O upload `multipart/form-data` reautentica sessão e aparelho na transação e delega ao mesmo `ServicoComposerWeb`, `ServicoMidias` e caixa de saída da web. O app não acessa S3 ou Meta e não existe fila local de bytes.
+
+As ações ERP mobile reutilizam `ServicoContatoAcoesWeb` como caso de uso compartilhado, não como UI web. A consulta financeira devolve origem explícita; preparação e execução são rotas distintas, com nova autorização e contexto no servidor. Desbloqueio e OS continuam passando pelos serviços recuperáveis e idempotentes do domínio. O cliente apenas apresenta a prévia e envia a confirmação; não deriva contrato, protocolo, permissão, elegibilidade ou sucesso externo.
+
 ## 14. Observabilidade
 
 Quatro sinais distintos:

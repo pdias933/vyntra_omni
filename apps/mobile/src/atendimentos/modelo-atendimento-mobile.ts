@@ -151,6 +151,26 @@ export interface ModeloAprovadoMobile {
   readonly quantidadeParametros: number;
 }
 
+export type AcaoErpMobile =
+  | 'CRIAR_ORDEM_SERVICO'
+  | 'EXECUTAR_DESBLOQUEIO';
+
+export interface PreviaAcaoErpMobile {
+  readonly acao: AcaoErpMobile;
+  readonly confirmacaoObrigatoria: true;
+  readonly disponivel: boolean;
+  readonly motivo?: string;
+  readonly resumo: readonly {
+    readonly rotulo: string;
+    readonly valor: string;
+  }[];
+}
+
+export interface ResultadoAcaoErpMobile {
+  readonly operacaoId?: string;
+  readonly situacao: string;
+}
+
 export type MotivoRevisaoTextoMobile =
   | 'ATRIBUICAO_ALTERADA'
   | 'CONTEXTO_ALTERADO'
@@ -608,6 +628,57 @@ export function normalizarResultadoReconciliacaoTextoMobile(
     };
   }
   throw new Error('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+}
+
+export function normalizarPreviaAcaoErpMobile(
+  valor: unknown,
+): PreviaAcaoErpMobile {
+  const previa = objeto(valor);
+  chavesExatas(
+    previa,
+    ['acao', 'confirmacao_obrigatoria', 'disponivel', 'resumo'],
+    ['motivo'],
+  );
+  if (
+    (previa.acao !== 'CRIAR_ORDEM_SERVICO' &&
+      previa.acao !== 'EXECUTAR_DESBLOQUEIO') ||
+    previa.confirmacao_obrigatoria !== true ||
+    typeof previa.disponivel !== 'boolean' ||
+    !Array.isArray(previa.resumo) ||
+    previa.resumo.length > 10
+  ) {
+    throw new Error('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+  }
+  const resumo = previa.resumo.map((valorItem) => {
+    const item = objeto(valorItem);
+    chavesExatas(item, ['rotulo', 'valor']);
+    return {
+      rotulo: texto(item.rotulo, 100),
+      valor: texto(item.valor, 300),
+    };
+  });
+  return {
+    acao: previa.acao,
+    confirmacaoObrigatoria: true,
+    disponivel: previa.disponivel,
+    ...(previa.motivo === undefined
+      ? {}
+      : { motivo: texto(previa.motivo, 200) }),
+    resumo,
+  };
+}
+
+export function normalizarResultadoAcaoErpMobile(
+  valor: unknown,
+): ResultadoAcaoErpMobile {
+  const resultado = objeto(valor);
+  chavesExatas(resultado, ['situacao'], ['operacao_id']);
+  return {
+    ...(resultado.operacao_id === undefined
+      ? {}
+      : { operacaoId: uuid(resultado.operacao_id) }),
+    situacao: texto(resultado.situacao, 100),
+  };
 }
 
 export function normalizarModelosAprovadosMobile(

@@ -3,6 +3,7 @@ import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -24,37 +25,38 @@ import type {
   RespostaRapidaMobile,
 } from '../atendimentos/modelo-atendimento-mobile';
 import type { ServicoAtendimentosMobile } from '../atendimentos/servico-atendimentos-mobile';
+import {
+  AdaptadorSelecaoMidiaNativa,
+  ErroSelecaoMidiaMobile,
+  type MidiaSelecionadaMobile,
+} from '../midias/adaptador-selecao-midia-nativa';
 import type { RepositorioReplicaLocal } from '../offline/repositorio-replica-local';
 import type {
   PendenciaSaidaTextoLocal,
 } from '../offline/repositorio-replica-local';
 import type { ServicoPendenciasSaidaMobile } from '../offline/servico-pendencias-saida-mobile';
 import { CORES, ESPACOS, RAIOS } from '../tema';
+import { FolhaAcoesSistemaMobile } from './FolhaAcoesSistemaMobile';
 
-const GRUPOS_ACOES = [
-  {
-    acoes: [
-      { codigo: 'CLIENTE', icone: 'person-outline', rotulo: 'Cliente e contrato' },
-      { codigo: 'FATURAS', icone: 'receipt-outline', rotulo: 'Faturas, segunda via e Pix' },
-    ],
-    titulo: 'Cliente e financeiro',
-  },
-  {
-    acoes: [
-      { codigo: 'CONEXAO', icone: 'wifi-outline', rotulo: 'Consultar conexão' },
-      { codigo: 'DESBLOQUEIO', icone: 'flash-outline', rotulo: 'Desbloqueio de confiança' },
-      { codigo: 'ORDEM_SERVICO', icone: 'construct-outline', rotulo: 'Ordem de serviço' },
-    ],
-    titulo: 'Suporte',
-  },
-  {
-    acoes: [
-      { codigo: 'FORMULARIO', icone: 'reader-outline', rotulo: 'Solicitar WhatsApp Flow' },
-      { codigo: 'NOTA', icone: 'lock-closed-outline', rotulo: 'Adicionar nota interna' },
-    ],
-    titulo: 'Atendimento',
-  },
-] as const;
+const seletorMidia = new AdaptadorSelecaoMidiaNativa();
+
+function tamanhoLegivel(tamanhoBytes: number): string {
+  const megabytes = tamanhoBytes / (1024 * 1024);
+  if (megabytes >= 1) return `${megabytes.toFixed(1).replace('.', ',')} MB`;
+  return `${Math.ceil(tamanhoBytes / 1024)} KB`;
+}
+
+function mensagemSelecaoMidia(erro: unknown): string {
+  if (erro instanceof ErroSelecaoMidiaMobile) {
+    if (erro.codigo === 'TAMANHO_EXCEDIDO') {
+      return 'O arquivo ultrapassa o limite permitido para este formato.';
+    }
+    if (erro.codigo === 'FORMATO_NAO_PERMITIDO') {
+      return 'Este formato não é permitido. Use imagem, áudio, vídeo MP4 ou PDF.';
+    }
+  }
+  return 'Não foi possível acessar o arquivo selecionado.';
+}
 
 function mensagemFalha(erro: unknown): string {
   if (erro instanceof ErroAtendimentoMobile) {
@@ -102,6 +104,8 @@ export function ComposerMobile({
   const [ocupado, definirOcupado] = useState(false);
   const [erro, definirErro] = useState<string>();
   const [acoesAbertas, definirAcoesAbertas] = useState(false);
+  const [midiaSelecionada, definirMidiaSelecionada] =
+    useState<MidiaSelecionadaMobile>();
   const [modelosAbertos, definirModelosAbertos] = useState(false);
   const [modelos, definirModelos] = useState<readonly ModeloAprovadoMobile[]>([]);
   const [modeloSelecionado, definirModeloSelecionado] = useState<ModeloAprovadoMobile>();
@@ -294,10 +298,60 @@ export function ComposerMobile({
     }
   }
 
-  function executarAcao(codigo: string) {
-    if (codigo !== 'CLIENTE') return;
-    definirAcoesAbertas(false);
-    aoAbrirDetalhes();
+  async function selecionarMidia() {
+    if (ocupado) return;
+    if (acessoOffline) {
+      definirErro('Conecte-se para selecionar e enviar um anexo.');
+      return;
+    }
+    if (!janelaAberta) {
+      definirErro('A janela Meta encerrou. Anexos não podem ser enviados agora.');
+      return;
+    }
+    definirOcupado(true);
+    definirErro(undefined);
+    try {
+      const selecao = await seletorMidia.selecionar();
+      if (selecao === undefined) return;
+      definirMidiaSelecionada(selecao);
+      void Haptics.selectionAsync();
+    } catch (falha) {
+      definirErro(mensagemSelecaoMidia(falha));
+    } finally {
+      definirOcupado(false);
+    }
+  }
+
+  async function enviarMidia() {
+    if (
+      midiaSelecionada === undefined ||
+      ocupado ||
+      acessoOffline ||
+      !janelaAberta
+    ) {
+      return;
+    }
+    definirOcupado(true);
+    definirErro(undefined);
+    try {
+      const arquivo = await seletorMidia.materializar(midiaSelecionada);
+      await servico.enviarMidia(
+        atendimentoId,
+        arquivo,
+        Crypto.randomUUID(),
+      );
+      definirMidiaSelecionada(undefined);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await aoEnviado();
+    } catch (falha) {
+      definirErro(
+        falha instanceof ErroSelecaoMidiaMobile
+          ? mensagemSelecaoMidia(falha)
+          : 'Não foi possível enviar. O anexo foi preservado para tentar novamente.',
+      );
+    } finally {
+      definirOcupado(false);
+    }
   }
 
   async function editarPendencia(pendencia: PendenciaSaidaTextoLocal) {
@@ -483,9 +537,15 @@ export function ComposerMobile({
           <View style={estilos.linhaComposer}>
             <Pressable
               accessibilityLabel="Anexar"
-              accessibilityState={{ disabled: true }}
-              disabled
-              style={estilos.botaoSecundario}
+              accessibilityState={{
+                disabled: ocupado || acessoOffline || !janelaAberta,
+              }}
+              disabled={ocupado || acessoOffline || !janelaAberta}
+              onPress={() => void selecionarMidia()}
+              style={[
+                estilos.botaoSecundario,
+                (acessoOffline || !janelaAberta) && estilos.botaoAnexoDesabilitado,
+              ]}
             >
               <Ionicons color={CORES.textoSecundario} name="attach-outline" size={23} />
             </Pressable>
@@ -534,52 +594,88 @@ export function ComposerMobile({
         </SafeAreaView>
       </View>
 
+      <FolhaAcoesSistemaMobile
+        acessoOffline={acessoOffline}
+        aoAbrirDetalhes={aoAbrirDetalhes}
+        aoFechar={() => definirAcoesAbertas(false)}
+        atendimentoId={atendimentoId}
+        reduzirMovimento={reduzirMovimento}
+        servico={servico}
+        visivel={acoesAbertas}
+      />
+
       <Modal
         animationType={reduzirMovimento ? 'fade' : 'slide'}
-        onRequestClose={() => definirAcoesAbertas(false)}
+        onRequestClose={() => definirMidiaSelecionada(undefined)}
         transparent
-        visible={acoesAbertas}
+        visible={midiaSelecionada !== undefined}
       >
         <View style={estilos.fundoModal}>
           <Pressable
-            accessibilityLabel="Fechar ações"
-            onPress={() => definirAcoesAbertas(false)}
+            accessibilityLabel="Cancelar envio do anexo"
+            onPress={() => definirMidiaSelecionada(undefined)}
             style={StyleSheet.absoluteFill}
           />
-          <SafeAreaView edges={['bottom']} style={estilos.folha}>
+          <SafeAreaView edges={['bottom']} style={estilos.folhaMidia}>
             <View style={estilos.alca} />
-            <Text style={estilos.tituloFolha}>Ações</Text>
-            <Text style={estilos.descricaoFolha}>Sistema e ERP, organizados pelo contexto atual.</Text>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {GRUPOS_ACOES.map((grupo) => (
-                <View key={grupo.titulo} style={estilos.grupo}>
-                  <Text style={estilos.tituloGrupo}>{grupo.titulo}</Text>
-                  {grupo.acoes.map((acao) => {
-                    const disponivel = acao.codigo === 'CLIENTE';
-                    return (
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityState={{ disabled: !disponivel }}
-                        disabled={!disponivel}
-                        key={acao.codigo}
-                        onPress={() => executarAcao(acao.codigo)}
-                        style={estilos.acao}
-                      >
-                        <View style={estilos.iconeAcao}>
-                          <Ionicons color={disponivel ? CORES.acao : CORES.textoSecundario} name={acao.icone} size={19} />
-                        </View>
-                        <Text style={[estilos.rotuloAcao, !disponivel && estilos.rotuloIndisponivel]}>{acao.rotulo}</Text>
-                        {disponivel ? (
-                          <Ionicons color={CORES.textoSecundario} name="chevron-forward" size={18} />
-                        ) : (
-                          <Text style={estilos.emBreve}>Próxima etapa</Text>
-                        )}
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ))}
-            </ScrollView>
+            <Text style={estilos.tituloFolha}>Revisar anexo</Text>
+            <Text style={estilos.descricaoFolha}>
+              O arquivo só será enviado depois da sua confirmação.
+            </Text>
+            {midiaSelecionada?.categoria === 'IMAGEM' ? (
+              <Image
+                accessibilityLabel="Prévia da imagem selecionada"
+                resizeMode="contain"
+                source={{ uri: midiaSelecionada.uri }}
+                style={estilos.previaImagem}
+              />
+            ) : (
+              <View style={estilos.previaArquivo}>
+                <Ionicons
+                  color={CORES.acao}
+                  name={
+                    midiaSelecionada?.categoria === 'AUDIO'
+                      ? 'musical-notes-outline'
+                      : midiaSelecionada?.categoria === 'VIDEO'
+                        ? 'videocam-outline'
+                        : 'document-text-outline'
+                  }
+                  size={38}
+                />
+              </View>
+            )}
+            <Text numberOfLines={2} style={estilos.nomeArquivo}>
+              {midiaSelecionada?.nome}
+            </Text>
+            <Text style={estilos.metaArquivo}>
+              {midiaSelecionada === undefined
+                ? ''
+                : `${tamanhoLegivel(midiaSelecionada.tamanhoBytes)} · Origem: este aparelho`}
+            </Text>
+            {erro !== undefined && (
+              <Text accessibilityLiveRegion="polite" style={estilos.erroMidia}>
+                {erro}
+              </Text>
+            )}
+            <View style={estilos.acoesMidia}>
+              <Pressable
+                disabled={ocupado}
+                onPress={() => definirMidiaSelecionada(undefined)}
+                style={estilos.cancelarMidia}
+              >
+                <Text style={estilos.textoCancelarMidia}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                accessibilityState={{ disabled: ocupado }}
+                disabled={ocupado}
+                onPress={() => void enviarMidia()}
+                style={[estilos.confirmarMidia, ocupado && estilos.botaoDesabilitado]}
+              >
+                <Text style={estilos.textoConfirmarMidia}>
+                  {ocupado ? 'Enviando…' : 'Confirmar envio'}
+                </Text>
+              </Pressable>
+            </View>
           </SafeAreaView>
         </View>
       </Modal>
@@ -686,19 +782,21 @@ export function ComposerMobile({
 }
 
 const estilos = StyleSheet.create({
-  acao: { alignItems: 'center', flexDirection: 'row', gap: 10, minHeight: 48 },
   acaoPendencia: { paddingHorizontal: 8, paddingVertical: 7 },
   acaoPendenciaDesabilitada: { opacity: 0.45 },
   acaoPendenciaPrincipal: { backgroundColor: '#805A00', borderRadius: RAIOS.pílula, paddingHorizontal: 12, paddingVertical: 7 },
   acoesPendencia: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   alca: { alignSelf: 'center', backgroundColor: '#D5DAD7', borderRadius: RAIOS.pílula, height: 4, marginBottom: 18, width: 38 },
+  acoesMidia: { flexDirection: 'row', gap: 10, marginTop: 18 },
   area: { backgroundColor: CORES.superficie, borderTopColor: CORES.borda, borderTopWidth: 1, position: 'relative' },
   atalho: { color: CORES.acao, fontSize: 12, fontWeight: '800' },
   botaoDesabilitado: { backgroundColor: '#A9B4AE' },
+  botaoAnexoDesabilitado: { opacity: 0.42 },
   botaoPressionado: { opacity: 0.82, transform: [{ scale: 0.96 }] },
   botaoPrincipal: { alignItems: 'center', backgroundColor: CORES.acao, borderRadius: RAIOS.pílula, height: 44, justifyContent: 'center', width: 44 },
   botaoModelo: { backgroundColor: '#E7F5EC', borderRadius: RAIOS.pílula, paddingHorizontal: 12, paddingVertical: 8 },
   botaoSecundario: { alignItems: 'center', borderColor: CORES.borda, borderRadius: RAIOS.pílula, borderWidth: 1, height: 42, justifyContent: 'center', width: 42 },
+  cancelarMidia: { alignItems: 'center', borderColor: CORES.borda, borderRadius: RAIOS.campo, borderWidth: 1, flex: 1, justifyContent: 'center', minHeight: 48 },
   campo: { alignItems: 'center', backgroundColor: '#F3F6F4', borderColor: CORES.borda, borderRadius: 22, borderWidth: 1, flex: 1, flexDirection: 'row', minHeight: 44, paddingHorizontal: 13 },
   cabecalhoModelos: { alignItems: 'center', flexDirection: 'row', gap: 8 },
   cabecalhoPendencia: { alignItems: 'center', flexDirection: 'row', gap: 6 },
@@ -707,15 +805,16 @@ const estilos = StyleSheet.create({
   descricaoModelo: { color: CORES.textoSecundario, fontSize: 11, marginTop: 2 },
   descricaoFolha: { color: CORES.textoSecundario, fontSize: 13, marginBottom: 15, marginTop: 3 },
   dicaBarra: { color: CORES.textoSecundario, fontSize: 15, fontWeight: '700' },
-  emBreve: { color: CORES.textoSecundario, fontSize: 10 },
+  confirmarMidia: { alignItems: 'center', backgroundColor: CORES.acao, borderRadius: RAIOS.campo, flex: 1.4, justifyContent: 'center', minHeight: 48 },
   entrada: { color: CORES.texto, flex: 1, fontSize: 15, lineHeight: 20, maxHeight: 112, minHeight: 42, paddingVertical: 10 },
   entradaParametro: { borderColor: CORES.borda, borderRadius: RAIOS.campo, borderWidth: 1, color: CORES.texto, fontSize: 14, minHeight: 44, paddingHorizontal: 12 },
   enviarModelo: { alignItems: 'center', backgroundColor: CORES.acao, borderRadius: RAIOS.campo, justifyContent: 'center', marginTop: 14, minHeight: 48 },
   erro: { backgroundColor: '#FFF1ED', color: '#9B3326', fontSize: 11, lineHeight: 16, paddingHorizontal: ESPACOS.grande, paddingVertical: 7 },
   erroModelo: { color: '#9B3326', fontSize: 11, lineHeight: 16, marginTop: 10 },
+  erroMidia: { color: '#9B3326', fontSize: 11, lineHeight: 16, marginTop: 12 },
   folha: { backgroundColor: CORES.superficie, borderTopLeftRadius: 26, borderTopRightRadius: 26, maxHeight: '84%', padding: ESPACOS.grande, width: '100%' },
+  folhaMidia: { backgroundColor: CORES.superficie, borderTopLeftRadius: 26, borderTopRightRadius: 26, padding: ESPACOS.grande, width: '100%' },
   fundoModal: { backgroundColor: 'rgba(9,20,15,0.36)', flex: 1, justifyContent: 'flex-end' },
-  grupo: { borderTopColor: CORES.borda, borderTopWidth: 1, paddingBottom: 9, paddingTop: 12 },
   iconeAcao: { alignItems: 'center', backgroundColor: '#EFF5F1', borderRadius: 10, height: 34, justifyContent: 'center', width: 34 },
   janelaFechada: { alignItems: 'center', backgroundColor: '#FFF8E7', borderBottomColor: '#F0DEAC', borderBottomWidth: 1, flexDirection: 'row', gap: 10, justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8 },
   linhaComposer: { alignItems: 'flex-end', flexDirection: 'row', gap: 8, paddingHorizontal: 10, paddingTop: 8 },
@@ -723,21 +822,25 @@ const estilos = StyleSheet.create({
   listaModelos: { marginTop: 15, maxHeight: 440 },
   modelo: { alignItems: 'center', borderTopColor: CORES.borda, borderTopWidth: 1, flexDirection: 'row', gap: 10, minHeight: 58, paddingVertical: 10 },
   modeloSelecionado: { backgroundColor: '#F3F7F4', borderRadius: RAIOS.campo, marginBottom: 12, padding: 12 },
+  metaArquivo: { color: CORES.textoSecundario, fontSize: 11, marginTop: 4 },
+  nomeArquivo: { color: CORES.texto, fontSize: 14, fontWeight: '700', marginTop: 12 },
   nomeModelo: { color: CORES.texto, fontSize: 13, fontWeight: '700' },
   parametro: { gap: 5, marginBottom: 10 },
   pendencia: { backgroundColor: '#F2F5F3', borderBottomColor: CORES.borda, borderBottomWidth: 1, paddingHorizontal: 14, paddingVertical: 9 },
   pendenciaRevisao: { backgroundColor: '#FFF7E3', borderBottomColor: '#EEDAA6' },
   previaResposta: { color: CORES.textoSecundario, fontSize: 11, lineHeight: 15, marginTop: 3 },
+  previaArquivo: { alignItems: 'center', backgroundColor: '#EFF5F1', borderRadius: RAIOS.campo, height: 144, justifyContent: 'center' },
+  previaImagem: { backgroundColor: '#EEF1EF', borderRadius: RAIOS.campo, height: 230, width: '100%' },
   resposta: { borderTopColor: CORES.borda, borderTopWidth: 1, paddingHorizontal: 14, paddingVertical: 10 },
   respostaPressionada: { backgroundColor: '#F4F8F5' },
   rotuloParametro: { color: CORES.textoSecundario, fontSize: 11, fontWeight: '600' },
   rodape: { backgroundColor: CORES.superficie },
-  rotuloAcao: { color: CORES.texto, flex: 1, fontSize: 13, fontWeight: '600' },
-  rotuloIndisponivel: { color: CORES.textoSecundario },
   sugestoes: { backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: 16, borderWidth: 1, bottom: '100%', left: 10, maxHeight: 290, overflow: 'hidden', position: 'absolute', right: 10, zIndex: 20 },
   semModelos: { color: CORES.textoSecundario, fontSize: 13, paddingVertical: 22, textAlign: 'center' },
   skeletonModelo: { backgroundColor: '#E6EBE8', borderRadius: RAIOS.campo, height: 64 },
   textoBotaoModelo: { color: CORES.acao, fontSize: 11, fontWeight: '700' },
+  textoCancelarMidia: { color: CORES.textoSecundario, fontSize: 13, fontWeight: '700' },
+  textoConfirmarMidia: { color: CORES.textoInvertido, fontSize: 13, fontWeight: '700' },
   textoAcaoPendencia: { color: CORES.textoSecundario, fontSize: 11, fontWeight: '700' },
   textoAcaoPendenciaPrincipal: { color: CORES.textoInvertido, fontSize: 11, fontWeight: '700' },
   textoCabecalhoModelos: { flex: 1 },
@@ -746,7 +849,6 @@ const estilos = StyleSheet.create({
   textoPendencia: { color: CORES.texto, fontSize: 12, lineHeight: 16, marginTop: 4 },
   tentarPendencia: { alignSelf: 'flex-start', marginTop: 5, paddingVertical: 4 },
   tituloFolha: { color: CORES.texto, fontSize: 20, fontWeight: '800' },
-  tituloGrupo: { color: CORES.textoSecundario, fontSize: 10, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4, textTransform: 'uppercase' },
   tituloJanelaFechada: { color: '#725A20', fontSize: 12, fontWeight: '700' },
   tituloPendencia: { color: CORES.texto, fontSize: 11, fontWeight: '800' },
   tituloResposta: { color: CORES.texto, fontSize: 13, fontWeight: '700', marginTop: 2 },
