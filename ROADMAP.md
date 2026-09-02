@@ -144,9 +144,9 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | PR | Estado | Effort |
 |---:|---|---|
 | 096A | CONCLUÍDA | `high` |
-| 096B | EM ANDAMENTO | `xhigh` |
+| 096B | CONCLUÍDA | `xhigh` |
 
-`096A` e `096B` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entrega MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging; PR097–PR107 permanecem pausadas até novo direcionamento.
+`096A` e `096B` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging; PR097–PR107 permanecem pausadas até novo direcionamento.
 
 ## 2. Portão zero
 
@@ -651,6 +651,10 @@ Aceite concluído em 1º de setembro de 2026: `Saúde e releases` observa automa
 ### PR 096A — publicação segura do console web em staging
 
 Aceite concluído em 1º de setembro de 2026: o frontend foi empacotado em imagem imutável, servido em rede privada e publicado em `https://omni.up100.com.br` por uma borda TLS separada. O certificado público da Let’s Encrypt cobre o domínio, HTTP redireciona permanentemente para HTTPS e HSTS, CSP, `nosniff`, bloqueio de frame e políticas de origem estão ativos. A tela de login foi carregada no navegador integrado sem exceção de certificado nem erro de console; a prontidão pública respondeu `PRONTO`. API, SSE e WebSocket compartilham a mesma origem. Somente 80/443 estão publicados: API direta, PostgreSQL, Redis e Garage S3 permaneceram inacessíveis externamente. Web e proxy executam como `1000:1000`, com imagem somente leitura, `no-new-privileges` e todas as capabilities removidas. API, web, proxy, PostgreSQL, Redis, storage e duas instâncias do worker ficaram saudáveis; a migração cumulativa terminou com código zero e o smoke público/privado foi aprovado. Lint, tipos, 426 testes da API, 240 testes de arquitetura, builds web/API/iOS/Android, contratos, Expo, auditoria de dependências e varredura de todo o histórico sem segredo foram aprovados. Não houve migration nova. Effort `high` foi confirmado pela exposição pública, PKI e preservação do isolamento de staging. PR097–PR107 permanecem pausadas até novo direcionamento.
+
+### PR 096B — MFA e primeiro administrador de staging
+
+Aceite concluído em 1º de setembro de 2026: TOTP RFC 6238 e códigos de recuperação de uso único passaram a proteger contas privilegiadas sem atalho de autenticação. O contador TOTP persistido bloqueia replay entre instâncias; o segredo fica sob AES-256-GCM com chave externa, códigos ficam somente por HMAC-SHA-256 e a senha usa Argon2id. O provisionador restrito a staging criou `administrador` com perfil base `ADMINISTRADOR`, 38 concessões explícitas vigentes, fator ativo e dez códigos de recuperação intactos, registrando auditoria sem segredo. A migration aditiva `20260901016000_mfa_totp_recuperacao` terminou com código zero. O ensaio público confirmou `403 MFA_NECESSARIO` sem segundo fator, `401 MFA_INVALIDO` para código incorreto, `200` com cookies `__Host` seguros para TOTP válido e `401 MFA_INVALIDO` ao reutilizar o mesmo código; a sessão de aceite foi revogada ao final e a prontidão permaneceu `PRONTO`. API, web, proxy, PostgreSQL, Redis, storage e dois workers ficaram saudáveis nas imagens `pr-096b`. A tela pública foi conferida sem erro de console. Lint, tipos, testes, contratos, builds web/API/iOS/Android e auditoria de dependências foram aprovados; Gitleaks 8.30.0, com checksum e canário, examinou 217 commits sem encontrar segredo. Effort `xhigh` foi confirmado pela migração, custódia criptográfica, atomicidade sessão+MFA, replay e bootstrap privilegiado. PR097–PR107 continuam pausadas até novo direcionamento.
 
 ## 12. Mobile
 
