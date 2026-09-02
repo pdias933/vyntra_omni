@@ -279,6 +279,8 @@ export class ControladorConsoleWeb {
     resposta.setHeader('Content-Type', conteudo.mime);
     resposta.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(conteudo.nomeArquivo)}`);
     resposta.setHeader('Cache-Control', 'private, no-store');
+    resposta.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+    resposta.setHeader('X-Content-Type-Options', 'nosniff');
     return new StreamableFile(conteudo.bytes);
   }
 

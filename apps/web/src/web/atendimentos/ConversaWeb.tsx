@@ -516,7 +516,7 @@ function MidiaMensagemWeb({ item }: { readonly item: ItemTimelineWebDto }) {
   }
   if (erro) return <p className="midia-indisponivel">Mídia indisponível</p>;
   if (item.mensagem_tipo === 'AUDIO' && endereco !== undefined) return <audio controls preload="metadata" src={endereco} />;
-  if (endereco !== undefined) return <div className="visualizador-midia"><button aria-label="Fechar mídia" onClick={() => definirEndereco(undefined)} type="button">×</button>{item.mensagem_tipo === 'IMAGEM' && <img alt="Mídia da conversa" src={endereco} />}{item.mensagem_tipo === 'VIDEO' && <video controls src={endereco} />}{item.mensagem_tipo === 'PDF' && <iframe src={endereco} title="Documento PDF" />}</div>;
+  if (endereco !== undefined) return <div className="visualizador-midia"><button aria-label="Fechar mídia" onClick={() => definirEndereco(undefined)} type="button">×</button>{item.mensagem_tipo === 'IMAGEM' && <img alt="Mídia da conversa" src={endereco} />}{item.mensagem_tipo === 'VIDEO' && <video controls src={endereco} />}{item.mensagem_tipo === 'PDF' && <iframe sandbox="" src={endereco} title="Documento PDF" />}</div>;
   return <button className="abrir-midia" onClick={() => void abrir()} type="button"><strong>{rotuloMidia(item.mensagem_tipo)}</strong><span>Abrir com segurança</span></button>;
 }
 

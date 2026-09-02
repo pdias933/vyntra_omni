@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR113 foram concluídas. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. A PR114 é a próxima na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR114 foram concluídas. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. A PR115 é a próxima na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -728,6 +728,10 @@ Aceite concluído em 2 de setembro de 2026: as imagens de migration, API, worker
 ### PR 113 — backups e restauração
 
 Aceite de engenharia concluído em 2 de setembro de 2026: staging passou a gerar artefatos cifrados e autenticados separados para PostgreSQL, mídias e snapshot de metadados, segredos/chaves e configuração, com manifesto e hashes. O destino precisa ser absoluto, externo ao checkout e confirmado como outro domínio de falha; a chave fica fora do pacote. Um timer persistente agenda a rotina a cada quatro horas. A restauração recusa alvo existente, valida todos os artefatos e carrega o dump em PostgreSQL efêmero sem rede, produzindo RTO e evidência sanitizada. Redis continua reconstruível. A implantação final deve ensaiar o processo no host e configurar destino/cofre externos reais antes do piloto. Não houve migration nem dependência. Effort recomendado e confirmado: `xhigh`, pela recuperação coordenada de banco, mídia e material criptográfico sem aceitar falsa segurança na mesma VM.
+
+### PR 114 — testes integrados adversariais e de falha
+
+Aceite de engenharia concluído em 2 de setembro de 2026: um portão curto e nominal passou a recompor e executar cenários de IDOR/BOLA, webhook falso/replay, XSS, upload hostil, perda de Redis/worker/API e corrida offline. A visualização de PDF recebeu sandbox próprio, CSP restrita e `nosniff`; nenhuma tela web usa injeção direta de HTML. O ensaio de staging exige confirmação e mede reinícios controlados sem tocar em banco ou volumes. Reinício total da VM permanece prova manual supervisionada e bloqueante para produção, nunca resultado presumido. Não houve migration nem dependência. Effort recomendado e confirmado: `high`, pela cobertura cruzada de segurança, consistência e recuperação em clientes e backend.
 
 ## 12. Mobile
 
