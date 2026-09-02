@@ -145,8 +145,9 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 |---:|---|---|
 | 096A | CONCLUÍDA | `high` |
 | 096B | CONCLUÍDA | `xhigh` |
+| 096C | CONCLUÍDA | `low` |
 
-`096A` e `096B` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. O lote mobile foi retomado em 2 de setembro de 2026; a PR097 está em andamento e PR098–PR107 seguem pendentes na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; a PR097 está em aceite final e PR098–PR107 seguem pendentes na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -655,6 +656,10 @@ Aceite concluído em 1º de setembro de 2026: o frontend foi empacotado em image
 ### PR 096B — MFA e primeiro administrador de staging
 
 Aceite concluído em 1º de setembro de 2026: TOTP RFC 6238 e códigos de recuperação de uso único passaram a proteger contas privilegiadas sem atalho de autenticação. O contador TOTP persistido bloqueia replay entre instâncias; o segredo fica sob AES-256-GCM com chave externa, códigos ficam somente por HMAC-SHA-256 e a senha usa Argon2id. O provisionador restrito a staging criou `administrador` com perfil base `ADMINISTRADOR`, 38 concessões explícitas vigentes, fator ativo e dez códigos de recuperação intactos, registrando auditoria sem segredo. A migration aditiva `20260901016000_mfa_totp_recuperacao` terminou com código zero. O ensaio público confirmou `403 MFA_NECESSARIO` sem segundo fator, `401 MFA_INVALIDO` para código incorreto, `200` com cookies `__Host` seguros para TOTP válido e `401 MFA_INVALIDO` ao reutilizar o mesmo código; a sessão de aceite foi revogada ao final e a prontidão permaneceu `PRONTO`. API, web, proxy, PostgreSQL, Redis, storage e dois workers ficaram saudáveis nas imagens `pr-096b`. A tela pública foi conferida sem erro de console. Lint, tipos, testes, contratos, builds web/API/iOS/Android e auditoria de dependências foram aprovados; Gitleaks 8.30.0, com checksum e canário, examinou 217 commits sem encontrar segredo. Effort `xhigh` foi confirmado pela migração, custódia criptográfica, atomicidade sessão+MFA, replay e bootstrap privilegiado. PR097–PR107 continuam pausadas até novo direcionamento.
+
+### PR 096C — correção do desafio MFA no console web
+
+Implementação concluída localmente em 2 de setembro de 2026: o console passou a reconhecer o código de erro tanto no JSON direto lançado pelo SDK OpenAPI quanto no formato encapsulado compatível. Assim, `MFA_NECESSARIO` abre a etapa do segundo fator em vez de cair na mensagem genérica. O teste de regressão do shell, lint e tipos da web foram aprovados. Não houve migration nem mudança de contrato. O aceite público em staging permanece pendente; Effort `low`.
 
 ## 12. Mobile
 
