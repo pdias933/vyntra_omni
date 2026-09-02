@@ -39,7 +39,7 @@ docker([...base, 'restart', 'redis']);
 evidencias.push(await aguardarSaude('REINICIO_REDIS'));
 docker([...base, 'stop', '--timeout', '10', 'worker_fluxos']);
 evidencias.push(await aguardarSaude('WORKER_INDISPONIVEL'));
-docker([...base, 'up', '--detach', '--no-deps', '--wait', 'worker_fluxos']);
+docker([...base, 'up', '--detach', '--no-deps', '--wait', '--scale', 'worker_fluxos=2', 'worker_fluxos']);
 docker([...base, 'restart', 'api']);
 evidencias.push(await aguardarSaude('REINICIO_API_COM_RECONEXAO'));
 process.stdout.write(`${JSON.stringify({ estado: 'FALHAS_CONTROLADAS_APROVADAS', evidencias, reinicio_vm: 'REQUER_JANELA_SUPERVISIONADA' }, null, 2)}\n`);

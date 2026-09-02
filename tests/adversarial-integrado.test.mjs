@@ -51,3 +51,8 @@ test('falhas recuperáveis permanecem ancoradas no PostgreSQL e não no Redis', 
   assert.doesNotMatch(`${execucoes}\n${sincronizacao}\n${saida}`, /from ['"].*redis|RedisClient|BullMQ/u);
   assert.match(saida, /ErroRevisaoPendenciaTextoNecessaria/u);
 });
+
+test('ensaio de falhas preserva as duas réplicas do worker', async () => {
+  const ensaio = await readFile('scripts/aceitar-falhas-staging.mjs', 'utf8');
+  assert.match(ensaio, /'--scale', 'worker_fluxos=2'/u);
+});
