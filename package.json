@@ -22,6 +22,7 @@
     "staging:parar": "node scripts/ambiente-staging.mjs parar",
     "staging:preparar": "node scripts/ambiente-staging.mjs preparar",
     "staging:preparar-administrador": "node scripts/ambiente-staging.mjs preparar-administrador",
+    "staging:aceitar-pr097": "node scripts/aceitar-pr097-staging.mjs",
     "staging:smoke": "node scripts/ambiente-staging.mjs smoke",
     "staging:subir": "node scripts/ambiente-staging.mjs subir",
     "staging:validar": "node scripts/ambiente-staging.mjs validar",
