@@ -18,6 +18,7 @@ export interface CredencialLoginWeb {
 export interface EntradaLoginWeb {
   readonly identificador: string;
   readonly senha: string;
+  readonly codigoMfa?: string;
   readonly enderecoIp: string;
   readonly agenteUsuario: string;
   readonly confirmarRevogacaoSessaoMaisAntiga: boolean;

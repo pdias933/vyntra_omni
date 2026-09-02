@@ -20,6 +20,7 @@ export interface CredencialLoginMobile {
 export interface EntradaLoginMobile {
   readonly identificador: string;
   readonly senha: string;
+  readonly codigoMfa?: string;
   readonly identificadorInstalacao: string;
   readonly segredoVinculo: string;
   readonly plataforma: PlataformaMobile;

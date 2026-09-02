@@ -104,6 +104,13 @@ function criarCenario(sobrescritas = {}) {
         exigirVersaoPermitida: async (...argumentos) =>
           chamadas.versoes?.push(argumentos),
       },
+      {
+        consumirValidacao: async () => sobrescritas.mfaConsumido ?? true,
+        prepararValidacao: async () =>
+          sobrescritas.mfaValido === false
+            ? undefined
+            : { contador: 1n, tipo: 'TOTP' },
+      },
     ),
     transacao,
   };

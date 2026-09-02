@@ -240,6 +240,7 @@ A PR 091 acrescenta busca na conversa e galeria de `Mídias`, `Links` e `Documen
 - QR de pareamento com 90 segundos, uso único e um token ativo por sessão web.
 - Pareamento confirmado somente pela sessão web criadora com autenticação recente; token/comprovante persistidos apenas como hash e sessão entregue somente ao aparelho que resgatou.
 - Senha de 12–128 caracteres, bloqueio de credenciais comprometidas e MFA obrigatório para usuários privilegiados.
+- MFA privilegiado aceita TOTP ou código de recuperação de uso único; a interface conduz a confirmação em segunda etapa sem expor infraestrutura ou criar bypass para o primeiro Administrador.
 - Ações ERP classificadas em risco baixo, médio ou alto; risco alto exige ERP em tempo real, contexto explícito, revalidação, prévia, confirmação, idempotência e auditoria.
 - Link público de transcrição e eliminação automática permanecem desligados até política jurídica/LGPD aprovada.
 - Feature flags e rollout controlados pelo backend.

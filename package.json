@@ -21,6 +21,7 @@
     "staging:estado": "node scripts/ambiente-staging.mjs estado",
     "staging:parar": "node scripts/ambiente-staging.mjs parar",
     "staging:preparar": "node scripts/ambiente-staging.mjs preparar",
+    "staging:preparar-administrador": "node scripts/ambiente-staging.mjs preparar-administrador",
     "staging:smoke": "node scripts/ambiente-staging.mjs smoke",
     "staging:subir": "node scripts/ambiente-staging.mjs subir",
     "staging:validar": "node scripts/ambiente-staging.mjs validar",

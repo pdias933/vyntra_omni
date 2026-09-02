@@ -12,6 +12,7 @@ import {
   ErroCredenciaisInvalidas,
   ErroConfirmacaoRevogacaoSessaoNecessaria,
   ErroLimiteLoginExcedido,
+  ErroMfaInvalido,
   ErroMfaNecessario,
   ErroRequisicaoWebNaoConfiavel,
 } from '../dist/autenticacao/erros-autenticacao.js';
@@ -94,6 +95,13 @@ function criarCenario(sobrescritas = {}) {
     {
       revogarDispositivosAdministrativamente: async (...argumentos) =>
         chamadas.dispositivosMobileAdmin.push(argumentos),
+    },
+    {
+      consumirValidacao: async () => sobrescritas.mfaConsumido ?? true,
+      prepararValidacao: async () =>
+        sobrescritas.mfaValido === false
+          ? undefined
+          : { contador: 1n, tipo: 'TOTP' },
     },
   );
   return { chamadas, credencial, servico, transacao };
@@ -211,6 +219,37 @@ test('conta privilegiada não recebe sessão sem MFA', async () => {
   await assert.rejects(() => cenario.servico.entrar(entradaLogin), ErroMfaNecessario);
   assert.equal(cenario.chamadas.criarSessao.length, 0);
   assert.equal(cenario.chamadas.auditoria[0][0].tipoEvento, 'LOGIN_WEB_MFA_NECESSARIO');
+});
+
+test('conta privilegiada recebe sessão somente após consumir MFA válido', async () => {
+  const cenario = criarCenario({ credencial: { papelBase: 'ADMINISTRADOR' } });
+  const sessao = await cenario.servico.entrar({
+    ...entradaLogin,
+    codigoMfa: '123456',
+  });
+  assert.equal(sessao.usuarioId, cenario.credencial.usuarioId);
+  assert.equal(cenario.chamadas.criarSessao.length, 1);
+});
+
+test('conta privilegiada nega MFA inválido ou já consumido', async () => {
+  const invalido = criarCenario({
+    credencial: { papelBase: 'ADMINISTRADOR' },
+    mfaValido: false,
+  });
+  const repetido = criarCenario({
+    credencial: { papelBase: 'ADMINISTRADOR' },
+    mfaConsumido: false,
+  });
+  await assert.rejects(
+    () => invalido.servico.entrar({ ...entradaLogin, codigoMfa: '123456' }),
+    ErroMfaInvalido,
+  );
+  await assert.rejects(
+    () => repetido.servico.entrar({ ...entradaLogin, codigoMfa: '123456' }),
+    ErroMfaInvalido,
+  );
+  assert.equal(invalido.chamadas.criarSessao.length, 0);
+  assert.equal(repetido.chamadas.criarSessao.length, 0);
 });
 
 test('rotação invalida o segredo anterior e renova a inatividade atomicamente', async () => {

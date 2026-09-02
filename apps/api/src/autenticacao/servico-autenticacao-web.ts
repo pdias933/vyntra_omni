@@ -18,6 +18,7 @@ import {
   ErroCredenciaisInvalidas,
   ErroConfirmacaoRevogacaoSessaoNecessaria,
   ErroLimiteLoginExcedido,
+  ErroMfaInvalido,
   ErroMfaNecessario,
   ErroRequisicaoWebNaoConfiavel,
 } from './erros-autenticacao.js';
@@ -35,6 +36,7 @@ import {
 } from './repositorio-autenticacao.js';
 import { ServicoAutenticacaoMobile } from './servico-autenticacao-mobile.js';
 import { ServicoSenha } from './servico-senha.js';
+import { ServicoMfa } from './servico-mfa.js';
 import { credencialExigeMfa } from './politica-mfa.js';
 
 const JANELA_FALHAS_MS = 15 * 60 * 1_000;
@@ -69,6 +71,8 @@ export class ServicoAutenticacaoWeb {
     private readonly autorizacao: ServicoAutorizacao,
     @Inject(ServicoAutenticacaoMobile)
     private readonly autenticacaoMobile: ServicoAutenticacaoMobile,
+    @Inject(ServicoMfa)
+    private readonly mfa: ServicoMfa,
   ) {}
 
   public async entrar(entrada: EntradaLoginWeb): Promise<SessaoWebEmitida> {
@@ -115,7 +119,8 @@ export class ServicoAutenticacaoWeb {
       throw new ErroCredenciaisInvalidas();
     }
 
-    if (credencialExigeMfa(credencial)) {
+    const exigeMfa = credencialExigeMfa(credencial);
+    if (exigeMfa && entrada.codigoMfa === undefined) {
       await this.prisma.executarTransacao(async (transacao) => {
         await this.confirmarTentativa(reserva.id, transacao);
         await this.auditoria.registrar(
@@ -134,12 +139,37 @@ export class ServicoAutenticacaoWeb {
       throw new ErroMfaNecessario();
     }
 
+    const validacaoMfa =
+      exigeMfa && entrada.codigoMfa !== undefined
+        ? await this.mfa.prepararValidacao(
+            credencial.usuarioId,
+            entrada.codigoMfa,
+            agora,
+          )
+        : undefined;
+    if (exigeMfa && validacaoMfa === undefined) {
+      await this.prisma.executarTransacao((transacao) =>
+        this.auditoria.registrar(
+          {
+            acao: 'LOGIN_WEB_MFA_FALHOU',
+            dadosNovos: { resultado: 'FALHA' },
+            enderecoIp: entrada.enderecoIp,
+            entidadeId: credencial.usuarioId,
+            entidadeTipo: 'USUARIO',
+            origem: 'SISTEMA',
+            tipoEvento: 'LOGIN_WEB_MFA_FALHOU',
+          },
+          transacao,
+        ),
+      );
+      throw new ErroMfaInvalido();
+    }
+
     const token = gerarSegredo();
     const csrf = gerarSegredo();
     const sessaoId = randomUUID();
     const expiraEm = new Date(agora.getTime() + DURACAO_INATIVIDADE_MS);
     const criacao = await this.prisma.executarTransacao(async (transacao) => {
-      await this.confirmarTentativa(reserva.id, transacao);
       await this.repositorio.serializarSessoesUsuario(
         credencial.usuarioId,
         transacao,
@@ -153,6 +183,7 @@ export class ServicoAutenticacaoWeb {
         sessoesAtivas.length >= LIMITE_SESSOES_WEB &&
         !entrada.confirmarRevogacaoSessaoMaisAntiga
       ) {
+        await this.confirmarTentativa(reserva.id, transacao);
         await this.auditoria.registrar(
           {
             acao: 'CONFIRMAR_SUBSTITUICAO_SESSAO_WEB',
@@ -168,6 +199,19 @@ export class ServicoAutenticacaoWeb {
         );
         return { confirmacaoNecessaria: true } as const;
       }
+
+      if (
+        validacaoMfa !== undefined &&
+        !(await this.mfa.consumirValidacao(
+          credencial.usuarioId,
+          validacaoMfa,
+          agora,
+          transacao,
+        ))
+      ) {
+        throw new ErroMfaInvalido();
+      }
+      await this.confirmarTentativa(reserva.id, transacao);
 
       if (sessoesAtivas.length >= LIMITE_SESSOES_WEB) {
         const quantidadeRevogar =
@@ -216,7 +260,11 @@ export class ServicoAutenticacaoWeb {
       await this.auditoria.registrar(
         {
           acao: 'LOGIN_WEB_CONCLUIDO',
-          dadosNovos: { resultado: 'SUCESSO' },
+          dadosNovos: {
+            resultado: 'SUCESSO',
+            segundo_fator:
+              validacaoMfa === undefined ? 'NAO_EXIGIDO' : validacaoMfa.tipo,
+          },
           enderecoIp: entrada.enderecoIp,
           entidadeId: sessaoId,
           entidadeTipo: 'SESSAO_WEB',

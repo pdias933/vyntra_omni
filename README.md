@@ -62,7 +62,7 @@ O PostgreSQL materializa usuários, perfis, ajustes granulares de permissão, fi
 
 ### Login e sessão web
 
-Senha usa Argon2id; identificador desconhecido não altera a resposta nem elimina o custo criptográfico. Sessões usam cookie `__Host` seguro, token opaco persistido apenas por hash, CSRF vinculado, origem HTTPS explícita, rotação atômica e auditoria. Há no máximo duas sessões web, a terceira exige confirmação antes de substituir a mais antiga e 12 horas sem atividade encerram a autoridade. Contas privilegiadas continuam bloqueadas sem MFA. Contratos e operação estão em [docs/operacoes/PR-013.md](docs/operacoes/PR-013.md) e [docs/operacoes/PR-014.md](docs/operacoes/PR-014.md); as análises de dependências estão em [docs/dependencias/PR-013.md](docs/dependencias/PR-013.md) e [docs/dependencias/PR-014.md](docs/dependencias/PR-014.md).
+Senha usa Argon2id; identificador desconhecido não altera a resposta nem elimina o custo criptográfico. Sessões usam cookie `__Host` seguro, token opaco persistido apenas por hash, CSRF vinculado, origem HTTPS explícita, rotação atômica e auditoria. Há no máximo duas sessões web, a terceira exige confirmação antes de substituir a mais antiga e 12 horas sem atividade encerram a autoridade. Contas privilegiadas exigem TOTP ou código de recuperação de uso único; segredo TOTP fica cifrado e replay é bloqueado no PostgreSQL. Contratos e operação estão em [docs/operacoes/PR-013.md](docs/operacoes/PR-013.md), [docs/operacoes/PR-014.md](docs/operacoes/PR-014.md) e [docs/operacoes/PR-096B.md](docs/operacoes/PR-096B.md).
 
 ### Sessão e dispositivo mobile
 
@@ -114,13 +114,14 @@ O staging possui composição, projeto Docker, redes, volumes e segredos própri
 
 ```text
 pnpm staging:preparar
+pnpm staging:preparar-administrador
 pnpm staging:validar
 VYNTRA_CONFIRMAR_STAGING=STAGING_ISOLADO_SEM_DADOS_DE_PRODUCAO pnpm staging:subir
 pnpm staging:smoke
 pnpm staging:estado
 ```
 
-Segredos são arquivos ignorados em `.segredos/staging/`; valores nunca entram em Compose, Git, imagem, log ou parâmetro de processo. O storage cria uma chave exclusiva com leitura/escrita somente no bucket privado `vyntra-staging-midias`, sem permissão de proprietário. O TLS público persiste em volume exclusivo da borda e não depende de chave versionada. Topologia, implantação, recuperação e limites estão em [docs/operacoes/PR-005.md](docs/operacoes/PR-005.md) e [docs/operacoes/PR-096A.md](docs/operacoes/PR-096A.md); seleção e risco das imagens estão em [docs/dependencias/PR-005.md](docs/dependencias/PR-005.md) e [docs/dependencias/PR-096A.md](docs/dependencias/PR-096A.md).
+Segredos são arquivos ignorados em `.segredos/staging/`; valores nunca entram em Compose, Git, imagem, log ou parâmetro de processo. O storage cria uma chave exclusiva com leitura/escrita somente no bucket privado `vyntra-staging-midias`, sem permissão de proprietário. O TLS público persiste em volume exclusivo da borda e não depende de chave versionada. Topologia, implantação, recuperação e limites estão em [docs/operacoes/PR-005.md](docs/operacoes/PR-005.md), [docs/operacoes/PR-096A.md](docs/operacoes/PR-096A.md) e [docs/operacoes/PR-096B.md](docs/operacoes/PR-096B.md); análises de dependências estão na pasta correspondente.
 
 ## Princípios congelados
 

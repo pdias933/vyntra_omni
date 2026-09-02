@@ -126,6 +126,8 @@ Mídia fica em storage externo; disco local comporta banco, cache, imagens de co
 - comunicação MK restrita por IP/VPN quando suportada;
 - egress para integrações por allowlist quando viável.
 
+Em staging, `pnpm staging:preparar-administrador` cria sem exibir a chave de proteção, senha, segredo TOTP e dez códigos de recuperação. O serviço `provisionar_administrador` roda somente sob o perfil Compose `provisionamento`, falha fora do ambiente sintético/sanitizado e não permanece ativo. O procedimento e o aceite estão em [docs/operacoes/PR-096B.md](docs/operacoes/PR-096B.md).
+
 ## 5. Segredos
 
 Produção usa secret manager/cofre. Segredos não entram em código, imagem, Git, log ou parâmetro visível de processo.

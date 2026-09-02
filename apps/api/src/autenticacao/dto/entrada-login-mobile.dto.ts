@@ -2,6 +2,18 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString, IsUUID, Length, Matches } from 'class-validator';
 
 export class EntradaLoginMobileDto {
+  @ApiProperty({
+    description: 'Código TOTP de seis dígitos ou código de recuperação de uso único.',
+    maxLength: 32,
+    minLength: 6,
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(6, 32)
+  @Matches(/^(?:\d{6}|[A-Z2-9]{5}(?:-[A-Z2-9]{5}){3})$/iu)
+  public readonly codigo_mfa?: string;
+
   @ApiProperty({ example: 'maria.silva', maxLength: 120, minLength: 3 })
   @IsString()
   @Length(3, 120)

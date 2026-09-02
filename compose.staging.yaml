@@ -123,7 +123,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: migracao
-    image: vyntra/migracoes-staging:pr-096a
+    image: vyntra/migracoes-staging:pr-096b
     pull_policy: build
     restart: "no"
     init: true
@@ -147,12 +147,60 @@ services:
       - rede_dados_staging
     logging: *registro-staging
 
+  provisionar_administrador:
+    profiles:
+      - provisionamento
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: execucao
+    image: vyntra/provisionamento-staging:pr-096b
+    pull_policy: build
+    restart: "no"
+    init: true
+    user: "1000:0"
+    command:
+      - node
+      - dist/provisionar-administrador-staging.js
+    depends_on:
+      migrar:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    environment:
+      ADMIN_CODIGOS_RECUPERACAO_FILE: /run/secrets/codigos_recuperacao_administrador
+      ADMIN_IDENTIFICADOR: administrador
+      ADMIN_NOME_EXIBICAO: Administrador Vyntra
+      ADMIN_SENHA_FILE: /run/secrets/senha_administrador
+      ADMIN_TOTP_FILE: /run/secrets/totp_administrador
+      AMBIENTE_APLICACAO: staging
+      BANCO_URL_FILE: /run/secrets/url_postgresql
+      DADOS_PERMITIDOS: sinteticos_ou_sanitizados
+      MFA_CHAVE_PROTECAO_FILE: /run/secrets/chave_protecao_mfa
+      NODE_ENV: production
+    secrets:
+      - chave_protecao_mfa
+      - codigos_recuperacao_administrador
+      - senha_administrador
+      - totp_administrador
+      - url_postgresql
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:uid=1000,gid=0,mode=0700
+    networks:
+      - rede_dados_staging
+    logging: *registro-staging
+
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/api-staging:pr-096a
+    image: vyntra/api-staging:pr-096b
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -171,6 +219,7 @@ services:
       BANCO_URL_FILE: /run/secrets/url_postgresql
       DADOS_PERMITIDOS: sinteticos_ou_sanitizados
       ENDERECO_HTTP: 0.0.0.0
+      MFA_CHAVE_PROTECAO_FILE: /run/secrets/chave_protecao_mfa
       NODE_ENV: production
       ORIGENS_WEB_PERMITIDAS: https://omni.up100.com.br
       PORTA_HTTP: "3000"
@@ -182,6 +231,7 @@ services:
       STORAGE_FORCE_PATH_STYLE: "true"
       STORAGE_REGION: vyntra-staging
     secrets:
+      - chave_protecao_mfa
       - chave_storage_id
       - chave_storage_secreta
       - url_postgresql
@@ -222,7 +272,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
       target: execucao
-    image: vyntra/worker-fluxos-staging:pr-096a
+    image: vyntra/worker-fluxos-staging:pr-096b
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -260,7 +310,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       target: conteudo
-    image: vyntra/web-staging:pr-096a
+    image: vyntra/web-staging:pr-096b
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -293,7 +343,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       target: borda
-    image: vyntra/proxy-staging:pr-096a
+    image: vyntra/proxy-staging:pr-096b
     pull_policy: build
     restart: *reinicio-staging
     init: true
@@ -356,10 +406,14 @@ networks:
     internal: false
 
 secrets:
+  chave_protecao_mfa:
+    file: ./.segredos/staging/chave-protecao-mfa
   chave_storage_id:
     file: ./.segredos/staging/chave-storage-id
   chave_storage_secreta:
     file: ./.segredos/staging/chave-storage-secreta
+  codigos_recuperacao_administrador:
+    file: ./.segredos/staging/administrador/codigos-recuperacao-administrador
   garage_admin:
     file: ./.segredos/staging/garage-admin
   garage_metricas:
@@ -370,6 +424,10 @@ secrets:
     file: ./.segredos/staging/redis.acl
   senha_postgresql:
     file: ./.segredos/staging/senha-postgresql
+  senha_administrador:
+    file: ./.segredos/staging/administrador/senha-administrador
+  totp_administrador:
+    file: ./.segredos/staging/administrador/totp-administrador
   url_postgresql:
     file: ./.segredos/staging/url-postgresql
   url_redis:

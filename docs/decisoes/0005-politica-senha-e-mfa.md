@@ -24,3 +24,7 @@ MFA é obrigatório inicialmente para usuários privilegiados. Obrigá-lo para t
 ## Regra de implementação
 
 Autenticação real segue esta política. Parâmetros Argon2id são calibrados no hardware de produção dentro da faixa aprovada e registrados antes do piloto.
+
+## Implementação da PR 096B
+
+TOTP usa passo de 30 segundos, seis dígitos, tolerância de um passo e contador persistido para bloquear replay. O segredo é protegido por AES-256-GCM com chave fora do banco; códigos de recuperação são normalizados, armazenados somente por HMAC-SHA-256 e consumidos atomicamente. O primeiro Administrador de staging é criado por serviço one-shot, bloqueado fora de staging e sem exibir segredos. Não existe bypass temporário de MFA.

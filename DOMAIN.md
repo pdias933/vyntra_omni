@@ -66,6 +66,8 @@ Instalação (uma empresa)
 
 `CredencialSenha` associa um identificador normalizado único ao usuário e conserva somente o hash Argon2id da senha. Identificador não é identidade pública, senha nunca é recuperável e revogar a credencial não apaga usuário, auditoria ou sessões históricas.
 
+`FatorMfaTotp` associa no máximo um fator ativo ao usuário, conserva o segredo somente em envelope cifrado e registra o último contador aceito. `CodigoRecuperacaoMfa` conserva apenas HMAC do código e o instante de consumo. Contador e código só podem ser consumidos na mesma transação que emite a sessão; repetição não produz autoridade.
+
 `SessaoWeb` é uma sessão de navegador com identificador próprio, token opaco armazenado somente por hash, proteção CSRF vinculada, última atividade, limite de inatividade e versão de rotação. O segredo apresentado pelo navegador nunca é persistido. Rotação substitui token e CSRF atomicamente e renova a atividade; logout ou revogação alteram estado e motivo sem remover histórico. Um usuário possui no máximo duas sessões web ativas. Ao alcançar o limite, uma nova autenticação válida primeiro exige confirmação explícita e somente então revoga a sessão mais antiga sob serialização do PostgreSQL.
 
 `TentativaLoginWeb` registra somente hash do identificador, IP, resultado e instante. Ela sustenta os limites técnicos sem guardar identificador ou senha em claro.
@@ -105,6 +107,7 @@ Regras:
 - código de permissão vem do catálogo fechado no schema e não de texto livre;
 - `VISUALIZAR_DADO_SENSIVEL`, `EXPORTAR_HISTORICO` e `VISUALIZAR_NOTAS_TRANSVERSAIS` continuam específicos e não decorrem apenas de ser Administrador;
 - credencial válida autentica identidade, mas não concede perfil, fila ou permissão;
+- conta privilegiada exige fator MFA ativo e validação consumida; fator ausente, inválido ou repetido nega a sessão;
 - sessão web só produz contexto autenticado enquanto estiver ativa, não expirada e vinculada a usuário ativo.
 - sessão mobile só produz contexto autenticado enquanto usuário, dispositivo e sessão estiverem ativos, o access token não tiver expirado e o vínculo apresentado coincidir;
 - refresh mobile é de uso único; reutilização revoga a sessão e exige nova autenticação.

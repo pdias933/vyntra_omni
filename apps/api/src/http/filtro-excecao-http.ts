@@ -20,6 +20,7 @@ import {
   ErroDispositivoNaoConfiavel,
   ErroLimiteLoginExcedido,
   ErroLimitePareamentoQrExcedido,
+  ErroMfaInvalido,
   ErroMfaNecessario,
   ErroPareamentoQrAguardandoConfirmacao,
   ErroPareamentoQrInvalido,
@@ -103,6 +104,10 @@ const ERROS_AUTENTICACAO = {
   MFA_NECESSARIO: {
     codigo: 'MFA_NECESSARIO',
     mensagem: 'É necessário concluir a autenticação multifator.',
+  },
+  MFA_INVALIDO: {
+    codigo: 'MFA_INVALIDO',
+    mensagem: 'O código de autenticação não é válido ou já foi utilizado.',
   },
   LIMITE_PAREAMENTO_QR_EXCEDIDO: {
     codigo: 'LIMITE_DE_REQUISICOES',
@@ -191,7 +196,10 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
     if (excecao instanceof ErroConfirmacaoRevogacaoSessaoNecessaria) {
       return HttpStatus.CONFLICT;
     }
-    if (excecao instanceof ErroCredenciaisInvalidas) {
+    if (
+      excecao instanceof ErroCredenciaisInvalidas ||
+      excecao instanceof ErroMfaInvalido
+    ) {
       return HttpStatus.UNAUTHORIZED;
     }
     if (excecao instanceof ErroLimiteLoginExcedido) {
@@ -243,6 +251,9 @@ export class FiltroExcecaoHttp implements ExceptionFilter {
     }
     if (excecao instanceof ErroMfaNecessario) {
       return ERROS_AUTENTICACAO.MFA_NECESSARIO;
+    }
+    if (excecao instanceof ErroMfaInvalido) {
+      return ERROS_AUTENTICACAO.MFA_INVALIDO;
     }
     if (excecao instanceof ErroLimitePareamentoQrExcedido) {
       return ERROS_AUTENTICACAO.LIMITE_PAREAMENTO_QR_EXCEDIDO;

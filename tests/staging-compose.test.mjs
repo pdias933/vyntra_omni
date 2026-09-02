@@ -1,8 +1,14 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 
 import { parse } from 'yaml';
+import {
+  prepararAdministradorStaging,
+  prepararChaveProtecaoMfa,
+} from '../scripts/ambiente-staging.mjs';
 
 const conteudoCompose = await readFile('compose.staging.yaml', 'utf8');
 const compose = parse(conteudoCompose);
@@ -21,6 +27,7 @@ test('declara a pilha persistente de staging com publicação web separada', () 
     'api',
     'migrar',
     'postgres',
+    'provisionar_administrador',
     'proxy',
     'redis',
     'storage',
@@ -42,7 +49,12 @@ test('declara a pilha persistente de staging com publicação web separada', () 
   }
 
   for (const [nome, servico] of Object.entries(compose.services)) {
-    assert.equal(servico.restart, nome === 'migrar' ? 'no' : 'unless-stopped');
+    assert.equal(
+      servico.restart,
+      ['migrar', 'provisionar_administrador'].includes(nome)
+        ? 'no'
+        : 'unless-stopped',
+    );
     assert.equal(servico.container_name, undefined);
     assert.equal(servico.privileged, undefined);
   }
@@ -116,13 +128,17 @@ test('mantém banco, Redis e storage inacessíveis pelo host', () => {
 
 test('separa todos os segredos e não aceita credencial de produção', () => {
   assert.deepEqual(Object.keys(compose.secrets).sort(), [
+    'chave_protecao_mfa',
     'chave_storage_id',
     'chave_storage_secreta',
+    'codigos_recuperacao_administrador',
     'garage_admin',
     'garage_metricas',
     'garage_rpc',
     'redis_acl',
+    'senha_administrador',
     'senha_postgresql',
+    'totp_administrador',
     'url_postgresql',
     'url_redis',
   ]);
@@ -146,7 +162,7 @@ test('separa todos os segredos e não aceita credencial de produção', () => {
   );
   assert.match(codigoStaging, /DADOS_PERMITIDOS=sinteticos_ou_sanitizados/);
   assert.match(codigoStaging, /CHAVE_STORAGE_EXISTE_SEM_SEGREDO_LOCAL/);
-  assert.match(codigoStaging, /vyntra\/api-staging:pr-096a/);
+  assert.match(codigoStaging, /vyntra\/api-staging:pr-096b/);
   assert.match(codigoStaging, /no-new-privileges:true/);
   assert.match(codigoVerificacaoS3, /AWS4-HMAC-SHA256/);
   assert.ok(!codigoVerificacaoS3.includes('console.log(identificador'));
@@ -162,6 +178,10 @@ test('entrega à API apenas contratos por arquivo e contexto explícito', () => 
   assert.equal(ambiente.DADOS_PERMITIDOS, 'sinteticos_ou_sanitizados');
   assert.equal(ambiente.NODE_ENV, 'production');
   assert.equal(ambiente.BANCO_URL_FILE, '/run/secrets/url_postgresql');
+  assert.equal(
+    ambiente.MFA_CHAVE_PROTECAO_FILE,
+    '/run/secrets/chave_protecao_mfa',
+  );
   assert.equal(ambiente.REDIS_URL_FILE, '/run/secrets/url_redis');
   assert.equal(ambiente.STORAGE_ENDPOINT, 'http://storage:3900');
   assert.equal(ambiente.STORAGE_BUCKET, 'vyntra-staging-midias');
@@ -171,6 +191,7 @@ test('entrega à API apenas contratos por arquivo e contexto explícito', () => 
     '/run/secrets/chave_storage_secreta',
   );
   assert.deepEqual([...compose.services.api.secrets].sort(), [
+    'chave_protecao_mfa',
     'chave_storage_id',
     'chave_storage_secreta',
     'url_postgresql',
@@ -184,6 +205,19 @@ test('entrega à API apenas contratos por arquivo e contexto explícito', () => 
     'dist/worker-fluxos.js',
   ]);
   assert.equal(compose.services.worker_fluxos.environment.REDIS_URL_FILE, undefined);
+  assert.deepEqual(compose.services.provisionar_administrador.profiles, [
+    'provisionamento',
+  ]);
+  assert.deepEqual(compose.services.provisionar_administrador.command, [
+    'node',
+    'dist/provisionar-administrador-staging.js',
+  ]);
+  assert.equal(compose.services.provisionar_administrador.read_only, true);
+  assert.deepEqual(compose.services.provisionar_administrador.cap_drop, ['ALL']);
+  assert.equal(
+    compose.services.provisionar_administrador.environment.AMBIENTE_APLICACAO,
+    'staging',
+  );
 });
 
 test('ordena startup por saúde e limita privilégios e logs', () => {
@@ -236,6 +270,52 @@ test('ordena startup por saúde e limita privilégios e logs', () => {
   assert.equal(compose.services.web.read_only, true);
   assert.deepEqual(compose.services.proxy.cap_drop, ['ALL']);
   assert.deepEqual(compose.services.web.cap_drop, ['ALL']);
+});
+
+test('bootstrap do administrador exige MFA e mantém segredos fora do compose', () => {
+  const provisionador = compose.services.provisionar_administrador;
+  assert.deepEqual([...provisionador.secrets].sort(), [
+    'chave_protecao_mfa',
+    'codigos_recuperacao_administrador',
+    'senha_administrador',
+    'totp_administrador',
+    'url_postgresql',
+  ]);
+  assert.equal(
+    provisionador.environment.MFA_CHAVE_PROTECAO_FILE,
+    '/run/secrets/chave_protecao_mfa',
+  );
+  assert.match(codigoStaging, /preparar-administrador/u);
+  assert.match(codigoStaging, /nenhum valor foi exibido/u);
+  assert.ok(!conteudoCompose.includes('ADMIN_SENHA:'));
+  assert.ok(!conteudoCompose.includes('ADMIN_TOTP:'));
+});
+
+test('gera conjunto completo do administrador sem revelar ou sobrescrever', async () => {
+  const raizTemporaria = await mkdtemp(join(tmpdir(), 'vyntra-staging-'));
+  const diretorioSegredos = join(raizTemporaria, 'segredos');
+  const diretorioAdministrador = join(diretorioSegredos, 'administrador');
+  try {
+    assert.equal(await prepararChaveProtecaoMfa(diretorioSegredos), true);
+    assert.equal(await prepararChaveProtecaoMfa(diretorioSegredos), false);
+    assert.equal(
+      (await prepararAdministradorStaging(diretorioAdministrador)).length,
+      3,
+    );
+    assert.deepEqual(
+      await prepararAdministradorStaging(diretorioAdministrador),
+      [],
+    );
+    assert.equal((await stat(diretorioAdministrador)).mode & 0o777, 0o700);
+    const codigos = await readFile(
+      join(diretorioAdministrador, 'codigos-recuperacao-administrador'),
+      'utf8',
+    );
+    assert.equal(codigos.trimEnd().split('\n').length, 10);
+    assert.equal(new Set(codigos.trimEnd().split('\n')).size, 10);
+  } finally {
+    await rm(raizTemporaria, { force: true, recursive: true });
+  }
 });
 
 test('publica SPA e API na mesma origem com HTTPS e cabeçalhos defensivos', () => {

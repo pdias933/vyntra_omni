@@ -153,6 +153,9 @@ export class ControladorAutenticacaoWeb {
       enderecoIp: requisicao.socket.remoteAddress ?? '',
       identificador: entrada.identificador,
       senha: entrada.senha,
+      ...(entrada.codigo_mfa === undefined
+        ? {}
+        : { codigoMfa: entrada.codigo_mfa }),
       confirmarRevogacaoSessaoMaisAntiga:
         entrada.confirmar_revogacao_sessao_mais_antiga ?? false,
     });

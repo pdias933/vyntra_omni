@@ -117,9 +117,13 @@ Tentativas usam janela persistente de 15 minutos: cinco falhas por identificador
 - armazenamento usa Argon2id calibrado para 100–250 ms no servidor; ponto inicial: 64 MiB, 3 iterações e paralelismo 1;
 - MFA é obrigatório para Administrador e quem administra usuários/integrações, publica fluxo ou exporta histórico;
 - fatores da V1: TOTP e códigos de recuperação de uso único; SMS/WhatsApp não servem como fator único;
+- TOTP usa passo de 30 segundos, tolerância de um passo e contador aceito persistido para impedir replay distribuído;
+- segredo TOTP fica cifrado com AES-256-GCM e chave separada do banco; códigos de recuperação ficam somente como HMAC-SHA-256 e são consumidos atomicamente;
 - MFA para todos os atendentes pode ser configurado depois sem remover a obrigação dos privilegiados; WebAuthn pode ser acrescentado por decisão própria sem enfraquecer TOTP;
 - ação administrativa crítica e confirmação de novo aparelho exigem autenticação realizada há no máximo 10 minutos;
 - recuperação de credencial invalida sessões e refresh tokens e gera auditoria/alerta.
+
+O bootstrap do primeiro Administrador é operação one-shot de staging, idempotente somente para o mesmo conjunto e bloqueada fora do ambiente sintético/sanitizado. Senha, segredo TOTP e códigos nunca entram em imagem, Compose, banco em claro, Git, log ou auditoria. Não existe exceção de MFA para conta inicial.
 
 - rate limit por conta, IP, dispositivo e endpoint, sem depender de um único sinal;
 - atraso progressivo e bloqueio técnico temporário;

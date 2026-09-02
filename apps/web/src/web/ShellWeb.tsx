@@ -53,6 +53,9 @@ function mensagemErro(erro: unknown): string {
   if (codigo === 'MFA_NECESSARIO') {
     return 'Confirme o segundo fator para continuar.';
   }
+  if (codigo === 'MFA_INVALIDO') {
+    return 'Código inválido, expirado ou já utilizado.';
+  }
   if (codigo === 'LIMITE_LOGIN_EXCEDIDO') {
     return 'Aguarde alguns minutos antes de tentar novamente.';
   }
@@ -249,6 +252,8 @@ function CarregamentoInicial() {
 function TelaLogin({ aoAutenticar }: { readonly aoAutenticar: (sessao: SessaoWebDto) => void }) {
   const [identificador, definirIdentificador] = useState('');
   const [senha, definirSenha] = useState('');
+  const [codigoMfa, definirCodigoMfa] = useState('');
+  const [mfaNecessario, definirMfaNecessario] = useState(false);
   const [ocupada, definirOcupada] = useState(false);
   const [erro, definirErro] = useState<string>();
   const [confirmarSubstituicao, definirConfirmarSubstituicao] = useState(false);
@@ -260,6 +265,7 @@ function TelaLogin({ aoAutenticar }: { readonly aoAutenticar: (sessao: SessaoWeb
     try {
       const resposta = await entrarSessaoWeb({
         body: {
+          ...(mfaNecessario ? { codigo_mfa: codigoMfa } : {}),
           confirmar_revogacao_sessao_mais_antiga: confirmarSubstituicao,
           identificador,
           senha,
@@ -269,7 +275,11 @@ function TelaLogin({ aoAutenticar }: { readonly aoAutenticar: (sessao: SessaoWeb
       if (!sessaoValida(resposta.data)) throw new Error('SESSAO_WEB_INVALIDA');
       aoAutenticar(resposta.data);
     } catch (falha) {
-      if (codigoErro(falha) === 'CONFIRMACAO_REVOGACAO_SESSAO_NECESSARIA') {
+      if (codigoErro(falha) === 'MFA_NECESSARIO') {
+        definirMfaNecessario(true);
+        definirCodigoMfa('');
+        definirErro(undefined);
+      } else if (codigoErro(falha) === 'CONFIRMACAO_REVOGACAO_SESSAO_NECESSARIA') {
         definirConfirmarSubstituicao(true);
         definirErro('Você já possui duas sessões. Confirme para substituir a mais antiga.');
       } else {
@@ -294,15 +304,33 @@ function TelaLogin({ aoAutenticar }: { readonly aoAutenticar: (sessao: SessaoWeb
       <section className="login-formulario">
         <form onSubmit={(evento) => void entrar(evento)}>
           <span className="login-formulario__selo">Acesso seguro</span>
-          <h2>Boas-vindas</h2>
-          <p>Entre com suas credenciais da empresa.</p>
-          <label>Usuário ou e-mail<input autoComplete="username" autoFocus maxLength={120} onChange={(evento) => definirIdentificador(evento.target.value)} required value={identificador} /></label>
-          <label>Senha<input autoComplete="current-password" maxLength={128} minLength={12} onChange={(evento) => definirSenha(evento.target.value)} required type="password" value={senha} /></label>
+          <h2>{mfaNecessario ? 'Confirme seu acesso' : 'Boas-vindas'}</h2>
+          <p>{mfaNecessario ? 'Digite o código do autenticador ou um código de recuperação.' : 'Entre com suas credenciais da empresa.'}</p>
+          {!mfaNecessario && (
+            <>
+              <label>Usuário ou e-mail<input autoComplete="username" autoFocus maxLength={120} onChange={(evento) => definirIdentificador(evento.target.value)} required value={identificador} /></label>
+              <label>Senha<input autoComplete="current-password" maxLength={128} minLength={12} onChange={(evento) => definirSenha(evento.target.value)} required type="password" value={senha} /></label>
+            </>
+          )}
+          {mfaNecessario && (
+            <>
+              <div className="mfa-identidade"><span aria-hidden="true">✓</span><div><strong>{identificador}</strong><small>Senha confirmada</small></div></div>
+              <label>Código de segurança<input autoComplete="one-time-code" autoFocus maxLength={23} minLength={6} onChange={(evento) => definirCodigoMfa(evento.target.value.toLocaleUpperCase('pt-BR'))} placeholder="000 000" required value={codigoMfa} /></label>
+            </>
+          )}
           {confirmarSubstituicao && (
             <label className="confirmacao-sessao"><input checked={confirmarSubstituicao} onChange={(evento) => definirConfirmarSubstituicao(evento.target.checked)} type="checkbox" />Substituir minha sessão mais antiga</label>
           )}
           {erro !== undefined && <div className="erro-login" role="alert">{erro}</div>}
-          <button className="botao botao--primario botao-login" disabled={ocupada} type="submit">{ocupada ? 'Entrando…' : 'Entrar'}</button>
+          <button className="botao botao--primario botao-login" disabled={ocupada} type="submit">{ocupada ? 'Validando…' : mfaNecessario ? 'Confirmar e entrar' : 'Entrar'}</button>
+          {mfaNecessario && (
+            <button className="voltar-login" disabled={ocupada} onClick={() => {
+              definirMfaNecessario(false);
+              definirCodigoMfa('');
+              definirSenha('');
+              definirErro(undefined);
+            }} type="button">Voltar e usar outra conta</button>
+          )}
         </form>
       </section>
     </main>

@@ -245,6 +245,8 @@ O cookie da sessão é `HttpOnly`, `Secure`, `SameSite=Strict`, sem `Domain` e c
 
 Rotação usa `updateMany` condicionado pelo token atual, estado e expiração: concorrentes têm um vencedor e o segredo anterior perde autoridade. A última atividade confirmada renova a janela de inatividade de 12 horas, com persistência limitada por intervalo para evitar escrita por evento SSE. Perfil privilegiado não recebe sessão somente com senha; enquanto TOTP/código de recuperação não estiver disponível, o backend responde `MFA_NECESSARIO` e permanece em negação segura.
 
+`ServicoMfa` valida TOTP/código sem emitir autoridade. O consumo do contador ou do hash de recuperação ocorre na mesma transação que cria a sessão; duas APIs concorrentes têm no máximo um vencedor. `ServicoProtecaoMfa` cifra o segredo TOTP com AES-256-GCM autenticado e deriva hashes de recuperação por HMAC-SHA-256 usando chave montada por arquivo. O PostgreSQL guarda apenas envelope cifrado, contador e hashes. O provisionador do primeiro administrador é composição separada, one-shot e restrita a staging; ele não integra o módulo HTTP normal.
+
 Criação e revogação por limite usam advisory lock transacional derivado apenas do UUID do usuário. Dentro dessa seção serializada, o serviço conta sessões válidas, exige confirmação antes da terceira e, quando confirmado, revoga a mais antiga antes de inserir a nova. O limite não depende de Redis nem de uma instância específica da API. Logout global, revogação própria e administrativa alteram estado e gravam auditoria na mesma transação; a rota administrativa ainda passa por `ServicoAutorizacao` e pelo recurso concreto.
 
 ### 6.1.2 Autenticação mobile

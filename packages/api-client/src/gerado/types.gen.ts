@@ -153,6 +153,10 @@ export type SessaoMobileDto = {
 };
 
 export type EntradaLoginMobileDto = {
+    /**
+     * Código TOTP de seis dígitos ou código de recuperação de uso único.
+     */
+    codigo_mfa?: string;
     identificador: string;
     senha: string;
     identificador_instalacao: string;
@@ -200,6 +204,10 @@ export type ResumoPareamentoQrWebDto = {
 };
 
 export type EntradaLoginWebDto = {
+    /**
+     * Código TOTP de seis dígitos ou código de recuperação de uso único.
+     */
+    codigo_mfa?: string;
     /**
      * Confirma a substituição da sessão web ativa mais antiga quando o limite for alcançado.
      */

@@ -31,4 +31,7 @@ test('login trata expiração e substituição explícita da sessão mais antiga
   assert.match(shell, /confirmar_revogacao_sessao_mais_antiga/);
   assert.match(shell, /Substituir minha sessão mais antiga/);
   assert.match(shell, /MFA_NECESSARIO/);
+  assert.match(shell, /MFA_INVALIDO/);
+  assert.match(shell, /codigo_mfa/);
+  assert.match(shell, /autoComplete="one-time-code"/);
 });

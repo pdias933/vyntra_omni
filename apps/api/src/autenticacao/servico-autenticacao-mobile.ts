@@ -22,6 +22,7 @@ import {
   ErroCredenciaisInvalidas,
   ErroDispositivoNaoConfiavel,
   ErroLimiteLoginExcedido,
+  ErroMfaInvalido,
   ErroMfaNecessario,
 } from './erros-autenticacao.js';
 import type {
@@ -40,6 +41,7 @@ import {
   type RepositorioAutenticacaoMobile,
 } from './repositorio-autenticacao-mobile.js';
 import { ServicoSenha } from './servico-senha.js';
+import { ServicoMfa } from './servico-mfa.js';
 
 const JANELA_FALHAS_MS = 15 * 60 * 1_000;
 const LIMITE_CONTA_IP_DISPOSITIVO = 5;
@@ -76,6 +78,8 @@ export class ServicoAutenticacaoMobile {
     private readonly autorizacao: ServicoAutorizacao,
     @Inject(ServicoReleases)
     private readonly releases: ServicoReleases,
+    @Inject(ServicoMfa)
+    private readonly mfa: ServicoMfa,
   ) {}
 
   public async entrar(entrada: EntradaLoginMobile): Promise<SessaoMobileEmitida> {
@@ -122,7 +126,8 @@ export class ServicoAutenticacaoMobile {
       );
       throw new ErroCredenciaisInvalidas();
     }
-    if (credencialExigeMfa(credencial)) {
+    const exigeMfa = credencialExigeMfa(credencial);
+    if (exigeMfa && entrada.codigoMfa === undefined) {
       await this.prisma.executarTransacao(async (transacao) => {
         await this.confirmarTentativa(reserva.id, transacao);
         await this.auditoria.registrar(
@@ -141,11 +146,50 @@ export class ServicoAutenticacaoMobile {
       throw new ErroMfaNecessario();
     }
 
+    const validacaoMfa =
+      exigeMfa && entrada.codigoMfa !== undefined
+        ? await this.mfa.prepararValidacao(
+            credencial.usuarioId,
+            entrada.codigoMfa,
+            agora,
+          )
+        : undefined;
+    if (exigeMfa && validacaoMfa === undefined) {
+      await this.prisma.executarTransacao((transacao) =>
+        this.auditoria.registrar(
+          {
+            acao: 'LOGIN_MOBILE_MFA_FALHOU',
+            dadosNovos: { resultado: 'FALHA' },
+            enderecoIp: entrada.enderecoIp,
+            entidadeId: credencial.usuarioId,
+            entidadeTipo: 'USUARIO',
+            origem: 'SISTEMA',
+            tipoEvento: 'LOGIN_MOBILE_MFA_FALHOU',
+          },
+          transacao,
+        ),
+      );
+      throw new ErroMfaInvalido();
+    }
+
     const resultado = await this.prisma.executarTransacao((transacao) =>
       this.emitirSessaoEmTransacao(
         {
           agora,
-          antesDeEmitir: () => this.confirmarTentativa(reserva.id, transacao),
+          antesDeEmitir: async () => {
+            if (
+              validacaoMfa !== undefined &&
+              !(await this.mfa.consumirValidacao(
+                credencial.usuarioId,
+                validacaoMfa,
+                agora,
+                transacao,
+              ))
+            ) {
+              throw new ErroMfaInvalido();
+            }
+            await this.confirmarTentativa(reserva.id, transacao);
+          },
           dispositivo,
           enderecoIp: entrada.enderecoIp,
           nomeExibicao: credencial.nomeExibicao,

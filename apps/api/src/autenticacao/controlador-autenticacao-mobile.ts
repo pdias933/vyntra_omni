@@ -153,6 +153,9 @@ export class ControladorAutenticacaoMobile {
     const sessao = await this.autenticacao.entrar({
       enderecoIp: requisicao.socket.remoteAddress ?? '',
       identificador: entrada.identificador,
+      ...(entrada.codigo_mfa === undefined
+        ? {}
+        : { codigoMfa: entrada.codigo_mfa }),
       identificadorInstalacao: entrada.identificador_instalacao,
       ...(entrada.modelo_sanitizado === undefined
         ? {}

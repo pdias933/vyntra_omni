@@ -406,6 +406,13 @@ enum EstadoCredencialSenha {
   @@map("estado_credencial_senha")
 }
 
+enum EstadoFatorMfaTotp {
+  ATIVO
+  REVOGADO
+
+  @@map("estado_fator_mfa_totp")
+}
+
 enum EstadoSessaoWeb {
   ATIVA
   REVOGADA
@@ -677,6 +684,7 @@ model Usuario {
   perfil                         PerfilAcesso?                     @relation(fields: [perfilId], references: [id], onDelete: Restrict)
   acessosFila                    AcessoUsuarioFila[]
   credencialSenha                CredencialSenha?
+  fatorMfaTotp                   FatorMfaTotp?
   sessoesWeb                     SessaoWeb[]
   dispositivosMobile             DispositivoMobile[]
   sessoesMobile                  SessaoMobile[]
@@ -918,6 +926,35 @@ model CredencialSenha {
 
   @@index([estado, identificadorNormalizado], map: "credencial_senha_estado_identificador_idx")
   @@map("credencial_senha")
+}
+
+model FatorMfaTotp {
+  usuarioId            String             @id @map("usuario_id") @db.Uuid
+  segredoProtegido     String             @map("segredo_protegido") @db.VarChar(512)
+  ultimoContadorUsado  BigInt?            @map("ultimo_contador_usado")
+  estado               EstadoFatorMfaTotp @default(ATIVO)
+  ativadoEm            DateTime           @default(now()) @map("ativado_em") @db.Timestamptz(6)
+  revogadoEm           DateTime?          @map("revogado_em") @db.Timestamptz(6)
+  criadoEm             DateTime           @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm         DateTime           @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  usuario              Usuario            @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  codigosRecuperacao   CodigoRecuperacaoMfa[]
+
+  @@index([estado, usuarioId], map: "fator_mfa_totp_estado_usuario_idx")
+  @@map("fator_mfa_totp")
+}
+
+model CodigoRecuperacaoMfa {
+  id          String       @id @db.Uuid
+  usuarioId   String       @map("usuario_id") @db.Uuid
+  codigoHash  String       @map("codigo_hash") @db.Char(64)
+  usadoEm     DateTime?    @map("usado_em") @db.Timestamptz(6)
+  criadoEm    DateTime     @default(now()) @map("criado_em") @db.Timestamptz(6)
+  fator       FatorMfaTotp @relation(fields: [usuarioId], references: [usuarioId], onDelete: Restrict)
+
+  @@unique([usuarioId, codigoHash], map: "codigo_recuperacao_mfa_usuario_hash_key")
+  @@index([usuarioId, usadoEm], map: "codigo_recuperacao_mfa_usuario_uso_idx")
+  @@map("codigo_recuperacao_mfa")
 }
 
 model SessaoWeb {

@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomInt } from 'node:crypto';
 import {
   chmod,
   lstat,
@@ -14,6 +14,10 @@ import { fileURLToPath } from 'node:url';
 const caminhoScript = fileURLToPath(import.meta.url);
 const raizRepositorio = resolve(dirname(caminhoScript), '..');
 const diretorioSegredosPadrao = join(raizRepositorio, '.segredos', 'staging');
+const diretorioAdministradorStaging = join(
+  diretorioSegredosPadrao,
+  'administrador',
+);
 const caminhoCompose = join(raizRepositorio, 'compose.staging.yaml');
 const caminhoVerificadorStorage = join(
   raizRepositorio,
@@ -28,6 +32,35 @@ const confirmacaoObrigatoria = 'STAGING_ISOLADO_SEM_DADOS_DE_PRODUCAO';
 
 function gerarValorAleatorio() {
   return randomBytes(32).toString('base64url');
+}
+
+function codificarBase32(bytes) {
+  const alfabeto = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let acumulador = 0;
+  let bits = 0;
+  let resultado = '';
+  for (const byte of bytes) {
+    acumulador = (acumulador << 8) | byte;
+    bits += 8;
+    while (bits >= 5) {
+      bits -= 5;
+      resultado += alfabeto[(acumulador >>> bits) & 0x1f];
+      acumulador &= (1 << bits) - 1;
+    }
+  }
+  if (bits > 0) resultado += alfabeto[(acumulador << (5 - bits)) & 0x1f];
+  return resultado;
+}
+
+function gerarCodigoRecuperacao() {
+  const alfabeto = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const caracteres = Array.from(
+    { length: 20 },
+    () => alfabeto[randomInt(alfabeto.length)],
+  ).join('');
+  return [0, 5, 10, 15]
+    .map((inicio) => caracteres.slice(inicio, inicio + 5))
+    .join('-');
 }
 
 const arquivosSegredosBase = Object.freeze([
@@ -94,6 +127,37 @@ const arquivosCredencialStorage = Object.freeze([
     nome: 'chave-storage-secreta',
     modo: 0o640,
     validar: (conteudo) => /^[a-f0-9]{64}\n$/.test(conteudo),
+  },
+]);
+
+const arquivoChaveProtecaoMfa = Object.freeze({
+  nome: 'chave-protecao-mfa',
+  modo: 0o640,
+  validar: (conteudo) => /^[A-Za-z0-9_-]{43}\n$/u.test(conteudo),
+});
+
+const arquivosAdministradorStaging = Object.freeze([
+  {
+    nome: 'senha-administrador',
+    modo: 0o640,
+    validar: (conteudo) => /^[A-Za-z0-9_-]{43}\n$/u.test(conteudo),
+  },
+  {
+    nome: 'totp-administrador',
+    modo: 0o640,
+    validar: (conteudo) => /^[A-Z2-7]{32}\n$/u.test(conteudo),
+  },
+  {
+    nome: 'codigos-recuperacao-administrador',
+    modo: 0o640,
+    validar: (conteudo) => {
+      const codigos = conteudo.trimEnd().split('\n');
+      return (
+        codigos.length === 10 &&
+        new Set(codigos).size === codigos.length &&
+        codigos.every((codigo) => /^(?:[A-Z2-9]{5}-){3}[A-Z2-9]{5}$/u.test(codigo))
+      );
+    },
   },
 ]);
 
@@ -236,6 +300,76 @@ async function validarSegredosBase(diretorio = diretorioSegredosPadrao) {
   for (const definicao of arquivosSegredosBase) {
     await validarArquivo(diretorio, definicao);
   }
+}
+
+async function prepararChaveProtecaoMfa(
+  diretorio = diretorioSegredosPadrao,
+) {
+  await mkdir(diretorio, { mode: 0o700, recursive: true });
+  await validarDiretorio(diretorio);
+  const caminho = join(diretorio, arquivoChaveProtecaoMfa.nome);
+  if (await caminhoExiste(caminho)) {
+    await validarArquivo(diretorio, arquivoChaveProtecaoMfa);
+    return false;
+  }
+  await criarArquivoExclusivo(
+    caminho,
+    `${gerarValorAleatorio()}\n`,
+    arquivoChaveProtecaoMfa.modo,
+  );
+  await validarArquivo(diretorio, arquivoChaveProtecaoMfa);
+  return true;
+}
+
+async function prepararAdministradorStaging(
+  diretorio = diretorioAdministradorStaging,
+) {
+  await mkdir(diretorio, { mode: 0o700, recursive: true });
+  await validarDiretorio(diretorio);
+  const presencas = await Promise.all(
+    arquivosAdministradorStaging.map(({ nome }) =>
+      caminhoExiste(join(diretorio, nome)),
+    ),
+  );
+  const quantidadeExistente = presencas.filter(Boolean).length;
+  if (quantidadeExistente !== 0 && quantidadeExistente !== presencas.length) {
+    throw new Error('SEGREDOS_ADMINISTRADOR_STAGING_INCOMPLETOS');
+  }
+  if (quantidadeExistente === presencas.length) {
+    for (const definicao of arquivosAdministradorStaging) {
+      await validarArquivo(diretorio, definicao);
+    }
+    return [];
+  }
+  const codigos = new Set();
+  while (codigos.size < 10) codigos.add(gerarCodigoRecuperacao());
+  const conteudos = new Map([
+    ['senha-administrador', `${gerarValorAleatorio()}\n`],
+    ['totp-administrador', `${codificarBase32(randomBytes(20))}\n`],
+    [
+      'codigos-recuperacao-administrador',
+      `${Array.from(codigos).join('\n')}\n`,
+    ],
+  ]);
+  const criados = [];
+  try {
+    for (const definicao of arquivosAdministradorStaging) {
+      const caminho = join(diretorio, definicao.nome);
+      await criarArquivoExclusivo(
+        caminho,
+        conteudos.get(definicao.nome),
+        definicao.modo,
+      );
+      criados.push(caminho);
+    }
+  } catch (erro) {
+    await Promise.all(criados.map((caminho) => rm(caminho, { force: true })));
+    throw erro;
+  }
+  for (const definicao of arquivosAdministradorStaging) {
+    await validarArquivo(diretorio, definicao);
+  }
+  return arquivosAdministradorStaging.map(({ nome }) => nome);
 }
 
 async function obterEstadoCredencialStorage(diretorio = diretorioSegredosPadrao) {
@@ -477,7 +611,7 @@ function executarVerificacaoS3(modo = 'gravar-e-ler') {
       `type=bind,source=${segredoChave},target=/run/secrets/chave_storage_secreta,readonly`,
       '--entrypoint',
       'node',
-      'vyntra/api-staging:pr-096a',
+      'vyntra/api-staging:pr-096b',
       '/verificar-storage-s3.mjs',
       modo,
     ],
@@ -570,6 +704,7 @@ function exigirConfirmacao() {
 
 async function validarAmbiente() {
   await validarSegredosBase();
+  await validarArquivo(diretorioSegredosPadrao, arquivoChaveProtecaoMfa);
   const estadoCredencial = await obterEstadoCredencialStorage();
 
   if (estadoCredencial === 'PRESENTE') {
@@ -680,8 +815,19 @@ async function executarComando(comando) {
   switch (comando) {
     case 'preparar': {
       const criados = await prepararSegredosBase();
+      await prepararChaveProtecaoMfa();
       const resumo = criados.length === 0 ? 'já estavam prontos' : 'foram criados';
       console.log(`Segredos-base de staging ${resumo}; nenhum valor foi exibido.`);
+      break;
+    }
+    case 'preparar-administrador': {
+      await prepararSegredosBase();
+      await prepararChaveProtecaoMfa();
+      const criados = await prepararAdministradorStaging();
+      const resumo = criados.length === 0 ? 'já estavam prontos' : 'foram criados';
+      console.log(
+        `Segredos do administrador de staging ${resumo}; nenhum valor foi exibido.`,
+      );
       break;
     }
     case 'validar':
@@ -691,6 +837,7 @@ async function executarComando(comando) {
     case 'subir':
       exigirConfirmacao();
       await prepararSegredosBase();
+      await prepararChaveProtecaoMfa();
       await validarAmbiente();
       executarDockerCompose([
         'up',
@@ -732,7 +879,7 @@ async function executarComando(comando) {
       break;
     default:
       throw new Error(
-        'COMANDO_INVALIDO; use preparar, validar, subir, smoke, estado ou parar',
+        'COMANDO_INVALIDO; use preparar, preparar-administrador, validar, subir, smoke, estado ou parar',
       );
   }
 }
@@ -752,12 +899,15 @@ if (executadoDiretamente) {
 
 export {
   arquivosCredencialStorage,
+  arquivosAdministradorStaging,
   arquivosSegredosBase,
   armazenarCredencialStorage,
   confirmacaoObrigatoria,
   diretorioSegredosPadrao,
   endpointDockerEhLocal,
   obterEstadoCredencialStorage,
+  prepararAdministradorStaging,
+  prepararChaveProtecaoMfa,
   prepararSegredosBase,
   validarCredencialStorage,
   validarSegredosBase,

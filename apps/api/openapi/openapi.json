@@ -3548,6 +3548,12 @@
       "EntradaLoginMobileDto": {
         "type": "object",
         "properties": {
+          "codigo_mfa": {
+            "type": "string",
+            "description": "Código TOTP de seis dígitos ou código de recuperação de uso único.",
+            "maxLength": 32,
+            "minLength": 6
+          },
           "identificador": {
             "type": "string",
             "example": "maria.silva",
@@ -3744,6 +3750,13 @@
       "EntradaLoginWebDto": {
         "type": "object",
         "properties": {
+          "codigo_mfa": {
+            "type": "string",
+            "description": "Código TOTP de seis dígitos ou código de recuperação de uso único.",
+            "example": "123456",
+            "maxLength": 32,
+            "minLength": 6
+          },
           "confirmar_revogacao_sessao_mais_antiga": {
             "type": "boolean",
             "default": false,

@@ -144,8 +144,9 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | PR | Estado | Effort |
 |---:|---|---|
 | 096A | CONCLUÍDA | `high` |
+| 096B | EM ANDAMENTO | `xhigh` |
 
-`096A` foi inserida sem renumerar o lote mobile aprovado. Seu único objetivo é publicar com segurança o console web já concluído; PR097–PR107 permanecem pausadas até novo direcionamento.
+`096A` e `096B` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entrega MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging; PR097–PR107 permanecem pausadas até novo direcionamento.
 
 ## 2. Portão zero
 

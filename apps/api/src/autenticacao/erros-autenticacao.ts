@@ -34,6 +34,15 @@ export class ErroMfaNecessario extends Error {
   }
 }
 
+export class ErroMfaInvalido extends Error {
+  public readonly codigo = 'MFA_INVALIDO';
+
+  public constructor() {
+    super('MFA_INVALIDO');
+    this.name = 'ErroMfaInvalido';
+  }
+}
+
 export class ErroConfirmacaoRevogacaoSessaoNecessaria extends Error {
   public readonly codigo = 'CONFIRMACAO_REVOGACAO_SESSAO_NECESSARIA';
 
