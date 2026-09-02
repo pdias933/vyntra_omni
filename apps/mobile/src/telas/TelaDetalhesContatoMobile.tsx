@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type {
@@ -104,6 +105,7 @@ export function TelaDetalhesContatoMobile({
   readonly atendimento: ResumoAtendimentoLocal;
   readonly servico: ServicoAtendimentosMobile;
 }) {
+  const reduzirMovimento = useReducedMotion();
   const [detalhes, definirDetalhes] = useState<DetalhesContatoMobile>();
   const [financeiro, definirFinanceiro] = useState<ResumoFinanceiroContatoMobile>();
   const [carregando, definirCarregando] = useState(!acessoOffline);
@@ -351,7 +353,7 @@ export function TelaDetalhesContatoMobile({
       </ScrollView>
 
       <Modal
-        animationType="slide"
+        animationType={reduzirMovimento ? 'fade' : 'slide'}
         onRequestClose={() => definirSelecao(undefined)}
         transparent
         visible={selecao !== undefined}

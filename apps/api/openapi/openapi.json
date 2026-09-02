@@ -1213,6 +1213,256 @@
         ]
       }
     },
+    "/api/v1/mobile/atendimentos/{atendimentoId}/respostas-rapidas": {
+      "get": {
+        "operationId": "listarRespostasRapidasMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "busca",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RespostaRapidaWebDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Pesquisa respostas rápidas autorizadas no aplicativo",
+        "tags": [
+          "console-mobile"
+        ]
+      }
+    },
+    "/api/v1/mobile/atendimentos/{atendimentoId}/modelos-aprovados": {
+      "get": {
+        "operationId": "listarModelosAprovadosMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "busca",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModeloAprovadoWebDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Pesquisa mensagens aprovadas para o aplicativo",
+        "tags": [
+          "console-mobile"
+        ]
+      }
+    },
+    "/api/v1/mobile/atendimentos/{atendimentoId}/mensagens/texto": {
+      "post": {
+        "operationId": "enviarTextoMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaEnvioTextoWebDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MensagemCriadaWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Enfileira texto livre autorizado no aplicativo",
+        "tags": [
+          "console-mobile"
+        ]
+      }
+    },
+    "/api/v1/mobile/atendimentos/{atendimentoId}/mensagens/modelo-aprovado": {
+      "post": {
+        "operationId": "enviarModeloAprovadoMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaEnvioModeloWebDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MensagemCriadaWebDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Enfileira uma mensagem aprovada autorizada no aplicativo",
+        "tags": [
+          "console-mobile"
+        ]
+      }
+    },
     "/api/v1/mobile/atendimentos/{atendimentoId}/timeline": {
       "get": {
         "operationId": "obterTimelineMobile",
@@ -4350,6 +4600,121 @@
           "versao_permissoes"
         ]
       },
+      "RespostaRapidaWebDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "atalho": {
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "atalho",
+          "texto"
+        ]
+      },
+      "ModeloAprovadoWebDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "idioma": {
+            "type": "string"
+          },
+          "quantidade_parametros": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "idioma",
+          "quantidade_parametros"
+        ]
+      },
+      "EntradaEnvioTextoWebDto": {
+        "type": "object",
+        "properties": {
+          "mensagem_cliente_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "texto": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "responde_a_mensagem_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "mensagem_cliente_id",
+          "texto"
+        ]
+      },
+      "MensagemCriadaWebDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "recebida_servidor_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "estado",
+          "recebida_servidor_em"
+        ]
+      },
+      "EntradaEnvioModeloWebDto": {
+        "type": "object",
+        "properties": {
+          "mensagem_cliente_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "modelo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "parametros": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mensagem_cliente_id",
+          "modelo_id",
+          "parametros"
+        ]
+      },
       "ItemTimelineWebDto": {
         "type": "object",
         "properties": {
@@ -5066,96 +5431,6 @@
           "filtro"
         ]
       },
-      "RespostaRapidaWebDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "titulo": {
-            "type": "string"
-          },
-          "atalho": {
-            "type": "string"
-          },
-          "texto": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "titulo",
-          "atalho",
-          "texto"
-        ]
-      },
-      "ModeloAprovadoWebDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "nome": {
-            "type": "string"
-          },
-          "idioma": {
-            "type": "string"
-          },
-          "quantidade_parametros": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "id",
-          "nome",
-          "idioma",
-          "quantidade_parametros"
-        ]
-      },
-      "EntradaEnvioTextoWebDto": {
-        "type": "object",
-        "properties": {
-          "mensagem_cliente_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "texto": {
-            "type": "string",
-            "maxLength": 4096
-          },
-          "responde_a_mensagem_id": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "required": [
-          "mensagem_cliente_id",
-          "texto"
-        ]
-      },
-      "MensagemCriadaWebDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "estado": {
-            "type": "string"
-          },
-          "recebida_servidor_em": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "estado",
-          "recebida_servidor_em"
-        ]
-      },
       "EntradaReacaoWebDto": {
         "type": "object",
         "properties": {
@@ -5183,31 +5458,6 @@
           "mensagem_cliente_id",
           "mensagem_alvo_id",
           "emoji"
-        ]
-      },
-      "EntradaEnvioModeloWebDto": {
-        "type": "object",
-        "properties": {
-          "mensagem_cliente_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "modelo_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "parametros": {
-            "maxItems": 100,
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "mensagem_cliente_id",
-          "modelo_id",
-          "parametros"
         ]
       },
       "EntradaMarcarNaoLidaWebDto": {

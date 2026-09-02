@@ -20,13 +20,21 @@ import type { ContextoSessaoAutorizacao } from '../autorizacao/modelo-autorizaca
 import {
   DetalhesContatoWebDto,
   EntradaAlterarContextoWebDto,
+  EntradaEnvioModeloWebDto,
+  EntradaEnvioTextoWebDto,
   EntradaLeituraTimelineWebDto,
   MarcadorLeituraWebDto,
+  MensagemCriadaWebDto,
+  ModeloAprovadoWebDto,
   PaginaTimelineWebDto,
+  RespostaRapidaWebDto,
   ResultadoFinanceiroContatoWebDto,
 } from '../console-web/dto/console-web.dto.js';
+import { ServicoComposerWeb } from '../console-web/servico-composer-web.js';
 import { ServicoContatoAcoesWeb } from '../console-web/servico-contato-acoes-web.js';
 import { ServicoTimelineWeb } from '../console-web/servico-timeline-web.js';
+import { ExcecaoHttpCanonica } from '../http/excecao-http-canonica.js';
+import { ErroTextoLivreForaJanela } from '../janela-canal/erros-janela-canal.js';
 
 function tokenAcesso(cabecalho: string | undefined): string {
   const resultado = /^Bearer ([A-Za-z0-9_-]{43})$/u.exec(cabecalho ?? '');
@@ -61,7 +69,134 @@ export class ControladorConsoleMobile {
     private readonly timeline: ServicoTimelineWeb,
     @Inject(ServicoContatoAcoesWeb)
     private readonly contato: ServicoContatoAcoesWeb,
+    @Inject(ServicoComposerWeb)
+    private readonly composer: ServicoComposerWeb,
   ) {}
+
+  @Get('atendimentos/:atendimentoId/respostas-rapidas')
+  @ApiQuery({ name: 'busca', required: false })
+  @ApiOperation({
+    operationId: 'listarRespostasRapidasMobile',
+    summary: 'Pesquisa respostas rápidas autorizadas no aplicativo',
+  })
+  @ApiOkResponse({ type: [RespostaRapidaWebDto] })
+  public async listarRespostasRapidas(
+    @Param('atendimentoId') atendimentoId: string,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+    @Query('busca') busca?: string,
+  ): Promise<readonly RespostaRapidaWebDto[]> {
+    const sessao = await this.autenticar(autorizacao, dispositivoId, segredo);
+    const itens = await this.composer.listarRespostasRapidas(
+      sessao.contexto,
+      atendimentoId,
+      busca,
+    );
+    return itens.map((item) => new RespostaRapidaWebDto(item));
+  }
+
+  @Get('atendimentos/:atendimentoId/modelos-aprovados')
+  @ApiQuery({ name: 'busca', required: false })
+  @ApiOperation({
+    operationId: 'listarModelosAprovadosMobile',
+    summary: 'Pesquisa mensagens aprovadas para o aplicativo',
+  })
+  @ApiOkResponse({ type: [ModeloAprovadoWebDto] })
+  public async listarModelosAprovados(
+    @Param('atendimentoId') atendimentoId: string,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+    @Query('busca') busca?: string,
+  ): Promise<readonly ModeloAprovadoWebDto[]> {
+    const sessao = await this.autenticar(autorizacao, dispositivoId, segredo);
+    const itens = await this.composer.listarModelos(
+      sessao.contexto,
+      atendimentoId,
+      busca,
+    );
+    return itens.map((item) => new ModeloAprovadoWebDto(item));
+  }
+
+  @Post('atendimentos/:atendimentoId/mensagens/texto')
+  @ApiBody({ type: EntradaEnvioTextoWebDto })
+  @ApiOperation({
+    operationId: 'enviarTextoMobile',
+    summary: 'Enfileira texto livre autorizado no aplicativo',
+  })
+  @ApiOkResponse({ type: MensagemCriadaWebDto })
+  public async enviarTexto(
+    @Param('atendimentoId') atendimentoId: string,
+    @Body() entrada: EntradaEnvioTextoWebDto,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<MensagemCriadaWebDto> {
+    try {
+      const mensagem = await this.autenticacao.executarComSessaoAtual(
+        tokenAcesso(autorizacao),
+        cabecalhoObrigatorio(dispositivoId),
+        cabecalhoObrigatorio(segredo),
+        (sessao, _agora, transacao) =>
+          this.composer.enviarTexto(
+            contexto(sessao),
+            atendimentoId,
+            {
+              mensagemClienteId: entrada.mensagem_cliente_id,
+              ...(entrada.responde_a_mensagem_id === undefined
+                ? {}
+                : { respondeAMensagemId: entrada.responde_a_mensagem_id }),
+              texto: entrada.texto,
+            },
+            transacao,
+          ),
+      );
+      return new MensagemCriadaWebDto(mensagem);
+    } catch (erro) {
+      if (erro instanceof ErroTextoLivreForaJanela) {
+        throw new ExcecaoHttpCanonica(
+          409,
+          'JANELA_META_EXPIRADA',
+          'A janela de conversa expirou. Use uma mensagem aprovada.',
+        );
+      }
+      throw erro;
+    }
+  }
+
+  @Post('atendimentos/:atendimentoId/mensagens/modelo-aprovado')
+  @ApiBody({ type: EntradaEnvioModeloWebDto })
+  @ApiOperation({
+    operationId: 'enviarModeloAprovadoMobile',
+    summary: 'Enfileira uma mensagem aprovada autorizada no aplicativo',
+  })
+  @ApiOkResponse({ type: MensagemCriadaWebDto })
+  public async enviarModeloAprovado(
+    @Param('atendimentoId') atendimentoId: string,
+    @Body() entrada: EntradaEnvioModeloWebDto,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<MensagemCriadaWebDto> {
+    const mensagem = await this.autenticacao.executarComSessaoAtual(
+      tokenAcesso(autorizacao),
+      cabecalhoObrigatorio(dispositivoId),
+      cabecalhoObrigatorio(segredo),
+      (sessao, _agora, transacao) =>
+        this.composer.enviarModelo(
+          contexto(sessao),
+          atendimentoId,
+          {
+            mensagemClienteId: entrada.mensagem_cliente_id,
+            modeloId: entrada.modelo_id,
+            parametros: entrada.parametros,
+          },
+          transacao,
+        ),
+    );
+    return new MensagemCriadaWebDto(mensagem);
+  }
 
   @Get('atendimentos/:atendimentoId/timeline')
   @ApiQuery({ name: 'cursor', required: false })

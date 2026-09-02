@@ -214,6 +214,8 @@ Na PR 101, `Atendimentos` deixa de ser um placeholder e passa a exibir a projeç
 
 Na PR 102, a lista abre uma conversa mobile paginada sobre a timeline única do contato. Mensagens, atendimentos, origem empresarial, notas, eventos e submissões permanecem tipos visuais distintos; a janela Meta usa countdown e o marcador de leitura só avança após confirmação online. `Ver formulário` revela apenas campos declarados e já mascarados pelo backend. Tocar no contato abre Detalhes em pilha nativa, preservando a posição da conversa; identidade opcional, vínculos, contrato, endereço, histórico e situação financeira aparecem conforme RBAC, com `Snapshot` e `Tempo real` claramente separados. Trocar contexto exige seleção e confirmação e não altera a identidade WhatsApp.
 
+Na PR 103, o composer mobile mantém o rascunho por conversa exclusivamente no SQLCipher, abre respostas rápidas autorizadas ao digitar `/` e só limpa o texto depois que o backend confirma o envio. Com texto, a ação principal é enviar; vazio, ela abre a folha categorizada de ações do sistema. Anexo e capacidades ERP ainda não implementadas aparecem indisponíveis, sem sucesso fictício. Fora da janela Meta, texto livre é bloqueado e o operador pode selecionar apenas modelos aprovados pelo servidor, preencher todos os parâmetros e confirmar o envio. Esta etapa não transforma rascunho em pendência offline: o envio reconciliável fica reservado à PR 104.
+
 ### 4.8 Motor de Fluxos e WhatsApp Flows
 
 - Motor próprio, determinístico e configurável.

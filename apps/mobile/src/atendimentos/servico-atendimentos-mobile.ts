@@ -16,6 +16,56 @@ export class ServicoAtendimentosMobile {
     );
   }
 
+  public listarRespostasRapidas(atendimentoId: string, busca = '') {
+    return this.executar((credenciais) =>
+      this.adaptador.listarRespostasRapidas(
+        credenciais,
+        atendimentoId,
+        busca,
+      ),
+    );
+  }
+
+  public enviarTexto(
+    atendimentoId: string,
+    entrada: {
+      readonly mensagemClienteId: string;
+      readonly respondeAMensagemId?: string;
+      readonly texto: string;
+    },
+  ) {
+    return this.executar((credenciais) =>
+      this.adaptador.enviarTexto(credenciais, atendimentoId, entrada),
+    );
+  }
+
+  public listarModelosAprovados(atendimentoId: string, busca = '') {
+    return this.executar((credenciais) =>
+      this.adaptador.listarModelosAprovados(
+        credenciais,
+        atendimentoId,
+        busca,
+      ),
+    );
+  }
+
+  public enviarModeloAprovado(
+    atendimentoId: string,
+    entrada: {
+      readonly mensagemClienteId: string;
+      readonly modeloId: string;
+      readonly parametros: readonly string[];
+    },
+  ) {
+    return this.executar((credenciais) =>
+      this.adaptador.enviarModeloAprovado(
+        credenciais,
+        atendimentoId,
+        entrada,
+      ),
+    );
+  }
+
   public obterDetalhes(atendimentoId: string) {
     return this.executar((credenciais) =>
       this.adaptador.obterDetalhes(credenciais, atendimentoId),

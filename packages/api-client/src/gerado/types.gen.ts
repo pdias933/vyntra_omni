@@ -290,6 +290,38 @@ export type ResultadoAlteracaoAcessoUsuarioDto = {
     versao_permissoes: number;
 };
 
+export type RespostaRapidaWebDto = {
+    id: string;
+    titulo: string;
+    atalho: string;
+    texto: string;
+};
+
+export type ModeloAprovadoWebDto = {
+    id: string;
+    nome: string;
+    idioma: string;
+    quantidade_parametros: number;
+};
+
+export type EntradaEnvioTextoWebDto = {
+    mensagem_cliente_id: string;
+    texto: string;
+    responde_a_mensagem_id?: string;
+};
+
+export type MensagemCriadaWebDto = {
+    id: string;
+    estado: string;
+    recebida_servidor_em: string;
+};
+
+export type EntradaEnvioModeloWebDto = {
+    mensagem_cliente_id: string;
+    modelo_id: string;
+    parametros: Array<string>;
+};
+
 export type ItemTimelineWebDto = {
     id: string;
     tipo: 'EVENTO_OPERACIONAL' | 'FORMULARIO' | 'MENSAGEM' | 'NOTA_INTERNA' | 'SEPARADOR_ATENDIMENTO';
@@ -481,42 +513,10 @@ export type ListaAtendimentosWebDto = {
     filtro: 'MEUS' | 'PENDENTES' | 'NAO_LIDOS' | 'SLA' | 'EXPIRANDO' | 'EM_AUTOMACAO';
 };
 
-export type RespostaRapidaWebDto = {
-    id: string;
-    titulo: string;
-    atalho: string;
-    texto: string;
-};
-
-export type ModeloAprovadoWebDto = {
-    id: string;
-    nome: string;
-    idioma: string;
-    quantidade_parametros: number;
-};
-
-export type EntradaEnvioTextoWebDto = {
-    mensagem_cliente_id: string;
-    texto: string;
-    responde_a_mensagem_id?: string;
-};
-
-export type MensagemCriadaWebDto = {
-    id: string;
-    estado: string;
-    recebida_servidor_em: string;
-};
-
 export type EntradaReacaoWebDto = {
     mensagem_cliente_id: string;
     mensagem_alvo_id: string;
     emoji: '👍' | '❤️' | '😂' | '😮' | '😢' | '🙏';
-};
-
-export type EntradaEnvioModeloWebDto = {
-    mensagem_cliente_id: string;
-    modelo_id: string;
-    parametros: Array<string>;
 };
 
 export type EntradaMarcarNaoLidaWebDto = {
@@ -1292,6 +1292,86 @@ export type AlterarAcessoUsuarioAdministracaoResponses = {
 };
 
 export type AlterarAcessoUsuarioAdministracaoResponse = AlterarAcessoUsuarioAdministracaoResponses[keyof AlterarAcessoUsuarioAdministracaoResponses];
+
+export type ListarRespostasRapidasMobileData = {
+    body?: never;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: {
+        busca?: string;
+    };
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/respostas-rapidas';
+};
+
+export type ListarRespostasRapidasMobileResponses = {
+    200: Array<RespostaRapidaWebDto>;
+};
+
+export type ListarRespostasRapidasMobileResponse = ListarRespostasRapidasMobileResponses[keyof ListarRespostasRapidasMobileResponses];
+
+export type ListarModelosAprovadosMobileData = {
+    body?: never;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: {
+        busca?: string;
+    };
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/modelos-aprovados';
+};
+
+export type ListarModelosAprovadosMobileResponses = {
+    200: Array<ModeloAprovadoWebDto>;
+};
+
+export type ListarModelosAprovadosMobileResponse = ListarModelosAprovadosMobileResponses[keyof ListarModelosAprovadosMobileResponses];
+
+export type EnviarTextoMobileData = {
+    body: EntradaEnvioTextoWebDto;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/mensagens/texto';
+};
+
+export type EnviarTextoMobileResponses = {
+    200: MensagemCriadaWebDto;
+};
+
+export type EnviarTextoMobileResponse = EnviarTextoMobileResponses[keyof EnviarTextoMobileResponses];
+
+export type EnviarModeloAprovadoMobileData = {
+    body: EntradaEnvioModeloWebDto;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/mensagens/modelo-aprovado';
+};
+
+export type EnviarModeloAprovadoMobileResponses = {
+    200: MensagemCriadaWebDto;
+};
+
+export type EnviarModeloAprovadoMobileResponse = EnviarModeloAprovadoMobileResponses[keyof EnviarModeloAprovadoMobileResponses];
 
 export type ObterTimelineMobileData = {
     body?: never;

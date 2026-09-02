@@ -3,19 +3,29 @@ import {
   client,
   confirmarLeituraTimelineMobile,
   consultarFinanceiroContatoMobile,
+  enviarModeloAprovadoMobile,
+  enviarTextoMobile,
   obterDetalhesContatoMobile,
   obterTimelineMobile,
+  listarModelosAprovadosMobile,
+  listarRespostasRapidasMobile,
 } from '@vyntra/api-client';
 
 import { CONFIGURACAO_APLICATIVO } from '../configuracao-aplicativo';
 import type { CredenciaisSincronizacaoAplicativo } from '../autenticacao/servico-autenticacao-aplicativo';
 import {
   normalizarDetalhesContatoMobile,
+  normalizarMensagemCriadaMobile,
+  normalizarModelosAprovadosMobile,
   normalizarPaginaTimelineMobile,
+  normalizarRespostasRapidasMobile,
   normalizarResumoFinanceiroMobile,
   normalizarVersaoMarcador,
   type DetalhesContatoMobile,
+  type MensagemCriadaMobile,
+  type ModeloAprovadoMobile,
   type PaginaTimelineMobile,
+  type RespostaRapidaMobile,
   type ResumoFinanceiroContatoMobile,
 } from './modelo-atendimento-mobile';
 
@@ -71,6 +81,96 @@ function opcoesAutenticadas(credenciais: CredenciaisSincronizacaoAplicativo) {
 client.setConfig({ baseUrl: CONFIGURACAO_APLICATIVO.servidor });
 
 export class AdaptadorAtendimentosHttp {
+  public async listarRespostasRapidas(
+    credenciais: CredenciaisSincronizacaoAplicativo,
+    atendimentoId: string,
+    busca = '',
+  ): Promise<readonly RespostaRapidaMobile[]> {
+    const resposta = await listarRespostasRapidasMobile({
+      ...opcoesAutenticadas(credenciais),
+      path: { atendimentoId },
+      query: { busca },
+    });
+    try {
+      return normalizarRespostasRapidasMobile(exigirDado(resposta));
+    } catch (erro) {
+      if (erro instanceof ErroAtendimentoMobile) throw erro;
+      throw new ErroAtendimentoMobile('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+    }
+  }
+
+  public async enviarTexto(
+    credenciais: CredenciaisSincronizacaoAplicativo,
+    atendimentoId: string,
+    entrada: {
+      readonly mensagemClienteId: string;
+      readonly respondeAMensagemId?: string;
+      readonly texto: string;
+    },
+  ): Promise<MensagemCriadaMobile> {
+    const resposta = await enviarTextoMobile({
+      ...opcoesAutenticadas(credenciais),
+      body: {
+        mensagem_cliente_id: entrada.mensagemClienteId,
+        ...(entrada.respondeAMensagemId === undefined
+          ? {}
+          : { responde_a_mensagem_id: entrada.respondeAMensagemId }),
+        texto: entrada.texto,
+      },
+      path: { atendimentoId },
+    });
+    try {
+      return normalizarMensagemCriadaMobile(exigirDado(resposta));
+    } catch (erro) {
+      if (erro instanceof ErroAtendimentoMobile) throw erro;
+      throw new ErroAtendimentoMobile('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+    }
+  }
+
+  public async listarModelosAprovados(
+    credenciais: CredenciaisSincronizacaoAplicativo,
+    atendimentoId: string,
+    busca = '',
+  ): Promise<readonly ModeloAprovadoMobile[]> {
+    const resposta = await listarModelosAprovadosMobile({
+      ...opcoesAutenticadas(credenciais),
+      path: { atendimentoId },
+      query: { busca },
+    });
+    try {
+      return normalizarModelosAprovadosMobile(exigirDado(resposta));
+    } catch (erro) {
+      if (erro instanceof ErroAtendimentoMobile) throw erro;
+      throw new ErroAtendimentoMobile('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+    }
+  }
+
+  public async enviarModeloAprovado(
+    credenciais: CredenciaisSincronizacaoAplicativo,
+    atendimentoId: string,
+    entrada: {
+      readonly mensagemClienteId: string;
+      readonly modeloId: string;
+      readonly parametros: readonly string[];
+    },
+  ): Promise<MensagemCriadaMobile> {
+    const resposta = await enviarModeloAprovadoMobile({
+      ...opcoesAutenticadas(credenciais),
+      body: {
+        mensagem_cliente_id: entrada.mensagemClienteId,
+        modelo_id: entrada.modeloId,
+        parametros: [...entrada.parametros],
+      },
+      path: { atendimentoId },
+    });
+    try {
+      return normalizarMensagemCriadaMobile(exigirDado(resposta));
+    } catch (erro) {
+      if (erro instanceof ErroAtendimentoMobile) throw erro;
+      throw new ErroAtendimentoMobile('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+    }
+  }
+
   public async obterTimeline(
     credenciais: CredenciaisSincronizacaoAplicativo,
     atendimentoId: string,

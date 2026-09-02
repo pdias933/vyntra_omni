@@ -776,3 +776,14 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - dados de cadastro declaram `SNAPSHOT`; financeiro usa `TEMPO_REAL` ou falha explícita e nunca cai para snapshot;
 - troca de cliente/contrato exige `ALTERAR_CONTEXTO_CLIENTE`, pertencimento exato, versão esperada e confirmação visual; esconder o controle no app não substitui a autorização;
 - marcador local de não lida só é limpo após sucesso do servidor, impedindo sucesso aparente durante falha ou revogação.
+
+## 33. Composer mobile da PR 103
+
+- catálogo de respostas rápidas e modelos aprovados exige bearer atual, UUID do dispositivo e segredo do vínculo; o app não declara usuário, perfil, fila ou permissão;
+- cada envio revalida sessão e aparelho dentro da transação e reutiliza autorização central por atendimento, fila, responsabilidade e estado;
+- texto livre fora da janela Meta falha no backend com código canônico, independentemente da aparência do cliente;
+- modelo aprovado é identificado somente pelo cadastro interno retornado pelo servidor; parâmetros têm contrato fechado, limite e preenchimento obrigatório;
+- o rascunho fica exclusivamente no SQLCipher, limitado a 4.096 caracteres, não entra em log, telemetria, SecureStore ou snapshot enviado ao servidor;
+- falha, `401`, `403`, conflito ou janela expirada preserva o texto; somente a confirmação positiva remove o rascunho;
+- a PR 103 não envia offline nem cria pendência silenciosa: botão desabilitado conserva apenas o rascunho até a reconciliação segura da PR 104;
+- ação ERP, Flow, nota ou anexo sem caso de uso implementado permanece desabilitada; cliente não simula efeito nem chama MK, Meta ou storage diretamente.

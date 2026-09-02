@@ -8,6 +8,7 @@ import { CofreReplicaLocal } from './cofre-replica-local';
 
 const NOME_BANCO = 'vyntra-omni.db';
 const CHAVE_HEXADECIMAL = /^[a-f0-9]{64}$/u;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 export const FILTROS_ATENDIMENTOS_MOBILE = [
   'MEUS',
@@ -302,6 +303,37 @@ export class RepositorioReplicaLocal {
       atendimentoId,
     );
     return linha === null ? undefined : this.mapearResumoAtendimento(linha);
+  }
+
+  public async obterRascunho(conversaId: string): Promise<string> {
+    if (!UUID.test(conversaId)) throw new Error('RASCUNHO_INVALIDO');
+    const banco = await this.abrir();
+    const linha = await banco.getFirstAsync<{ readonly texto: string }>(
+      'SELECT texto FROM rascunho WHERE conversa_id = ?',
+      conversaId,
+    );
+    return linha?.texto ?? '';
+  }
+
+  public async salvarRascunho(conversaId: string, texto: string): Promise<void> {
+    if (!UUID.test(conversaId) || texto.length > 4_096 || texto.includes('\u0000')) {
+      throw new Error('RASCUNHO_INVALIDO');
+    }
+    const banco = await this.abrir();
+    if (texto.length === 0) {
+      await banco.runAsync('DELETE FROM rascunho WHERE conversa_id = ?', conversaId);
+      return;
+    }
+    await banco.runAsync(
+      `INSERT INTO rascunho (conversa_id, texto, atualizado_em)
+       VALUES (?, ?, ?)
+       ON CONFLICT(conversa_id) DO UPDATE SET
+         texto = excluded.texto,
+         atualizado_em = excluded.atualizado_em`,
+      conversaId,
+      texto,
+      new Date().toISOString(),
+    );
   }
 
   public async listarTimeline(

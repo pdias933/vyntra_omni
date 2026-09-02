@@ -11,6 +11,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type {
@@ -18,6 +19,7 @@ import type {
   PaginaTimelineMobile,
 } from '../atendimentos/modelo-atendimento-mobile';
 import type { ServicoAtendimentosMobile } from '../atendimentos/servico-atendimentos-mobile';
+import { ComposerMobile } from '../componentes/ComposerMobile';
 import type {
   ItemTimelineLocal,
   RepositorioReplicaLocal,
@@ -195,6 +197,7 @@ export function TelaConversaMobile({
   readonly repositorio: RepositorioReplicaLocal;
   readonly servico: ServicoAtendimentosMobile;
 }) {
+  const reduzirMovimento = useReducedMotion();
   const lista = useRef<FlatList<ItemTimelineMobile>>(null);
   const leituraEmVoo = useRef<string | undefined>(undefined);
   const primeiraPosicao = useRef(false);
@@ -379,10 +382,23 @@ export function TelaConversaMobile({
           )}
           scrollEventThrottle={80}
           showsVerticalScrollIndicator={false}
+          style={estilos.listaTimeline}
+        />
+      )}
+      {!erro && (
+        <ComposerMobile
+          acessoOffline={acessoOffline}
+          aoAbrirDetalhes={aoAbrirDetalhes}
+          aoEnviado={carregar}
+          atendimentoId={atendimento.atendimentoId}
+          conversaId={atendimento.conversaId}
+          janelaAberta={janelaAberta}
+          repositorio={repositorio}
+          servico={servico}
         />
       )}
       <Modal
-        animationType="slide"
+        animationType={reduzirMovimento ? 'fade' : 'slide'}
         onRequestClose={() => definirFormularioAberto(undefined)}
         transparent
         visible={formularioAberto !== undefined}
@@ -466,6 +482,7 @@ const estilos = StyleSheet.create({
   iniciais: { color: '#4A5B53', fontSize: 16, fontWeight: '700' },
   interno: { alignSelf: 'center', backgroundColor: '#EEF1EF', borderRadius: 14, marginBottom: 9, maxWidth: '88%', padding: 11 },
   janelaMeta: { alignItems: 'center', backgroundColor: '#F2FBF5', borderBottomColor: '#DCEBE1', borderBottomWidth: 1, flexDirection: 'row', gap: 7, minHeight: 35, paddingHorizontal: ESPACOS.grande },
+  listaTimeline: { flex: 1 },
   metaEvento: { color: CORES.textoSecundario, fontSize: 10, marginTop: 1 },
   metaMensagem: { alignItems: 'center', alignSelf: 'flex-end', flexDirection: 'row', gap: 3, marginTop: 3 },
   nomeContato: { color: CORES.texto, fontSize: 16, fontWeight: '700' },

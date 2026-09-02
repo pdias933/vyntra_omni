@@ -344,6 +344,8 @@ Upload offline avançado de imagem, áudio, vídeo e PDF, com retomada parcial, 
 
 `RASCUNHO` é texto não enviado e local ao aparelho.
 
+Desde a PR 103, o rascunho é persistido por `conversa_id` na tabela criptografada já existente, com limite de 4.096 caracteres. Digitar `/` consulta respostas rápidas autorizadas no backend; escolher uma apenas substitui o texto. Falha, revogação ou janela encerrada preserva o rascunho, e somente a aceitação confirmada do servidor o remove. Sem rede, a PR 103 salva o texto, mas não cria envio nem pendência; essa transição pertence integralmente à reconciliação da PR 104.
+
 Ao tocar Enviar sem rede, criar `AGUARDANDO_CONEXAO` com:
 
 ```text
@@ -444,6 +446,8 @@ O botão dedicado ao lado do anexo, ativo/visível com o campo vazio, abre um bo
 - solicitar WhatsApp Flow.
 
 O app nunca chama MK/Meta diretamente. Botão invisível não é segurança; a API revalida tudo.
+
+Na PR 103, a folha do composer organiza capacidades em `Cliente e financeiro`, `Suporte` e `Atendimento`. Somente abrir Detalhes e os envios de texto/modelo já possuem caso de uso ativo; anexo e ações ERP/Flow/notas permanecem desabilitados até suas entregas próprias. Fora da janela Meta, a interface carrega exclusivamente o catálogo de modelos aprovados devolvido pelo backend, exige todos os parâmetros declarados e não oferece texto livre como atalho. Folhas usam deslocamento curto ou `fade` quando “Reduzir Movimento” estiver ativo.
 
 ## 14. Diagnóstico
 

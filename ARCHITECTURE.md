@@ -840,3 +840,19 @@ ControladorConsoleMobile
 ```
 
 A réplica SQLCipher fornece somente a janela recente já incluída no snapshot autorizado. Histórico anterior é paginado no PostgreSQL e nunca inventado a partir de eventos mínimos. A pilha nativa conserva a instância da conversa enquanto Detalhes está aberta. Formulários passam pelo projetor central: somente campos declarados na estrutura interna entram no DTO e `VISUALIZAR_DADO_SENSIVEL` decide revelar ou mascarar o valor. O JSON protegido integral, referência externa e identificadores do ERP não chegam ao app ou à web.
+
+### 13.24 Composer mobile
+
+`ComposerMobile` é estado de apresentação: texto e rascunho usam vocabulário do produto, enquanto o adapter é a única camada que conhece as rotas OpenAPI. A API autentica bearer, dispositivo e segredo do vínculo antes de reutilizar o serviço central de composição. Escritas repetem essa autenticação dentro da transação que cria a mensagem.
+
+```text
+ComposerMobile
+  ├── RepositorioReplicaLocal → rascunho SQLCipher por conversa
+  └── ServicoAtendimentosMobile → renovação única após 401
+        ↓
+AdaptadorAtendimentosHttp → SDK OpenAPI gerado
+        ↓ bearer + vínculo do aparelho
+ControladorConsoleMobile → ServicoComposerWeb → domínio de mensagens
+```
+
+Respostas rápidas apenas preenchem o campo; catálogo e envio de modelo aprovado continuam autoritativos no backend. Texto livre fora da janela Meta retorna `JANELA_META_EXPIRADA`, mesmo que o cliente tente contornar o bloqueio visual. O rascunho é removido somente depois da resposta positiva. A PR 103 não cria caixa de saída local: offline conserva texto, e a PR 104 será responsável por pendência, sincronização anterior ao envio e revisão de mudanças concorrentes.

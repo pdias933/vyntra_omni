@@ -123,6 +123,26 @@ export interface ResumoFinanceiroContatoMobile {
   readonly origem: 'INDISPONIVEL' | 'TEMPO_REAL';
 }
 
+export interface RespostaRapidaMobile {
+  readonly atalho: string;
+  readonly id: string;
+  readonly texto: string;
+  readonly titulo: string;
+}
+
+export interface MensagemCriadaMobile {
+  readonly estado: string;
+  readonly id: string;
+  readonly recebidaServidorEm: string;
+}
+
+export interface ModeloAprovadoMobile {
+  readonly id: string;
+  readonly idioma: string;
+  readonly nome: string;
+  readonly quantidadeParametros: number;
+}
+
 function objeto(valor: unknown): Record<string, unknown> {
   if (valor === null || typeof valor !== 'object' || Array.isArray(valor)) {
     throw new Error('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
@@ -499,4 +519,54 @@ export function normalizarResumoFinanceiroMobile(
     }),
     origem: resposta.origem,
   };
+}
+
+export function normalizarRespostasRapidasMobile(
+  valor: unknown,
+): readonly RespostaRapidaMobile[] {
+  if (!Array.isArray(valor) || valor.length > 20) {
+    throw new Error('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+  }
+  return valor.map((recebida) => {
+    const resposta = objeto(recebida);
+    chavesExatas(resposta, ['atalho', 'id', 'texto', 'titulo']);
+    return {
+      atalho: texto(resposta.atalho, 80),
+      id: uuid(resposta.id),
+      texto: texto(resposta.texto, 4_096),
+      titulo: texto(resposta.titulo, 200),
+    };
+  });
+}
+
+export function normalizarMensagemCriadaMobile(valor: unknown): MensagemCriadaMobile {
+  const mensagem = objeto(valor);
+  chavesExatas(mensagem, ['estado', 'id', 'recebida_servidor_em']);
+  return {
+    estado: texto(mensagem.estado, 64),
+    id: uuid(mensagem.id),
+    recebidaServidorEm: instante(mensagem.recebida_servidor_em),
+  };
+}
+
+export function normalizarModelosAprovadosMobile(
+  valor: unknown,
+): readonly ModeloAprovadoMobile[] {
+  if (!Array.isArray(valor) || valor.length > 20) {
+    throw new Error('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+  }
+  return valor.map((recebido) => {
+    const modelo = objeto(recebido);
+    chavesExatas(modelo, ['id', 'idioma', 'nome', 'quantidade_parametros']);
+    const quantidadeParametros = inteiro(modelo.quantidade_parametros);
+    if (quantidadeParametros > 100) {
+      throw new Error('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+    }
+    return {
+      id: uuid(modelo.id),
+      idioma: texto(modelo.idioma, 20),
+      nome: texto(modelo.nome, 200),
+      quantidadeParametros,
+    };
+  });
 }

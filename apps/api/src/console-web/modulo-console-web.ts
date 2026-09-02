@@ -18,7 +18,7 @@ import { ServicoTimelineWeb } from './servico-timeline-web.js';
 
 @Module({
   controllers: [ControladorConsoleWeb],
-  exports: [ServicoContatoAcoesWeb, ServicoTimelineWeb],
+  exports: [ServicoComposerWeb, ServicoContatoAcoesWeb, ServicoTimelineWeb],
   imports: [
     ModuloAutenticacao,
     ModuloAutorizacao,
