@@ -1401,6 +1401,68 @@
         ]
       }
     },
+    "/api/v1/mobile/atendimentos/{atendimentoId}/mensagens/texto/reconciliar": {
+      "post": {
+        "operationId": "reconciliarTextoMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaReconciliarTextoMobileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoReconciliacaoTextoMobileDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Reconcilia e enfileira uma pendência de texto do aplicativo",
+        "tags": [
+          "console-mobile"
+        ]
+      }
+    },
     "/api/v1/mobile/atendimentos/{atendimentoId}/mensagens/modelo-aprovado": {
       "post": {
         "operationId": "enviarModeloAprovadoMobile",
@@ -4688,6 +4750,86 @@
           "id",
           "estado",
           "recebida_servidor_em"
+        ]
+      },
+      "EntradaReconciliarTextoMobileDto": {
+        "type": "object",
+        "properties": {
+          "mensagem_cliente_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "texto": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "criada_dispositivo_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sequencia_observada": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$"
+          },
+          "versao_atribuicao_observada": {
+            "type": "number",
+            "minimum": 0
+          },
+          "versao_estado_observada": {
+            "type": "number",
+            "minimum": 0
+          },
+          "versao_contexto_observada": {
+            "type": "number",
+            "minimum": 0
+          },
+          "janela_expira_em_observada": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "mensagem_cliente_id",
+          "texto",
+          "criada_dispositivo_em",
+          "sequencia_observada",
+          "versao_atribuicao_observada",
+          "versao_estado_observada",
+          "versao_contexto_observada",
+          "janela_expira_em_observada"
+        ]
+      },
+      "ResultadoReconciliacaoTextoMobileDto": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "type": "string",
+            "enum": [
+              "ENVIADA_PARA_FILA",
+              "REVISAO_NECESSARIA"
+            ]
+          },
+          "motivos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ATRIBUICAO_ALTERADA",
+                "CONTEXTO_ALTERADO",
+                "ESTADO_ALTERADO",
+                "JANELA_ALTERADA",
+                "JANELA_EXPIRADA",
+                "TIMELINE_ALTERADA"
+              ]
+            }
+          },
+          "mensagem": {
+            "$ref": "#/components/schemas/MensagemCriadaWebDto"
+          }
+        },
+        "required": [
+          "estado",
+          "motivos"
         ]
       },
       "EntradaEnvioModeloWebDto": {

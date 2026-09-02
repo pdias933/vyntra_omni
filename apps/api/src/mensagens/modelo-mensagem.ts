@@ -76,5 +76,29 @@ export interface ContextoSaidaMensagem {
   readonly contatoId: string;
   readonly contaWhatsAppId: string;
   readonly filaId: string;
+  readonly janelaExpiraEm: Date | undefined;
   readonly permiteEnvio: boolean;
+  readonly versaoAtribuicao: number;
+  readonly versaoContexto: number;
+  readonly versaoEstado: number;
+}
+
+export const MOTIVOS_REVISAO_PENDENCIA_TEXTO = [
+  'ATRIBUICAO_ALTERADA',
+  'CONTEXTO_ALTERADO',
+  'ESTADO_ALTERADO',
+  'JANELA_ALTERADA',
+  'JANELA_EXPIRADA',
+  'TIMELINE_ALTERADA',
+] as const;
+
+export type MotivoRevisaoPendenciaTexto =
+  (typeof MOTIVOS_REVISAO_PENDENCIA_TEXTO)[number];
+
+export interface ObservacaoPendenciaTexto {
+  readonly janelaExpiraEm: Date;
+  readonly sequenciaEvento: bigint;
+  readonly versaoAtribuicao: number;
+  readonly versaoContexto: number;
+  readonly versaoEstado: number;
 }

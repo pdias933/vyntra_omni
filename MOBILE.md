@@ -344,7 +344,7 @@ Upload offline avançado de imagem, áudio, vídeo e PDF, com retomada parcial, 
 
 `RASCUNHO` é texto não enviado e local ao aparelho.
 
-Desde a PR 103, o rascunho é persistido por `conversa_id` na tabela criptografada já existente, com limite de 4.096 caracteres. Digitar `/` consulta respostas rápidas autorizadas no backend; escolher uma apenas substitui o texto. Falha, revogação ou janela encerrada preserva o rascunho, e somente a aceitação confirmada do servidor o remove. Sem rede, a PR 103 salva o texto, mas não cria envio nem pendência; essa transição pertence integralmente à reconciliação da PR 104.
+Desde a PR 103, o rascunho é persistido por `conversa_id` na tabela criptografada já existente, com limite de 4.096 caracteres. Digitar `/` consulta respostas rápidas autorizadas no backend; escolher uma apenas substitui o texto. Falha, revogação ou janela encerrada preserva o rascunho, e somente a aceitação confirmada do servidor o remove. A PR 104 concretiza a transição offline: depois de validar a autorização assinada vigente e o usuário responsável observado, o mesmo commit SQLCipher cria a pendência e remove o rascunho. Falha local conserva o texto original.
 
 Ao tocar Enviar sem rede, criar `AGUARDANDO_CONEXAO` com:
 
@@ -356,8 +356,10 @@ texto
 criada_dispositivo_em
 sequencia_observada
 versao_atribuicao_observada
+versao_estado_observada
+versao_contexto_observada
 usuario_responsavel_observado
-janela_observada
+janela_expira_em_observada
 ```
 
 Não mostrar como `ENVIADA`.
@@ -372,6 +374,8 @@ Ao voltar:
 4. recalcular janela Meta;
 5. enviar automaticamente somente se não houve mudança relevante;
 6. caso contrário, mudar para `REVISAO_NECESSARIA`.
+
+A PR 104 somente inicia esse processamento em segundo plano depois de o motor alcançar `CONECTADO`, isto é, após snapshot/lotes e abertura do WebSocket sem lacuna. Erro transitório conserva `AGUARDANDO_CONEXAO`; `401`/`403`, expiração da janela ou divergência de sequência/versão exigem revisão. O servidor usa o mesmo lock `autoridade-saida:<atendimento_id>` de resgate, transferência e despacho automático, revalida a autorização dentro da transação e compara a observação com a fonte de verdade antes de criar a mensagem.
 
 Mudanças relevantes incluem:
 
@@ -393,6 +397,8 @@ Enviar mesmo assim
 ```
 
 “Enviar mesmo assim” cria novo comando; o backend ainda pode recusar por autorização, estado ou janela. Não existe bypass local.
+
+`Editar` devolve o conteúdo ao rascunho criptografado e remove a pendência no mesmo commit local. `Descartar` remove somente a pendência selecionada. `Enviar mesmo assim` exige conexão, gera uma nova chave idempotente e só remove a pendência após aceitação do servidor. Nenhuma dessas ações registra texto, identificadores ou observações em telemetria.
 
 ## 10. Permissão removida
 

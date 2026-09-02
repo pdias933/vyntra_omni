@@ -35,6 +35,10 @@ import { ServicoContatoAcoesWeb } from '../console-web/servico-contato-acoes-web
 import { ServicoTimelineWeb } from '../console-web/servico-timeline-web.js';
 import { ExcecaoHttpCanonica } from '../http/excecao-http-canonica.js';
 import { ErroTextoLivreForaJanela } from '../janela-canal/erros-janela-canal.js';
+import {
+  EntradaReconciliarTextoMobileDto,
+  ResultadoReconciliacaoTextoMobileDto,
+} from './dto-console-mobile.js';
 
 function tokenAcesso(cabecalho: string | undefined): string {
   const resultado = /^Bearer ([A-Za-z0-9_-]{43})$/u.exec(cabecalho ?? '');
@@ -163,6 +167,47 @@ export class ControladorConsoleMobile {
       }
       throw erro;
     }
+  }
+
+  @Post('atendimentos/:atendimentoId/mensagens/texto/reconciliar')
+  @ApiBody({ type: EntradaReconciliarTextoMobileDto })
+  @ApiOperation({
+    operationId: 'reconciliarTextoMobile',
+    summary: 'Reconcilia e enfileira uma pendência de texto do aplicativo',
+  })
+  @ApiOkResponse({ type: ResultadoReconciliacaoTextoMobileDto })
+  public async reconciliarTexto(
+    @Param('atendimentoId') atendimentoId: string,
+    @Body() entrada: EntradaReconciliarTextoMobileDto,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<ResultadoReconciliacaoTextoMobileDto> {
+    const resultado = await this.autenticacao.executarComSessaoAtual(
+      tokenAcesso(autorizacao),
+      cabecalhoObrigatorio(dispositivoId),
+      cabecalhoObrigatorio(segredo),
+      (sessao, _agora, transacao) =>
+        this.composer.reconciliarTexto(
+          contexto(sessao),
+          atendimentoId,
+          {
+            criadaDispositivoEm: new Date(entrada.criada_dispositivo_em),
+            janelaExpiraEmObservada: new Date(
+              entrada.janela_expira_em_observada,
+            ),
+            mensagemClienteId: entrada.mensagem_cliente_id,
+            sequenciaObservada: BigInt(entrada.sequencia_observada),
+            texto: entrada.texto,
+            versaoAtribuicaoObservada:
+              entrada.versao_atribuicao_observada,
+            versaoContextoObservada: entrada.versao_contexto_observada,
+            versaoEstadoObservada: entrada.versao_estado_observada,
+          },
+          transacao,
+        ),
+    );
+    return new ResultadoReconciliacaoTextoMobileDto(resultado);
   }
 
   @Post('atendimentos/:atendimentoId/mensagens/modelo-aprovado')

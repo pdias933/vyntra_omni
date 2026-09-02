@@ -51,8 +51,23 @@ export class RepositorioMensagensPrisma implements RepositorioMensagens {
     const atendimento = await transacao.atendimento.findFirst({
       select: {
         contaWhatsAppOrigemId: true,
-        conversa: { select: { contatoId: true } },
+        contexto: { select: { versao: true } },
+        conversa: {
+          select: {
+            contatoId: true,
+            contato: {
+              select: {
+                janelasAtendimentoCanal: {
+                  select: { expiraEm: true },
+                  where: { contaWhatsAppId },
+                },
+              },
+            },
+          },
+        },
         filaAtualId: true,
+        versaoAtribuicao: true,
+        versaoEstado: true,
       },
       where: {
         contaWhatsAppOrigemId: contaWhatsAppId,
@@ -69,8 +84,25 @@ export class RepositorioMensagensPrisma implements RepositorioMensagens {
       contaWhatsAppId: atendimento.contaWhatsAppOrigemId,
       contatoId: atendimento.conversa.contatoId,
       filaId: atendimento.filaAtualId as string,
+      janelaExpiraEm:
+        atendimento.conversa.contato.janelasAtendimentoCanal[0]?.expiraEm,
       permiteEnvio: true,
+      versaoAtribuicao: atendimento.versaoAtribuicao,
+      versaoContexto: atendimento.contexto?.versao ?? 0,
+      versaoEstado: atendimento.versaoEstado,
     };
+  }
+
+  public async houveEventoNaConversaApos(
+    conversaId: string,
+    sequenciaEvento: bigint,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    return (
+      (await transacao.eventoDominio.count({
+        where: { conversaId, sequenciaEvento: { gt: sequenciaEvento } },
+      })) > 0
+    );
   }
 
   public async obterContextoSaidaAutomatica(

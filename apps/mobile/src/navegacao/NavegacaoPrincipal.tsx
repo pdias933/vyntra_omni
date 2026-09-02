@@ -15,6 +15,7 @@ import type {
   RepositorioReplicaLocal,
   ResumoAtendimentoLocal,
 } from '../offline/repositorio-replica-local';
+import type { ServicoPendenciasSaidaMobile } from '../offline/servico-pendencias-saida-mobile';
 import type { EstadoSincronizacaoMobile } from '../sincronizacao/motor-sincronizacao-mobile';
 import { TelaListaAtendimentos } from '../telas/TelaListaAtendimentos';
 import { TelaConversaMobile } from '../telas/TelaConversaMobile';
@@ -42,12 +43,14 @@ function FluxoAtendimentos({
   estadoSincronizacao,
   repositorio,
   servico,
+  servicoPendencias,
   usuarioId,
 }: {
   readonly acessoOffline: boolean;
   readonly estadoSincronizacao: EstadoSincronizacaoMobile;
   readonly repositorio: RepositorioReplicaLocal;
   readonly servico: ServicoAtendimentosMobile;
+  readonly servicoPendencias: ServicoPendenciasSaidaMobile;
   readonly usuarioId: string;
 }) {
   const reduzirMovimento = useReducedMotion();
@@ -83,6 +86,8 @@ function FluxoAtendimentos({
             atendimento={route.params.atendimento}
             repositorio={repositorio}
             servico={servico}
+            servicoPendencias={servicoPendencias}
+            usuarioId={usuarioId}
           />
         )}
       </PilhaAtendimentos.Screen>
@@ -231,6 +236,7 @@ export function NavegacaoPrincipal({
   politicaVersao,
   repositorio,
   servicoAtendimentos,
+  servicoPendencias,
   saindo,
   sessao,
 }: {
@@ -242,6 +248,7 @@ export function NavegacaoPrincipal({
   readonly politicaVersao?: PoliticaVersaoAplicativo;
   readonly repositorio: RepositorioReplicaLocal;
   readonly servicoAtendimentos: ServicoAtendimentosMobile;
+  readonly servicoPendencias: ServicoPendenciasSaidaMobile;
   readonly saindo: boolean;
   readonly sessao: SessaoAplicativo;
 }) {
@@ -274,10 +281,11 @@ export function NavegacaoPrincipal({
       <Abas.Screen name="Atendimentos">
         {() => (
           <FluxoAtendimentos
-            acessoOffline={sessao.acessoOffline}
+            acessoOffline={estadoSincronizacao !== 'CONECTADO'}
             estadoSincronizacao={estadoSincronizacao}
             repositorio={repositorio}
             servico={servicoAtendimentos}
+            servicoPendencias={servicoPendencias}
             usuarioId={sessao.usuarioId}
           />
         )}

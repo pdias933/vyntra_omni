@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 
-import { ErroIdempotenciaMensagemDivergente, ErroTransicaoMensagemInvalida } from '../dist/mensagens/erros-mensagem.js';
+import { ErroIdempotenciaMensagemDivergente, ErroRevisaoPendenciaTextoNecessaria, ErroTransicaoMensagemInvalida } from '../dist/mensagens/erros-mensagem.js';
 import { ErroTextoLivreForaJanela } from '../dist/janela-canal/erros-janela-canal.js';
 import { MaquinaSaidaMensagem } from '../dist/mensagens/maquina-saida-mensagem.js';
 import { ServicoMensagensSaida } from '../dist/mensagens/servico-mensagens-saida.js';
@@ -91,8 +91,14 @@ function criarServico(sobrescritas = {}) {
       contaWhatsAppId: ids.conta,
       contatoId: ids.contato,
       filaId: ids.fila,
+      janelaExpiraEm: new Date('2026-09-01T18:00:00Z'),
       permiteEnvio: true,
+      versaoAtribuicao: sobrescritas.versaoAtribuicao ?? 7,
+      versaoContexto: sobrescritas.versaoContexto ?? 3,
+      versaoEstado: sobrescritas.versaoEstado ?? 5,
     }),
+    houveEventoNaConversaApos: async () =>
+      sobrescritas.houveEvento === true,
     obterContextoSaidaAutomatica: async () =>
       sobrescritas.contextoAutomatico === false
         ? undefined
@@ -241,6 +247,59 @@ test('reuso divergente da chave do cliente é rejeitado', async () => {
     servico.criarTexto(sessao, { ...entrada, texto: 'divergente' }, {}, () => agora),
     ErroIdempotenciaMensagemDivergente,
   );
+});
+
+test('pendência offline sem mudança é criada sob a mesma autoridade', async () => {
+  const { estado, servico } = criarServico();
+  const sessao = { estado: 'ATIVA', expiraEm: new Date('2099-01-01'), sessaoId: ids.sessao, usuarioId: ids.usuario };
+  const mensagem = await servico.criarTexto(sessao, {
+    atendimentoId: ids.atendimento,
+    contaWhatsAppId: ids.conta,
+    conversaId: ids.conversa,
+    criadaDispositivoEm: new Date('2026-09-01T11:55:00Z'),
+    filaId: ids.fila,
+    mensagemClienteId: randomUUID(),
+    observacaoOffline: {
+      janelaExpiraEm: new Date('2026-09-01T18:00:00Z'),
+      sequenciaEvento: 41n,
+      versaoAtribuicao: 7,
+      versaoContexto: 3,
+      versaoEstado: 5,
+    },
+    texto: 'Mensagem criada sem rede',
+  }, {}, () => agora);
+  assert.equal(mensagem.criadaDispositivoEm.toISOString(), '2026-09-01T11:55:00.000Z');
+  assert.equal(estado.mensagens.length, 1);
+});
+
+test('mudança de timeline ou contexto exige revisão sem criar mensagem', async () => {
+  const cenario = criarServico({ houveEvento: true, versaoContexto: 4 });
+  const sessao = { estado: 'ATIVA', expiraEm: new Date('2099-01-01'), sessaoId: ids.sessao, usuarioId: ids.usuario };
+  await assert.rejects(
+    cenario.servico.criarTexto(sessao, {
+      atendimentoId: ids.atendimento,
+      contaWhatsAppId: ids.conta,
+      conversaId: ids.conversa,
+      criadaDispositivoEm: new Date('2026-09-01T11:55:00Z'),
+      filaId: ids.fila,
+      mensagemClienteId: randomUUID(),
+      observacaoOffline: {
+        janelaExpiraEm: new Date('2026-09-01T18:00:00Z'),
+        sequenciaEvento: 41n,
+        versaoAtribuicao: 7,
+        versaoContexto: 3,
+        versaoEstado: 5,
+      },
+      texto: 'Exige revisão',
+    }, {}, () => agora),
+    (erro) => {
+      assert.ok(erro instanceof ErroRevisaoPendenciaTextoNecessaria);
+      assert.deepEqual(erro.motivos, ['CONTEXTO_ALTERADO', 'TIMELINE_ALTERADA']);
+      return true;
+    },
+  );
+  assert.equal(cenario.estado.mensagens.length, 0);
+  assert.equal(cenario.estado.eventos.length, 0);
 });
 
 test('mensagem aprovada valida catálogo e pode sair com a janela encerrada', async () => {

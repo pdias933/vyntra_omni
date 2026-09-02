@@ -787,3 +787,14 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - falha, `401`, `403`, conflito ou janela expirada preserva o texto; somente a confirmação positiva remove o rascunho;
 - a PR 103 não envia offline nem cria pendência silenciosa: botão desabilitado conserva apenas o rascunho até a reconciliação segura da PR 104;
 - ação ERP, Flow, nota ou anexo sem caso de uso implementado permanece desabilitada; cliente não simula efeito nem chama MK, Meta ou storage diretamente.
+
+## 34. Offline e reconciliação mobile da PR 104
+
+- a pendência nasce somente enquanto a autorização offline assinada está válida e vinculada ao mesmo usuário, sessão, dispositivo e instalação; estar sem rede não amplia escopo;
+- o SQLCipher guarda texto e observação mínima, nunca access/refresh token, segredo do vínculo, dado ERP ou mídia; snapshot não apaga a pendência e logout/revogação integral apagam toda a réplica;
+- reconciliação só começa após REST e WebSocket convergirem; `CONECTANDO` ou `SINCRONIZANDO` não autoriza envio;
+- a API reautentica bearer, dispositivo e vínculo, adquire `autoridade-saida:<atendimento_id>` e então revalida RBAC, fila, recurso, responsável, estado e janela dentro da transação;
+- versões de atribuição, estado e contexto, expiração observada e eventos posteriores da conversa são comparados no servidor; cliente não declara que o contexto permaneceu seguro;
+- qualquer mudança relevante produz revisão conservadora sem criar mensagem; falha transitória permanece aguardando em vez de aparentar falha terminal ou sucesso;
+- “enviar mesmo assim” cria novo comando idempotente pela rota normal e nunca ignora autorização, atribuição, estado ou janela atuais;
+- texto, motivos associados ao contato, UUIDs e observações da pendência não entram em log, auditoria ou telemetria; somente resultado e contadores agregados podem ser observados.

@@ -74,6 +74,23 @@ interface LinhaNotaTimelineLocal {
   readonly ocorrido_em: string;
 }
 
+interface LinhaPendenciaSaidaTextoLocal {
+  readonly atendimento_id: string;
+  readonly chave_idempotencia: string;
+  readonly conversa_id: string;
+  readonly criada_em: string;
+  readonly estado: EstadoPendenciaSaidaTextoLocal;
+  readonly id: string;
+  readonly janela_observada: string;
+  readonly motivos_revisao: string;
+  readonly sequencia_observada: string;
+  readonly texto: string;
+  readonly usuario_responsavel_observado: string;
+  readonly versao_atribuicao: number;
+  readonly versao_contexto: number;
+  readonly versao_estado: number;
+}
+
 export interface ResumoAtendimentoLocal {
   readonly atendimentoId: string;
   readonly contatoId: string;
@@ -113,6 +130,37 @@ export interface EstadoReplicaLocal {
   readonly precisaRessincronizar: boolean;
   readonly sequenciaEvento: string;
   readonly versaoPermissoes: number;
+}
+
+export type EstadoPendenciaSaidaTextoLocal =
+  | 'AGUARDANDO_CONEXAO'
+  | 'REVISAO_NECESSARIA';
+
+export type MotivoRevisaoPendenciaLocal =
+  | 'ACESSO_ALTERADO'
+  | 'ATENDIMENTO_INDISPONIVEL'
+  | 'ATRIBUICAO_ALTERADA'
+  | 'CONTEXTO_ALTERADO'
+  | 'ESTADO_ALTERADO'
+  | 'JANELA_ALTERADA'
+  | 'JANELA_EXPIRADA'
+  | 'TIMELINE_ALTERADA';
+
+export interface PendenciaSaidaTextoLocal {
+  readonly atendimentoId: string;
+  readonly chaveIdempotencia: string;
+  readonly conversaId: string;
+  readonly criadaEm: string;
+  readonly estado: EstadoPendenciaSaidaTextoLocal;
+  readonly id: string;
+  readonly janelaObservada: string;
+  readonly motivosRevisao: readonly MotivoRevisaoPendenciaLocal[];
+  readonly sequenciaObservada: string;
+  readonly texto: string;
+  readonly usuarioResponsavelObservado: string;
+  readonly versaoAtribuicao: number;
+  readonly versaoContexto: number;
+  readonly versaoEstado: number;
 }
 
 type ParametroSql = boolean | number | string | null;
@@ -336,6 +384,206 @@ export class RepositorioReplicaLocal {
     );
   }
 
+  public async criarPendenciaSaidaTexto(entrada: {
+    readonly atendimentoId: string;
+    readonly chaveIdempotencia: string;
+    readonly conversaId: string;
+    readonly criadaEm: string;
+    readonly id: string;
+    readonly texto: string;
+    readonly usuarioId: string;
+  }): Promise<PendenciaSaidaTextoLocal> {
+    const criadaEm = new Date(entrada.criadaEm);
+    if (
+      ![
+        entrada.atendimentoId,
+        entrada.chaveIdempotencia,
+        entrada.conversaId,
+        entrada.id,
+        entrada.usuarioId,
+      ].every((valor) => UUID.test(valor)) ||
+      entrada.texto.trim().length < 1 ||
+      entrada.texto.length > 4_096 ||
+      entrada.texto.includes('\u0000') ||
+      !Number.isFinite(criadaEm.getTime()) ||
+      criadaEm.toISOString() !== entrada.criadaEm
+    ) {
+      throw new Error('PENDENCIA_SAIDA_TEXTO_INVALIDA');
+    }
+    const banco = await this.abrir();
+    let criada: PendenciaSaidaTextoLocal | undefined;
+    await banco.withExclusiveTransactionAsync(async (transacao) => {
+      const observacao = await transacao.getFirstAsync<{
+        readonly janela_expira_em: string | null;
+        readonly sequencia_evento: string;
+        readonly usuario_responsavel_id: string | null;
+        readonly versao_atribuicao: number;
+        readonly versao_contexto: number;
+        readonly versao_estado: number;
+      }>(
+        `SELECT resumo.janela_expira_em, estado.sequencia_evento,
+          atendimento.usuario_responsavel_id,
+          atendimento.versao_atribuicao, atendimento.versao_contexto,
+          atendimento.versao_estado
+         FROM atendimento
+         JOIN conversa ON conversa.id = atendimento.conversa_id
+         JOIN resumo_atendimento resumo
+           ON resumo.atendimento_id = atendimento.id
+         JOIN estado_replica estado ON estado.id = 1
+           AND estado.precisa_ressincronizar = 0
+         WHERE atendimento.id = ? AND atendimento.conversa_id = ?
+           AND atendimento.estado = 'EM_ATENDIMENTO'
+           AND atendimento.modo = 'HUMANO'
+           AND atendimento.usuario_responsavel_id = ?`,
+        entrada.atendimentoId,
+        entrada.conversaId,
+        entrada.usuarioId,
+      );
+      if (
+        observacao === null ||
+        observacao.janela_expira_em === null ||
+        new Date(observacao.janela_expira_em) <= new Date(entrada.criadaEm)
+      ) {
+        throw new Error('PENDENCIA_SAIDA_TEXTO_NAO_AUTORIZADA');
+      }
+      await transacao.runAsync(
+        `INSERT INTO pendencia_saida_texto
+          (id, conversa_id, atendimento_id, texto, chave_idempotencia,
+           versao_atribuicao, criada_em, estado, sequencia_observada,
+           versao_estado, versao_contexto, usuario_responsavel_observado,
+           janela_observada, motivos_revisao)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'AGUARDANDO_CONEXAO', ?, ?, ?, ?, ?, '[]')`,
+        entrada.id,
+        entrada.conversaId,
+        entrada.atendimentoId,
+        entrada.texto.trim(),
+        entrada.chaveIdempotencia,
+        observacao.versao_atribuicao,
+        entrada.criadaEm,
+        observacao.sequencia_evento,
+        observacao.versao_estado,
+        observacao.versao_contexto,
+        observacao.usuario_responsavel_id,
+        observacao.janela_expira_em,
+      );
+      await transacao.runAsync(
+        'DELETE FROM rascunho WHERE conversa_id = ?',
+        entrada.conversaId,
+      );
+      criada = {
+        atendimentoId: entrada.atendimentoId,
+        chaveIdempotencia: entrada.chaveIdempotencia,
+        conversaId: entrada.conversaId,
+        criadaEm: entrada.criadaEm,
+        estado: 'AGUARDANDO_CONEXAO',
+        id: entrada.id,
+        janelaObservada: observacao.janela_expira_em,
+        motivosRevisao: [],
+        sequenciaObservada: observacao.sequencia_evento,
+        texto: entrada.texto.trim(),
+        usuarioResponsavelObservado:
+          observacao.usuario_responsavel_id as string,
+        versaoAtribuicao: observacao.versao_atribuicao,
+        versaoContexto: observacao.versao_contexto,
+        versaoEstado: observacao.versao_estado,
+      };
+    });
+    this.publicarMudanca();
+    if (criada === undefined) throw new Error('PENDENCIA_SAIDA_TEXTO_INVALIDA');
+    return criada;
+  }
+
+  public async listarPendenciasSaidaTexto(
+    conversaId?: string,
+  ): Promise<readonly PendenciaSaidaTextoLocal[]> {
+    if (conversaId !== undefined && !UUID.test(conversaId)) {
+      throw new Error('PENDENCIA_SAIDA_TEXTO_INVALIDA');
+    }
+    const banco = await this.abrir();
+    const linhas = await banco.getAllAsync<LinhaPendenciaSaidaTextoLocal>(
+      `SELECT id, conversa_id, atendimento_id, texto, chave_idempotencia,
+        versao_atribuicao, criada_em, estado, sequencia_observada,
+        versao_estado, versao_contexto, usuario_responsavel_observado,
+        janela_observada, motivos_revisao
+       FROM pendencia_saida_texto
+       ${conversaId === undefined ? '' : 'WHERE conversa_id = ?'}
+       ORDER BY criada_em, id
+       LIMIT 100`,
+      ...(conversaId === undefined ? [] : [conversaId]),
+    );
+    return linhas.map((linha) => this.mapearPendencia(linha));
+  }
+
+  public async marcarPendenciaParaRevisao(
+    id: string,
+    motivos: readonly MotivoRevisaoPendenciaLocal[],
+  ): Promise<void> {
+    if (!UUID.test(id) || motivos.length < 1 || motivos.length > 8) {
+      throw new Error('PENDENCIA_SAIDA_TEXTO_INVALIDA');
+    }
+    const permitidos = new Set<MotivoRevisaoPendenciaLocal>([
+      'ACESSO_ALTERADO',
+      'ATENDIMENTO_INDISPONIVEL',
+      'ATRIBUICAO_ALTERADA',
+      'CONTEXTO_ALTERADO',
+      'ESTADO_ALTERADO',
+      'JANELA_ALTERADA',
+      'JANELA_EXPIRADA',
+      'TIMELINE_ALTERADA',
+    ]);
+    if (motivos.some((motivo) => !permitidos.has(motivo))) {
+      throw new Error('PENDENCIA_SAIDA_TEXTO_INVALIDA');
+    }
+    const banco = await this.abrir();
+    await banco.runAsync(
+      `UPDATE pendencia_saida_texto
+       SET estado = 'REVISAO_NECESSARIA', motivos_revisao = ?
+       WHERE id = ?`,
+      JSON.stringify([...new Set(motivos)]),
+      id,
+    );
+    this.publicarMudanca();
+  }
+
+  public async concluirPendenciaSaidaTexto(id: string): Promise<void> {
+    if (!UUID.test(id)) throw new Error('PENDENCIA_SAIDA_TEXTO_INVALIDA');
+    const banco = await this.abrir();
+    await banco.runAsync('DELETE FROM pendencia_saida_texto WHERE id = ?', id);
+    this.publicarMudanca();
+  }
+
+  public async editarPendenciaComoRascunho(id: string): Promise<string> {
+    if (!UUID.test(id)) throw new Error('PENDENCIA_SAIDA_TEXTO_INVALIDA');
+    const banco = await this.abrir();
+    let texto = '';
+    await banco.withExclusiveTransactionAsync(async (transacao) => {
+      const pendencia = await transacao.getFirstAsync<{
+        readonly conversa_id: string;
+        readonly texto: string;
+      }>(
+        'SELECT conversa_id, texto FROM pendencia_saida_texto WHERE id = ?',
+        id,
+      );
+      if (pendencia === null) throw new Error('PENDENCIA_SAIDA_TEXTO_AUSENTE');
+      texto = pendencia.texto;
+      await transacao.runAsync(
+        `INSERT INTO rascunho (conversa_id, texto, atualizado_em)
+         VALUES (?, ?, ?)
+         ON CONFLICT(conversa_id) DO UPDATE SET
+           texto = excluded.texto, atualizado_em = excluded.atualizado_em`,
+        pendencia.conversa_id,
+        pendencia.texto,
+        new Date().toISOString(),
+      );
+      await transacao.runAsync(
+        'DELETE FROM pendencia_saida_texto WHERE id = ?',
+        id,
+      );
+    });
+    this.publicarMudanca();
+    return texto;
+  }
+
   public async listarTimeline(
     conversaId: string,
   ): Promise<readonly ItemTimelineLocal[]> {
@@ -465,8 +713,8 @@ export class RepositorioReplicaLocal {
         `INSERT INTO atendimento
           (id, conversa_id, conta_origem_id, estado, fila_id, modo,
            motivo_espera, usuario_responsavel_id, versao_atribuicao,
-           versao_estado, atualizado_em)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           versao_estado, atualizado_em, versao_contexto)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         snapshot.atendimentos.map((item) => [
           item.id,
           item.conversaId,
@@ -479,6 +727,7 @@ export class RepositorioReplicaLocal {
           item.versaoAtribuicao,
           item.versaoEstado,
           item.atualizadoEm,
+          item.versaoContexto,
         ]),
       );
       await executarPreparado(
@@ -735,7 +984,7 @@ export class RepositorioReplicaLocal {
       'PRAGMA user_version',
     );
     let atual = versao?.user_version;
-    if (atual !== 0 && atual !== 1 && atual !== 2 && atual !== 3) {
+    if (atual !== 0 && atual !== 1 && atual !== 2 && atual !== 3 && atual !== 4) {
       throw new Error('VERSAO_REPLICA_LOCAL_INCOMPATIVEL');
     }
     if (atual === 0) {
@@ -926,6 +1175,29 @@ export class RepositorioReplicaLocal {
           PRAGMA user_version = 3;
         `);
       });
+      atual = 3;
+    }
+    if (atual === 3) {
+      await banco.withExclusiveTransactionAsync(async (transacao) => {
+        await transacao.execAsync(`
+          ALTER TABLE atendimento ADD COLUMN versao_contexto INTEGER
+            NOT NULL DEFAULT 0 CHECK (versao_contexto >= 0);
+          ALTER TABLE pendencia_saida_texto ADD COLUMN sequencia_observada TEXT
+            NOT NULL DEFAULT '0';
+          ALTER TABLE pendencia_saida_texto ADD COLUMN versao_estado INTEGER
+            NOT NULL DEFAULT 0 CHECK (versao_estado >= 0);
+          ALTER TABLE pendencia_saida_texto ADD COLUMN versao_contexto INTEGER
+            NOT NULL DEFAULT 0 CHECK (versao_contexto >= 0);
+          ALTER TABLE pendencia_saida_texto ADD COLUMN usuario_responsavel_observado TEXT
+            NOT NULL DEFAULT '';
+          ALTER TABLE pendencia_saida_texto ADD COLUMN janela_observada TEXT
+            NOT NULL DEFAULT '';
+          ALTER TABLE pendencia_saida_texto ADD COLUMN motivos_revisao TEXT
+            NOT NULL DEFAULT '[]';
+          UPDATE estado_replica SET precisa_ressincronizar = 1;
+          PRAGMA user_version = 4;
+        `);
+      });
     }
   }
 
@@ -975,5 +1247,39 @@ export class RepositorioReplicaLocal {
         ? {}
         : { usuarioResponsavelId: linha.usuario_responsavel_id }),
     };
+  }
+
+  private mapearPendencia(
+    linha: LinhaPendenciaSaidaTextoLocal,
+  ): PendenciaSaidaTextoLocal {
+    const motivos = this.lerListaMotivos(linha.motivos_revisao);
+    return {
+      atendimentoId: linha.atendimento_id,
+      chaveIdempotencia: linha.chave_idempotencia,
+      conversaId: linha.conversa_id,
+      criadaEm: linha.criada_em,
+      estado: linha.estado,
+      id: linha.id,
+      janelaObservada: linha.janela_observada,
+      motivosRevisao: motivos,
+      sequenciaObservada: linha.sequencia_observada,
+      texto: linha.texto,
+      usuarioResponsavelObservado: linha.usuario_responsavel_observado,
+      versaoAtribuicao: linha.versao_atribuicao,
+      versaoContexto: linha.versao_contexto,
+      versaoEstado: linha.versao_estado,
+    };
+  }
+
+  private lerListaMotivos(valor: string): readonly MotivoRevisaoPendenciaLocal[] {
+    try {
+      const lido: unknown = JSON.parse(valor);
+      return Array.isArray(lido)
+        ? lido.filter((item): item is MotivoRevisaoPendenciaLocal =>
+            typeof item === 'string')
+        : [];
+    } catch {
+      return [];
+    }
   }
 }

@@ -116,6 +116,7 @@ export interface AtendimentoSnapshotMobile {
   readonly ultimaMensagemResumo: string;
   readonly usuarioResponsavelId?: string;
   readonly versaoAtribuicao: number;
+  readonly versaoContexto: number;
   readonly versaoEstado: number;
 }
 export interface MensagemSnapshotMobile {
@@ -338,6 +339,7 @@ function normalizarAtendimento(valor: unknown): AtendimentoSnapshotMobile {
       'ultimaAtividadeEm',
       'ultimaMensagemResumo',
       'versaoAtribuicao',
+      'versaoContexto',
       'versaoEstado',
     ],
     [
@@ -381,6 +383,7 @@ function normalizarAtendimento(valor: unknown): AtendimentoSnapshotMobile {
       ? {}
       : { usuarioResponsavelId: uuid(lido.usuarioResponsavelId) }),
     versaoAtribuicao: inteiro(lido.versaoAtribuicao),
+    versaoContexto: inteiro(lido.versaoContexto),
     versaoEstado: inteiro(lido.versaoEstado),
   };
 }

@@ -25,6 +25,10 @@ import type {
 } from '../atendimentos/modelo-atendimento-mobile';
 import type { ServicoAtendimentosMobile } from '../atendimentos/servico-atendimentos-mobile';
 import type { RepositorioReplicaLocal } from '../offline/repositorio-replica-local';
+import type {
+  PendenciaSaidaTextoLocal,
+} from '../offline/repositorio-replica-local';
+import type { ServicoPendenciasSaidaMobile } from '../offline/servico-pendencias-saida-mobile';
 import { CORES, ESPACOS, RAIOS } from '../tema';
 
 const GRUPOS_ACOES = [
@@ -73,6 +77,8 @@ export function ComposerMobile({
   janelaAberta,
   repositorio,
   servico,
+  servicoPendencias,
+  usuarioId,
 }: {
   readonly acessoOffline: boolean;
   readonly aoAbrirDetalhes: () => void;
@@ -82,6 +88,8 @@ export function ComposerMobile({
   readonly janelaAberta: boolean;
   readonly repositorio: RepositorioReplicaLocal;
   readonly servico: ServicoAtendimentosMobile;
+  readonly servicoPendencias: ServicoPendenciasSaidaMobile;
+  readonly usuarioId: string;
 }) {
   const reduzirMovimento = useReducedMotion();
   const campo = useRef<TextInput>(null);
@@ -99,6 +107,9 @@ export function ComposerMobile({
   const [modeloSelecionado, definirModeloSelecionado] = useState<ModeloAprovadoMobile>();
   const [parametros, definirParametros] = useState<readonly string[]>([]);
   const [carregandoModelos, definirCarregandoModelos] = useState(false);
+  const [pendencias, definirPendencias] = useState<
+    readonly PendenciaSaidaTextoLocal[]
+  >([]);
 
   const persistirRascunho = useCallback((valor: string): Promise<void> => {
     const proximo = filaSalvamento.current
@@ -127,6 +138,25 @@ export function ComposerMobile({
       void persistirRascunho(textoAtual.current).catch(() => undefined);
     };
   }, [conversaId, persistirRascunho, repositorio]);
+
+  useEffect(() => {
+    let ativo = true;
+    const carregar = () => {
+      void repositorio.listarPendenciasSaidaTexto(conversaId)
+        .then((itens) => {
+          if (ativo) definirPendencias(itens);
+        })
+        .catch(() => {
+          if (ativo) definirErro('As pendências locais não puderam ser lidas.');
+        });
+    };
+    carregar();
+    const parar = repositorio.observarMudancas(carregar);
+    return () => {
+      ativo = false;
+      parar();
+    };
+  }, [conversaId, repositorio]);
 
   useEffect(() => {
     if (!texto.startsWith('/') || acessoOffline) return;
@@ -164,7 +194,30 @@ export function ComposerMobile({
     const normalizado = texto.trim();
     if (normalizado.length === 0 || ocupado) return;
     if (acessoOffline) {
-      definirErro('Sem conexão. O envio offline será preparado na próxima etapa; seu rascunho está salvo.');
+      definirOcupado(true);
+      definirErro(undefined);
+      try {
+        if (salvamento.current !== undefined) clearTimeout(salvamento.current);
+        await filaSalvamento.current.catch(() => undefined);
+        await servicoPendencias.criar({
+          atendimentoId,
+          conversaId,
+          texto: normalizado,
+          usuarioId,
+        });
+        textoAtual.current = '';
+        definirTexto('');
+        definirRespostas([]);
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
+      } catch {
+        definirErro(
+          'Não foi possível guardar o envio. O rascunho foi preservado.',
+        );
+      } finally {
+        definirOcupado(false);
+      }
       return;
     }
     if (!janelaAberta) {
@@ -247,10 +300,150 @@ export function ComposerMobile({
     aoAbrirDetalhes();
   }
 
+  async function editarPendencia(pendencia: PendenciaSaidaTextoLocal) {
+    if (ocupado) return;
+    definirOcupado(true);
+    definirErro(undefined);
+    try {
+      const recuperado = await servicoPendencias.editarComoRascunho(
+        pendencia.id,
+      );
+      alterarTexto(recuperado);
+      campo.current?.focus();
+    } catch {
+      definirErro('Não foi possível editar esta pendência.');
+    } finally {
+      definirOcupado(false);
+    }
+  }
+
+  async function descartarPendencia(pendencia: PendenciaSaidaTextoLocal) {
+    if (ocupado) return;
+    definirOcupado(true);
+    definirErro(undefined);
+    try {
+      await servicoPendencias.descartar(pendencia.id);
+    } catch {
+      definirErro('Não foi possível descartar esta pendência.');
+    } finally {
+      definirOcupado(false);
+    }
+  }
+
+  async function enviarPendenciaMesmoAssim(
+    pendencia: PendenciaSaidaTextoLocal,
+  ) {
+    if (ocupado || acessoOffline) return;
+    definirOcupado(true);
+    definirErro(undefined);
+    try {
+      await servicoPendencias.enviarMesmoAssim(pendencia);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await aoEnviado();
+    } catch (falha) {
+      definirErro(mensagemFalha(falha));
+    } finally {
+      definirOcupado(false);
+    }
+  }
+
+  async function tentarReconciliar() {
+    if (ocupado || acessoOffline) return;
+    definirOcupado(true);
+    definirErro(undefined);
+    try {
+      await servicoPendencias.reconciliarAguardando();
+    } catch {
+      definirErro('Não foi possível reconciliar agora. Tente novamente.');
+    } finally {
+      definirOcupado(false);
+    }
+  }
+
   const possuiTexto = texto.trim().length > 0;
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={estilos.area}>
+        {pendencias.map((pendencia) => (
+          <View
+            accessibilityLiveRegion="polite"
+            key={pendencia.id}
+            style={[
+              estilos.pendencia,
+              pendencia.estado === 'REVISAO_NECESSARIA' &&
+                estilos.pendenciaRevisao,
+            ]}
+          >
+            <View style={estilos.cabecalhoPendencia}>
+              <Ionicons
+                color={
+                  pendencia.estado === 'REVISAO_NECESSARIA'
+                    ? '#8A5A00'
+                    : CORES.textoSecundario
+                }
+                name={
+                  pendencia.estado === 'REVISAO_NECESSARIA'
+                    ? 'alert-circle-outline'
+                    : 'cloud-offline-outline'
+                }
+                size={17}
+              />
+              <Text style={estilos.tituloPendencia}>
+                {pendencia.estado === 'REVISAO_NECESSARIA'
+                  ? 'Revisão necessária'
+                  : 'Aguardando conexão'}
+              </Text>
+            </View>
+            <Text numberOfLines={3} style={estilos.textoPendencia}>
+              {pendencia.texto}
+            </Text>
+            {pendencia.estado === 'REVISAO_NECESSARIA' && (
+              <>
+                <Text style={estilos.descricaoPendencia}>
+                  A conversa ou sua responsabilidade mudou antes do envio.
+                </Text>
+                <View style={estilos.acoesPendencia}>
+                  <Pressable
+                    disabled={ocupado}
+                    onPress={() => void editarPendencia(pendencia)}
+                    style={estilos.acaoPendencia}
+                  >
+                    <Text style={estilos.textoAcaoPendencia}>Editar</Text>
+                  </Pressable>
+                  <Pressable
+                    disabled={ocupado}
+                    onPress={() => void descartarPendencia(pendencia)}
+                    style={estilos.acaoPendencia}
+                  >
+                    <Text style={estilos.textoAcaoPendencia}>Descartar</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityState={{ disabled: ocupado || acessoOffline }}
+                    disabled={ocupado || acessoOffline}
+                    onPress={() => void enviarPendenciaMesmoAssim(pendencia)}
+                    style={[
+                      estilos.acaoPendenciaPrincipal,
+                      acessoOffline && estilos.acaoPendenciaDesabilitada,
+                    ]}
+                  >
+                    <Text style={estilos.textoAcaoPendenciaPrincipal}>
+                      Enviar mesmo assim
+                    </Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+            {pendencia.estado === 'AGUARDANDO_CONEXAO' && !acessoOffline && (
+              <Pressable
+                disabled={ocupado}
+                onPress={() => void tentarReconciliar()}
+                style={estilos.tentarPendencia}
+              >
+                <Text style={estilos.textoAcaoPendencia}>Tentar agora</Text>
+              </Pressable>
+            )}
+          </View>
+        ))}
         {texto.startsWith('/') && respostas.length > 0 && (
           <View accessibilityLiveRegion="polite" style={estilos.sugestoes}>
             <Text style={estilos.tituloSugestoes}>Respostas rápidas</Text>
@@ -314,12 +507,12 @@ export function ComposerMobile({
             {possuiTexto ? (
               <Pressable
                 accessibilityLabel="Enviar mensagem"
-                accessibilityState={{ disabled: ocupado || acessoOffline || !janelaAberta }}
-                disabled={ocupado || acessoOffline || !janelaAberta}
+                accessibilityState={{ disabled: ocupado || !janelaAberta }}
+                disabled={ocupado || !janelaAberta}
                 onPress={() => void enviar()}
                 style={({ pressed }) => [
                   estilos.botaoPrincipal,
-                  (acessoOffline || !janelaAberta) && estilos.botaoDesabilitado,
+                  !janelaAberta && estilos.botaoDesabilitado,
                   pressed && estilos.botaoPressionado,
                 ]}
               >
@@ -494,6 +687,10 @@ export function ComposerMobile({
 
 const estilos = StyleSheet.create({
   acao: { alignItems: 'center', flexDirection: 'row', gap: 10, minHeight: 48 },
+  acaoPendencia: { paddingHorizontal: 8, paddingVertical: 7 },
+  acaoPendenciaDesabilitada: { opacity: 0.45 },
+  acaoPendenciaPrincipal: { backgroundColor: '#805A00', borderRadius: RAIOS.pílula, paddingHorizontal: 12, paddingVertical: 7 },
+  acoesPendencia: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   alca: { alignSelf: 'center', backgroundColor: '#D5DAD7', borderRadius: RAIOS.pílula, height: 4, marginBottom: 18, width: 38 },
   area: { backgroundColor: CORES.superficie, borderTopColor: CORES.borda, borderTopWidth: 1, position: 'relative' },
   atalho: { color: CORES.acao, fontSize: 12, fontWeight: '800' },
@@ -504,6 +701,8 @@ const estilos = StyleSheet.create({
   botaoSecundario: { alignItems: 'center', borderColor: CORES.borda, borderRadius: RAIOS.pílula, borderWidth: 1, height: 42, justifyContent: 'center', width: 42 },
   campo: { alignItems: 'center', backgroundColor: '#F3F6F4', borderColor: CORES.borda, borderRadius: 22, borderWidth: 1, flex: 1, flexDirection: 'row', minHeight: 44, paddingHorizontal: 13 },
   cabecalhoModelos: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+  cabecalhoPendencia: { alignItems: 'center', flexDirection: 'row', gap: 6 },
+  descricaoPendencia: { color: '#725A20', fontSize: 11, lineHeight: 15, marginTop: 5 },
   descricaoJanelaFechada: { color: CORES.textoSecundario, fontSize: 10, marginTop: 2 },
   descricaoModelo: { color: CORES.textoSecundario, fontSize: 11, marginTop: 2 },
   descricaoFolha: { color: CORES.textoSecundario, fontSize: 13, marginBottom: 15, marginTop: 3 },
@@ -526,6 +725,8 @@ const estilos = StyleSheet.create({
   modeloSelecionado: { backgroundColor: '#F3F7F4', borderRadius: RAIOS.campo, marginBottom: 12, padding: 12 },
   nomeModelo: { color: CORES.texto, fontSize: 13, fontWeight: '700' },
   parametro: { gap: 5, marginBottom: 10 },
+  pendencia: { backgroundColor: '#F2F5F3', borderBottomColor: CORES.borda, borderBottomWidth: 1, paddingHorizontal: 14, paddingVertical: 9 },
+  pendenciaRevisao: { backgroundColor: '#FFF7E3', borderBottomColor: '#EEDAA6' },
   previaResposta: { color: CORES.textoSecundario, fontSize: 11, lineHeight: 15, marginTop: 3 },
   resposta: { borderTopColor: CORES.borda, borderTopWidth: 1, paddingHorizontal: 14, paddingVertical: 10 },
   respostaPressionada: { backgroundColor: '#F4F8F5' },
@@ -537,12 +738,17 @@ const estilos = StyleSheet.create({
   semModelos: { color: CORES.textoSecundario, fontSize: 13, paddingVertical: 22, textAlign: 'center' },
   skeletonModelo: { backgroundColor: '#E6EBE8', borderRadius: RAIOS.campo, height: 64 },
   textoBotaoModelo: { color: CORES.acao, fontSize: 11, fontWeight: '700' },
+  textoAcaoPendencia: { color: CORES.textoSecundario, fontSize: 11, fontWeight: '700' },
+  textoAcaoPendenciaPrincipal: { color: CORES.textoInvertido, fontSize: 11, fontWeight: '700' },
   textoCabecalhoModelos: { flex: 1 },
   textoEnviarModelo: { color: CORES.textoInvertido, fontSize: 14, fontWeight: '700' },
   textoJanelaFechada: { flex: 1 },
+  textoPendencia: { color: CORES.texto, fontSize: 12, lineHeight: 16, marginTop: 4 },
+  tentarPendencia: { alignSelf: 'flex-start', marginTop: 5, paddingVertical: 4 },
   tituloFolha: { color: CORES.texto, fontSize: 20, fontWeight: '800' },
   tituloGrupo: { color: CORES.textoSecundario, fontSize: 10, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4, textTransform: 'uppercase' },
   tituloJanelaFechada: { color: '#725A20', fontSize: 12, fontWeight: '700' },
+  tituloPendencia: { color: CORES.texto, fontSize: 11, fontWeight: '800' },
   tituloResposta: { color: CORES.texto, fontSize: 13, fontWeight: '700', marginTop: 2 },
   tituloSugestoes: { color: CORES.textoSecundario, fontSize: 10, fontWeight: '800', letterSpacing: 0.5, padding: 11, textTransform: 'uppercase' },
   textoModelo: { flex: 1 },

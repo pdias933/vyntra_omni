@@ -216,6 +216,8 @@ Na PR 102, a lista abre uma conversa mobile paginada sobre a timeline única do 
 
 Na PR 103, o composer mobile mantém o rascunho por conversa exclusivamente no SQLCipher, abre respostas rápidas autorizadas ao digitar `/` e só limpa o texto depois que o backend confirma o envio. Com texto, a ação principal é enviar; vazio, ela abre a folha categorizada de ações do sistema. Anexo e capacidades ERP ainda não implementadas aparecem indisponíveis, sem sucesso fictício. Fora da janela Meta, texto livre é bloqueado e o operador pode selecionar apenas modelos aprovados pelo servidor, preencher todos os parâmetros e confirmar o envio. Esta etapa não transforma rascunho em pendência offline: o envio reconciliável fica reservado à PR 104.
 
+Na PR 104, tocar em enviar sem conexão transforma o rascunho em pendência criptografada `AGUARDANDO_CONEXAO`, sem aparência de mensagem enviada. Depois de REST e WebSocket convergirem, o app reautentica a sessão vinculada ao aparelho e o backend serializa a autoridade do atendimento antes de comparar sequência da timeline, versões de atribuição, estado e contexto, além da janela Meta observada. Somente ausência total de mudança permite o envio automático. Qualquer divergência relevante produz `REVISAO_NECESSARIA` e oferece exatamente `Editar`, `Descartar` e `Enviar mesmo assim`; a última opção cria um novo comando submetido à autorização corrente, nunca um bypass. Falha transitória conserva a pendência e mídia offline avançada continua fora da V1.
+
 ### 4.8 Motor de Fluxos e WhatsApp Flows
 
 - Motor próprio, determinístico e configurável.

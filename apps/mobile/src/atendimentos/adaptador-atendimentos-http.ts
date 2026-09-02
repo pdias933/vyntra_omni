@@ -7,6 +7,7 @@ import {
   enviarTextoMobile,
   obterDetalhesContatoMobile,
   obterTimelineMobile,
+  reconciliarTextoMobile,
   listarModelosAprovadosMobile,
   listarRespostasRapidasMobile,
 } from '@vyntra/api-client';
@@ -19,6 +20,7 @@ import {
   normalizarModelosAprovadosMobile,
   normalizarPaginaTimelineMobile,
   normalizarRespostasRapidasMobile,
+  normalizarResultadoReconciliacaoTextoMobile,
   normalizarResumoFinanceiroMobile,
   normalizarVersaoMarcador,
   type DetalhesContatoMobile,
@@ -27,6 +29,7 @@ import {
   type PaginaTimelineMobile,
   type RespostaRapidaMobile,
   type ResumoFinanceiroContatoMobile,
+  type ResultadoReconciliacaoTextoMobile,
 } from './modelo-atendimento-mobile';
 
 interface RespostaSdk<T> {
@@ -121,6 +124,42 @@ export class AdaptadorAtendimentosHttp {
     });
     try {
       return normalizarMensagemCriadaMobile(exigirDado(resposta));
+    } catch (erro) {
+      if (erro instanceof ErroAtendimentoMobile) throw erro;
+      throw new ErroAtendimentoMobile('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+    }
+  }
+
+  public async reconciliarTexto(
+    credenciais: CredenciaisSincronizacaoAplicativo,
+    atendimentoId: string,
+    entrada: {
+      readonly chaveIdempotencia: string;
+      readonly criadaEm: string;
+      readonly janelaObservada: string;
+      readonly sequenciaObservada: string;
+      readonly texto: string;
+      readonly versaoAtribuicao: number;
+      readonly versaoContexto: number;
+      readonly versaoEstado: number;
+    },
+  ): Promise<ResultadoReconciliacaoTextoMobile> {
+    const resposta = await reconciliarTextoMobile({
+      ...opcoesAutenticadas(credenciais),
+      body: {
+        criada_dispositivo_em: entrada.criadaEm,
+        janela_expira_em_observada: entrada.janelaObservada,
+        mensagem_cliente_id: entrada.chaveIdempotencia,
+        sequencia_observada: entrada.sequenciaObservada,
+        texto: entrada.texto,
+        versao_atribuicao_observada: entrada.versaoAtribuicao,
+        versao_contexto_observada: entrada.versaoContexto,
+        versao_estado_observada: entrada.versaoEstado,
+      },
+      path: { atendimentoId },
+    });
+    try {
+      return normalizarResultadoReconciliacaoTextoMobile(exigirDado(resposta));
     } catch (erro) {
       if (erro instanceof ErroAtendimentoMobile) throw erro;
       throw new ErroAtendimentoMobile('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');

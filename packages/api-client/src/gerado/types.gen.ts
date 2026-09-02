@@ -316,6 +316,23 @@ export type MensagemCriadaWebDto = {
     recebida_servidor_em: string;
 };
 
+export type EntradaReconciliarTextoMobileDto = {
+    mensagem_cliente_id: string;
+    texto: string;
+    criada_dispositivo_em: string;
+    sequencia_observada: string;
+    versao_atribuicao_observada: number;
+    versao_estado_observada: number;
+    versao_contexto_observada: number;
+    janela_expira_em_observada: string;
+};
+
+export type ResultadoReconciliacaoTextoMobileDto = {
+    estado: 'ENVIADA_PARA_FILA' | 'REVISAO_NECESSARIA';
+    motivos: Array<'ATRIBUICAO_ALTERADA' | 'CONTEXTO_ALTERADO' | 'ESTADO_ALTERADO' | 'JANELA_ALTERADA' | 'JANELA_EXPIRADA' | 'TIMELINE_ALTERADA'>;
+    mensagem?: MensagemCriadaWebDto;
+};
+
 export type EntradaEnvioModeloWebDto = {
     mensagem_cliente_id: string;
     modelo_id: string;
@@ -1353,6 +1370,25 @@ export type EnviarTextoMobileResponses = {
 };
 
 export type EnviarTextoMobileResponse = EnviarTextoMobileResponses[keyof EnviarTextoMobileResponses];
+
+export type ReconciliarTextoMobileData = {
+    body: EntradaReconciliarTextoMobileDto;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/mensagens/texto/reconciliar';
+};
+
+export type ReconciliarTextoMobileResponses = {
+    200: ResultadoReconciliacaoTextoMobileDto;
+};
+
+export type ReconciliarTextoMobileResponse = ReconciliarTextoMobileResponses[keyof ReconciliarTextoMobileResponses];
 
 export type EnviarModeloAprovadoMobileData = {
     body: EntradaEnvioModeloWebDto;

@@ -39,6 +39,24 @@ export class ServicoAtendimentosMobile {
     );
   }
 
+  public reconciliarTexto(
+    atendimentoId: string,
+    entrada: {
+      readonly chaveIdempotencia: string;
+      readonly criadaEm: string;
+      readonly janelaObservada: string;
+      readonly sequenciaObservada: string;
+      readonly texto: string;
+      readonly versaoAtribuicao: number;
+      readonly versaoContexto: number;
+      readonly versaoEstado: number;
+    },
+  ) {
+    return this.executar((credenciais) =>
+      this.adaptador.reconciliarTexto(credenciais, atendimentoId, entrada),
+    );
+  }
+
   public listarModelosAprovados(atendimentoId: string, busca = '') {
     return this.executar((credenciais) =>
       this.adaptador.listarModelosAprovados(

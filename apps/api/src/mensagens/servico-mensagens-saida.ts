@@ -13,9 +13,12 @@ import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import {
   ErroIdempotenciaMensagemDivergente,
   ErroMensagemInvalida,
+  ErroRevisaoPendenciaTextoNecessaria,
 } from './erros-mensagem.js';
 import type {
   MensagemSaidaPersistida,
+  MotivoRevisaoPendenciaTexto,
+  ObservacaoPendenciaTexto,
   OpcaoMensagemAutomatica,
   ResultadoCriacaoMensagemAutomatica,
 } from './modelo-mensagem.js';
@@ -56,6 +59,7 @@ export class ServicoMensagensSaida {
       readonly criadaDispositivoEm?: Date;
       readonly filaId: string;
       readonly mensagemClienteId: string;
+      readonly observacaoOffline?: ObservacaoPendenciaTexto;
       readonly respondeAMensagemId?: string;
       readonly texto: string;
     },
@@ -65,7 +69,12 @@ export class ServicoMensagensSaida {
     const texto = this.validarEntrada(entrada);
     const agora = relogio();
     if (!Number.isFinite(agora.getTime())) throw new ErroMensagemInvalida();
+    this.validarObservacaoOffline(entrada.observacaoOffline);
     const conteudoHash = createHash('sha256').update(`${texto}\u0000${entrada.respondeAMensagemId ?? ''}`, 'utf8').digest('hex');
+    await this.repositorio.bloquearAutoridadeSaida(
+      entrada.atendimentoId,
+      transacao,
+    );
     await this.repositorio.bloquearIdempotencia(
       sessao.usuarioId,
       entrada.mensagemClienteId,
@@ -114,6 +123,18 @@ export class ServicoMensagensSaida {
       transacao,
     );
     if (contexto === undefined) throw new ErroMensagemInvalida();
+    if (entrada.observacaoOffline !== undefined) {
+      const motivos = await this.motivosRevisao(
+        contexto,
+        entrada.conversaId,
+        entrada.observacaoOffline,
+        transacao,
+        agora,
+      );
+      if (motivos.length > 0) {
+        throw new ErroRevisaoPendenciaTextoNecessaria(motivos);
+      }
+    }
     let textoSaida = texto;
     if (entrada.respondeAMensagemId !== undefined) {
       const alvo = await this.repositorio.obterAlvoRelacao(
@@ -640,6 +661,7 @@ export class ServicoMensagensSaida {
     readonly criadaDispositivoEm?: Date;
     readonly filaId: string;
     readonly mensagemClienteId: string;
+    readonly observacaoOffline?: ObservacaoPendenciaTexto;
     readonly respondeAMensagemId?: string;
     readonly texto: unknown;
   }): string {
@@ -664,6 +686,66 @@ export class ServicoMensagensSaida {
       throw new ErroMensagemInvalida();
     }
     return texto;
+  }
+
+  private validarObservacaoOffline(
+    observacao: ObservacaoPendenciaTexto | undefined,
+  ): void {
+    if (observacao === undefined) return;
+    if (
+      !Number.isFinite(observacao.janelaExpiraEm.getTime()) ||
+      observacao.sequenciaEvento < 0n ||
+      observacao.sequenciaEvento > 9_223_372_036_854_775_807n ||
+      ![
+        observacao.versaoAtribuicao,
+        observacao.versaoContexto,
+        observacao.versaoEstado,
+      ].every((valor) => Number.isSafeInteger(valor) && valor >= 0)
+    ) {
+      throw new ErroMensagemInvalida();
+    }
+  }
+
+  private async motivosRevisao(
+    contexto: Awaited<ReturnType<RepositorioMensagens['obterContextoSaida']>>,
+    conversaId: string,
+    observacao: ObservacaoPendenciaTexto,
+    transacao: TransacaoPrisma,
+    agora: Date,
+  ): Promise<readonly MotivoRevisaoPendenciaTexto[]> {
+    if (contexto === undefined) return ['ATRIBUICAO_ALTERADA'];
+    const motivos: MotivoRevisaoPendenciaTexto[] = [];
+    if (contexto.versaoAtribuicao !== observacao.versaoAtribuicao) {
+      motivos.push('ATRIBUICAO_ALTERADA');
+    }
+    if (contexto.versaoEstado !== observacao.versaoEstado) {
+      motivos.push('ESTADO_ALTERADO');
+    }
+    if (contexto.versaoContexto !== observacao.versaoContexto) {
+      motivos.push('CONTEXTO_ALTERADO');
+    }
+    if (
+      contexto.janelaExpiraEm?.getTime() !==
+      observacao.janelaExpiraEm.getTime()
+    ) {
+      motivos.push('JANELA_ALTERADA');
+    }
+    if (
+      contexto.janelaExpiraEm === undefined ||
+      contexto.janelaExpiraEm <= agora
+    ) {
+      motivos.push('JANELA_EXPIRADA');
+    }
+    if (
+      await this.repositorio.houveEventoNaConversaApos(
+        conversaId,
+        observacao.sequenciaEvento,
+        transacao,
+      )
+    ) {
+      motivos.push('TIMELINE_ALTERADA');
+    }
+    return motivos;
   }
 
   private validarTextoAutomatico(valor: unknown): string | undefined {

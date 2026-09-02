@@ -855,4 +855,22 @@ AdaptadorAtendimentosHttp → SDK OpenAPI gerado
 ControladorConsoleMobile → ServicoComposerWeb → domínio de mensagens
 ```
 
-Respostas rápidas apenas preenchem o campo; catálogo e envio de modelo aprovado continuam autoritativos no backend. Texto livre fora da janela Meta retorna `JANELA_META_EXPIRADA`, mesmo que o cliente tente contornar o bloqueio visual. O rascunho é removido somente depois da resposta positiva. A PR 103 não cria caixa de saída local: offline conserva texto, e a PR 104 será responsável por pendência, sincronização anterior ao envio e revisão de mudanças concorrentes.
+Respostas rápidas apenas preenchem o campo; catálogo e envio de modelo aprovado continuam autoritativos no backend. Texto livre fora da janela Meta retorna `JANELA_META_EXPIRADA`, mesmo que o cliente tente contornar o bloqueio visual. O rascunho é removido somente depois da resposta positiva. A PR 103 conserva o texto offline como rascunho; a PR 104 acrescenta a caixa de saída local reconciliável descrita a seguir.
+
+### 13.25 Offline e reconciliação mobile
+
+O SQLCipher `user_version = 4` separa a pendência de texto da réplica substituível. Sua criação captura `sequencia_observada`, versões de atribuição, estado e contexto, responsável e expiração exata da janela Meta; no mesmo commit remove o rascunho correspondente. Snapshot e lotes podem substituir projeções de negócio, mas nunca apagam essas pendências. Logout ou revogação integral continuam limpando toda a base autenticada.
+
+```text
+AGUARDANDO_CONEXAO
+  ↓ REST convergente → WebSocket aberto → sessão revalidada
+POST /mobile/.../mensagens/texto/reconciliar
+  ↓ lock autoridade-saida:<atendimento>
+comparar atribuição + estado + contexto + janela + eventos da conversa
+  ├── sem mudança → ServicoMensagensSaida → NA_FILA
+  └── divergência → REVISAO_NECESSARIA
+```
+
+O cliente não decide se a observação ainda é válida. A rota mobile autentica bearer, dispositivo e segredo do vínculo, e `ServicoMensagensSaida` adquire a mesma trava transacional usada por resgate, transferência e despacho automático antes de autorizar e comparar a observação. Qualquer evento da conversa posterior à sequência capturada é conservadoramente relevante; versões impedem que transferir e devolver, fechar e reabrir ou trocar e restaurar contexto aparentem igualdade.
+
+Falha transitória não altera a pendência. Revisão local permite editar ou descartar; “enviar mesmo assim” usa o envio normal com nova chave idempotente e continua sujeito ao estado, responsabilidade, RBAC e janela Meta atuais. Mídia não entra nessa caixa local.

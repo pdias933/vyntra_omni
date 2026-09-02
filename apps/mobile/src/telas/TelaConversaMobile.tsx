@@ -25,6 +25,7 @@ import type {
   RepositorioReplicaLocal,
   ResumoAtendimentoLocal,
 } from '../offline/repositorio-replica-local';
+import type { ServicoPendenciasSaidaMobile } from '../offline/servico-pendencias-saida-mobile';
 import { CORES, ESPACOS, RAIOS } from '../tema';
 
 function dataSeparador(iso: string): string {
@@ -189,6 +190,8 @@ export function TelaConversaMobile({
   atendimento,
   repositorio,
   servico,
+  servicoPendencias,
+  usuarioId,
 }: {
   readonly acessoOffline: boolean;
   readonly aoAbrirDetalhes: () => void;
@@ -196,6 +199,8 @@ export function TelaConversaMobile({
   readonly atendimento: ResumoAtendimentoLocal;
   readonly repositorio: RepositorioReplicaLocal;
   readonly servico: ServicoAtendimentosMobile;
+  readonly servicoPendencias: ServicoPendenciasSaidaMobile;
+  readonly usuarioId: string;
 }) {
   const reduzirMovimento = useReducedMotion();
   const lista = useRef<FlatList<ItemTimelineMobile>>(null);
@@ -395,6 +400,8 @@ export function TelaConversaMobile({
           janelaAberta={janelaAberta}
           repositorio={repositorio}
           servico={servico}
+          servicoPendencias={servicoPendencias}
+          usuarioId={usuarioId}
         />
       )}
       <Modal

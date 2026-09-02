@@ -18,6 +18,7 @@ import {
 } from './autenticacao/servico-autenticacao-aplicativo';
 import type { PoliticaVersaoAplicativo } from './atualizacao/adaptador-politica-versao-http';
 import { ServicoAtendimentosMobile } from './atendimentos/servico-atendimentos-mobile';
+import { ServicoPendenciasSaidaMobile } from './offline/servico-pendencias-saida-mobile';
 import { ServicoPoliticaVersaoAplicativo } from './atualizacao/servico-politica-versao-aplicativo';
 import { NavegacaoPrincipal } from './navegacao/NavegacaoPrincipal';
 import { ServicoSincronizacaoAplicativo } from './sincronizacao/servico-sincronizacao-aplicativo';
@@ -46,6 +47,11 @@ const NavegacaoEntrada = createNativeStackNavigator<RotasEntrada>();
 const autenticacao = new ServicoAutenticacaoAplicativo();
 const sincronizacao = new ServicoSincronizacaoAplicativo(autenticacao);
 const atendimentosMobile = new ServicoAtendimentosMobile(autenticacao);
+const pendenciasSaida = new ServicoPendenciasSaidaMobile(
+  autenticacao,
+  atendimentosMobile,
+  autenticacao.replica,
+);
 const politicaVersaoAplicativo = new ServicoPoliticaVersaoAplicativo();
 const TEMPO_PARA_BLOQUEAR_MS = 30_000;
 
@@ -273,6 +279,22 @@ export function Aplicacao() {
     () =>
       sincronizacao.observar((estadoSincronizacao) => {
         definirEstadoSincronizacao(estadoSincronizacao);
+        if (estadoSincronizacao === 'CONECTADO') {
+          const atual = sessaoAtual.current;
+          if (atual?.acessoOffline === true) {
+            const revalidada: SessaoAplicativo = {
+              acessoOffline: false,
+              dispositivoId: atual.dispositivoId,
+              dispositivoSubstituido: atual.dispositivoSubstituido,
+              nomeExibicao: atual.nomeExibicao,
+              sessaoId: atual.sessaoId,
+              usuarioId: atual.usuarioId,
+            };
+            sessaoAtual.current = revalidada;
+            definirSessao(revalidada);
+          }
+          void pendenciasSaida.reconciliarAguardando();
+        }
         if (
           estadoSincronizacao === 'BLOQUEADO' &&
           sessaoAtual.current !== undefined
@@ -318,25 +340,33 @@ export function Aplicacao() {
   useEffect(() => {
     if (
       estado !== 'AUTENTICADO' ||
-      sessao?.acessoOffline !== true ||
-      sessao.offlineValidaAte === undefined
+      estadoSincronizacao !== 'SEM_CONEXAO'
     ) {
       return;
     }
-    const restante = new Date(sessao.offlineValidaAte).getTime() - Date.now();
+    let ativa = true;
+    let temporizador: ReturnType<typeof setTimeout> | undefined;
     const bloquear = () => {
+      if (!ativa) return;
       definirMensagemBloqueio(
         'O acesso offline expirou. Conecte-se para revalidar sua sessão.',
       );
       definirEstado('BLOQUEADO');
     };
-    if (restante <= 0) {
-      const temporizador = setTimeout(bloquear, 0);
-      return () => clearTimeout(temporizador);
-    }
-    const temporizador = setTimeout(bloquear, restante);
-    return () => clearTimeout(temporizador);
-  }, [estado, sessao]);
+    void autenticacao.replica.obterAutorizacao().then((autorizacao) => {
+      if (!ativa) return;
+      const validaAte = autorizacao?.validaAte ?? sessao?.offlineValidaAte;
+      if (validaAte === undefined) return;
+      const restante = new Date(validaAte).getTime() - Date.now();
+      temporizador = setTimeout(bloquear, Math.max(0, restante));
+    }).catch(() => {
+      if (sessao?.acessoOffline === true) bloquear();
+    });
+    return () => {
+      ativa = false;
+      if (temporizador !== undefined) clearTimeout(temporizador);
+    };
+  }, [estado, estadoSincronizacao, sessao]);
 
   async function usarSenha() {
     definirDesbloqueando(true);
@@ -415,6 +445,7 @@ export function Aplicacao() {
                 : { erroAtualizacao: erroPolitica })}
               {...(politicaVersao === undefined ? {} : { politicaVersao })}
               repositorio={autenticacao.replica}
+              servicoPendencias={pendenciasSaida}
               saindo={saindo}
               servicoAtendimentos={atendimentosMobile}
               sessao={sessao}

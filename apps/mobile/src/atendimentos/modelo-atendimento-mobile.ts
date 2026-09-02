@@ -12,6 +12,14 @@ const ESTADOS_SNAPSHOT = new Set([
   'NAO_DISPONIVEL',
   'OBSOLETO',
 ]);
+const MOTIVOS_REVISAO = new Set([
+  'ATRIBUICAO_ALTERADA',
+  'CONTEXTO_ALTERADO',
+  'ESTADO_ALTERADO',
+  'JANELA_ALTERADA',
+  'JANELA_EXPIRADA',
+  'TIMELINE_ALTERADA',
+]);
 
 export type TipoItemTimelineMobile =
   | 'EVENTO_OPERACIONAL'
@@ -142,6 +150,24 @@ export interface ModeloAprovadoMobile {
   readonly nome: string;
   readonly quantidadeParametros: number;
 }
+
+export type MotivoRevisaoTextoMobile =
+  | 'ATRIBUICAO_ALTERADA'
+  | 'CONTEXTO_ALTERADO'
+  | 'ESTADO_ALTERADO'
+  | 'JANELA_ALTERADA'
+  | 'JANELA_EXPIRADA'
+  | 'TIMELINE_ALTERADA';
+
+export type ResultadoReconciliacaoTextoMobile =
+  | {
+      readonly estado: 'ENVIADA_PARA_FILA';
+      readonly mensagem: MensagemCriadaMobile;
+    }
+  | {
+      readonly estado: 'REVISAO_NECESSARIA';
+      readonly motivos: readonly MotivoRevisaoTextoMobile[];
+    };
 
 function objeto(valor: unknown): Record<string, unknown> {
   if (valor === null || typeof valor !== 'object' || Array.isArray(valor)) {
@@ -547,6 +573,41 @@ export function normalizarMensagemCriadaMobile(valor: unknown): MensagemCriadaMo
     id: uuid(mensagem.id),
     recebidaServidorEm: instante(mensagem.recebida_servidor_em),
   };
+}
+
+export function normalizarResultadoReconciliacaoTextoMobile(
+  valor: unknown,
+): ResultadoReconciliacaoTextoMobile {
+  const resultado = objeto(valor);
+  chavesExatas(resultado, ['estado', 'motivos'], ['mensagem']);
+  if (!Array.isArray(resultado.motivos) || resultado.motivos.length > 6) {
+    throw new Error('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+  }
+  const motivos = resultado.motivos.map((motivo) => {
+    const lido = texto(motivo, 64);
+    if (!MOTIVOS_REVISAO.has(lido)) {
+      throw new Error('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+    }
+    return lido as MotivoRevisaoTextoMobile;
+  });
+  if (
+    resultado.estado === 'REVISAO_NECESSARIA' &&
+    motivos.length > 0 &&
+    resultado.mensagem === undefined
+  ) {
+    return { estado: 'REVISAO_NECESSARIA', motivos };
+  }
+  if (
+    resultado.estado === 'ENVIADA_PARA_FILA' &&
+    motivos.length === 0 &&
+    resultado.mensagem !== undefined
+  ) {
+    return {
+      estado: 'ENVIADA_PARA_FILA',
+      mensagem: normalizarMensagemCriadaMobile(resultado.mensagem),
+    };
+  }
+  throw new Error('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
 }
 
 export function normalizarModelosAprovadosMobile(

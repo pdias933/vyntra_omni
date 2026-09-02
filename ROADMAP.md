@@ -125,7 +125,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 101 | CONCLUÍDA | `high` |
 | 102 | CONCLUÍDA | `high` |
 | 103 | CONCLUÍDA | `high` |
-| 104 | PENDENTE | `xhigh` |
+| 104 | CONCLUÍDA | `xhigh` |
 | 105 | PENDENTE | `xhigh` |
 | 106 | PENDENTE | `high` |
 | 107 | PENDENTE | `xhigh` |
@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR103 foram concluídas e PR104–PR107 seguem pendentes na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR104 foram concluídas e PR105–PR107 seguem pendentes na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -688,6 +688,10 @@ Aceite concluído em 2 de setembro de 2026: a lista abre uma pilha nativa com co
 ### PR 103 — composer e respostas rápidas mobile
 
 Aceite concluído em 2 de setembro de 2026: o composer persiste rascunho por conversa no SQLCipher, limita o conteúdo a 4.096 caracteres e só o remove depois da aceitação do servidor. Digitar `/` pesquisa respostas rápidas autorizadas e selecionar uma apenas preenche o campo. Com texto, a ação principal envia; vazio, abre uma folha categorizada de ações do sistema. Fora da janela Meta, texto livre é bloqueado também no backend e o app oferece somente modelos aprovados pelo catálogo autoritativo, exigindo todos os parâmetros. Falha, revogação ou indisponibilidade preserva o texto. Anexo e ações ERP/Flow/notas ainda sem caso de uso permanecem desabilitados, e esta PR não cria envio nem pendência offline antes da reconciliação da PR104. Folhas e transições respeitam “Reduzir Movimento”. Não houve dependência, migration, mudança de schema SQLCipher ou deploy. Lint, tipos, 432 testes da API, 284 testes de arquitetura, matriz Expo, auditoria de dependências, Gitleaks em 227 commits e builds web/API/iOS/Android foram aprovados. Effort `high` confirmado pela composição autorizada, persistência segura do rascunho e convergência entre janela Meta e modelos aprovados.
+
+### PR 104 — offline e reconciliação mobile
+
+Aceite concluído em 2 de setembro de 2026: enviar sem rede cria no SQLCipher uma pendência `AGUARDANDO_CONEXAO`, captura sequência e versões observadas e remove o rascunho no mesmo commit, sem aparentar envio. A reconciliação começa apenas depois de REST e WebSocket convergirem. A rota mobile reautentica sessão e aparelho; o serviço de mensagens serializa pela mesma trava de autoridade usada por transferência/resgate/automação e compara timeline, atribuição, estado, contexto e janela Meta no PostgreSQL. Somente observação invariável envia automaticamente. Mudança relevante produz `REVISAO_NECESSARIA` com `Editar`, `Descartar` e `Enviar mesmo assim`; este último gera novo comando e continua sujeito à autorização atual. Falha transitória mantém a pendência. O schema local avançou para `user_version = 4`; não houve migration PostgreSQL, dependência ou deploy. Lint, tipos, 434 testes da API, 290 testes de arquitetura, matriz Expo, auditoria de dependências, Gitleaks no histórico e builds web/API/iOS/Android foram aprovados. Effort `xhigh` confirmado pela convergência multi-dispositivo, prevenção de TOCTOU e recuperação segura sem duplicar mensagem.
 
 ## 12. Mobile
 

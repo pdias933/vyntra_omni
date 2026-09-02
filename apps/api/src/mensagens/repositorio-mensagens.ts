@@ -32,6 +32,11 @@ export interface RepositorioMensagens {
     usuarioId: string,
     transacao: TransacaoPrisma,
   ): Promise<ContextoSaidaMensagem | undefined>;
+  houveEventoNaConversaApos(
+    conversaId: string,
+    sequenciaEvento: bigint,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean>;
   obterContextoSaidaAutomatica(
     execucaoFluxoId: string,
     atendimentoId: string,

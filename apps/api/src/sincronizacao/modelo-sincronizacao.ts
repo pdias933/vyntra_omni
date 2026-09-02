@@ -47,6 +47,7 @@ export interface AtendimentoSnapshotSincronizacao {
   readonly ultimaMensagemResumo: string;
   readonly usuarioResponsavelId?: string;
   readonly versaoAtribuicao: number;
+  readonly versaoContexto: number;
   readonly versaoEstado: number;
   readonly atualizadoEm: string;
 }

@@ -4,11 +4,14 @@ import { ErroPermissaoNegada } from '../autorizacao/erros-autorizacao.js';
 import type { ContextoSessaoAutorizacao } from '../autorizacao/modelo-autorizacao.js';
 import { ServicoAutorizacao } from '../autorizacao/servico-autorizacao.js';
 import type { Prisma } from '../gerado/prisma/client.js';
+import { ErroTextoLivreForaJanela } from '../janela-canal/erros-janela-canal.js';
 import { ServicoMensagensSaida } from '../mensagens/servico-mensagens-saida.js';
 import { ServicoMidias } from '../midias/servico-midias.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
 import type { ConteudoMidiaWeb, MensagemCriadaWeb, ModeloAprovadoWeb, RespostaRapidaWeb } from './modelo-console-web.js';
+import { ErroRevisaoPendenciaTextoNecessaria } from '../mensagens/erros-mensagem.js';
+import type { MotivoRevisaoPendenciaTexto } from '../mensagens/modelo-mensagem.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
@@ -88,6 +91,67 @@ export class ServicoComposerWeb {
       texto: entrada.texto,
     }, transacao);
     return { estado: mensagem.estadoSaida, id: mensagem.id, recebidaServidorEm: mensagem.recebidaServidorEm };
+  }
+
+  public async reconciliarTexto(
+    sessao: ContextoSessaoAutorizacao,
+    atendimentoId: string,
+    entrada: {
+      readonly criadaDispositivoEm: Date;
+      readonly janelaExpiraEmObservada: Date;
+      readonly mensagemClienteId: string;
+      readonly sequenciaObservada: bigint;
+      readonly texto: string;
+      readonly versaoAtribuicaoObservada: number;
+      readonly versaoContextoObservada: number;
+      readonly versaoEstadoObservada: number;
+    },
+    transacao: TransacaoPrisma,
+  ): Promise<
+    | { readonly estado: 'ENVIADA_PARA_FILA'; readonly mensagem: MensagemCriadaWeb }
+    | {
+        readonly estado: 'REVISAO_NECESSARIA';
+        readonly motivos: readonly MotivoRevisaoPendenciaTexto[];
+      }
+  > {
+    const contexto = await this.obterContexto(atendimentoId, transacao);
+    try {
+      const mensagem = await this.mensagens.criarTexto(sessao, {
+        atendimentoId,
+        contaWhatsAppId: contexto.contaWhatsAppId,
+        conversaId: contexto.conversaId,
+        criadaDispositivoEm: entrada.criadaDispositivoEm,
+        filaId: contexto.filaId,
+        mensagemClienteId: entrada.mensagemClienteId,
+        observacaoOffline: {
+          janelaExpiraEm: entrada.janelaExpiraEmObservada,
+          sequenciaEvento: entrada.sequenciaObservada,
+          versaoAtribuicao: entrada.versaoAtribuicaoObservada,
+          versaoContexto: entrada.versaoContextoObservada,
+          versaoEstado: entrada.versaoEstadoObservada,
+        },
+        texto: entrada.texto,
+      }, transacao);
+      return {
+        estado: 'ENVIADA_PARA_FILA',
+        mensagem: {
+          estado: mensagem.estadoSaida,
+          id: mensagem.id,
+          recebidaServidorEm: mensagem.recebidaServidorEm,
+        },
+      };
+    } catch (erro) {
+      if (erro instanceof ErroRevisaoPendenciaTextoNecessaria) {
+        return { estado: 'REVISAO_NECESSARIA', motivos: erro.motivos };
+      }
+      if (erro instanceof ErroTextoLivreForaJanela) {
+        return {
+          estado: 'REVISAO_NECESSARIA',
+          motivos: ['JANELA_EXPIRADA'],
+        };
+      }
+      throw erro;
+    }
   }
 
   public async enviarMidia(

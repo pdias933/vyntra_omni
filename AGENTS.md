@@ -229,9 +229,11 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - Projeção incremental mínima nunca vira entidade completa inventada: sincronize o snapshot autorizado antes de confirmar o evento ao servidor.
 - Snapshot, autorização offline e cursor são um único commit SQLCipher; rascunhos e pendências ficam fora da substituição.
 - Push avisa; nunca vira fonte da verdade.
-- Pendência offline sincroniza antes de enviar.
-- Mudança relevante produz `REVISAO_NECESSARIA`.
-- “Enviar mesmo assim” não ignora autorização, janela ou atribuição.
+- Pendência offline nasce somente com autorização assinada vigente, captura sequência, versões de atribuição/estado/contexto e janela observadas, e sincroniza antes de enviar.
+- Reconciliação automática só começa após REST convergir e o WebSocket alcançar `CONECTADO`; `CONECTANDO` ou `SINCRONIZANDO` nunca executa pendência.
+- O backend adquire `autoridade-saida:<atendimento_id>` e revalida sessão, aparelho, RBAC, fila, recurso, responsabilidade, estado, contexto, timeline e janela antes de criar a mensagem.
+- Mudança relevante produz `REVISAO_NECESSARIA`; falha transitória conserva `AGUARDANDO_CONEXAO`.
+- “Enviar mesmo assim” cria novo comando idempotente e não ignora autorização, janela, estado ou atribuição.
 - Perda de permissão remove/inutiliza dado local correspondente.
 - Invalidação pausa comandos dependentes, fecha realtime, aplica snapshot autorizado e só então reconecta/retoma; falha bloqueia a área autenticada e nunca restaura cache antigo.
 - Fechar app/stream não muda disponibilidade do usuário.
@@ -286,7 +288,7 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - rascunho do composer vive somente no SQLCipher por conversa, nunca em estado global, log, telemetria ou SecureStore;
 - resposta rápida apenas preenche o texto; modelo aprovado e seus parâmetros vêm da autoridade do backend;
 - não limpe rascunho antes da aceitação do servidor nem transforme falha em sucesso visual;
-- antes da PR 104, ausência de rede preserva rascunho e não cria envio, fila local ou estado `ENVIADA`;
+- ausência de rede cria somente pendência de texto `AGUARDANDO_CONEXAO` depois de validar autorização offline; nunca cria estado `ENVIADA`, mídia pendente ou efeito externo;
 - folha de ações não executa ERP, Meta, Flow ou storage diretamente e não habilita capacidade ainda sem caso de uso;
 - bloqueio visual da janela Meta não substitui a recusa autoritativa de texto livre no backend.
 

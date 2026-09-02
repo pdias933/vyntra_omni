@@ -55,6 +55,7 @@ interface LinhaAtendimento {
   readonly ultima_mensagem_tipo: string | null;
   readonly usuario_responsavel_id: string | null;
   readonly versao_atribuicao: number;
+  readonly versao_contexto: number;
   readonly versao_estado: number;
 }
 
@@ -276,6 +277,7 @@ export class RepositorioRessincronizacaoPrisma
         a."estado"::text, a."modo"::text, a."motivo_espera"::text,
         a."fila_atual_id" AS fila_id, fa."nome" AS fila_nome,
         a."usuario_responsavel_id", a."versao_estado", a."versao_atribuicao",
+        COALESCE(contexto_atual."versao", 0) AS versao_contexto,
         a."atualizado_em", ultima."texto" AS ultima_mensagem_texto,
         ca."ultima_atividade_em",
         ultima."tipo" AS ultima_mensagem_tipo,
@@ -295,6 +297,8 @@ export class RepositorioRessincronizacaoPrisma
       JOIN "contato" contato ON contato."id"=ca."contato_id" AND contato."estado"='NORMAL'
       LEFT JOIN "marcador_leitura_conversa_usuario" marcador
         ON marcador."conversa_id"=ca."id" AND marcador."usuario_id"=${usuarioId}::uuid
+      LEFT JOIN "contexto_atendimento" contexto_atual
+        ON contexto_atual."atendimento_id"=a."id"
       LEFT JOIN LATERAL (
         SELECT m."conteudo_protegido"->>'texto' AS texto,
           m."tipo"::text AS tipo, m."direcao"::text AS direcao
@@ -352,6 +356,7 @@ export class RepositorioRessincronizacaoPrisma
         ? {}
         : { usuarioResponsavelId: linha.usuario_responsavel_id }),
       versaoAtribuicao: linha.versao_atribuicao,
+      versaoContexto: linha.versao_contexto,
       versaoEstado: linha.versao_estado,
     }));
   }
