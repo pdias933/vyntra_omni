@@ -747,3 +747,9 @@ Observar somente volume, latência, tamanho/categoria agregados e códigos canô
 Não há migration, dependência, mudança do OpenAPI ou deploy. A entrega reutiliza `expo-notifications` e os contratos da PR 057. O aceite precisa cobrir os cinco tipos, payload extra/incoerente, rajada do mesmo contato, várias conversas, primeiro plano, segundo plano, abertura a frio, sequência ainda não aplicada, destino removido após sync, falha de rede, logout e troca de usuário.
 
 O badge conta grupos em memória e não deve ser tratado como métrica de entrega. Monitorar apenas resultado agregado do provedor já normalizado, latência de convergência e códigos de falha; nunca payload, UUID, nome ou conteúdo. Rollback do app remove a aba funcional, mas não muda eventos, réplica ou estado do atendimento. O adapter real de entrega continua desligado sem credenciais/destinos aprovados. O runbook detalhado está em [docs/operacoes/PR-106.md](docs/operacoes/PR-106.md).
+
+## 45. Operação da revogação mobile da PR 107
+
+Redução de escopo deve bloquear a réplica imediatamente, alcançar a sequência e a versão da invalidação e só então liberar o novo conjunto autorizado. Revogação de sessão ou aparelho exige limpeza de cofre, réplica, pendências, rascunhos e notificações antes do login. Nunca reativar autorização offline removida nem corrigir cursor, versão ou escopo por SQL.
+
+O deploy cumulativo usa imagens imutáveis `pr-107` para API, web, proxy, migração e dois workers homogêneos. A chave privada Ed25519 fica somente no cofre da VM; a build mobile recebe exclusivamente a chave pública. Reversão de servidor não pode regressar contratos já consumidos pelo app. O procedimento e as evidências ficam em [docs/operacoes/PR-107.md](docs/operacoes/PR-107.md).
