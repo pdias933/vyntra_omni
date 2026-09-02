@@ -335,6 +335,8 @@ Busca e galeria da PR 091 tratam termo, cursor e tipo apenas como filtros, nunca
 - se juridicamente liberado, validade padrão de 72 horas, máxima de 7 dias e revogação imediata; token é armazenado por HMAC;
 - o recurso público permanece desligado até aprovação jurídica/DPO da política e do conteúdo exportável.
 
+A PR 109 não relaxa esse portão. Ela oferece somente uma cópia interna autenticada: criação e consumo são `POST` com sessão web, origem e CSRF; exigem `VISUALIZAR_FILA` e a concessão explícita `EXPORTAR_HISTORICO`; o token aleatório de 256 bits fica somente por SHA-256, expira em 15 minutos, pertence ao mesmo usuário e sessão e é consumido atomicamente uma vez. O token nunca integra URL. A projeção usa o atendimento/protocolo oficial exatos e inclui apenas mensagens cliente↔empresa até o instante da criação, com mídias, reações, formulários, notas e eventos internos excluídos. Limites de dez mil mensagens e 5 MiB impedem exportação irrestrita. Criação e download são auditados sem conteúdo ou token.
+
 ### 8.3 Limites operacionais iniciais
 
 - busca de identidade: 30 requisições por minuto por usuário;

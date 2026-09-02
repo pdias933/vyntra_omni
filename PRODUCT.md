@@ -124,7 +124,7 @@ No composer, `/` abre respostas rápidas pesquisáveis. O botão dedicado de aç
 - Encerramento por fluxo exige fila humana de fallback; nova mensagem dentro da tolerância reabre nessa fila, sem responsável, e não retoma a execução terminal anterior.
 - Reabertura manual autorizada assume o atendimento em modo humano para o operador que executou o comando.
 - Nova interação após o encerramento definitivo cria outro atendimento, mantendo a timeline.
-- Cópia segura do atendimento, vinculada ao protocolo, com token não previsível e somente conteúdo cliente↔empresa.
+- Cópia interna segura do atendimento, vinculada ao protocolo oficial, com token não previsível, de uso único por 15 minutos e preso à mesma sessão web; contém somente mensagens cliente↔empresa, sem mídia, formulário ou conteúdo interno.
 - A transcrição original permanece como fonte da verdade.
 
 ### 4.4 Filas, resgate e transferência
@@ -248,6 +248,7 @@ Na PR 108, `Perfil → Diagnóstico` apresenta somente versão do app/sistema, c
 - Snapshot nunca autoriza ação mutável ou decisão financeira atual.
 - `AccessSessionAdapter` separado do ERP; o contrato faz parte da V1. A integração real só entra se uma fonte confiável for validada sem bloquear o lançamento.
 - Link público de transcrição continua desativado e não é gerado nem enviado ao ERP enquanto faltarem aprovação jurídica/DPO e caracterização real da capacidade.
+- A cópia interna autenticada não cria link público nem substitui essa aprovação: exportação exige `EXPORTAR_HISTORICO`, MFA, confirmação, auditoria e autorização vigente da fila.
 - No app, consultar faturas identifica explicitamente `TEMPO_REAL` ou indisponibilidade, sem trocar para snapshot financeiro. Desbloqueio e criação de ordem de serviço passam por seleção, prévia e confirmação e reutilizam os casos de uso idempotentes do backend. Segunda via, Pix, conexão e capacidades ainda não conectadas permanecem indisponíveis, sem sucesso simulado.
 
 ### 4.10 Segurança, auditoria e operação

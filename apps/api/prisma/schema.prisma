@@ -483,6 +483,14 @@ enum EstadoControleRecurso {
   @@map("estado_controle_recurso")
 }
 
+enum EstadoCopiaAtendimento {
+  ATIVA
+  CONSUMIDA
+  REVOGADA
+
+  @@map("estado_copia_atendimento")
+}
+
 enum EstadoContaWhatsApp {
   ATIVA
   INATIVA
@@ -706,6 +714,7 @@ model Usuario {
   versoesFluxoCriadas            VersaoFluxo[]                     @relation("UsuarioCriacaoVersaoFluxo")
   versoesFluxoPublicadas         VersaoFluxo[]                     @relation("UsuarioPublicacaoVersaoFluxo")
   mudancasPublicacaoFluxo        HistoricoPublicacaoFluxo[]        @relation("UsuarioMudancaPublicacaoFluxo")
+  copiasAtendimentoSolicitadas   CopiaAtendimento[]                 @relation("UsuarioSolicitacaoCopiaAtendimento")
 
   @@index([estado, nomeExibicao], map: "usuario_estado_nome_idx")
   @@index([perfilId], map: "usuario_perfil_idx")
@@ -1258,6 +1267,7 @@ model Atendimento {
   acoesErp                    RegistroAcaoAtendimentoErp[]
   reservaEncerramentoErp      ReservaEncerramentoAtendimentoErp?
   execucoesFluxo              ExecucaoFluxo[]
+  copias                      CopiaAtendimento[]
 
   @@unique([id, conversaId], map: "atendimento_id_conversa_key")
   @@index([conversaId, iniciadoEm, id], map: "atendimento_conversa_inicio_idx")
@@ -1265,6 +1275,27 @@ model Atendimento {
   @@index([filaAtualId, estado, atualizadoEm], map: "atendimento_fila_estado_idx")
   @@index([usuarioResponsavelId, estado, atualizadoEm], map: "atendimento_responsavel_estado_idx")
   @@map("atendimento")
+}
+
+model CopiaAtendimento {
+  id                     String                 @id @db.Uuid
+  atendimentoId          String                 @map("atendimento_id") @db.Uuid
+  solicitadoPorUsuarioId String                 @map("solicitado_por_usuario_id") @db.Uuid
+  sessaoWebId            String                 @map("sessao_web_id") @db.Uuid
+  tokenHash              String                 @unique(map: "copia_atendimento_token_hash_key") @map("token_hash") @db.Char(64)
+  estado                 EstadoCopiaAtendimento @default(ATIVA)
+  geradaAteEm            DateTime               @map("gerada_ate_em") @db.Timestamptz(6)
+  expiraEm               DateTime               @map("expira_em") @db.Timestamptz(6)
+  consumidaEm            DateTime?              @map("consumida_em") @db.Timestamptz(6)
+  revogadaEm             DateTime?              @map("revogada_em") @db.Timestamptz(6)
+  criadoEm               DateTime               @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atendimento            Atendimento            @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  solicitadoPor          Usuario                @relation("UsuarioSolicitacaoCopiaAtendimento", fields: [solicitadoPorUsuarioId], references: [id], onDelete: Restrict)
+
+  @@index([atendimentoId, criadoEm, id], map: "copia_atendimento_atendimento_criado_idx")
+  @@index([solicitadoPorUsuarioId, estado, expiraEm], map: "copia_atendimento_usuario_estado_expira_idx")
+  @@index([estado, expiraEm], map: "copia_atendimento_estado_expira_idx")
+  @@map("copia_atendimento")
 }
 
 model HistoricoAtribuicao {

@@ -2911,6 +2911,99 @@
         ]
       }
     },
+    "/api/v1/web/atendimentos/{atendimentoId}/copias": {
+      "post": {
+        "operationId": "criarCopiaAtendimentoWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaCriarCopiaAtendimentoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopiaAtendimentoEmitidaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Cria token interno, efêmero e vinculado à sessão para a cópia do atendimento",
+        "tags": [
+          "copias-atendimento"
+        ]
+      }
+    },
+    "/api/v1/web/copias/baixar": {
+      "post": {
+        "operationId": "baixarCopiaAtendimentoWeb",
+        "parameters": [
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaBaixarCopiaAtendimentoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Consome uma única vez a cópia vinculada à mesma sessão web",
+        "tags": [
+          "copias-atendimento"
+        ]
+      }
+    },
     "/api/v1/administracao/fluxos": {
       "get": {
         "operationId": "listarFluxosEditor",
@@ -5812,6 +5905,56 @@
         },
         "required": [
           "versao_esperada"
+        ]
+      },
+      "EntradaCriarCopiaAtendimentoDto": {
+        "type": "object",
+        "properties": {
+          "confirmacao_explicita": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "confirmacao_explicita"
+        ]
+      },
+      "CopiaAtendimentoEmitidaDto": {
+        "type": "object",
+        "properties": {
+          "expira_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nome_arquivo": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43
+          }
+        },
+        "required": [
+          "expira_em",
+          "nome_arquivo",
+          "token"
+        ]
+      },
+      "EntradaBaixarCopiaAtendimentoDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Token opaco de uso único.",
+            "minLength": 43,
+            "maxLength": 43
+          }
+        },
+        "required": [
+          "token"
         ]
       },
       "VersaoFluxoEditorDto": {

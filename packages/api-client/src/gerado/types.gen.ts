@@ -540,6 +540,23 @@ export type EntradaMarcarNaoLidaWebDto = {
     versao_esperada: number;
 };
 
+export type EntradaCriarCopiaAtendimentoDto = {
+    confirmacao_explicita: true;
+};
+
+export type CopiaAtendimentoEmitidaDto = {
+    expira_em: string;
+    nome_arquivo: string;
+    token: string;
+};
+
+export type EntradaBaixarCopiaAtendimentoDto = {
+    /**
+     * Token opaco de uso único.
+     */
+    token: string;
+};
+
 export type VersaoFluxoEditorDto = {
     id: string;
     fluxo_id: string;
@@ -1877,6 +1894,38 @@ export type MarcarTimelineWebNaoLidaResponses = {
 };
 
 export type MarcarTimelineWebNaoLidaResponse = MarcarTimelineWebNaoLidaResponses[keyof MarcarTimelineWebNaoLidaResponses];
+
+export type CriarCopiaAtendimentoWebData = {
+    body: EntradaCriarCopiaAtendimentoDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/copias';
+};
+
+export type CriarCopiaAtendimentoWebResponses = {
+    200: CopiaAtendimentoEmitidaDto;
+};
+
+export type CriarCopiaAtendimentoWebResponse = CriarCopiaAtendimentoWebResponses[keyof CriarCopiaAtendimentoWebResponses];
+
+export type BaixarCopiaAtendimentoWebData = {
+    body: EntradaBaixarCopiaAtendimentoDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/web/copias/baixar';
+};
+
+export type BaixarCopiaAtendimentoWebResponses = {
+    201: unknown;
+};
 
 export type ListarFluxosEditorData = {
     body?: never;

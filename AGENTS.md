@@ -495,6 +495,7 @@ Formatação que o CI corrige não deve obscurecer risco funcional.
 - Escrita ERP do fluxo ocorre fora da transação e usa chave estável por execução+nó. Resultado incerto só reconcilia; nunca repita criação cega.
 - Sem provider ERP real, percorra `INDISPONIVEL` sem operação externa. Simulador/fixture não pode ser registrado como provider de runtime.
 - No Motor de Fluxos, verificar e executar desbloqueio são nós distintos. Verificação nunca escreve; execução aceita somente `confirmacaoExplicita: true`, refaz a elegibilidade em tempo real e usa chave estável execução+nó.
+- Cópia interna de atendimento exige protocolo oficial, `EXPORTAR_HISTORICO`, sessão web atual, origem, CSRF e confirmação. Token aleatório fica somente por hash, fora de URL/log/auditoria, dura 15 minutos, pertence à mesma sessão e é consumido uma vez. Projete apenas mensagens cliente↔empresa; exclua mídia, formulário, reação, nota, evento e identificadores internos. Link público continua proibido até o portão jurídico/DPO.
 - Derive contrato do contexto e exija atendimento BOT sem fila/responsável, execução/versão corrente e vínculo automatizável verificado. Ação humana mantém fila+RBAC; não fabrique usuário, sessão ou fila para fluxo.
 - Não exponha contrato, motivos, chave, instantes ou resposta ERP em passo/log/auditoria. Resultado incerto só reconcilia; sem provider, nenhum efeito ou operação pode nascer.
 - `TRANSFERIR_PARA_FILA` exige fila interna ativa e conduz diretamente a `AGUARDAR_ATENDENTE` da mesma fila; valide a topologia também no runtime antes da mutação.
