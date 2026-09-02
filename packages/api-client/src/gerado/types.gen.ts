@@ -758,6 +758,54 @@ export type EntradaAtualizacaoPoliticaVersaoMobileDto = {
     versao_esperada: number;
 };
 
+export type FilaRelatorioDto = {
+    fila_id: string;
+    nome: string;
+    aguardando: number;
+    em_atendimento: number;
+    encerrados: number;
+};
+
+export type SlaRelatorioDto = {
+    atendente: number;
+    supervisor: number;
+    administrador: number;
+};
+
+export type MensagensRelatorioDto = {
+    recebidas: number;
+    enviadas: number;
+    entregues: number;
+    lidas: number;
+    falhas: number;
+    taxa_entrega: number;
+};
+
+export type FluxosRelatorioDto = {
+    ativos: number;
+    concluidos: number;
+    falhas: number;
+};
+
+export type ErpRelatorioDto = {
+    pendentes: number;
+    concluidas: number;
+    resultados_incertos: number;
+    falhas_definitivas: number;
+};
+
+export type RelatorioOperacionalDto = {
+    periodo: '24H' | '7D' | '30D';
+    inicio: string;
+    fim: string;
+    formulas_versao: '1';
+    filas: Array<FilaRelatorioDto>;
+    sla: SlaRelatorioDto;
+    mensagens: MensagensRelatorioDto;
+    fluxos: FluxosRelatorioDto;
+    erp: ErpRelatorioDto;
+};
+
 export type SnapshotSincronizacaoDto = {
     sequencia_base: string;
     versao_permissoes: number;
@@ -2172,6 +2220,21 @@ export type AtualizarPoliticaVersaoMobileResponses = {
 };
 
 export type AtualizarPoliticaVersaoMobileResponse = AtualizarPoliticaVersaoMobileResponses[keyof AtualizarPoliticaVersaoMobileResponses];
+
+export type ObterRelatorioOperacionalData = {
+    body?: never;
+    path?: never;
+    query?: {
+        periodo?: '24H' | '7D' | '30D';
+    };
+    url: '/api/v1/administracao/relatorios-operacionais';
+};
+
+export type ObterRelatorioOperacionalResponses = {
+    200: RelatorioOperacionalDto;
+};
+
+export type ObterRelatorioOperacionalResponse = ObterRelatorioOperacionalResponses[keyof ObterRelatorioOperacionalResponses];
 
 export type AcompanharEventosWebData = {
     body?: never;

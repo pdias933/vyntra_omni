@@ -338,6 +338,8 @@ O painel operacional deve priorizar:
 
 Relatórios sofisticados não devem atrasar o núcleo operacional.
 
+Na PR 110, o console oferece períodos fechados de 24 horas, 7 dias e 30 dias e agrega somente filas autorizadas. A visão mínima cobre atendimentos por estado/fila, alertas SLA por nível, mensagens recebidas/enviadas/entregues/lidas/falhas, execuções do Motor de Fluxos e operações ERP recuperáveis. Não há detalhe pessoal nem exportação. Fórmula v1: `enviadas` conta saídas no estado atual `ENVIADA|ENTREGUE|LIDA`; `entregues` conta `ENTREGUE|LIDA`; `taxa_entrega = entregues / enviadas`, ou zero sem denominador. Estados são fotografias operacionais no intervalo, não coortes analíticas.
+
 ## 8. Comportamento de versões de fluxo
 
 Salvar uma automação não altera o que está atendendo clientes. O produto trata o fluxo como identidade estável e cada definição como versão numerada; somente uma publicação explícita futura troca o ponteiro usado por novos atendimentos. Atendimentos em curso continuam na versão com que começaram. Na PR 069 essa fundação é apenas interna: editor, simulação, publicação e execução ainda não aparecem na interface.

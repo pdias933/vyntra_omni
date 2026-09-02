@@ -3710,6 +3710,47 @@
         ]
       }
     },
+    "/api/v1/administracao/relatorios-operacionais": {
+      "get": {
+        "operationId": "obterRelatorioOperacional",
+        "parameters": [
+          {
+            "name": "periodo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "24H",
+                "7D",
+                "30D"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatorioOperacionalDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Agrega indicadores somente das filas autorizadas",
+        "tags": [
+          "relatorios-operacionais"
+        ]
+      }
+    },
     "/api/v1/sincronizacao/eventos": {
       "get": {
         "operationId": "acompanharEventosWeb",
@@ -6730,6 +6771,202 @@
           "versao_minima",
           "versao_recomendada",
           "versao_esperada"
+        ]
+      },
+      "FilaRelatorioDto": {
+        "type": "object",
+        "properties": {
+          "fila_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "aguardando": {
+            "type": "number",
+            "minimum": 0
+          },
+          "em_atendimento": {
+            "type": "number",
+            "minimum": 0
+          },
+          "encerrados": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "fila_id",
+          "nome",
+          "aguardando",
+          "em_atendimento",
+          "encerrados"
+        ]
+      },
+      "SlaRelatorioDto": {
+        "type": "object",
+        "properties": {
+          "atendente": {
+            "type": "number",
+            "minimum": 0
+          },
+          "supervisor": {
+            "type": "number",
+            "minimum": 0
+          },
+          "administrador": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "atendente",
+          "supervisor",
+          "administrador"
+        ]
+      },
+      "MensagensRelatorioDto": {
+        "type": "object",
+        "properties": {
+          "recebidas": {
+            "type": "number",
+            "minimum": 0
+          },
+          "enviadas": {
+            "type": "number",
+            "minimum": 0
+          },
+          "entregues": {
+            "type": "number",
+            "minimum": 0
+          },
+          "lidas": {
+            "type": "number",
+            "minimum": 0
+          },
+          "falhas": {
+            "type": "number",
+            "minimum": 0
+          },
+          "taxa_entrega": {
+            "type": "number",
+            "maximum": 1,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "recebidas",
+          "enviadas",
+          "entregues",
+          "lidas",
+          "falhas",
+          "taxa_entrega"
+        ]
+      },
+      "FluxosRelatorioDto": {
+        "type": "object",
+        "properties": {
+          "ativos": {
+            "type": "number",
+            "minimum": 0
+          },
+          "concluidos": {
+            "type": "number",
+            "minimum": 0
+          },
+          "falhas": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "ativos",
+          "concluidos",
+          "falhas"
+        ]
+      },
+      "ErpRelatorioDto": {
+        "type": "object",
+        "properties": {
+          "pendentes": {
+            "type": "number",
+            "minimum": 0
+          },
+          "concluidas": {
+            "type": "number",
+            "minimum": 0
+          },
+          "resultados_incertos": {
+            "type": "number",
+            "minimum": 0
+          },
+          "falhas_definitivas": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "pendentes",
+          "concluidas",
+          "resultados_incertos",
+          "falhas_definitivas"
+        ]
+      },
+      "RelatorioOperacionalDto": {
+        "type": "object",
+        "properties": {
+          "periodo": {
+            "type": "string",
+            "enum": [
+              "24H",
+              "7D",
+              "30D"
+            ]
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fim": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "formulas_versao": {
+            "type": "string",
+            "enum": [
+              "1"
+            ]
+          },
+          "filas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilaRelatorioDto"
+            }
+          },
+          "sla": {
+            "$ref": "#/components/schemas/SlaRelatorioDto"
+          },
+          "mensagens": {
+            "$ref": "#/components/schemas/MensagensRelatorioDto"
+          },
+          "fluxos": {
+            "$ref": "#/components/schemas/FluxosRelatorioDto"
+          },
+          "erp": {
+            "$ref": "#/components/schemas/ErpRelatorioDto"
+          }
+        },
+        "required": [
+          "periodo",
+          "inicio",
+          "fim",
+          "formulas_versao",
+          "filas",
+          "sla",
+          "mensagens",
+          "fluxos",
+          "erp"
         ]
       },
       "SnapshotSincronizacaoDto": {

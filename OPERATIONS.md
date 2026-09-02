@@ -765,3 +765,9 @@ O usuário precisa abrir `Perfil → Diagnóstico`, revisar e confirmar antes de
 A migration obrigatória passa a `20260902000500_copia_segura_atendimento`. A cópia interna exige protocolo oficial, concessão explícita `EXPORTAR_HISTORICO`, MFA da conta privilegiada, sessão/origem/CSRF e confirmação na interface. O token não deve aparecer em URL, log, auditoria ou evidência; precisa ser consumido pela mesma sessão em até 15 minutos. Segundo consumo, sessão diferente, expiração ou perda de permissão retornam a mesma indisponibilidade genérica.
 
 O arquivo é texto simples, no máximo 5 MiB e dez mil mensagens. Conferir que contém apenas o atendimento solicitado, até o instante emitido, sem mídia, formulário, reação, nota, evento, chave de storage ou identificador interno. Registros de emissão/consumo são imutáveis; não limpar por SQL. O link público permanece desativado e esta entrega não cria URL anônima nem comentário no MK. Rollback preserva a tabela e invalida naturalmente os tokens curtos. O runbook detalhado está em [docs/operacoes/PR-109.md](docs/operacoes/PR-109.md).
+
+## 48. Operação dos relatórios mínimos da PR 110
+
+Não há migration nem materialização periódica. Cada leitura agrega PostgreSQL no mesmo snapshot consistente e só pelas filas autorizadas; portanto o painel não substitui auditoria, observabilidade ou relatório fiscal. Os períodos permitidos são 24 horas, 7 dias e 30 dias, sempre terminando no instante da consulta. Monitorar duração e erro por período de forma agregada, sem fila, usuário ou conteúdo em logs técnicos.
+
+Validar zero denominador, ausência de filas, permissão parcial e os estados terminais/não terminais de mensagens, fluxo e ERP. Mudança de fórmula exige nova versão no contrato e documentação antes do deploy. Reversão remove apenas rota e tela, sem perder fatos. O runbook detalhado está em [docs/operacoes/PR-110.md](docs/operacoes/PR-110.md).

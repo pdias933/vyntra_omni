@@ -359,6 +359,8 @@ Os valores são configuráveis por ambiente. Caracterização real pode reduzi-l
 - UUID desconhecido e UUID não autorizado produzem resposta indistinguível quando necessário;
 - nenhum endpoint recebe URL arbitrária para backend acessar;
 - paginação, limites de busca e exportação evitam exfiltração em massa.
+
+Relatórios da PR 110 não ampliam visibilidade: cada fila é autorizada individualmente antes das agregações, e todas as relações de atendimento, SLA, mensagem, execução e ERP recebem o mesmo conjunto permitido na consulta. O DTO contém somente contagens, intervalo, versão de fórmula e nome/UUID interno de fila já autorizada; não inclui contato, mensagem, protocolo, documento, identificador externo ou payload de integração. Ausência de fila retorna conjunto vazio sem consultar fatos operacionais.
 - a lista resolve permissão e filas antes de consultar conteúdo e aplica seus seis filtros no PostgreSQL; não carrega atendimentos de outras filas para filtrar no JavaScript;
 - telefone secundário é mascarado e BSUID, identificadores externos e conteúdo técnico não entram nos cards.
 

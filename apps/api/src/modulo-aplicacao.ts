@@ -38,6 +38,7 @@ import { ControladorSaudeAdministrativa } from './saude/controlador-saude-admini
 import { ServicoSaudeAdministrativa } from './saude/servico-saude-administrativa.js';
 import { ServicoProntidao } from './saude/servico-prontidao.js';
 import { ModuloReleases } from './releases/modulo-releases.js';
+import { ModuloRelatoriosOperacionais } from './relatorios-operacionais/modulo-relatorios-operacionais.js';
 import { ModuloSnapshotsCliente } from './snapshots-cliente/modulo-snapshots-cliente.js';
 import { ModuloSla } from './sla/modulo-sla.js';
 import { ModuloSincronizacao } from './sincronizacao/modulo-sincronizacao.js';
@@ -81,6 +82,7 @@ import { ModuloSincronizacao } from './sincronizacao/modulo-sincronizacao.js';
     ModuloPersistencia,
     ModuloProtocolosErp,
     ModuloReleases,
+    ModuloRelatoriosOperacionais,
     ModuloSnapshotsCliente,
     ModuloSincronizacao,
     ModuloSla,

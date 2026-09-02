@@ -2392,6 +2392,32 @@ textarea:focus-visible {
   .erro-operacao { grid-column: 1; }
 }
 
+.relatorios-operacionais { padding: 26px 28px 40px; overflow: auto; }
+.periodos-relatorio { display: flex; gap: 7px; margin: 10px 0 18px; }
+.periodos-relatorio button { min-height: 34px; padding: 0 14px; border: 1px solid #dbe4df; border-radius: 999px; color: #657068; background: #fff; cursor: pointer; font: inherit; font-size: 10px; font-weight: 750; }
+.periodos-relatorio button.ativo { border-color: #1b9b56; color: #fff; background: #1b9b56; }
+.conteudo-relatorio { display: grid; gap: 14px; }
+.grade-indicadores-relatorio { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.indicador-relatorio { display: grid; gap: 5px; min-height: 88px; align-content: center; padding: 16px; border: 1px solid #e2e8e4; border-radius: 14px; background: #fff; box-shadow: 0 8px 24px rgba(25, 48, 34, .04); }
+.indicador-relatorio strong { font-size: 24px; letter-spacing: -.04em; }
+.indicador-relatorio span { color: #748078; font-size: 10px; }
+.indicador-relatorio--verde strong { color: #178449; } .indicador-relatorio--azul strong { color: #3974b9; } .indicador-relatorio--amarelo strong { color: #a36d14; } .indicador-relatorio--vermelho strong { color: #b84b4b; }
+.painel-relatorio, .bloco-relatorio { border: 1px solid #e2e8e4; border-radius: 14px; background: #fff; }
+.painel-relatorio > header { display: flex; align-items: center; justify-content: space-between; padding: 15px 17px; border-bottom: 1px solid #edf1ee; }
+.painel-relatorio > header span { color: #77827a; font-size: 9px; font-weight: 760; text-transform: uppercase; letter-spacing: .06em; }
+.painel-relatorio h2, .bloco-relatorio h2 { margin: 3px 0 0; font-size: 13px; }
+.painel-relatorio header small { color: #7c8780; font-size: 9px; }
+.tabela-relatorio { display: grid; grid-template-columns: minmax(160px, 1fr) repeat(3, minmax(90px, .45fr)); align-items: center; }
+.tabela-relatorio > * { margin: 0; padding: 10px 17px; border-bottom: 1px solid #f0f3f1; font-size: 10px; }
+.tabela-relatorio > b { color: #6f7972; background: #fafbfa; font-size: 9px; }
+.grade-detalhes-relatorio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.bloco-relatorio { padding: 15px 17px; }
+.bloco-relatorio h2 { margin-bottom: 10px; }
+.bloco-relatorio div { display: flex; align-items: center; justify-content: space-between; min-height: 29px; border-top: 1px solid #f0f3f1; color: #6f7972; font-size: 10px; }
+.bloco-relatorio div strong { color: #29342d; }
+.nota-formulas { margin: 0; color: #7a857d; font-size: 9px; }
+@media (max-width: 1040px) { .grade-indicadores-relatorio, .grade-detalhes-relatorio { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 @keyframes aparecer {
   from { opacity: 0; }
   to { opacity: 1; }

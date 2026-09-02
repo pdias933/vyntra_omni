@@ -131,7 +131,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 107 | CONCLUÍDA | `xhigh` |
 | 108 | CONCLUÍDA | `high` |
 | 109 | CONCLUÍDA | `xhigh` |
-| 110 | PENDENTE | `high` |
+| 110 | CONCLUÍDA | `high` |
 | 111 | PENDENTE | `high` |
 | 112 | PENDENTE | `xhigh` |
 | 113 | PENDENTE | `xhigh` |
@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR109 foram concluídas. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. A PR110 é a próxima na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR110 foram concluídas. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. A PR111 é a próxima na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -712,6 +712,10 @@ Aceite concluído em 2 de setembro de 2026: `Perfil → Diagnóstico` gera local
 ### PR 109 — cópia segura do atendimento
 
 Aceite concluído em 2 de setembro de 2026: a cópia interna exige protocolo oficial e as permissões `VISUALIZAR_FILA` e `EXPORTAR_HISTORICO`, além de sessão web atual, origem, CSRF e confirmação. O token aleatório de 256 bits é armazenado somente por hash, não integra URL, dura 15 minutos, pertence ao mesmo usuário e sessão e é consumido atomicamente uma vez. A projeção usa a fonte da verdade até o instante emitido e inclui somente mensagens cliente↔empresa; formulário, reação, mídia, nota, evento e identificador interno não são consultados ou exportados. Há limites de dez mil mensagens e 5 MiB, auditoria sem conteúdo/token e persistência terminal imutável. A migration aditiva é `20260902000500_copia_segura_atendimento`. Lint, tipos, 438 testes da API, 313 testes de arquitetura, contratos, matriz Expo, auditoria de dependências, varredura de segredos e builds web/API/iOS/Android foram aprovados. O link público continua sem rota/token e condicionado à aprovação jurídica/DPO. Effort `xhigh` mantido por autorização sensível, exportação e consumo concorrente.
+
+### PR 110 — relatórios operacionais mínimos
+
+Aceite concluído em 2 de setembro de 2026: o painel web oferece 24 horas, 7 dias e 30 dias e cobre atendimento por estado/fila, alertas SLA por nível, mensagens, Motor de Fluxos e operações ERP recuperáveis. A API autoriza cada fila ativa antes de agregar e injeta somente o conjunto permitido em todas as relações; usuário sem fila recebe zeros sem consulta a fatos. O DTO contém apenas contagens, intervalo, fórmula versionada e identificação interna da fila autorizada. A fórmula v1 documenta fotografia de estado, inclusão de `LIDA` em entregue e zero sem denominador. O web usa o SDK gerado e apresenta visão desktop responsiva sem recalcular autoridade. Não houve migration. Lint, tipos, 440 testes da API, 316 testes de arquitetura, contratos, matriz Expo, auditoria de dependências, varredura de segredos e builds web/API/iOS/Android foram aprovados. Effort `high` confirmado pelas agregações multi-domínio sob RBAC.
 
 ## 12. Mobile
 

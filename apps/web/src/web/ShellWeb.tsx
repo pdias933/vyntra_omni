@@ -12,6 +12,7 @@ import { AdministracaoUsuariosWeb } from './administracao/AdministracaoUsuariosW
 import { AdministracaoOperacionalWeb } from './administracao/AdministracaoOperacionalWeb';
 import { ListaAtendimentosWeb } from './atendimentos/ListaAtendimentosWeb';
 import { SaudeReleasesWeb } from './saude/SaudeReleasesWeb';
+import { RelatoriosOperacionaisWeb } from './relatorios/RelatoriosOperacionaisWeb';
 import { obterCsrf } from './seguranca-web';
 
 const PareamentoCelularWeb = lazy(async () => {
@@ -24,10 +25,12 @@ type RotaWeb =
   | '/administracao/operacao'
   | '/administracao/usuarios'
   | '/atendimentos'
+  | '/relatorios'
   | '/saude';
 
 const ROTAS = new Set<RotaWeb>([
   '/atendimentos',
+  '/relatorios',
   '/administracao/usuarios',
   '/administracao/operacao',
   '/administracao/fluxos',
@@ -174,6 +177,7 @@ export function ShellWeb() {
         <nav aria-label="Navegação principal" className="navegacao-shell">
           <GrupoNavegacao rotulo="Operação">
             <ItemNavegacao ativo={rota === '/atendimentos'} icone="◫" rotulo="Atendimentos" aoSelecionar={() => navegar('/atendimentos')} />
+            <ItemNavegacao ativo={rota === '/relatorios'} icone="⌁" rotulo="Relatórios" aoSelecionar={() => navegar('/relatorios')} />
           </GrupoNavegacao>
           <GrupoNavegacao rotulo="Administração">
             <ItemNavegacao ativo={rota === '/administracao/usuarios'} icone="♙" rotulo="Usuários e acessos" aoSelecionar={() => navegar('/administracao/usuarios')} />
@@ -249,6 +253,7 @@ function ConteudoRota({ rota }: { readonly rota: RotaWeb }) {
   if (rota === '/administracao/operacao') return <AdministracaoOperacionalWeb />;
   if (rota === '/administracao/usuarios') return <AdministracaoUsuariosWeb />;
   if (rota === '/atendimentos') return <ListaAtendimentosWeb />;
+  if (rota === '/relatorios') return <RelatoriosOperacionaisWeb />;
   return <SaudeReleasesWeb />;
 }
 
