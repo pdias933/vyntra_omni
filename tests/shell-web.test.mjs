@@ -28,6 +28,7 @@ test('shell reage à invalidação de permissões pelo SSE e possui rotas deskto
 test('login trata expiração e substituição explícita da sessão mais antiga', async () => {
   const shell = await ler('apps/web/src/web/ShellWeb.tsx');
   assert.match(shell, /expira_em/);
+  assert.match(shell, /Reflect\.get\(erro, 'codigo'\)/);
   assert.match(shell, /confirmar_revogacao_sessao_mais_antiga/);
   assert.match(shell, /Substituir minha sessão mais antiga/);
   assert.match(shell, /MFA_NECESSARIO/);

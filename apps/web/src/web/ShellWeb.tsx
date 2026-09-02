@@ -37,6 +37,8 @@ function rotaAtual(): RotaWeb {
 
 function codigoErro(erro: unknown): string | undefined {
   if (typeof erro !== 'object' || erro === null) return undefined;
+  const codigoDireto = Reflect.get(erro, 'codigo');
+  if (typeof codigoDireto === 'string') return codigoDireto;
   const resposta = Reflect.get(erro, 'response');
   if (typeof resposta !== 'object' || resposta === null) return undefined;
   const dados = Reflect.get(resposta, 'data');
