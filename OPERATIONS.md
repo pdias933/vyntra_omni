@@ -741,3 +741,9 @@ Não há migration PostgreSQL nem mudança de schema SQLCipher. `expo-file-syste
 O aceite deve testar todos os formatos permitidos, arquivo acima de cada teto, MIME divergente, cancelamento, falha de upload, sessão/aparelho revogado e janela Meta encerrada. Para ERP, cobrir permissão ausente, contexto alterado entre prévia e confirmação, ERP indisponível, repetição idempotente e resultado em reconciliação. Faturas nunca podem cair para snapshot e capacidades sem caso de uso permanecem desabilitadas.
 
 Observar somente volume, latência, tamanho/categoria agregados e códigos canônicos; nunca registrar arquivo, nome, mensagem, fatura, contrato, protocolo, resposta ERP, token ou segredo. Rollback é coordenado entre API e app; mídia já aceita permanece no pipeline normal e operações ERP persistidas continuam sua reconciliação. O runbook detalhado está em [docs/operacoes/PR-105.md](docs/operacoes/PR-105.md).
+
+## 44. Operação das notificações mobile da PR 106
+
+Não há migration, dependência, mudança do OpenAPI ou deploy. A entrega reutiliza `expo-notifications` e os contratos da PR 057. O aceite precisa cobrir os cinco tipos, payload extra/incoerente, rajada do mesmo contato, várias conversas, primeiro plano, segundo plano, abertura a frio, sequência ainda não aplicada, destino removido após sync, falha de rede, logout e troca de usuário.
+
+O badge conta grupos em memória e não deve ser tratado como métrica de entrega. Monitorar apenas resultado agregado do provedor já normalizado, latência de convergência e códigos de falha; nunca payload, UUID, nome ou conteúdo. Rollback do app remove a aba funcional, mas não muda eventos, réplica ou estado do atendimento. O adapter real de entrega continua desligado sem credenciais/destinos aprovados. O runbook detalhado está em [docs/operacoes/PR-106.md](docs/operacoes/PR-106.md).

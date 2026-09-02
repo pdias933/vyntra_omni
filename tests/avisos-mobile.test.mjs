@@ -34,7 +34,7 @@ test('app sincroniza antes de navegar e nunca aplica a notificação na réplica
     'apps/mobile/src/avisos/coordenador-avisos-mobile.ts',
   );
   assert.ok(
-    coordenador.indexOf('await this.sincronizarUmaVez()') <
+    coordenador.indexOf('await this.sincronizarAte(aviso.sequenciaObservada)') <
       coordenador.indexOf('this.navegador.abrirConversa'),
   );
   assert.match(coordenador, /sincronizacaoEmCurso/);

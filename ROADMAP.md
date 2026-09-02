@@ -127,7 +127,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 103 | CONCLUÍDA | `high` |
 | 104 | CONCLUÍDA | `xhigh` |
 | 105 | CONCLUÍDA | `xhigh` |
-| 106 | PENDENTE | `high` |
+| 106 | CONCLUÍDA | `high` |
 | 107 | PENDENTE | `xhigh` |
 | 108 | PENDENTE | `high` |
 | 109 | PENDENTE | `xhigh` |
@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR105 foram concluídas e PR106–PR107 seguem pendentes na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR106 foram concluídas e a PR107 segue pendente na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -696,6 +696,10 @@ Aceite concluído em 2 de setembro de 2026: enviar sem rede cria no SQLCipher um
 ### PR 105 — mídia e ações ERP mobile
 
 Aceite concluído em 2 de setembro de 2026: o composer usa o seletor nativo para JPEG, PNG, WebP, MP3, OGG, MP4 e PDF, aplica os tetos 8/16/32/20 MB antes do upload e apresenta prévia local com nome, tamanho e origem. Somente a confirmação materializa e envia o arquivo; falha preserva a seleção, e offline ou janela Meta encerrada bloqueiam mídia sem criar pendência. A rota mobile reautentica sessão e aparelho na escrita e reutiliza validação por assinatura real, storage privado, timeline e caixa de saída centrais. A folha contextual resolve permissões no backend: faturas declaram ERP em tempo real ou indisponibilidade sem snapshot, e desbloqueio/OS usam prévia, confirmação, idempotência e reconciliação sem sucesso presumido. Capacidades sem caminho ponta a ponta permanecem indisponíveis. `expo-file-system ~57.0.6`, já transitivo no Expo, tornou-se dependência direta; não houve migration PostgreSQL, mudança SQLCipher ou deploy. Lint, tipos, 435 testes da API, 296 testes de arquitetura, matriz Expo, auditoria de dependências, varredura de segredos e builds web/API/iOS/Android foram aprovados. Effort `xhigh` confirmado pela fronteira nativa, upload seguro e reuso das operações ERP recuperáveis.
+
+### PR 106 — notificações mobile
+
+Aceite concluído em 2 de setembro de 2026: o receptor Expo passou a existir somente durante sessão autenticada e a aba `Notificações` apresenta exatamente nova mensagem própria, novo pendente, cliente aguardando, janela próxima de expirar e transferência direta. A caixa efêmera limita cem grupos, agrega rajadas pela conversa/contato, conserva a maior sequência e nunca persiste payload ou conteúdo no SQLCipher. O badge conta grupos, e cada card usa texto genérico. Recebimento em primeiro plano solicita sincronização coalescida; toque e abertura a frio aguardam cursor igual ou posterior a `sequencia_observada`, réplica íntegra e WebSocket conectado, relendo então o destino autorizado. Falha, timeout ou alvo removido não navegam e preservam o aviso; logout/troca de usuário limpam a caixa. Não houve migration, dependência, OpenAPI ou deploy; o adapter real de entrega permanece fechado sem configuração aprovada. Lint, tipos, 435 testes da API, 302 testes de arquitetura, matriz Expo, auditoria de dependências, varredura de segredos e builds web/API/iOS/Android foram aprovados. Effort `high` confirmado pela convergência por sequência, agrupamento seguro e navegação sem estado antigo.
 
 ## 12. Mobile
 

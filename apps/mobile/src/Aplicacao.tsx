@@ -1,4 +1,8 @@
-import { NavigationContainer, type Theme } from '@react-navigation/native';
+import {
+  createNavigationContainerRef,
+  NavigationContainer,
+  type Theme,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -18,9 +22,15 @@ import {
 } from './autenticacao/servico-autenticacao-aplicativo';
 import type { PoliticaVersaoAplicativo } from './atualizacao/adaptador-politica-versao-http';
 import { ServicoAtendimentosMobile } from './atendimentos/servico-atendimentos-mobile';
+import { AdaptadorPushExpo } from './avisos/adaptadores/push/adaptador-push-expo';
+import { CaixaAvisosMobile } from './avisos/caixa-avisos-mobile';
+import { CoordenadorAvisosMobile } from './avisos/coordenador-avisos-mobile';
 import { ServicoPendenciasSaidaMobile } from './offline/servico-pendencias-saida-mobile';
 import { ServicoPoliticaVersaoAplicativo } from './atualizacao/servico-politica-versao-aplicativo';
-import { NavegacaoPrincipal } from './navegacao/NavegacaoPrincipal';
+import {
+  NavegacaoPrincipal,
+  type RotasPrincipais,
+} from './navegacao/NavegacaoPrincipal';
 import { ServicoSincronizacaoAplicativo } from './sincronizacao/servico-sincronizacao-aplicativo';
 import type { EstadoSincronizacaoMobile } from './sincronizacao/motor-sincronizacao-mobile';
 import { CORES } from './tema';
@@ -44,6 +54,8 @@ type EstadoPoliticaVersao =
   | 'PERMITIDA'
   | 'VERIFICANDO';
 const NavegacaoEntrada = createNativeStackNavigator<RotasEntrada>();
+type RotasAplicacao = RotasEntrada & RotasPrincipais;
+const referenciaNavegacao = createNavigationContainerRef<RotasAplicacao>();
 const autenticacao = new ServicoAutenticacaoAplicativo();
 const sincronizacao = new ServicoSincronizacaoAplicativo(autenticacao);
 const atendimentosMobile = new ServicoAtendimentosMobile(autenticacao);
@@ -53,7 +65,62 @@ const pendenciasSaida = new ServicoPendenciasSaidaMobile(
   autenticacao.replica,
 );
 const politicaVersaoAplicativo = new ServicoPoliticaVersaoAplicativo();
+const caixaAvisos = new CaixaAvisosMobile();
+const adaptadorPush = new AdaptadorPushExpo();
 const TEMPO_PARA_BLOQUEAR_MS = 30_000;
+
+async function aguardarNavegacaoPronta(): Promise<void> {
+  if (referenciaNavegacao.isReady()) return;
+  await new Promise<void>((resolver, rejeitar) => {
+    let tentativas = 0;
+    const verificar = () => {
+      if (referenciaNavegacao.isReady()) {
+        resolver();
+        return;
+      }
+      tentativas += 1;
+      if (tentativas >= 100) {
+        rejeitar(new Error('NAVEGACAO_AVISO_INDISPONIVEL'));
+        return;
+      }
+      setTimeout(verificar, 20);
+    };
+    verificar();
+  });
+}
+
+async function abrirResumoSincronizado(
+  resumo: Awaited<
+    ReturnType<typeof autenticacao.replica.obterResumoAtendimento>
+  >,
+): Promise<void> {
+  if (resumo === undefined) throw new Error('DESTINO_AVISO_NAO_AUTORIZADO');
+  await aguardarNavegacaoPronta();
+  referenciaNavegacao.navigate('Atendimentos', {
+    params: { atendimento: resumo },
+    screen: 'Conversa',
+  });
+}
+
+const coordenadorAvisos = new CoordenadorAvisosMobile(
+  {
+    sincronizarAte: (sequenciaObservada) =>
+      sincronizacao.sincronizarAte(sequenciaObservada),
+  },
+  {
+    abrirAtendimento: async (atendimentoId) =>
+      abrirResumoSincronizado(
+        await autenticacao.replica.obterResumoAtendimento(atendimentoId),
+      ),
+    abrirConversa: async (conversaId) =>
+      abrirResumoSincronizado(
+        await autenticacao.replica.obterResumoAtendimentoPorConversa(
+          conversaId,
+        ),
+      ),
+  },
+  caixaAvisos,
+);
 
 function falhaPermiteAcessoOffline(erro: unknown): boolean {
   return (
@@ -275,6 +342,11 @@ export function Aplicacao() {
     }
   }, [estado, sessao?.sessaoId]);
 
+  useEffect(() => {
+    if (estado !== 'AUTENTICADO' || sessao === undefined) return;
+    return adaptadorPush.iniciar(coordenadorAvisos);
+  }, [estado, sessao]);
+
   useEffect(
     () =>
       sincronizacao.observar((estadoSincronizacao) => {
@@ -373,6 +445,7 @@ export function Aplicacao() {
     try {
       sincronizacao.pausar();
       await autenticacao.sair();
+      coordenadorAvisos.limpar();
       sessaoAtual.current = undefined;
       definirSessao(undefined);
       definirEstado('SEM_SESSAO');
@@ -389,6 +462,7 @@ export function Aplicacao() {
       sincronizacao.pausar();
       await autenticacao.sair();
     } finally {
+      coordenadorAvisos.limpar();
       sessaoAtual.current = undefined;
       definirSessao(undefined);
       definirEstado('SEM_SESSAO');
@@ -397,6 +471,7 @@ export function Aplicacao() {
   }
 
   function autenticar(sessaoAutenticada: SessaoAplicativo) {
+    coordenadorAvisos.limpar();
     sessaoAtual.current = sessaoAutenticada;
     definirSessao(sessaoAutenticada);
     definirEstado('AUTENTICADO');
@@ -405,7 +480,7 @@ export function Aplicacao() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <NavigationContainer theme={TEMA_NAVEGACAO}>
+        <NavigationContainer ref={referenciaNavegacao} theme={TEMA_NAVEGACAO}>
           {estadoPolitica === 'VERIFICANDO' ? (
             <TelaCarregamento />
           ) : estadoPolitica === 'FALHA' ? (
@@ -437,8 +512,10 @@ export function Aplicacao() {
           ) : estado === 'AUTENTICADO' && sessao !== undefined ? (
             <NavegacaoPrincipal
               abrindoLoja={abrindoLoja}
+              aoAbrirAviso={(aviso) => coordenadorAvisos.abrir(aviso)}
               aoAtualizar={() => void abrirLoja()}
               aoSair={() => void sair()}
+              caixaAvisos={caixaAvisos}
               estadoSincronizacao={estadoSincronizacao}
               {...(erroPolitica === undefined
                 ? {}

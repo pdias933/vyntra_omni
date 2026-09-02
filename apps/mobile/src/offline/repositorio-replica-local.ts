@@ -353,6 +353,26 @@ export class RepositorioReplicaLocal {
     return linha === null ? undefined : this.mapearResumoAtendimento(linha);
   }
 
+  public async obterResumoAtendimentoPorConversa(
+    conversaId: string,
+  ): Promise<ResumoAtendimentoLocal | undefined> {
+    if (!UUID.test(conversaId)) throw new Error('CONVERSA_AVISO_INVALIDA');
+    const banco = await this.abrir();
+    const linha = await banco.getFirstAsync<LinhaResumoAtendimentoLocal>(
+      `SELECT atendimento_id, contato_id, conversa_id, estado, fila_id,
+        fila_nome, identidade_secundaria, janela_expira_em, modo,
+        motivo_espera, nome_contato, quantidade_nao_lida, sla_em,
+        ultima_atividade_em, ultima_mensagem_direcao,
+        ultima_mensagem_resumo, usuario_responsavel_id
+       FROM resumo_atendimento
+       WHERE conversa_id = ? AND estado IN ('AGUARDANDO', 'EM_ATENDIMENTO')
+       ORDER BY ultima_atividade_em DESC, atendimento_id DESC
+       LIMIT 1`,
+      conversaId,
+    );
+    return linha === null ? undefined : this.mapearResumoAtendimento(linha);
+  }
+
   public async obterRascunho(conversaId: string): Promise<string> {
     if (!UUID.test(conversaId)) throw new Error('RASCUNHO_INVALIDO');
     const banco = await this.abrir();

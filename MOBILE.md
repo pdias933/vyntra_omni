@@ -326,6 +326,8 @@ Rajadas do mesmo contato são agrupadas. Push contém mínimo possível e nunca 
 
 A PR 057 adiciona o adapter nativo `expo-notifications` com allowlist de `tipo`, `sequencia_observada`, chave de agrupamento e UUIDs mínimos de conversa/atendimento. Payload ausente, adicional ou incoerente é ignorado. Em primeiro plano, o aviso apenas solicita sincronização coalescida. Ao tocar ou abrir o app a frio, `CoordenadorAvisosMobile` aguarda a sincronização e só então navega; falha não abre uma tela baseada em estado antigo. O aviso nunca é aplicado diretamente no SQLite, não avança cursor, não marca mensagem lida e não executa ação. Respostas de abertura já processadas são deduplicadas e limpas do adapter nativo depois do sucesso.
 
+Na PR 106, o adapter é iniciado somente durante a sessão autenticada. A caixa de avisos fica em memória, aceita exclusivamente os cinco tipos e agrupa pela chave de conversa/contato, conservando o mais novo e uma contagem de rajada. Ela não é histórico de domínio nem é persistida no SQLCipher. A aba `Notificações` usa conteúdo genérico, badge pela quantidade de grupos e lista virtualizada. Ao tocar, o motor converge até `sequencia_observada`, relê o resumo autorizado e navega; alvo removido do snapshot, timeout ou falha de rede mantém o aviso e não abre estado antigo. Logout ou troca de usuário limpa a caixa.
+
 ## 9. Offline
 
 ### 9.1 O que funciona

@@ -19,6 +19,7 @@ import type {
 const ANTECEDENCIA_RENOVACAO_MS = 5 * 60 * 1_000;
 const ATRASO_MAXIMO_RECONEXAO_MS = 30_000;
 const LIMITE_PAGINAS_INCREMENTAIS = 100;
+const PRAZO_ABERTURA_AVISO_MS = 30_000;
 
 export type EstadoSincronizacaoMobile =
   | 'BLOQUEADO'
@@ -81,6 +82,58 @@ export class MotorSincronizacaoMobile {
     if (!this.ativa) return;
     this.repeticao = 0;
     this.solicitarSincronizacao(false, false);
+  }
+
+  public aguardarSequencia(sequenciaMinima: string): Promise<void> {
+    if (!/^(0|[1-9][0-9]{0,18})$/u.test(sequenciaMinima)) {
+      return Promise.reject(new Error('SEQUENCIA_AVISO_INVALIDA'));
+    }
+    const minima = BigInt(sequenciaMinima);
+    return new Promise((resolver, rejeitar) => {
+      let concluida = false;
+      let consultando = false;
+      let pararEstado: () => void = () => undefined;
+      let pararRepositorio: () => void = () => undefined;
+      const temporizador = setTimeout(
+        () => finalizar(new Error('SINCRONIZACAO_AVISO_EXPIRADA')),
+        PRAZO_ABERTURA_AVISO_MS,
+      );
+      const finalizar = (erro?: Error) => {
+        if (concluida) return;
+        concluida = true;
+        clearTimeout(temporizador);
+        pararEstado();
+        pararRepositorio();
+        if (erro === undefined) resolver();
+        else rejeitar(erro);
+      };
+      const avaliar = () => {
+        if (concluida || consultando) return;
+        if (this.estado === 'BLOQUEADO') {
+          finalizar(new Error('SINCRONIZACAO_AVISO_BLOQUEADA'));
+          return;
+        }
+        if (this.estado !== 'CONECTADO') return;
+        consultando = true;
+        void this.repositorio.obterEstado()
+          .then((estado) => {
+            if (
+              estado !== undefined &&
+              !estado.precisaRessincronizar &&
+              BigInt(estado.sequenciaEvento) >= minima
+            ) {
+              finalizar();
+            }
+          })
+          .catch(() => undefined)
+          .finally(() => {
+            consultando = false;
+          });
+      };
+      pararRepositorio = this.repositorio.observarMudancas(avaliar);
+      pararEstado = this.observar(avaliar);
+      avaliar();
+    });
   }
 
   private solicitarSincronizacao(

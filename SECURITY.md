@@ -808,3 +808,12 @@ Falha em teste de segurança crítico bloqueia deploy; não é candidata a featu
 - fatura mobile usa somente ERP em tempo real e declara indisponibilidade sem snapshot financeiro;
 - desbloqueio e OS exigem permissão, contexto, preparação, confirmação explícita e chave idempotente; a execução revalida o estado no backend e resposta incerta nunca aparece como sucesso;
 - segunda via, Pix, sessão de acesso, Flow e nota continuam negados até existir caso de uso autorizado ponta a ponta; visibilidade ou estado do botão não é controle de segurança.
+
+## 36. Notificações mobile da PR 106
+
+- somente os cinco tipos aprovados, sequência decimal, chave de agrupamento e UUIDs mínimos atravessam o adapter; campo adicional ou relação incoerente descarta o payload;
+- títulos e descrições são genéricos e não contêm mensagem, contato, CPF/CNPJ, fatura, contrato, nota, formulário ou dado ERP;
+- a caixa é efêmera, limitada e separada do SQLCipher; push não atualiza entidade, cursor, permissão, estado de envio ou marcador de leitura;
+- rajadas convergem pelo maior `sequencia_observada`; abertura exige cursor local igual ou posterior, réplica íntegra e WebSocket conectado;
+- depois da sincronização, o destino é relido no escopo autorizado. Ausência, revogação, timeout ou falha de rede não abrem conversa antiga e conservam o aviso para nova tentativa;
+- o receptor existe somente em sessão autenticada e a caixa é limpa no logout/troca de usuário; resposta nativa é deduplicada e só é removida após abertura bem-sucedida.

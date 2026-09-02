@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import type { NavigatorScreenParams } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
-import type { ComponentProps } from 'react';
+import { type ComponentProps, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +11,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { SessaoAplicativo } from '../autenticacao/servico-autenticacao-aplicativo';
 import type { PoliticaVersaoAplicativo } from '../atualizacao/adaptador-politica-versao-http';
 import type { ServicoAtendimentosMobile } from '../atendimentos/servico-atendimentos-mobile';
+import type { CaixaAvisosMobile } from '../avisos/caixa-avisos-mobile';
+import type { AvisoMobileRecebido } from '../avisos/modelo-aviso-mobile';
 import { MarcaVyntra } from '../componentes/MarcaVyntra';
 import type {
   RepositorioReplicaLocal,
@@ -18,24 +21,25 @@ import type {
 import type { ServicoPendenciasSaidaMobile } from '../offline/servico-pendencias-saida-mobile';
 import type { EstadoSincronizacaoMobile } from '../sincronizacao/motor-sincronizacao-mobile';
 import { TelaListaAtendimentos } from '../telas/TelaListaAtendimentos';
+import { TelaNotificacoesMobile } from '../telas/TelaNotificacoesMobile';
 import { TelaConversaMobile } from '../telas/TelaConversaMobile';
 import { TelaDetalhesContatoMobile } from '../telas/TelaDetalhesContatoMobile';
 import { CORES, ESPACOS, RAIOS } from '../tema';
 
 type NomeIcone = ComponentProps<typeof Ionicons>['name'];
-type RotasPrincipais = {
-  Atendimentos: undefined;
+export type RotasAtendimentos = {
+  Conversa: { atendimento: ResumoAtendimentoLocal };
+  Detalhes: { atendimento: ResumoAtendimentoLocal };
+  Lista: undefined;
+};
+export type RotasPrincipais = {
+  Atendimentos: NavigatorScreenParams<RotasAtendimentos> | undefined;
   Contatos: undefined;
   Notificações: undefined;
   Perfil: undefined;
 };
 
 const Abas = createBottomTabNavigator<RotasPrincipais>();
-type RotasAtendimentos = {
-  Conversa: { atendimento: ResumoAtendimentoLocal };
-  Detalhes: { atendimento: ResumoAtendimentoLocal };
-  Lista: undefined;
-};
 const PilhaAtendimentos = createNativeStackNavigator<RotasAtendimentos>();
 
 function FluxoAtendimentos({
@@ -229,8 +233,10 @@ function Perfil({
 
 export function NavegacaoPrincipal({
   abrindoLoja,
+  aoAbrirAviso,
   aoAtualizar,
   aoSair,
+  caixaAvisos,
   erroAtualizacao,
   estadoSincronizacao,
   politicaVersao,
@@ -241,8 +247,10 @@ export function NavegacaoPrincipal({
   sessao,
 }: {
   readonly abrindoLoja: boolean;
+  readonly aoAbrirAviso: (aviso: AvisoMobileRecebido) => Promise<void>;
   readonly aoAtualizar: () => void;
   readonly aoSair: () => void;
+  readonly caixaAvisos: CaixaAvisosMobile;
   readonly erroAtualizacao?: string;
   readonly estadoSincronizacao: EstadoSincronizacaoMobile;
   readonly politicaVersao?: PoliticaVersaoAplicativo;
@@ -253,6 +261,17 @@ export function NavegacaoPrincipal({
   readonly sessao: SessaoAplicativo;
 }) {
   const reduzirMovimento = useReducedMotion();
+  const [quantidadeAvisos, definirQuantidadeAvisos] = useState(
+    () => caixaAvisos.listar().length,
+  );
+
+  useEffect(
+    () =>
+      caixaAvisos.observar(() =>
+        definirQuantidadeAvisos(caixaAvisos.listar().length),
+      ),
+    [caixaAvisos],
+  );
 
   return (
     <Abas.Navigator
@@ -299,12 +318,17 @@ export function NavegacaoPrincipal({
           />
         )}
       </Abas.Screen>
-      <Abas.Screen name="Notificações">
+      <Abas.Screen
+        name="Notificações"
+        options={{
+          ...(quantidadeAvisos === 0 ? {} : { tabBarBadge: quantidadeAvisos }),
+          tabBarBadgeStyle: estilos.badgeAba,
+        }}
+      >
         {() => (
-          <TelaVazia
-            descricao="Você não tem nenhuma notificação nova."
-            icone="notifications-outline"
-            titulo="Notificações"
+          <TelaNotificacoesMobile
+            aoAbrir={(grupo) => aoAbrirAviso(grupo.aviso)}
+            caixa={caixaAvisos}
           />
         )}
       </Abas.Screen>
@@ -331,6 +355,7 @@ const estilos = StyleSheet.create({
   avatar: { alignItems: 'center', backgroundColor: CORES.acao, borderRadius: RAIOS.pílula, height: 62, justifyContent: 'center', width: 62 },
   avisoAtualizacao: { alignItems: 'center', backgroundColor: '#F3F6FF', borderColor: '#DDE5FA', borderRadius: RAIOS.campo, borderWidth: 1, flexDirection: 'row', gap: 11, padding: 14 },
   avisoSubstituicao: { alignItems: 'center', backgroundColor: '#EAF0FF', borderRadius: RAIOS.campo, flexDirection: 'row', gap: 10, padding: 14 },
+  badgeAba: { backgroundColor: CORES.alerta, color: CORES.textoInvertido, fontSize: 10, fontWeight: '800' },
   barraAbas: { borderTopColor: CORES.borda, height: 76, paddingBottom: 9, paddingTop: 7 },
   cabecalho: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: ESPACOS.grande, paddingVertical: 18 },
   cartaoPerfil: { alignItems: 'center', backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: RAIOS.cartao, borderWidth: 1, flexDirection: 'row', gap: 16, padding: 18 },

@@ -33,4 +33,11 @@ export class ServicoSincronizacaoAplicativo {
   public sincronizarAgora(): void {
     this.motor.sincronizarAgora();
   }
+
+  public async sincronizarAte(sequenciaObservada: string): Promise<void> {
+    this.motor.iniciar();
+    const convergencia = this.motor.aguardarSequencia(sequenciaObservada);
+    this.motor.sincronizarAgora();
+    await convergencia;
+  }
 }

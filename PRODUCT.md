@@ -193,6 +193,7 @@ A PR 091 acrescenta busca na conversa e galeria de `Mídias`, `Links` e `Documen
 - Ações do sistema em bottom sheet categorizado.
 - Notas/eventos internos marcados como `Somente equipe` e cards de WhatsApp Flow com `Ver formulário`.
 - Notificações para nova mensagem própria, novo pendente, cliente aguardando, janela próxima de expirar e transferência direta, com agrupamento de rajadas do mesmo contato.
+- A aba de notificações mostra somente textos genéricos desses cinco eventos e uma entrada por contato. Tocar sincroniza até a sequência observada, confirma que o atendimento continua autorizado e só então abre a conversa; falha preserva o aviso para nova tentativa.
 - UX moderna, transições fluidas, gestos naturais e respeito a “Reduzir Movimento”.
 - REST + WebSocket em primeiro plano; APNs/FCM em background; sincronização antes de reabrir realtime.
 - SQLite como réplica/cache local.

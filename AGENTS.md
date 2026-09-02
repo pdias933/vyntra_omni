@@ -229,6 +229,9 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - Projeção incremental mínima nunca vira entidade completa inventada: sincronize o snapshot autorizado antes de confirmar o evento ao servidor.
 - Snapshot, autorização offline e cursor são um único commit SQLCipher; rascunhos e pendências ficam fora da substituição.
 - Push avisa; nunca vira fonte da verdade.
+- Notificações mobile aceitam somente os cinco tipos aprovados, agrupam pela conversa/contato e mantêm texto genérico; não adicione conteúdo protegido ao payload ou à caixa.
+- Abrir aviso exige sincronizar até `sequencia_observada`, confirmar réplica íntegra/tempo real conectado e reler o destino autorizado; nunca navegue primeiro para sincronizar depois.
+- A caixa de notificações é efêmera e limitada, não uma tabela de domínio. Limpe-a em logout, troca de usuário e revogação integral.
 - Pendência offline nasce somente com autorização assinada vigente, captura sequência, versões de atribuição/estado/contexto e janela observadas, e sincroniza antes de enviar.
 - Reconciliação automática só começa após REST convergir e o WebSocket alcançar `CONECTADO`; `CONECTANDO` ou `SINCRONIZANDO` nunca executa pendência.
 - O backend adquire `autoridade-saida:<atendimento_id>` e revalida sessão, aparelho, RBAC, fila, recurso, responsabilidade, estado, contexto, timeline e janela antes de criar a mensagem.
