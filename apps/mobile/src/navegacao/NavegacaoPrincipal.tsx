@@ -9,6 +9,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { SessaoAplicativo } from '../autenticacao/servico-autenticacao-aplicativo';
 import type { PoliticaVersaoAplicativo } from '../atualizacao/adaptador-politica-versao-http';
 import { MarcaVyntra } from '../componentes/MarcaVyntra';
+import type { RepositorioReplicaLocal } from '../offline/repositorio-replica-local';
+import type { EstadoSincronizacaoMobile } from '../sincronizacao/motor-sincronizacao-mobile';
+import { TelaListaAtendimentos } from '../telas/TelaListaAtendimentos';
 import { CORES, ESPACOS, RAIOS } from '../tema';
 
 type NomeIcone = ComponentProps<typeof Ionicons>['name'];
@@ -148,7 +151,9 @@ export function NavegacaoPrincipal({
   aoAtualizar,
   aoSair,
   erroAtualizacao,
+  estadoSincronizacao,
   politicaVersao,
+  repositorio,
   saindo,
   sessao,
 }: {
@@ -156,7 +161,9 @@ export function NavegacaoPrincipal({
   readonly aoAtualizar: () => void;
   readonly aoSair: () => void;
   readonly erroAtualizacao?: string;
+  readonly estadoSincronizacao: EstadoSincronizacaoMobile;
   readonly politicaVersao?: PoliticaVersaoAplicativo;
+  readonly repositorio: RepositorioReplicaLocal;
   readonly saindo: boolean;
   readonly sessao: SessaoAplicativo;
 }) {
@@ -188,10 +195,10 @@ export function NavegacaoPrincipal({
     >
       <Abas.Screen name="Atendimentos">
         {() => (
-          <TelaVazia
-            descricao="Seus atendimentos e pendências autorizadas aparecerão aqui."
-            icone="chatbubbles-outline"
-            titulo="Atendimentos"
+          <TelaListaAtendimentos
+            estadoSincronizacao={estadoSincronizacao}
+            repositorio={repositorio}
+            usuarioId={sessao.usuarioId}
           />
         )}
       </Abas.Screen>

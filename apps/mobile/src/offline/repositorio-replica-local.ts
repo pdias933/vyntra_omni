@@ -9,6 +9,17 @@ import { CofreReplicaLocal } from './cofre-replica-local';
 const NOME_BANCO = 'vyntra-omni.db';
 const CHAVE_HEXADECIMAL = /^[a-f0-9]{64}$/u;
 
+export const FILTROS_ATENDIMENTOS_MOBILE = [
+  'MEUS',
+  'PENDENTES',
+  'NAO_LIDOS',
+  'SLA',
+  'EXPIRANDO',
+  'EM_AUTOMACAO',
+] as const;
+export type FiltroAtendimentosMobile =
+  (typeof FILTROS_ATENDIMENTOS_MOBILE)[number];
+
 export interface AutorizacaoOfflineLocal {
   readonly sequenciaEvento: string;
   readonly token: string;
@@ -21,6 +32,46 @@ interface LinhaAutorizacaoOffline {
   readonly token: string;
   readonly valida_ate: string;
   readonly versao_permissoes: number;
+}
+
+interface LinhaResumoAtendimentoLocal {
+  readonly atendimento_id: string;
+  readonly contato_id: string;
+  readonly conversa_id: string;
+  readonly estado: string;
+  readonly fila_id: string;
+  readonly fila_nome: string;
+  readonly identidade_secundaria: string | null;
+  readonly janela_expira_em: string | null;
+  readonly modo: string;
+  readonly motivo_espera: string;
+  readonly nome_contato: string;
+  readonly quantidade_nao_lida: number;
+  readonly sla_em: string | null;
+  readonly ultima_atividade_em: string;
+  readonly ultima_mensagem_direcao: 'ENTRADA' | 'SAIDA' | null;
+  readonly ultima_mensagem_resumo: string;
+  readonly usuario_responsavel_id: string | null;
+}
+
+export interface ResumoAtendimentoLocal {
+  readonly atendimentoId: string;
+  readonly contatoId: string;
+  readonly conversaId: string;
+  readonly estado: string;
+  readonly filaId: string;
+  readonly filaNome: string;
+  readonly identidadeSecundaria?: string;
+  readonly janelaExpiraEm?: string;
+  readonly modo: string;
+  readonly motivoEspera: string;
+  readonly nomeContato: string;
+  readonly quantidadeNaoLida: number;
+  readonly slaEm?: string;
+  readonly ultimaAtividadeEm: string;
+  readonly ultimaMensagemDirecao?: 'ENTRADA' | 'SAIDA';
+  readonly ultimaMensagemResumo: string;
+  readonly usuarioResponsavelId?: string;
 }
 
 export interface EstadoReplicaLocal {
@@ -47,6 +98,7 @@ async function executarPreparado(
 
 export class RepositorioReplicaLocal {
   private banco: Promise<SQLite.SQLiteDatabase> | undefined;
+  private readonly observadores = new Set<() => void>();
 
   public constructor(public readonly cofre = new CofreReplicaLocal()) {}
 
@@ -57,7 +109,7 @@ export class RepositorioReplicaLocal {
         autorizacao_offline_valida_ate AS valida_ate,
         sequencia_evento,
         versao_permissoes
-       FROM estado_replica WHERE id = ?`,
+       FROM estado_replica WHERE id = ? AND precisa_ressincronizar = 0`,
       1,
     );
     return linha === null
@@ -93,11 +145,122 @@ export class RepositorioReplicaLocal {
         };
   }
 
+  public observarMudancas(observador: () => void): () => void {
+    this.observadores.add(observador);
+    return () => {
+      this.observadores.delete(observador);
+    };
+  }
+
+  public async listarAtendimentos(
+    filtro: FiltroAtendimentosMobile,
+    usuarioId: string,
+    agora = new Date(),
+  ): Promise<readonly ResumoAtendimentoLocal[]> {
+    const banco = await this.abrir();
+    const limiteSla = new Date(agora.getTime() + 15 * 60 * 1_000).toISOString();
+    const limiteJanela = new Date(agora.getTime() + 30 * 60 * 1_000).toISOString();
+    const condicoes: Readonly<Record<FiltroAtendimentosMobile, string>> = {
+      EM_AUTOMACAO: `modo = 'BOT'`,
+      EXPIRANDO: 'janela_expira_em > ? AND janela_expira_em <= ?',
+      MEUS: 'usuario_responsavel_id = ?',
+      NAO_LIDOS: 'quantidade_nao_lida > 0',
+      PENDENTES: `estado = 'AGUARDANDO' AND usuario_responsavel_id IS NULL`,
+      SLA: 'sla_em <= ?',
+    };
+    const parametros: Readonly<Record<FiltroAtendimentosMobile, readonly string[]>> = {
+      EM_AUTOMACAO: [],
+      EXPIRANDO: [agora.toISOString(), limiteJanela],
+      MEUS: [usuarioId],
+      NAO_LIDOS: [],
+      PENDENTES: [],
+      SLA: [limiteSla],
+    };
+    const linhas = await banco.getAllAsync<LinhaResumoAtendimentoLocal>(
+      `SELECT atendimento_id, contato_id, conversa_id, estado, fila_id,
+        fila_nome, identidade_secundaria, janela_expira_em, modo,
+        motivo_espera, nome_contato, quantidade_nao_lida, sla_em,
+        ultima_atividade_em, ultima_mensagem_direcao,
+        ultima_mensagem_resumo, usuario_responsavel_id
+       FROM resumo_atendimento
+       WHERE estado IN ('AGUARDANDO', 'EM_ATENDIMENTO')
+         AND ${condicoes[filtro]}
+       ORDER BY ultima_atividade_em DESC, atendimento_id DESC
+       LIMIT 60`,
+      ...parametros[filtro],
+    );
+    return linhas.map((linha) => ({
+      atendimentoId: linha.atendimento_id,
+      contatoId: linha.contato_id,
+      conversaId: linha.conversa_id,
+      estado: linha.estado,
+      filaId: linha.fila_id,
+      filaNome: linha.fila_nome,
+      ...(linha.identidade_secundaria === null
+        ? {}
+        : { identidadeSecundaria: linha.identidade_secundaria }),
+      ...(linha.janela_expira_em === null
+        ? {}
+        : { janelaExpiraEm: linha.janela_expira_em }),
+      modo: linha.modo,
+      motivoEspera: linha.motivo_espera,
+      nomeContato: linha.nome_contato,
+      quantidadeNaoLida: linha.quantidade_nao_lida,
+      ...(linha.sla_em === null ? {} : { slaEm: linha.sla_em }),
+      ultimaAtividadeEm: linha.ultima_atividade_em,
+      ...(linha.ultima_mensagem_direcao === null
+        ? {}
+        : { ultimaMensagemDirecao: linha.ultima_mensagem_direcao }),
+      ultimaMensagemResumo: linha.ultima_mensagem_resumo,
+      ...(linha.usuario_responsavel_id === null
+        ? {}
+        : { usuarioResponsavelId: linha.usuario_responsavel_id }),
+    }));
+  }
+
+  public async contarFiltrosAtendimentos(
+    usuarioId: string,
+    agora = new Date(),
+  ): Promise<Readonly<Record<FiltroAtendimentosMobile, number>>> {
+    const banco = await this.abrir();
+    const linha = await banco.getFirstAsync<{
+      em_automacao: number;
+      expirando: number;
+      meus: number;
+      nao_lidos: number;
+      pendentes: number;
+      sla: number;
+    }>(
+      `SELECT
+        COALESCE(SUM(CASE WHEN usuario_responsavel_id = ? THEN 1 ELSE 0 END), 0) AS meus,
+        COALESCE(SUM(CASE WHEN estado = 'AGUARDANDO' AND usuario_responsavel_id IS NULL THEN 1 ELSE 0 END), 0) AS pendentes,
+        COALESCE(SUM(CASE WHEN quantidade_nao_lida > 0 THEN 1 ELSE 0 END), 0) AS nao_lidos,
+        COALESCE(SUM(CASE WHEN sla_em <= ? THEN 1 ELSE 0 END), 0) AS sla,
+        COALESCE(SUM(CASE WHEN janela_expira_em > ? AND janela_expira_em <= ? THEN 1 ELSE 0 END), 0) AS expirando,
+        COALESCE(SUM(CASE WHEN modo = 'BOT' THEN 1 ELSE 0 END), 0) AS em_automacao
+       FROM resumo_atendimento
+       WHERE estado IN ('AGUARDANDO', 'EM_ATENDIMENTO')`,
+      usuarioId,
+      new Date(agora.getTime() + 15 * 60 * 1_000).toISOString(),
+      agora.toISOString(),
+      new Date(agora.getTime() + 30 * 60 * 1_000).toISOString(),
+    );
+    return {
+      EM_AUTOMACAO: linha?.em_automacao ?? 0,
+      EXPIRANDO: linha?.expirando ?? 0,
+      MEUS: linha?.meus ?? 0,
+      NAO_LIDOS: linha?.nao_lidos ?? 0,
+      PENDENTES: linha?.pendentes ?? 0,
+      SLA: linha?.sla ?? 0,
+    };
+  }
+
   public async aplicarSnapshot(snapshot: SnapshotMobileValidado): Promise<void> {
     const banco = await this.abrir();
     await banco.withExclusiveTransactionAsync(async (transacao) => {
       await transacao.execAsync(`
         DELETE FROM evento_sincronizacao;
+        DELETE FROM resumo_atendimento;
         DELETE FROM nota_interna;
         DELETE FROM mensagem;
         DELETE FROM atendimento;
@@ -143,6 +306,35 @@ export class RepositorioReplicaLocal {
           item.versaoAtribuicao,
           item.versaoEstado,
           item.atualizadoEm,
+        ]),
+      );
+      await executarPreparado(
+        transacao,
+        `INSERT INTO resumo_atendimento
+          (atendimento_id, conversa_id, contato_id, estado, fila_id, fila_nome,
+           modo, motivo_espera, usuario_responsavel_id, nome_contato,
+           identidade_secundaria, ultima_atividade_em, ultima_mensagem_resumo,
+           ultima_mensagem_direcao, quantidade_nao_lida, sla_em,
+           janela_expira_em)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        snapshot.atendimentos.map((item) => [
+          item.id,
+          item.conversaId,
+          item.contatoId,
+          item.estado,
+          item.filaId,
+          item.filaNome,
+          item.modo,
+          item.motivoEspera,
+          item.usuarioResponsavelId ?? null,
+          item.nomeContato,
+          item.identidadeSecundaria ?? null,
+          item.ultimaAtividadeEm,
+          item.ultimaMensagemResumo,
+          item.ultimaMensagemDirecao ?? null,
+          item.quantidadeNaoLida,
+          item.slaEm ?? null,
+          item.janelaExpiraEm ?? null,
         ]),
       );
       await executarPreparado(
@@ -220,6 +412,7 @@ export class RepositorioReplicaLocal {
         0,
       );
     });
+    this.publicarMudanca();
   }
 
   public async aplicarLote(
@@ -313,6 +506,7 @@ export class RepositorioReplicaLocal {
       await transacao.execAsync(`
         DELETE FROM pendencia_saida_texto;
         DELETE FROM rascunho;
+        DELETE FROM resumo_atendimento;
         DELETE FROM nota_interna;
         DELETE FROM mensagem;
         DELETE FROM atendimento;
@@ -325,6 +519,7 @@ export class RepositorioReplicaLocal {
         DELETE FROM estado_replica;
       `);
     });
+    this.publicarMudanca();
   }
 
   public async descartar(): Promise<void> {
@@ -367,7 +562,7 @@ export class RepositorioReplicaLocal {
       'PRAGMA user_version',
     );
     let atual = versao?.user_version;
-    if (atual !== 0 && atual !== 1 && atual !== 2) {
+    if (atual !== 0 && atual !== 1 && atual !== 2 && atual !== 3) {
       throw new Error('VERSAO_REPLICA_LOCAL_INCOMPATIVEL');
     }
     if (atual === 0) {
@@ -524,6 +719,44 @@ export class RepositorioReplicaLocal {
           PRAGMA user_version = 2;
         `);
       });
+      atual = 2;
     }
+    if (atual === 2) {
+      await banco.withExclusiveTransactionAsync(async (transacao) => {
+        await transacao.execAsync(`
+          CREATE TABLE resumo_atendimento (
+            atendimento_id TEXT PRIMARY KEY REFERENCES atendimento(id) ON DELETE CASCADE,
+            conversa_id TEXT NOT NULL REFERENCES conversa(id) ON DELETE CASCADE,
+            contato_id TEXT NOT NULL,
+            estado TEXT NOT NULL,
+            fila_id TEXT NOT NULL REFERENCES fila(id) ON DELETE CASCADE,
+            fila_nome TEXT NOT NULL,
+            modo TEXT NOT NULL,
+            motivo_espera TEXT NOT NULL,
+            usuario_responsavel_id TEXT,
+            nome_contato TEXT NOT NULL,
+            identidade_secundaria TEXT,
+            ultima_atividade_em TEXT NOT NULL,
+            ultima_mensagem_resumo TEXT NOT NULL,
+            ultima_mensagem_direcao TEXT CHECK (
+              ultima_mensagem_direcao IS NULL OR ultima_mensagem_direcao IN ('ENTRADA', 'SAIDA')
+            ),
+            quantidade_nao_lida INTEGER NOT NULL CHECK (quantidade_nao_lida >= 0),
+            sla_em TEXT,
+            janela_expira_em TEXT
+          );
+          CREATE INDEX resumo_atendimento_ordem_idx
+            ON resumo_atendimento(ultima_atividade_em DESC, atendimento_id DESC);
+          CREATE INDEX resumo_atendimento_filtros_idx
+            ON resumo_atendimento(estado, usuario_responsavel_id, modo);
+          UPDATE estado_replica SET precisa_ressincronizar = 1;
+          PRAGMA user_version = 3;
+        `);
+      });
+    }
+  }
+
+  private publicarMudanca(): void {
+    for (const observador of this.observadores) observador();
   }
 }

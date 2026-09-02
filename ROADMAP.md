@@ -122,7 +122,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 098 | CONCLUÍDA | `high` |
 | 099 | CONCLUÍDA | `xhigh` |
 | 100 | CONCLUÍDA | `xhigh` |
-| 101 | PENDENTE | `high` |
+| 101 | CONCLUÍDA | `high` |
 | 102 | PENDENTE | `high` |
 | 103 | PENDENTE | `high` |
 | 104 | PENDENTE | `xhigh` |
@@ -147,7 +147,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR100 foram concluídas e PR101–PR107 seguem pendentes na ordem aprovada.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR101 foram concluídas e PR102–PR107 seguem pendentes na ordem aprovada.
 
 ## 2. Portão zero
 
@@ -676,6 +676,10 @@ Aceite concluído em 2 de setembro de 2026: o app recebeu réplica SQLCipher com
 ### PR 100 — motor de sincronização mobile
 
 Aceite concluído em 2 de setembro de 2026: o app valida contratos fechados de snapshot, lote e WebSocket, verifica a autorização offline antes da escrita e aplica conteúdo, autorização e cursor numa única transação SQLCipher. Lotes e eventos são idempotentes e todo avanço de cursor deixa `precisa_ressincronizar` até um snapshot autorizado de sequência igual ou posterior remover a marca; rascunhos e pendências permanecem preservados. Como os eventos mobile são deliberadamente mínimos, o app não fabrica entidades: reconstrói a réplica antes de enviar `CONFIRMAR`. Inicialização, `409`, autorização próxima do fim, excesso de páginas, reconexão exponencial, rotação única após `401`, ciclo primeiro/segundo plano e handoff REST→WebSocket foram materializados. O snapshot do backend passou a limitar atendimentos à mesma janela de conversas autorizadas. Não houve dependência nem migration PostgreSQL nova e não foi feito deploy. Lint, tipos, 432 testes da API, 268 testes de arquitetura, matriz Expo, auditoria de dependências, Gitleaks em 224 commits e builds web/API/iOS/Android foram aprovados. Effort `xhigh` confirmado pela atomicidade local, contrato criptográfico e convergência sem lacuna.
+
+### PR 101 — lista de atendimentos mobile
+
+Aceite concluído em 2 de setembro de 2026: a aba `Atendimentos` passou a ler uma projeção autorizada do SQLCipher, limitada a 60 itens e ordenada por atividade confirmada. Os filtros únicos `Meus`, `Pendentes`, `Não lidos`, `SLA`, `Expirando` e `Em automação` usam consultas locais parametrizadas e contagens derivadas; não existem cards-resumo, atualização manual nem timestamp técnico. O snapshot calcula nome, fila, prévia, marcador pessoal, SLA, janela Meta e identidade mascarada depois de resolver usuário, permissão, fila e conversa dentro da mesma leitura consistente. O schema local avançou para `user_version = 3` e força reconstrução antes de liberar uma réplica migrada ou parcial offline. Commits da réplica atualizam e reordenam a lista automaticamente pelo `conversa_id` estável; eventos saudáveis não exibem infraestrutura, e a faixa aparece apenas em `Sem conexão`, `Conectando...` ou `Sincronizando...`. A animação curta é removida por “Reduzir Movimento”. Não houve dependência nem migration PostgreSQL nova e não foi feito deploy. Lint, tipos, 432 testes da API, 273 testes de arquitetura, matriz Expo, auditoria de dependências, Gitleaks em 225 commits e builds web/API/iOS/Android foram aprovados. Effort `high` confirmado pela projeção autorizada e pela experiência de mensageria silenciosa.
 
 ## 12. Mobile
 

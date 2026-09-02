@@ -35,12 +35,24 @@ interface LinhaFila {
 interface LinhaAtendimento {
   readonly atualizado_em: Date;
   readonly conta_origem_id: string;
+  readonly contato_id: string;
   readonly conversa_id: string;
   readonly estado: string;
   readonly fila_id: string;
+  readonly fila_nome: string;
   readonly id: string;
+  readonly janela_expira_em: Date | null;
   readonly modo: string;
   readonly motivo_espera: string;
+  readonly nome_contato: string | null;
+  readonly nome_usuario: string | null;
+  readonly quantidade_nao_lida: bigint;
+  readonly sla_em: Date | null;
+  readonly telefone_e164: string | null;
+  readonly ultima_mensagem_direcao: 'ENTRADA' | 'SAIDA' | null;
+  readonly ultima_atividade_em: Date;
+  readonly ultima_mensagem_texto: string | null;
+  readonly ultima_mensagem_tipo: string | null;
   readonly usuario_responsavel_id: string | null;
   readonly versao_atribuicao: number;
   readonly versao_estado: number;
@@ -260,30 +272,109 @@ export class RepositorioRessincronizacaoPrisma
     const linhas = await transacao.$queryRaw<LinhaAtendimento[]>(Prisma.sql`
       ${this.autorizacaoFilas(usuarioId)}
       SELECT a."id", a."conversa_id", a."conta_whatsapp_origem_id" AS conta_origem_id,
+        ca."contato_id", contato."nome_exibicao" AS nome_contato,
         a."estado"::text, a."modo"::text, a."motivo_espera"::text,
-        a."fila_atual_id" AS fila_id, a."usuario_responsavel_id",
-        a."versao_estado", a."versao_atribuicao", a."atualizado_em"
+        a."fila_atual_id" AS fila_id, fa."nome" AS fila_nome,
+        a."usuario_responsavel_id", a."versao_estado", a."versao_atribuicao",
+        a."atualizado_em", ultima."texto" AS ultima_mensagem_texto,
+        ca."ultima_atividade_em",
+        ultima."tipo" AS ultima_mensagem_tipo,
+        ultima."direcao" AS ultima_mensagem_direcao,
+        identidade."telefone_e164", identidade."nome_usuario",
+        (
+          SELECT COUNT(*) FROM "mensagem" nao_lida
+          WHERE nao_lida."conversa_id"=ca."id"
+            AND nao_lida."direcao"='ENTRADA'
+            AND nao_lida."recebida_servidor_em">COALESCE(marcador."lida_ate_em", '-infinity'::timestamptz)
+        ) AS quantidade_nao_lida,
+        sla."alerta_atendente_em" AS sla_em,
+        janela."expira_em" AS janela_expira_em
       FROM "atendimento" a
       JOIN filas_autorizadas fa ON fa."id"=a."fila_atual_id"
       JOIN conversas_autorizadas ca ON ca."id"=a."conversa_id"
+      JOIN "contato" contato ON contato."id"=ca."contato_id" AND contato."estado"='NORMAL'
+      LEFT JOIN "marcador_leitura_conversa_usuario" marcador
+        ON marcador."conversa_id"=ca."id" AND marcador."usuario_id"=${usuarioId}::uuid
+      LEFT JOIN LATERAL (
+        SELECT m."conteudo_protegido"->>'texto' AS texto,
+          m."tipo"::text AS tipo, m."direcao"::text AS direcao
+        FROM "mensagem" m WHERE m."conversa_id"=ca."id"
+        ORDER BY m."recebida_servidor_em" DESC, m."id" DESC LIMIT 1
+      ) ultima ON true
+      LEFT JOIN LATERAL (
+        SELECT r."alerta_atendente_em" FROM "relogio_sla_atendimento" r
+        WHERE r."atendimento_id"=a."id" AND r."finalizado_em" IS NULL
+        ORDER BY r."numero_ciclo" DESC LIMIT 1
+      ) sla ON true
+      LEFT JOIN "janela_atendimento_canal" janela
+        ON janela."contato_id"=ca."contato_id"
+        AND janela."conta_whatsapp_id"=a."conta_whatsapp_origem_id"
+      LEFT JOIN LATERAL (
+        SELECT iw."telefone_e164", iw."nome_usuario" FROM "identidade_whatsapp" iw
+        WHERE iw."contato_id"=ca."contato_id"
+        ORDER BY iw."atualizada_em" DESC, iw."id" DESC LIMIT 1
+      ) identidade ON true
       WHERE a."estado"<>'ENCERRADO'
       ORDER BY a."atualizado_em" DESC, a."id"
     `);
     return linhas.map((linha) => ({
       atualizadoEm: linha.atualizado_em.toISOString(),
       contaOrigemId: linha.conta_origem_id,
+      contatoId: linha.contato_id,
       conversaId: linha.conversa_id,
       estado: linha.estado,
       filaId: linha.fila_id,
+      filaNome: linha.fila_nome,
       id: linha.id,
+      ...(linha.telefone_e164 === null && linha.nome_usuario === null
+        ? {}
+        : {
+            identidadeSecundaria:
+              linha.nome_usuario ??
+              this.mascararTelefone(linha.telefone_e164 as string),
+          }),
+      ...(linha.janela_expira_em === null
+        ? {}
+        : { janelaExpiraEm: linha.janela_expira_em.toISOString() }),
       modo: linha.modo,
       motivoEspera: linha.motivo_espera,
+      nomeContato: linha.nome_contato?.trim() || 'Contato sem nome',
+      quantidadeNaoLida: Number(linha.quantidade_nao_lida),
+      ...(linha.sla_em === null ? {} : { slaEm: linha.sla_em.toISOString() }),
+      ...(linha.ultima_mensagem_direcao === null
+        ? {}
+        : { ultimaMensagemDirecao: linha.ultima_mensagem_direcao }),
+      ultimaAtividadeEm: linha.ultima_atividade_em.toISOString(),
+      ultimaMensagemResumo:
+        linha.ultima_mensagem_texto?.trim().slice(0, 160) ||
+        this.rotuloTipoMensagem(linha.ultima_mensagem_tipo),
       ...(linha.usuario_responsavel_id === null
         ? {}
         : { usuarioResponsavelId: linha.usuario_responsavel_id }),
       versaoAtribuicao: linha.versao_atribuicao,
       versaoEstado: linha.versao_estado,
     }));
+  }
+
+  private mascararTelefone(telefone: string): string {
+    return telefone.replace(
+      /^(\+\d{2})(\d+)(\d{4})$/u,
+      (_valor, pais: string, meio: string, fim: string) =>
+        `${pais} ${'*'.repeat(Math.min(meio.length, 6))}-${fim}`,
+    );
+  }
+
+  private rotuloTipoMensagem(tipo: string | null): string {
+    const rotulos: Readonly<Record<string, string>> = {
+      AUDIO: 'Áudio',
+      IMAGEM: 'Imagem',
+      INTERATIVA: 'Interação recebida',
+      MODELO_APROVADO: 'Mensagem aprovada',
+      PDF: 'Documento',
+      REACAO: 'Reação',
+      VIDEO: 'Vídeo',
+    };
+    return tipo === null ? 'Atendimento iniciado' : (rotulos[tipo] ?? 'Nova mensagem');
   }
 
   private async listarConversas(

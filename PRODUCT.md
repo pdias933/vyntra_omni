@@ -210,6 +210,8 @@ Na PR 099, a fundação offline passa a usar uma réplica SQLCipher cuja chave a
 
 Na PR 100, a sincronização mobile torna essa réplica utilizável: valida o contrato recebido, verifica a autorização antes do commit, aplica snapshot/cursor atomicamente e conecta o WebSocket somente depois de convergir pelo REST. Eventos mínimos provocam reconstrução autorizada antes da confirmação, sem fabricar conteúdo ausente. Reconexão, rotação do access e renovação preventiva do acesso offline ocorrem silenciosamente; apenas estados excepcionais ficam disponíveis para a faixa humana que será ligada à lista na PR 101.
 
+Na PR 101, `Atendimentos` deixa de ser um placeholder e passa a exibir a projeção autorizada do SQLCipher com os seis filtros únicos aprovados. Uma atualização confirmada altera prévia, não lidas e posição automaticamente; o movimento é curto, preserva a identidade visual da conversa e desaparece sob “Reduzir Movimento”. Não existem cards-resumo, pull-to-refresh, horário de atualização ou estado técnico saudável. A faixa superior aparece somente em perda de conexão, tentativa de conexão ou sincronização excepcional e some ao normalizar.
+
 ### 4.8 Motor de Fluxos e WhatsApp Flows
 
 - Motor próprio, determinístico e configurável.

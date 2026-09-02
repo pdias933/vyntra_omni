@@ -73,6 +73,8 @@ Após o commit, access e refresh daquele aparelho perdem autoridade imediatament
 
 A PR 100 trata toda resposta de sincronização como entrada não confiável. Snapshot, lote e mensagens WebSocket usam schemas fechados, enums/UUIDs/sequências estritos, coerência referencial e limites de coleção, profundidade e tamanho. A assinatura offline é verificada antes da transação de snapshot. Qualquer cursor avançado deixa `precisa_ressincronizar` até um snapshot autorizado igual ou posterior ser aplicado; assim, queda, payload mínimo ou confirmação perdida não transformam cache parcial em autoridade offline. `CONFIRMAR` só sai depois desse commit. Contrato adulterado, autorização inválida e sessão negada falham fechados; reconexão comum não reduz RBAC nem expõe infraestrutura.
 
+A projeção da lista mobile da PR 101 nasce dentro do mesmo snapshot autorizado e da mesma transação `REPEATABLE READ`: autorização por usuário e fila precede contato, prévia, marcador pessoal, SLA, janela e identidade. Telefone opcional é mascarado no backend e o app não recebe registros para decidir visibilidade ou filtrar escopo. O SQLite local só devolve autorização offline quando `precisa_ressincronizar = 0`; uma migration ou evento que deixe a réplica suja bloqueia o conteúdo autenticado até uma substituição integral assinada. Filtro visual, ausência de cartão e animação nunca substituem RBAC.
+
 ### 4.2 Pareamento QR
 
 O QR:

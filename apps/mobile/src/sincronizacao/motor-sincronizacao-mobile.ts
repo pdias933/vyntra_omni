@@ -273,12 +273,10 @@ export class MotorSincronizacaoMobile {
       [evento],
       evento.sequenciaEvento,
     );
-    this.publicarEstado('SINCRONIZANDO');
     const snapshot = await this.obterEAplicarSnapshot(
       credenciais,
       evento.sequenciaEvento,
     );
-    this.publicarEstado('CONECTADO');
     this.agendarRenovacao(snapshot.autorizacaoOfflineValidaAte);
   }
 

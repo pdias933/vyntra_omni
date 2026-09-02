@@ -98,12 +98,22 @@ export interface ConversaSnapshotMobile {
 export interface AtendimentoSnapshotMobile {
   readonly atualizadoEm: string;
   readonly contaOrigemId: string;
+  readonly contatoId: string;
   readonly conversaId: string;
   readonly estado: string;
   readonly filaId: string;
+  readonly filaNome: string;
   readonly id: string;
+  readonly identidadeSecundaria?: string;
+  readonly janelaExpiraEm?: string;
   readonly modo: string;
   readonly motivoEspera: string;
+  readonly nomeContato: string;
+  readonly quantidadeNaoLida: number;
+  readonly slaEm?: string;
+  readonly ultimaAtividadeEm: string;
+  readonly ultimaMensagemDirecao?: 'ENTRADA' | 'SAIDA';
+  readonly ultimaMensagemResumo: string;
   readonly usuarioResponsavelId?: string;
   readonly versaoAtribuicao: number;
   readonly versaoEstado: number;
@@ -315,26 +325,58 @@ function normalizarAtendimento(valor: unknown): AtendimentoSnapshotMobile {
     [
       'atualizadoEm',
       'contaOrigemId',
+      'contatoId',
       'conversaId',
       'estado',
       'filaId',
+      'filaNome',
       'id',
       'modo',
       'motivoEspera',
+      'nomeContato',
+      'quantidadeNaoLida',
+      'ultimaAtividadeEm',
+      'ultimaMensagemResumo',
       'versaoAtribuicao',
       'versaoEstado',
     ],
-    ['usuarioResponsavelId'],
+    [
+      'identidadeSecundaria',
+      'janelaExpiraEm',
+      'slaEm',
+      'ultimaMensagemDirecao',
+      'usuarioResponsavelId',
+    ],
   );
+  const ultimaMensagemDirecao =
+    lido.ultimaMensagemDirecao === undefined
+      ? undefined
+      : (enumeracao(lido.ultimaMensagemDirecao, new Set(['ENTRADA', 'SAIDA'])) as
+          | 'ENTRADA'
+          | 'SAIDA');
   return {
     atualizadoEm: instante(lido.atualizadoEm),
     contaOrigemId: uuid(lido.contaOrigemId),
+    contatoId: uuid(lido.contatoId),
     conversaId: uuid(lido.conversaId),
     estado: enumeracao(lido.estado, ESTADOS_ATENDIMENTO),
     filaId: uuid(lido.filaId),
+    filaNome: texto(lido.filaNome, 120),
     id: uuid(lido.id),
+    ...(lido.identidadeSecundaria === undefined
+      ? {}
+      : { identidadeSecundaria: texto(lido.identidadeSecundaria, 200) }),
+    ...(lido.janelaExpiraEm === undefined
+      ? {}
+      : { janelaExpiraEm: instante(lido.janelaExpiraEm) }),
     modo: enumeracao(lido.modo, MODOS_ATENDIMENTO),
     motivoEspera: enumeracao(lido.motivoEspera, MOTIVOS_ESPERA),
+    nomeContato: texto(lido.nomeContato, 200),
+    quantidadeNaoLida: inteiro(lido.quantidadeNaoLida),
+    ...(lido.slaEm === undefined ? {} : { slaEm: instante(lido.slaEm) }),
+    ultimaAtividadeEm: instante(lido.ultimaAtividadeEm),
+    ...(ultimaMensagemDirecao === undefined ? {} : { ultimaMensagemDirecao }),
+    ultimaMensagemResumo: texto(lido.ultimaMensagemResumo, 160),
     ...(lido.usuarioResponsavelId === undefined
       ? {}
       : { usuarioResponsavelId: uuid(lido.usuarioResponsavelId) }),
@@ -474,10 +516,15 @@ export function normalizarSnapshotMobile(valor: unknown): SnapshotMobileValidado
 
   const filaIds = new Set(filas.map(({ id }) => id));
   const conversaIds = new Set(conversas.map(({ id }) => id));
+  const contatoPorConversa = new Map(
+    conversas.map(({ contatoId, id }) => [id, contatoId]),
+  );
   if (
     atendimentos.some(
-      ({ conversaId, filaId }) =>
-        !filaIds.has(filaId) || !conversaIds.has(conversaId),
+      ({ contatoId, conversaId, filaId }) =>
+        !filaIds.has(filaId) ||
+        !conversaIds.has(conversaId) ||
+        contatoPorConversa.get(conversaId) !== contatoId,
     ) ||
     mensagens.some(({ conversaId }) => !conversaIds.has(conversaId)) ||
     notas.some(({ conversaId }) => !conversaIds.has(conversaId))

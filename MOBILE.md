@@ -75,6 +75,10 @@ Sincronizando...
 
 Ela desaparece automaticamente ao normalizar. Pull-to-refresh não faz parte do fluxo normal. Se for mantido somente como contingência, o feedback existe apenas enquanto o gesto está ativo, desaparece ao terminar e nunca mostra rótulo/timestamp nem substitui realtime ou reconciliação.
 
+Na PR 101, a lista passa a ser uma projeção local de até 60 atendimentos ativos por filtro, derivada exclusivamente do snapshot autorizado. Nome, fila, prévia, não lidas, SLA e expiração da janela são calculados pelo backend dentro da mesma leitura consistente que resolve filas e conversas permitidas; telefone eventual já chega mascarado. O SQLCipher `user_version = 3` guarda essa projeção separada das entidades da timeline e a invalida sempre que um lote mínimo avançar o cursor, impedindo leitura offline de um cache parcial.
+
+A tela observa os commits da réplica e ordena por `ultima_atividade_em`, usando `conversa_id` como chave visual estável. Assim, uma mensagem confirmada move o cartão suavemente para o topo sem botão de atualização, sem recarregar a tela e sem perder a seleção do filtro. A faixa excepcional acompanha apenas `SEM_CONEXAO`, `CONECTANDO` ou `SINCRONIZANDO`; eventos normais recebidos pelo WebSocket não promovem um estado técnico visível. Com “Reduzir Movimento”, a reordenação é imediata e sem deslocamento animado.
+
 ### 3.2 Conversa
 
 A tela permanece extremamente limpa: cabeçalho, contexto essencial, janela Meta quando relevante, timeline e composer. Não existe uma faixa permanente de atalhos `Cliente`, `Contrato`, `Histórico`, `Mídias` ou `Notas` abaixo da janela Meta.

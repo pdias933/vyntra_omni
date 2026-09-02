@@ -28,13 +28,23 @@ export interface FilaSnapshotSincronizacao {
 }
 
 export interface AtendimentoSnapshotSincronizacao {
+  readonly contatoId: string;
   readonly id: string;
   readonly conversaId: string;
   readonly contaOrigemId: string;
   readonly estado: string;
   readonly filaId: string;
+  readonly filaNome: string;
+  readonly identidadeSecundaria?: string;
+  readonly janelaExpiraEm?: string;
   readonly modo: string;
   readonly motivoEspera: string;
+  readonly nomeContato: string;
+  readonly quantidadeNaoLida: number;
+  readonly slaEm?: string;
+  readonly ultimaMensagemDirecao?: 'ENTRADA' | 'SAIDA';
+  readonly ultimaAtividadeEm: string;
+  readonly ultimaMensagemResumo: string;
   readonly usuarioResponsavelId?: string;
   readonly versaoAtribuicao: number;
   readonly versaoEstado: number;

@@ -84,6 +84,8 @@ Não propague DTOs/nomenclatura Meta ou MK para domínio, UI ou Motor de Fluxos.
 - Estado saudável não mostra atualização, horário de sync, cursor ou infraestrutura.
 - A lista usa somente `Meus`, `Pendentes`, `Não lidos`, `SLA`, `Expirando` e `Em automação`; não duplicar esses estados em cards.
 - Nova mensagem reorganiza a lista pela última atividade confirmada; `conversa_id` apenas preserva a identidade visual durante a animação.
+- A lista mobile consulta somente a projeção de snapshot já autorizada e íntegra; nunca carregue conjunto amplo para filtrar no app nem exiba réplica marcada para ressincronização.
+- Evento realtime saudável atualiza a lista em silêncio; não faça cada mensagem piscar `Sincronizando...`.
 - A conversa mantém cabeçalho com contato, contexto essencial e indicador/countdown da janela Meta quando relevante; não repete atalhos de cliente, contrato, histórico, mídias ou notas abaixo dela.
 - Nome/avatar abre Detalhes do Contato; voltar preserva timeline e rascunho. Essa tela concentra identidade WhatsApp, cliente ERP, documento mascarado, vínculos e contexto/contrato ativo trocável; contato não identificado oferece `Vincular a cliente`.
 - `/` abre respostas rápidas. O botão ERP/sistema fica ao lado de anexos com o campo vazio e abre bottom sheet; quando existe texto, o envio recebe prioridade. Efeito real exige seleção, prévia e confirmação.

@@ -522,6 +522,10 @@ Como a projeção incremental é minimizada e não contém entidades completas, 
 
 O handoff concreto é REST paginado, snapshot quando houve qualquer avanço de cursor e WebSocket aberto pelo cursor convergente. A recepção é serial; duplicatas já cobertas pelo snapshot são confirmadas sem reaplicação. `PRONTO`, evento e envelope possuem schemas fechados e limites de tamanho. Resposta `409`, cursor sujo, autorização próxima do vencimento ou cem páginas incrementais convergem para reconstrução completa. Em segundo plano o canal fecha; em primeiro plano reconecta com atraso exponencial limitado e renova access uma vez diante de `401`.
 
+A PR 101 acrescenta ao snapshot a projeção mínima da lista mobile sem criar uma segunda autoridade. A consulta resolve usuário, `VISUALIZAR_FILA`, filas e as 200 conversas da janela de trabalho dentro do mesmo `REPEATABLE READ`; somente então combina contato, marcador pessoal, última mensagem, relógio SLA, janela Meta e identidade WhatsApp. A identidade secundária já sai mascarada e nenhum conjunto amplo é carregado para filtro posterior no app.
+
+No SQLCipher, `resumo_atendimento` é uma tabela de leitura derivada, não uma entidade de domínio. Snapshot e projeção entram no mesmo commit e a versão local 3 exige reconstrução para instalações anteriores. Os seis filtros executam consultas locais limitadas e parametrizadas; observadores recebem notificação somente depois do commit. Qualquer avanço incremental mantém a réplica suja até o próximo snapshot, portanto a interface não pode usar a projeção parcial como autoridade offline. `conversa_id` estabiliza a animação e `ultima_atividade_em` determina a ordem.
+
 A referência inicial é retenção de 30 dias para eventos de sincronização, sujeita a medição e política operacional. Isso não limita histórico de conversa.
 
 ### 9.3 Alteração de permissão

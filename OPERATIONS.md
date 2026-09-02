@@ -703,3 +703,11 @@ Não há migration PostgreSQL nem dependência nova. O schema SQLCipher local av
 O aceite deve provar validação fechada dos contratos, snapshot/autorização/cursor no mesmo commit, preservação de rascunhos e pendências, marca de reconstrução após qualquer avanço, recuperação por `409`, REST paginado seguido do handoff sem lacuna e `CONFIRMAR` posterior ao snapshot. Em primeiro plano o canal reconecta com atraso entre um e trinta segundos; em segundo plano permanece fechado. Estado saudável não aparece na interface.
 
 Monitore somente contadores agregados de reconstrução, contrato inválido, `401/403`, desconexão `4003`, atraso de cursor e duração/tamanho do snapshot. Nunca registre token, segredo do aparelho, autorização offline, conteúdo, identificador de contato ou payload integral. Reverter a build exige uma versão que aceite `user_version = 2` ou descarte a réplica autenticada e faça snapshot novo; não rebaixe o schema local em SQL. O runbook detalhado está em [docs/operacoes/PR-100.md](docs/operacoes/PR-100.md).
+
+## 39. Operação da lista de atendimentos mobile da PR 101
+
+Não há migration PostgreSQL nem dependência nova. O schema SQLCipher avança para `user_version = 3` e cria `resumo_atendimento`; a migration marca qualquer réplica existente para reconstrução completa antes de liberar leitura offline. Snapshot, tabela derivada, autorização e cursor continuam no mesmo commit. Reversão exige uma build que aceite a versão 3 ou descarte o arquivo local e obtenha novo snapshot; nunca reduza `user_version` por SQL.
+
+O aceite deve validar os seis filtros, limite de 60 itens, ordenação por `ultima_atividade_em`, contagens, prévia, não lidas, SLA e janela Meta. Uma alteração confirmada deve mover a conversa pelo `conversa_id` estável sem pull-to-refresh e sem faixa técnica em operação saudável. Com “Reduzir Movimento”, a atualização permanece imediata sem animação espacial. Simule também `SEM_CONEXAO`, `CONECTANDO` e `SINCRONIZANDO`, comprovando que a faixa desaparece ao normalizar e que cache sujo não é apresentado offline.
+
+Monitore duração e tamanho do snapshot e tempo das consultas locais, sempre de forma agregada. Não registre nomes, telefones, prévias, contatos, conversas ou filtros associados a usuário. O runbook detalhado está em [docs/operacoes/PR-101.md](docs/operacoes/PR-101.md).

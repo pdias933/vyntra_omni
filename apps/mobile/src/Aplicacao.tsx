@@ -20,6 +20,7 @@ import type { PoliticaVersaoAplicativo } from './atualizacao/adaptador-politica-
 import { ServicoPoliticaVersaoAplicativo } from './atualizacao/servico-politica-versao-aplicativo';
 import { NavegacaoPrincipal } from './navegacao/NavegacaoPrincipal';
 import { ServicoSincronizacaoAplicativo } from './sincronizacao/servico-sincronizacao-aplicativo';
+import type { EstadoSincronizacaoMobile } from './sincronizacao/motor-sincronizacao-mobile';
 import { CORES } from './tema';
 import { TelaBloqueio } from './telas/TelaBloqueio';
 import { TelaCarregamento } from './telas/TelaCarregamento';
@@ -83,6 +84,8 @@ export function Aplicacao() {
   const [verificandoPolitica, definirVerificandoPolitica] = useState(true);
   const [abrindoLoja, definirAbrindoLoja] = useState(false);
   const [erroPolitica, definirErroPolitica] = useState<string>();
+  const [estadoSincronizacao, definirEstadoSincronizacao] =
+    useState<EstadoSincronizacaoMobile>('SEM_CONEXAO');
   const [sessao, definirSessao] = useState<SessaoAplicativo>();
   const [mensagemBloqueio, definirMensagemBloqueio] = useState<string>();
   const [biometriaIndisponivel, definirBiometriaIndisponivel] = useState(false);
@@ -267,6 +270,7 @@ export function Aplicacao() {
   useEffect(
     () =>
       sincronizacao.observar((estadoSincronizacao) => {
+        definirEstadoSincronizacao(estadoSincronizacao);
         if (
           estadoSincronizacao === 'BLOQUEADO' &&
           sessaoAtual.current !== undefined
@@ -403,10 +407,12 @@ export function Aplicacao() {
               abrindoLoja={abrindoLoja}
               aoAtualizar={() => void abrirLoja()}
               aoSair={() => void sair()}
+              estadoSincronizacao={estadoSincronizacao}
               {...(erroPolitica === undefined
                 ? {}
                 : { erroAtualizacao: erroPolitica })}
               {...(politicaVersao === undefined ? {} : { politicaVersao })}
+              repositorio={autenticacao.replica}
               saindo={saindo}
               sessao={sessao}
             />
