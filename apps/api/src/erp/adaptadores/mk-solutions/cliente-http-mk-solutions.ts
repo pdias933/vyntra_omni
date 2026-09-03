@@ -10,7 +10,6 @@ const PAUSA_CIRCUITO_MS = 30_000;
 const CAMINHOS_SOMENTE_LEITURA = new Set([
   '/mk/WSAutenticacao.rule',
   '/mk/WSMKConexoesPorCliente.rule',
-  '/mk/WSMKConsultaClientes.rule',
   '/mk/WSMKConsultaDoc.rule',
   '/mk/WSMKContratosPorCliente.rule',
   '/mk/WSMKFaturas.rule',
@@ -284,13 +283,34 @@ export function enderecoRedePublica(endereco: string): boolean {
   if (normalizado.startsWith('::ffff:')) {
     return enderecoRedePublica(normalizado.slice('::ffff:'.length));
   }
-  const primeiroHexteto = Number.parseInt(normalizado.split(':', 1)[0] ?? '', 16);
+  const hextetos = decomporIpv6(normalizado);
+  if (hextetos === undefined) return false;
+  const [primeiroHexteto = 0, segundoHexteto = 0] = hextetos;
   return !(
     normalizado === '::' ||
     normalizado === '::1' ||
-    !Number.isInteger(primeiroHexteto) ||
     primeiroHexteto < 0x2000 ||
     primeiroHexteto > 0x3fff ||
-    normalizado.startsWith('2001:db8:')
+    (primeiroHexteto === 0x2001 && segundoHexteto <= 0x01ff) ||
+    (primeiroHexteto === 0x2001 && segundoHexteto === 0x0db8) ||
+    primeiroHexteto === 0x2002
   );
+}
+
+function decomporIpv6(endereco: string): readonly number[] | undefined {
+  const partes = endereco.split('::');
+  if (partes.length > 2) return undefined;
+  const esquerda = partes[0]?.split(':').filter(Boolean) ?? [];
+  const direita = partes[1]?.split(':').filter(Boolean) ?? [];
+  const faltantes = 8 - esquerda.length - direita.length;
+  if ((partes.length === 1 && faltantes !== 0) || faltantes < 0) return undefined;
+  const textos = [
+    ...esquerda,
+    ...Array.from({ length: faltantes }, () => '0'),
+    ...direita,
+  ];
+  if (textos.length !== 8 || textos.some((parte) => !/^[0-9a-f]{1,4}$/u.test(parte))) {
+    return undefined;
+  }
+  return textos.map((parte) => Number.parseInt(parte, 16));
 }

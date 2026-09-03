@@ -758,6 +758,10 @@ O aceite aprovou contratos e fixtures sanitizados, testes de falha fechada e iso
 
 As credenciais usadas no ensaio devem ser revogadas/rotacionadas antes de nova caracterização ou ativação. Observabilidade sanitizada, teste TLS local ponta a ponta e governo dos limites retornados pela autenticação continuam portões explícitos para qualquer uso real. Produção e piloto real permanecem bloqueados. Effort recomendado e confirmado: `xhigh`, pela fronteira de segurança, contrato financeiro explícito e risco de habilitação acidental de capacidades não observadas.
 
+### PR 117A — correções pós-caracterização do adapter MK
+
+Em andamento em 2 de setembro de 2026. A correção separa autenticação pelos serviços mínimos fixos `6`, `8`, `9` e `22`, elimina código global e cache de token, recusa autorização ampla, fecha a consulta direta por identificador externo sem serviço confirmado e incorpora faturas pagas, erro `003` como ausência e relações multicontrato sem enfraquecer o vínculo explícito. Também impede complemento pagável em fatura liquidada, limita arquivo secreto antes da leitura e amplia o bloqueio IPv6 especial. O deploy deve conservar MK integralmente desligado. Effort recomendado: `xhigh`, pela correção de fronteira de autenticação e normalização financeira baseada em evidência real.
+
 ## 12. Mobile
 
 | PR | Objetivo | Aceite principal |
@@ -788,6 +792,7 @@ As credenciais usadas no ensaio devem ser revogadas/rotacionadas antes de nova c
 | 115 | Checklist de produção | Segredos, WAF, monitor externo, lojas, runbooks, capacidade e decisões do PR 001 conferidos. |
 | 116 | Piloto controlado | Flags desligadas por padrão, usuários/números controlados, métricas, reversão e responsável de plantão. |
 | 117 | Consultas reais MK controladas | Provider somente leitura, contexto explícito, dois controles independentes desligados e nenhuma escrita alcançável. |
+| 117A | Correções pós-caracterização MK | Tokens por serviço mínimo, faturas abertas/pagas seguras e staging ainda desligado. |
 
 ## 14. Marcos
 
@@ -800,6 +805,6 @@ As credenciais usadas no ensaio devem ser revogadas/rotacionadas antes de nova c
 | Automação configurável | 069–085 | Versões, executor, nós, resgate, editor e simulador. |
 | Interfaces operacionais | 086–108 | Web e mobile utilizáveis, inclusive offline/reconciliação. |
 | Piloto recuperável | 109–116 | Cópia segura, operação, deploy, backup, robustez e liberação gradual. |
-| ERP real controlado | 117 | Consultas MK caracterizadas entram por porta somente leitura; capacidades não observadas e produção continuam bloqueadas. |
+| ERP real controlado | 117–117A | Consultas MK caracterizadas entram por porta somente leitura, com autenticação mínima corrigida; capacidades não observadas e produção continuam bloqueadas. |
 
 O roadmap é uma proposta de execução, não autorização para preencher lacunas externas. Se Meta, MK ou o provedor de sessão divergirem, atualize o adaptador, as fixtures e a documentação; não contamine o domínio com o contrato do fornecedor.

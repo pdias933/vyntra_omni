@@ -243,10 +243,10 @@ Parte dessas capacidades depende de APIs especiais/licenciamento/liberação com
 
 Escopo real comprovado da PR 117:
 
-- autenticação geral e consultas por referência exata já observada;
-- cliente por documento ou referência externa;
+- autenticação geral vinculada ao código mínimo de cada serviço observado;
+- cliente por documento; consulta direta por referência externa permanece desabilitada por falta de serviço mínimo confirmado;
 - contratos e conexões cadastradas por cliente;
-- faturas pendentes, listagem financeira e linha digitável dentro do contexto explícito cliente+contrato;
+- faturas abertas e pagas, listagem financeira e linha digitável de fatura aberta dentro do contexto explícito cliente+contrato;
 - cobertura financeira explicitamente limitada a um mês, sem semântica de extrato integral;
 - normalização conservadora de estados, datas e valores;
 - nenhuma escrita, busca por nome/telefone, incremental, documento, Pix, segunda via, sessão de acesso ou capacidade do Motor de Fluxos.
@@ -279,7 +279,7 @@ Antes de congelar DTOs, executar chamadas reais controladas e guardar fixtures s
 
 Não inventar campos ausentes nem transformar imagem de documentação em contrato.
 
-A PR 059 registrou a caracterização pública em `docs/integracoes/PR-059-CARACTERIZACAO-MK-SOLUTIONS.md`. Em 2 de setembro de 2026, a caracterização controlada real observou autenticação geral, cliente, contratos, conexões cadastradas, faturas pendentes, faturas detalhadas e erros de consulta, sempre sem escrita. A evidência sanitizada confirma somente essa fatia: paginação, incremental, exclusões, documentos, Pix, segunda via, sessão de acesso e todas as escritas continuam não caracterizados.
+A PR 059 registrou a caracterização pública em `docs/integracoes/PR-059-CARACTERIZACAO-MK-SOLUTIONS.md`. Em 2 de setembro de 2026, a caracterização controlada real observou autenticação geral, cliente por documento, contratos, conexões cadastradas, faturas abertas e pagas, relações com um ou mais contratos e erros de consulta, sempre sem escrita. O serviço mínimo da consulta direta por referência externa não foi confirmado e essa capacidade foi fechada na PR 117A. A evidência sanitizada confirma somente essa fatia: paginação, incremental, exclusões, documentos, Pix, segunda via, sessão de acesso e todas as escritas continuam não caracterizados.
 
 A PR 117 congela DTO externo apenas dentro do adapter para as respostas efetivamente observadas e converte imediatamente para o contrato interno. Critério ou capacidade não observado retorna `CAPACIDADE_NAO_HABILITADA`; envelope inválido, relação divergente ou campo obrigatório ausente falha fechado. A fixture nunca contém endereço da instalação, identificador real, documento, credencial, valor, payload bruto ou dado de cliente.
 
@@ -298,6 +298,10 @@ A PR 117 congela DTO externo apenas dentro do adapter para as respostas efetivam
 - redirecionamento recusado e corpo limitado antes da desserialização;
 - sanitizar toda resposta antes de log/trace;
 - registrar somente código normalizado, duração, tentativa e correlação.
+
+A PR 117A fixa no código o serviço mínimo de cada rota: `6` para documento, `8` para contratos, `9` para conexões e `22` para faturas. Não existe `MK_CODIGO_SERVICO`: cada chamada pede um token próprio, exige que a resposta autorize exatamente o serviço solicitado, usa a credencial uma vez e a descarta. Perfil amplo, serviço adicional, `9999`, token compartilhado ou cache de token falham fechados. O perfil definitivo da instalação deve conter somente esses serviços de leitura e credenciais novas; o perfil de caracterização com 114 serviços nunca pode ser usado em runtime.
+
+Faturas abertas (`liquidado=N`) e pagas (`liquidado=S`) são consultadas separadamente e reunidas sem identificador duplicado. O erro externo `003` em uma dessas listas significa ausência, não indisponibilidade. A resposta pode relacionar outros contratos, mas o contrato consultado precisa aparecer exatamente uma vez. O estado externo observado `Pago` é normalizado para `PAGA`, com data de liquidação válida e valor pago positivo; uma fatura paga nunca oferece linha digitável como ação pagável.
 
 As credenciais usadas na caracterização real foram compartilhadas fora de um cofre aprovado e devem ser consideradas comprometidas. Revogação/rotação é obrigatória antes de nova caracterização ou ativação. Remover o valor de uma conversa ou log não substitui emitir credenciais novas, exclusivas por ambiente e com menor privilégio.
 

@@ -21,7 +21,10 @@ import type { ConfiguracaoMkSolutions } from './configuracao-mk-solutions.js';
 
 const IDENTIFICADOR_NUMERICO = /^[1-9][0-9]{0,17}$/u;
 const DATA = /^\d{4}-\d{2}-\d{2}$/u;
-const TEMPO_VIDA_TOKEN_MS = 30_000;
+const SERVICO_CONSULTA_DOCUMENTO = 6;
+const SERVICO_CONSULTA_CONTRATOS = 8;
+const SERVICO_CONSULTA_CONEXOES = 9;
+const SERVICO_CONSULTA_FATURAS = 22;
 
 interface FaturaComPagamento {
   readonly fatura: FaturaErpNormalizada;
@@ -29,15 +32,11 @@ interface FaturaComPagamento {
 }
 
 export class AdaptadorConsultasMkSolutions implements ConsultasErp {
-  private token: { readonly expiraEm: number; readonly valor: string } | undefined;
-  private autenticacaoEmAndamento: Promise<string> | undefined;
-
   public constructor(
     private readonly configuracao: ConfiguracaoMkSolutions,
     private readonly transporte: TransporteMkSolutions = new ClienteHttpMkSolutions(
       configuracao,
     ),
-    private readonly relogio: () => Date = () => new Date(),
   ) {}
 
   public async localizarClientes(
@@ -53,6 +52,7 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
         throw new ErroConsultaErpInvalida();
       }
       const resposta = await this.consultarProtegido(
+        SERVICO_CONSULTA_DOCUMENTO,
         '/mk/WSMKConsultaDoc.rule',
         { doc: documento },
       );
@@ -70,20 +70,8 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
       }
     }
     if (criterios.clienteExternoId !== undefined) {
-      const resposta = await this.consultarCliente(
-        criterios.clienteExternoId,
-      );
-      if (resposta.resultado === 'SUCESSO') {
-        return {
-          itens: [resposta.item],
-          origem: 'TEMPO_REAL',
-          resultado: 'SUCESSO',
-        };
-      }
-      if (resposta.resultado === 'NAO_ENCONTRADO') {
-        return { itens: [], origem: 'TEMPO_REAL', resultado: 'SUCESSO' };
-      }
-      return resposta;
+      validarIdentificador(criterios.clienteExternoId);
+      return capacidadeNaoHabilitada();
     }
     return capacidadeNaoHabilitada();
   }
@@ -92,47 +80,7 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
     clienteExternoId: string,
   ): Promise<ResultadoConsultaUnicaErp<ClienteErpNormalizado>> {
     validarIdentificador(clienteExternoId);
-    const resposta = await this.consultarProtegido(
-      '/mk/WSMKConsultaClientes.rule',
-      { cd_cliente: clienteExternoId },
-    );
-    try {
-      const itens = lista(resposta);
-      if (itens.length === 0) {
-        return { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' };
-      }
-      if (itens.length !== 1) throw new Error('RESPOSTA_MK_INVALIDA');
-      const item = objetoComChaves(itens[0], [
-        'CPF_CNPJ',
-        'CodigoPessoa',
-        'Email',
-        'Fone',
-        'InscricaoEstadual',
-        'InscricaoMunicipal',
-        'Latitude',
-        'Longitude',
-        'Nome',
-        'Situacao',
-        'contratos',
-        'endereco',
-      ]);
-      const codigo = inteiroIdentificadorPositivo(item.CodigoPessoa);
-      if (String(codigo) !== clienteExternoId) {
-        throw new Error('RESPOSTA_MK_DIVERGENTE');
-      }
-      return {
-        item: {
-          clienteExternoId: String(codigo),
-          documentoMascarado: mascararDocumento(texto(item.CPF_CNPJ, 32)),
-          nomeExibicao: texto(item.Nome, 512),
-          telefoneMascarado: mascararTelefone(texto(item.Fone, 64)),
-        },
-        origem: 'TEMPO_REAL',
-        resultado: 'SUCESSO',
-      };
-    } catch {
-      return indisponivel();
-    }
+    return capacidadeNaoHabilitada();
   }
 
   public async listarContratos(
@@ -140,6 +88,7 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
   ): Promise<ResultadoConsultaErp<ContratoErpNormalizado>> {
     validarIdentificador(clienteExternoId);
     const resposta = await this.consultarProtegido(
+      SERVICO_CONSULTA_CONTRATOS,
       '/mk/WSMKContratosPorCliente.rule',
       { cd_cliente: clienteExternoId },
     );
@@ -202,6 +151,7 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
   ): Promise<ResultadoConsultaErp<ConexaoCadastradaErpNormalizada>> {
     validarIdentificador(clienteExternoId);
     const resposta = await this.consultarProtegido(
+      SERVICO_CONSULTA_CONEXOES,
       '/mk/WSMKConexoesPorCliente.rule',
       { cd_cliente: clienteExternoId },
     );
@@ -262,7 +212,7 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
     contexto: ContextoConsultaContratoErp,
   ): Promise<ResultadoConsultaFaturasErp> {
     validarContextoContrato(contexto);
-    const itens = await this.obterFaturas(contexto);
+    const itens = await this.obterTodasFaturas(contexto);
     return itens === undefined
       ? indisponivel()
       : {
@@ -277,7 +227,7 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
     contexto: ContextoConsultaFaturaErp,
   ): Promise<ResultadoConsultaUnicaErp<FaturaErpNormalizada>> {
     validarContextoFatura(contexto);
-    const itens = await this.obterFaturas(contexto);
+    const itens = await this.obterTodasFaturas(contexto);
     if (itens === undefined) return indisponivel();
     const item = itens.find(
       ({ fatura }) =>
@@ -301,12 +251,15 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
     ResultadoComplementoFaturaErp<DadosPagamentoFaturaErpNormalizados>
   > {
     validarContextoFatura(contexto);
-    const itens = await this.obterFaturas(contexto);
+    const itens = await this.obterTodasFaturas(contexto);
     if (itens === undefined) return indisponivel();
-    const linhaDigitavel = itens.find(
+    const item = itens.find(
       ({ fatura }) =>
         fatura.faturaExternaId === contexto.faturaExternaId,
-    )?.linhaDigitavel;
+    );
+    const linhaDigitavel = item?.fatura.situacao === 'ABERTA'
+      ? item.linhaDigitavel
+      : undefined;
     return linhaDigitavel === undefined
       ? { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' }
       : {
@@ -328,18 +281,42 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
     return capacidadeNaoHabilitada();
   }
 
-  private async obterFaturas(
+  private async obterTodasFaturas(
     contexto: ContextoConsultaContratoErp,
   ): Promise<readonly FaturaComPagamento[] | undefined> {
     const contrato = await this.consultarContrato(contexto);
     if (contrato.resultado === 'INDISPONIVEL') return undefined;
     if (contrato.resultado === 'NAO_ENCONTRADO') return [];
-    const resposta = await this.consultarProtegido('/mk/WSMKFaturas.rule', {
-      codigo_cliente: contexto.clienteExternoId,
-      codigo_contrato: contexto.contratoExternoId,
-      liquidado: 'N',
-      quantidade_meses: '1',
-    });
+    const abertas = await this.obterFaturasPorLiquidacao(contexto, 'N');
+    if (abertas === undefined) return undefined;
+    const pagas = await this.obterFaturasPorLiquidacao(contexto, 'S');
+    if (pagas === undefined) return undefined;
+    const faturas = [...abertas, ...pagas];
+    try {
+      validarIdentificadoresUnicos(
+        faturas.map(({ fatura }) => fatura.faturaExternaId),
+      );
+      return faturas;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async obterFaturasPorLiquidacao(
+    contexto: ContextoConsultaContratoErp,
+    liquidado: 'N' | 'S',
+  ): Promise<readonly FaturaComPagamento[] | undefined> {
+    const resposta = await this.consultarProtegido(
+      SERVICO_CONSULTA_FATURAS,
+      '/mk/WSMKFaturas.rule',
+      {
+        codigo_cliente: contexto.clienteExternoId,
+        codigo_contrato: contexto.contratoExternoId,
+        liquidado,
+        quantidade_meses: '1',
+      },
+    );
+    if (erroNaoEncontrado(resposta)) return [];
     try {
       const faturas = lista(resposta).map((valor) => {
         const item = objetoComChaves(valor, [
@@ -365,11 +342,8 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
           'valor_pago',
           'valor_total_faturas',
         ]);
-        const contratos = lista(item.contratos);
-        if (contratos.length !== 1) {
-          throw new Error('RELACAO_FATURA_MK_AMBIGUA');
-        }
-        const contratoDaFatura = objetoComChaves(contratos[0], [
+        const contratos = lista(item.contratos).map((relacao) =>
+          objetoComChaves(relacao, [
             'adesao',
             'codigo_contrato',
             'data_referencia_final',
@@ -378,10 +352,16 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
             'tipo_plano',
             'tipo_utilizacao_servico',
             'tributacao',
-          ]);
+          ]),
+        );
+        const contratosExternos = contratos.map((relacao) =>
+          String(inteiroIdentificadorPositivo(relacao.codigo_contrato)),
+        );
+        validarIdentificadoresUnicos(contratosExternos);
         if (
-          String(inteiroIdentificadorPositivo(contratoDaFatura.codigo_contrato)) !==
-          contrato.item.contratoExternoId
+          contratosExternos.filter(
+            (identificador) => identificador === contexto.contratoExternoId,
+          ).length !== 1
         ) {
           throw new Error('RELACAO_FATURA_MK_DIVERGENTE');
         }
@@ -399,7 +379,25 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
         const vencimento = texto(item.data_vencimento, 10);
         if (!dataIsoValida(vencimento)) throw new Error('DATA_MK_INVALIDA');
         const status = texto(item.status, 64).toLocaleLowerCase('pt-BR');
-        if (status !== 'aberta') throw new Error('STATUS_MK_NAO_CARACTERIZADO');
+        const situacao = status === 'aberta' && liquidado === 'N'
+          ? 'ABERTA' as const
+          : status === 'pago' && liquidado === 'S'
+            ? 'PAGA' as const
+            : undefined;
+        if (situacao === undefined) {
+          throw new Error('STATUS_MK_NAO_CARACTERIZADO');
+        }
+        if (situacao === 'PAGA') {
+          const dataLiquidacao = texto(item.data_liquidacao, 10);
+          if (!dataIsoValida(dataLiquidacao) || centavos(item.valor_pago) <= 0) {
+            throw new Error('LIQUIDACAO_MK_INVALIDA');
+          }
+        } else if (
+          textoPossivelmenteVazio(item.data_liquidacao, 10) !== '' ||
+          centavos(item.valor_pago) !== 0
+        ) {
+          throw new Error('LIQUIDACAO_MK_DIVERGENTE');
+        }
         const linhaBruta = textoPossivelmenteVazio(
           item.linha_digitavel_boleto,
           128,
@@ -410,14 +408,14 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
         const linha = somenteDigitos(linhaBruta);
         return {
           fatura: {
-            clienteExternoId: contrato.item.clienteExternoId,
-            contratoExternoId: contrato.item.contratoExternoId,
+            clienteExternoId: contexto.clienteExternoId,
+            contratoExternoId: contexto.contratoExternoId,
             faturaExternaId: String(inteiroIdentificadorPositivo(item.codfatura)),
-            situacao: 'ABERTA' as const,
+            situacao,
             valorCentavos: centavos(item.valor_total_faturas),
             vencimento,
           },
-          ...(linha.length >= 36 && linha.length <= 64
+          ...(situacao === 'ABERTA' && linha.length >= 36 && linha.length <= 64
             ? { linhaDigitavel: linha }
             : {}),
         };
@@ -432,11 +430,16 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
   }
 
   private async consultarProtegido(
+    codigoServico: number,
     caminho: string,
     parametros: Readonly<Record<string, string>>,
   ): Promise<unknown> {
     try {
-      const resposta = await this.executarComToken(caminho, parametros);
+      const resposta = await this.executarComToken(
+        codigoServico,
+        caminho,
+        parametros,
+      );
       if (erroNaoEncontrado(resposta)) return resposta;
       if (erroMk(resposta)) throw new Error('RESPOSTA_MK_COM_ERRO');
       return resposta;
@@ -446,10 +449,11 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
   }
 
   private async executarComToken(
+    codigoServico: number,
     caminho: string,
     parametros: Readonly<Record<string, string>>,
   ): Promise<unknown> {
-    const token = await this.obterToken();
+    const token = await this.autenticar(codigoServico);
     if ('sys' in parametros || 'token' in parametros) {
       throw new Error('PARAMETRO_MK_RESERVADO');
     }
@@ -460,29 +464,11 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
     });
   }
 
-  private async obterToken(): Promise<string> {
-    if (
-      this.token !== undefined &&
-      this.token.expiraEm > this.relogio().getTime()
-    ) {
-      return this.token.valor;
-    }
-    if (this.autenticacaoEmAndamento !== undefined) {
-      return this.autenticacaoEmAndamento;
-    }
-    this.autenticacaoEmAndamento = this.autenticar();
-    try {
-      return await this.autenticacaoEmAndamento;
-    } finally {
-      this.autenticacaoEmAndamento = undefined;
-    }
-  }
-
-  private async autenticar(): Promise<string> {
+  private async autenticar(codigoServico: number): Promise<string> {
     const resposta = await this.transporte.obterJson(
       '/mk/WSAutenticacao.rule',
       {
-        cd_servico: String(this.configuracao.codigoServico),
+        cd_servico: String(codigoServico),
         password: this.configuracao.contraSenha,
         sys: this.configuracao.identificacaoSistema,
         token: this.configuracao.tokenCadastroUsuario,
@@ -497,13 +483,17 @@ export class AdaptadorConsultasMkSolutions implements ConsultasErp {
     ]);
     validarStatusOk(envelope);
     texto(envelope.Expire, 64);
-    inteiroSeguro(envelope.LimiteUso);
-    lista(envelope.ServicosAutorizados);
+    inteiroIdentificadorPositivo(envelope.LimiteUso);
+    const servicosAutorizados = lista(envelope.ServicosAutorizados).map(
+      inteiroIdentificadorPositivo,
+    );
+    if (
+      servicosAutorizados.length !== 1 ||
+      servicosAutorizados[0] !== codigoServico
+    ) {
+      throw new Error('PRIVILEGIO_MK_EXCESSIVO');
+    }
     const valor = texto(envelope.Token, 4_096);
-    this.token = {
-      expiraEm: this.relogio().getTime() + TEMPO_VIDA_TOKEN_MS,
-      valor,
-    };
     return valor;
   }
 
@@ -637,7 +627,12 @@ function erroMk(valor: unknown): boolean {
 function erroNaoEncontrado(valor: unknown): boolean {
   return (
     erroMk(valor) &&
-    (valor as Readonly<Record<string, unknown>>)['Num. ERRO'] === '003'
+    Object.keys(valor as Readonly<Record<string, unknown>>).sort().join('|') ===
+      'Mensagem|Num. ERRO|status' &&
+    (valor as Readonly<Record<string, unknown>>)['Num. ERRO'] === '003' &&
+    typeof (valor as Readonly<Record<string, unknown>>).Mensagem === 'string' &&
+    String((valor as Readonly<Record<string, unknown>>).Mensagem).length > 0 &&
+    String((valor as Readonly<Record<string, unknown>>).Mensagem).length <= 1_000
   );
 }
 

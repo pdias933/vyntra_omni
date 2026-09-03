@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { open } from 'node:fs/promises';
 import { isIP } from 'node:net';
 
 const IDENTIFICACAO_SISTEMA = /^MK[0-9]{1,4}$/u;
@@ -10,7 +10,6 @@ export type ModoMkSolutions =
   | 'SOMENTE_LEITURA';
 
 export interface ConfiguracaoMkSolutions {
-  readonly codigoServico: number;
   readonly contraSenha: string;
   readonly hostPermitido: string;
   readonly identificacaoSistema: string;
@@ -61,15 +60,6 @@ export async function carregarConfiguracaoMkSolutions(
   ) {
     throw new Error('IDENTIFICACAO_SISTEMA_MK_INVALIDA');
   }
-  const codigoServico = inteiroNoIntervalo(
-    ambiente.MK_CODIGO_SERVICO,
-    1,
-    9_999,
-    'CODIGO_SERVICO_MK_INVALIDO',
-  );
-  if (codigoServico === 9_999) {
-    throw new Error('PRIVILEGIO_MK_EXCESSIVO');
-  }
   const tokenCadastroUsuario = await lerSegredoEstrito(
     ambiente.MK_TOKEN_CADASTRO_USUARIO_FILE,
   );
@@ -78,7 +68,6 @@ export async function carregarConfiguracaoMkSolutions(
   );
 
   return {
-    codigoServico,
     contraSenha,
     hostPermitido,
     identificacaoSistema,
@@ -109,7 +98,17 @@ async function lerSegredoEstrito(caminho: string | undefined): Promise<string> {
   if (caminho === undefined || caminho.length === 0) {
     throw new Error('SEGREDO_MK_AUSENTE');
   }
-  const conteudo = await readFile(caminho, 'utf8');
+  const arquivo = await open(caminho, 'r');
+  let conteudo: string;
+  try {
+    const metadados = await arquivo.stat();
+    if (!metadados.isFile() || metadados.size === 0 || metadados.size > 4_098) {
+      throw new Error('SEGREDO_MK_INVALIDO');
+    }
+    conteudo = await arquivo.readFile('utf8');
+  } finally {
+    await arquivo.close();
+  }
   const valor = conteudo.endsWith('\r\n')
     ? conteudo.slice(0, -2)
     : conteudo.endsWith('\n')

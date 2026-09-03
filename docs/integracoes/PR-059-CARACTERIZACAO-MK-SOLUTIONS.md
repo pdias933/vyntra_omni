@@ -19,12 +19,12 @@ A caracterização foi executada a partir do ambiente de testes, sem escrita ext
 
 | Capacidade | Evidência observada | Decisão da PR 117 |
 |---|---|---|
-| Transporte e autenticação geral | HTTPS respondeu e a autenticação geral devolveu validade, limite de uso, serviços autorizados e credencial temporária. O perfil específico de operador permaneceu não autorizado. | Usar somente autenticação geral caracterizada; manter a credencial temporária em memória por prazo conservador e nunca registrá-la. |
-| Cliente | Consulta exata por documento e consulta por referência externa devolveram envelopes coerentes; documento ausente produziu erro externo controlado. | Habilitar apenas critérios observados. Busca por nome ou telefone continua não habilitada. |
+| Transporte e autenticação geral | HTTPS respondeu e a autenticação geral devolveu validade, limite de uso, serviços autorizados e credencial temporária. Tokens específicos funcionaram para os serviços `6`, `8`, `9` e `22`; o perfil de caracterização anunciou 114 serviços. | Pedir um token descartável para o único código mínimo de cada chamada e recusar lista adicional/divergente. O perfil amplo é proibido em runtime. |
+| Cliente | Consulta exata por documento funcionou no serviço `6`; documento ausente produziu erro externo controlado. O serviço mínimo da consulta direta por referência externa não foi confirmado. | Habilitar apenas documento. Referência externa, nome e telefone continuam não habilitados. |
 | Contratos | A consulta por cliente devolveu contratos com adesão, empresa, plano e vencimento. | Exigir cliente explícito e validar que o contrato devolvido pertence a ele. |
 | Conexões cadastradas | A consulta devolveu cadastro, bloqueio/redução, contrato, endereço e tecnologia, além de atributos técnicos que não devem atravessar a fronteira. | Projetar somente o modelo interno minimizado. Conexão cadastrada não é sessão de acesso e nunca prova estado `ATIVA`. |
 | Faturas pendentes | A consulta por cliente devolveu vencimento, descrição, associação contratual e valor em tipos observáveis. | Usar somente dentro do contexto explícito de cliente e contrato e validar a associação antes de projetar. |
-| Faturas detalhadas | A consulta com cliente e período devolveu estado, datas, total, forma de pagamento, linha digitável e relações de conta/contrato. A consulta baseada apenas no contrato foi recusada pelo provedor. | Toda porta financeira recebe cliente e contrato explícitos. A consulta interna exata filtra essa lista também pela fatura; documento, Pix, segunda via e endpoint externo direto por fatura permanecem não habilitados até caracterização própria. |
+| Faturas detalhadas | O serviço especial `22`, com cliente, contrato e um mês, devolveu faturas pagas com estado externo `Pago`, data/valor de liquidação e uma ou duas relações de contrato. `liquidado=N` sem resultados devolveu erro `003`. A consulta baseada apenas no contrato foi recusada pelo provedor. | Consultar abertas e pagas separadamente; tratar `003` como lista vazia; exigir que o contrato consultado apareça exatamente uma vez e aceitar outras relações distintas. Linha digitável só pode complementar fatura aberta. |
 | Classificações e processos | Catálogos exclusivamente de leitura responderam com estrutura observável. | Não expor na PR 117: ainda não existe caso de uso interno aprovado para esses catálogos. |
 | Escritas | Nenhuma chamada de criação, alteração, desbloqueio, comentário, encerramento ou ordem de serviço foi executada. | `ADAPTADOR_ERP` permanece sem provider real; nenhuma escrita pode ser descoberta ou habilitada por configuração. |
 
@@ -34,6 +34,8 @@ Os nomes e formatos externos observados ficam restritos ao adapter. O domínio r
 
 - Consultas de contrato e fatura exigem contexto explícito de cliente e contrato; relação implícita, cache ou escolha do primeiro resultado são proibidos.
 - A listagem financeira observada usa uma janela de um mês. O resultado normalizado declara `JANELA_LIMITADA`; não representa extrato integral e não autoriza concluir que não existem outras faturas.
+- O adapter fixa os códigos mínimos `6`, `8`, `9` e `22`, pede um token por chamada, exige autorização exata e o descarta após um uso. Não há código configurável, cache ou reaproveitamento de token.
+- Em listas financeiras, erro `003` representa ausência. Faturas abertas e pagas são unidas sem duplicidade; o contrato solicitado deve aparecer uma vez, ainda que a fatura possua outras relações contratuais.
 - A consulta de conexões representa cadastro técnico no ERP. Ela não substitui `AdaptadorSessaoAcesso`, não informa presença online confiável e não autoriza desconexão.
 - Paginação, incremental, exclusões, limites sustentados, comportamento sob concorrência e expiração efetiva não foram suficientemente caracterizados.
 - Datas e valores externos são tratados como entrada não confiável e convertidos apenas quando satisfazem o contrato interno.

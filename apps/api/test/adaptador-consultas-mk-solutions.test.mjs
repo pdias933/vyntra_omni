@@ -14,7 +14,6 @@ const fixture = JSON.parse(
 );
 
 const configuracao = {
-  codigoServico: 9999,
   contraSenha: 'contra-senha-publica-sintetica',
   hostPermitido: 'erp.example.invalid',
   identificacaoSistema: 'MK0',
@@ -35,12 +34,21 @@ function criarTransporte(sobrescritas = {}) {
         const valor = sobrescritas[caminho];
         return typeof valor === 'function' ? valor(parametros) : valor;
       }
-      if (caminho === '/mk/WSAutenticacao.rule') return fixture.autenticacao;
+      if (caminho === '/mk/WSAutenticacao.rule') {
+        return {
+          ...fixture.autenticacao,
+          ServicosAutorizados: [Number(parametros.cd_servico)],
+          Token: `${fixture.autenticacao.Token}-${parametros.cd_servico}`,
+        };
+      }
       if (caminho === '/mk/WSMKConsultaDoc.rule') return fixture.clientePorDocumento;
-      if (caminho === '/mk/WSMKConsultaClientes.rule') return fixture.clientePorCodigo;
       if (caminho === '/mk/WSMKContratosPorCliente.rule') return fixture.contratos;
       if (caminho === '/mk/WSMKConexoesPorCliente.rule') return fixture.conexoes;
-      if (caminho === '/mk/WSMKFaturas.rule') return fixture.faturas;
+      if (caminho === '/mk/WSMKFaturas.rule') {
+        return parametros.liquidado === 'S'
+          ? fixture.faturasLiquidadas
+          : fixture.faturasAbertas;
+      }
       throw new Error('ROTA_NAO_SIMULADA');
     },
   };
@@ -85,20 +93,6 @@ test('modo desconhecido e origem sem HTTPS falham fechados', async () => {
   );
 });
 
-test('runtime somente leitura recusa autenticação ampla antes de ler credenciais', async () => {
-  await assert.rejects(
-    carregarConfiguracaoMkSolutions({
-      MK_CODIGO_SERVICO: '9999',
-      MK_HOST_PERMITIDO: 'erp.example.invalid',
-      MK_IDENTIFICACAO_SISTEMA: 'MK0',
-      MK_MODO: 'SOMENTE_LEITURA',
-      MK_ORIGEM: 'https://erp.example.invalid/',
-      MK_TOKEN_CADASTRO_USUARIO_FILE: '/arquivo/que-nao-existe',
-    }),
-    /PRIVILEGIO_MK_EXCESSIVO/u,
-  );
-});
-
 test('modo real é recusado no ambiente limitado a dados sanitizados', async () => {
   await assert.rejects(
     carregarConfiguracaoMkSolutions({
@@ -121,6 +115,9 @@ test('endereços internos e reservados são bloqueados antes da conexão', () =>
     'fc00::1',
     'fe80::1',
     '2001:db8::1',
+    '2001:0:ffff::1',
+    '2001:20::1',
+    '2002:c000:0201::1',
   ]) {
     assert.equal(enderecoRedePublica(endereco), false, endereco);
   }
@@ -221,7 +218,7 @@ test('normaliza cliente, contrato, conexão cadastrada e fatura sem vazar campos
 
   assert.equal(clientes.resultado, 'SUCESSO');
   assert.equal(clientes.itens[0].documentoMascarado.endsWith('1111'), true);
-  assert.equal(cliente.resultado, 'SUCESSO');
+  assert.equal(cliente.codigo, 'CAPACIDADE_NAO_HABILITADA');
   assert.equal(contratos.itens[0].contratoExternoId, '202');
   assert.deepEqual(conexoes.itens[0], {
     clienteExternoId: '101',
@@ -240,6 +237,14 @@ test('normaliza cliente, contrato, conexão cadastrada e fatura sem vazar campos
     valorCentavos: 12345,
     vencimento: '2026-09-10',
   });
+  assert.deepEqual(faturas.itens[1], {
+    clienteExternoId: '101',
+    contratoExternoId: '202',
+    faturaExternaId: '405',
+    situacao: 'PAGA',
+    valorCentavos: 9876,
+    vencimento: '2026-08-10',
+  });
   const serializado = JSON.stringify({ cliente, clientes, conexoes, contratos, faturas });
   assert.equal(serializado.includes('usuario-sintetico'), false);
   assert.equal(serializado.includes('00:00:00:00:00:00'), false);
@@ -255,8 +260,13 @@ test('fatura sempre envia cliente e contrato explícitos e complemento não ativ
     faturaExternaId: '404',
   };
   const pagamento = await adaptador.obterDadosPagamentoFatura(contexto);
+  const pagamentoLiquidado = await adaptador.obterDadosPagamentoFatura({
+    ...contexto,
+    faturaExternaId: '405',
+  });
   const documento = await adaptador.obterDocumentoFatura(contexto);
   assert.equal(pagamento.resultado, 'SUCESSO');
+  assert.equal(pagamentoLiquidado.resultado, 'NAO_ENCONTRADO');
   assert.equal(documento.codigo, 'CAPACIDADE_NAO_HABILITADA');
   const chamada = transporte.chamadas.find(({ caminho }) => caminho === '/mk/WSMKFaturas.rule');
   assert.equal(chamada.parametros.codigo_cliente, '101');
@@ -264,7 +274,7 @@ test('fatura sempre envia cliente e contrato explícitos e complemento não ativ
   assert.equal('codigo_fatura' in chamada.parametros, false);
 });
 
-test('fatura exige vínculo exato e exclusivo entre cliente e contrato', async () => {
+test('fatura exige vínculo único com o contrato consultado e admite outros contratos', async () => {
   const contexto = {
     clienteExternoId: '101',
     contratoExternoId: '202',
@@ -290,28 +300,44 @@ test('fatura exige vínculo exato e exclusivo entre cliente e contrato', async (
     false,
   );
 
-  const faturaAmbigua = criarTransporte({
-    '/mk/WSMKFaturas.rule': [
+  const faturaSemContrato = criarTransporte({
+    '/mk/WSMKFaturas.rule': (parametros) => parametros.liquidado === 'S' ? [] : [
       {
-        ...fixture.faturas[0],
+        ...fixture.faturasAbertas[0],
         contratos: [
-          ...fixture.faturas[0].contratos,
           {
-            ...fixture.faturas[0].contratos[0],
+            ...fixture.faturasAbertas[0].contratos[0],
             codigo_contrato: 999,
           },
         ],
       },
     ],
   });
-  const adaptadorAmbiguo = new AdaptadorConsultasMkSolutions(
+  const adaptadorSemContrato = new AdaptadorConsultasMkSolutions(
     configuracao,
-    faturaAmbigua,
+    faturaSemContrato,
   );
-  assert.deepEqual(await adaptadorAmbiguo.listarFaturas(contexto), {
+  assert.deepEqual(await adaptadorSemContrato.listarFaturas(contexto), {
     codigo: 'ERP_INDISPONIVEL',
     resultado: 'INDISPONIVEL',
   });
+
+  const faturaContratoDuplicado = criarTransporte({
+    '/mk/WSMKFaturas.rule': (parametros) => parametros.liquidado === 'S' ? [] : [{
+      ...fixture.faturasAbertas[0],
+      contratos: [
+        fixture.faturasAbertas[0].contratos[0],
+        fixture.faturasAbertas[0].contratos[0],
+      ],
+    }],
+  });
+  assert.equal(
+    (await new AdaptadorConsultasMkSolutions(
+      configuracao,
+      faturaContratoDuplicado,
+    ).listarFaturas(contexto)).resultado,
+    'INDISPONIVEL',
+  );
 });
 
 test('IDs duplicados e data impossível falham fechados', async () => {
@@ -320,9 +346,9 @@ test('IDs duplicados e data impossível falham fechados', async () => {
     contratoExternoId: '202',
   };
   const duplicada = criarTransporte({
-    '/mk/WSMKFaturas.rule': [
-      fixture.faturas[0],
-      { ...fixture.faturas[0], valor_total_faturas: '999.99' },
+    '/mk/WSMKFaturas.rule': (parametros) => parametros.liquidado === 'S' ? [] : [
+      fixture.faturasAbertas[0],
+      { ...fixture.faturasAbertas[0], valor_total_faturas: '999.99' },
     ],
   });
   assert.equal(
@@ -336,8 +362,8 @@ test('IDs duplicados e data impossível falham fechados', async () => {
   );
 
   const dataInvalida = criarTransporte({
-    '/mk/WSMKFaturas.rule': [
-      { ...fixture.faturas[0], data_vencimento: '2026-02-31' },
+    '/mk/WSMKFaturas.rule': (parametros) => parametros.liquidado === 'S' ? [] : [
+      { ...fixture.faturasAbertas[0], data_vencimento: '2026-02-31' },
     ],
   });
   assert.equal(
@@ -370,13 +396,16 @@ test('identificador externo zero falha fechado', async () => {
   });
 });
 
-test('autenticação concorrente é coalescida e token nunca aparece na saída', async () => {
+test('autenticação usa token descartável e privilégio exato por serviço', async () => {
   let autenticacoes = 0;
   const transporte = criarTransporte({
-    '/mk/WSAutenticacao.rule': async () => {
+    '/mk/WSAutenticacao.rule': async (parametros) => {
       autenticacoes += 1;
       await new Promise((resolver) => setTimeout(resolver, 5));
-      return fixture.autenticacao;
+      return {
+        ...fixture.autenticacao,
+        ServicosAutorizados: [Number(parametros.cd_servico)],
+      };
     },
   });
   const adaptador = new AdaptadorConsultasMkSolutions(configuracao, transporte);
@@ -384,8 +413,86 @@ test('autenticação concorrente é coalescida e token nunca aparece na saída',
     adaptador.listarContratos('101'),
     adaptador.listarConexoes('101'),
   ]);
-  assert.equal(autenticacoes, 1);
+  assert.equal(autenticacoes, 2);
+  assert.deepEqual(
+    transporte.chamadas
+      .filter(({ caminho }) => caminho === '/mk/WSAutenticacao.rule')
+      .map(({ parametros }) => parametros.cd_servico)
+      .sort(),
+    ['8', '9'],
+  );
   assert.equal(JSON.stringify(resultados).includes(fixture.autenticacao.Token), false);
+});
+
+test('cada rota usa somente o código de serviço caracterizado', async () => {
+  const transporte = criarTransporte();
+  const adaptador = new AdaptadorConsultasMkSolutions(configuracao, transporte);
+  await adaptador.localizarClientes({ documento: '11111111111' });
+  await adaptador.listarContratos('101');
+  await adaptador.listarConexoes('101');
+  await adaptador.listarFaturas({
+    clienteExternoId: '101',
+    contratoExternoId: '202',
+  });
+  assert.deepEqual(
+    transporte.chamadas
+      .filter(({ caminho }) => caminho === '/mk/WSAutenticacao.rule')
+      .map(({ parametros }) => parametros.cd_servico),
+    ['6', '8', '9', '8', '22', '22'],
+  );
+  assert.equal(
+    transporte.chamadas.some(
+      ({ parametros }) => parametros.cd_servico === '9999',
+    ),
+    false,
+  );
+});
+
+test('autenticação ampla ou divergente é recusada antes da consulta', async () => {
+  const transporte = criarTransporte({
+    '/mk/WSAutenticacao.rule': (parametros) => ({
+      ...fixture.autenticacao,
+      ServicosAutorizados: [Number(parametros.cd_servico), 9999],
+    }),
+  });
+  const resultado = await new AdaptadorConsultasMkSolutions(
+    configuracao,
+    transporte,
+  ).listarContratos('101');
+  assert.equal(resultado.resultado, 'INDISPONIVEL');
+  assert.equal(
+    transporte.chamadas.some(
+      ({ caminho }) => caminho === '/mk/WSMKContratosPorCliente.rule',
+    ),
+    false,
+  );
+});
+
+test('erro 003 em lista de faturas significa ausência, não indisponibilidade', async () => {
+  const naoEncontrado = {
+    'Num. ERRO': '003',
+    Mensagem: 'Nenhum registro sintético.',
+    status: 'ERRO',
+  };
+  const somentePagas = criarTransporte({
+    '/mk/WSMKFaturas.rule': (parametros) =>
+      parametros.liquidado === 'N' ? naoEncontrado : fixture.faturasLiquidadas,
+  });
+  const contexto = { clienteExternoId: '101', contratoExternoId: '202' };
+  const resultado = await new AdaptadorConsultasMkSolutions(
+    configuracao,
+    somentePagas,
+  ).listarFaturas(contexto);
+  assert.equal(resultado.resultado, 'SUCESSO');
+  assert.deepEqual(resultado.itens.map(({ situacao }) => situacao), ['PAGA']);
+
+  const vazias = criarTransporte({ '/mk/WSMKFaturas.rule': naoEncontrado });
+  const vazio = await new AdaptadorConsultasMkSolutions(
+    configuracao,
+    vazias,
+  ).listarFaturas(contexto);
+  assert.equal(vazio.resultado, 'SUCESSO');
+  assert.deepEqual(vazio.itens, []);
 });
 
 test('erro externo não caracterizado não repete consulta nem autenticação', async () => {
@@ -476,6 +583,20 @@ test('critério não caracterizado fica indisponível sem chamar a rede', async 
   const transporte = criarTransporte();
   const adaptador = new AdaptadorConsultasMkSolutions(configuracao, transporte);
   assert.deepEqual(await adaptador.localizarClientes({ nome: 'Teste' }), {
+    codigo: 'CAPACIDADE_NAO_HABILITADA',
+    resultado: 'INDISPONIVEL',
+  });
+  assert.equal(transporte.chamadas.length, 0);
+});
+
+test('consulta direta por identificador externo fica indisponível sem chamar a rede', async () => {
+  const transporte = criarTransporte();
+  const adaptador = new AdaptadorConsultasMkSolutions(configuracao, transporte);
+  assert.deepEqual(await adaptador.consultarCliente('101'), {
+    codigo: 'CAPACIDADE_NAO_HABILITADA',
+    resultado: 'INDISPONIVEL',
+  });
+  assert.deepEqual(await adaptador.localizarClientes({ clienteExternoId: '101' }), {
     codigo: 'CAPACIDADE_NAO_HABILITADA',
     resultado: 'INDISPONIVEL',
   });

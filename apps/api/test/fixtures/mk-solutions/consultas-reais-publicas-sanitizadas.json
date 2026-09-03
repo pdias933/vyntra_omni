@@ -2,26 +2,10 @@
   "autenticacao": {
     "Expire": "31/12/2099 23:59:59",
     "LimiteUso": 100,
-    "ServicosAutorizados": [6, 8, 9],
+    "ServicosAutorizados": [6],
     "Token": "token-publico-sintetico",
     "status": "OK"
   },
-  "clientePorCodigo": [
-    {
-      "CPF_CNPJ": "11111111111",
-      "CodigoPessoa": 101,
-      "Email": "cliente@example.invalid",
-      "Fone": "5500000000000",
-      "InscricaoEstadual": "",
-      "InscricaoMunicipal": "",
-      "Latitude": "0",
-      "Longitude": "0",
-      "Nome": "Cliente Sintético",
-      "Situacao": "Ativo",
-      "contratos": [],
-      "endereco": {}
-    }
-  ],
   "clientePorDocumento": {
     "CEP": "00000000",
     "CodigoPessoa": 101,
@@ -72,7 +56,7 @@
     "Nome": "Cliente Sintético",
     "status": "OK"
   },
-  "faturas": [
+  "faturasAbertas": [
     {
       "banco": "Banco sintético",
       "codfatura": 404,
@@ -116,6 +100,62 @@
       "tipo_documento_descricao": "Boleto sintético",
       "valor_pago": "0.00",
       "valor_total_faturas": "123.45"
+    }
+  ],
+  "faturasLiquidadas": [
+    {
+      "banco": "Banco sintético",
+      "codfatura": 405,
+      "codigo_profile": "1",
+      "contas": [
+        {
+          "codconta": 506,
+          "data_referencia_final": 20260831,
+          "data_referencia_inicial": 20260801,
+          "descricao_conta": "Conta sintética liquidada",
+          "nomenclatura_integracao": "mensalidade",
+          "tipo_documento": "boleto",
+          "valor_lancamento": 98.76
+        }
+      ],
+      "contratos": [
+        {
+          "adesao": 20260101,
+          "codigo_contrato": 202,
+          "data_referencia_final": "2026-08-31",
+          "data_referencia_inicial": "2026-08-01",
+          "plano": "Plano sintético",
+          "tipo_plano": 1,
+          "tipo_utilizacao_servico": "Sintético",
+          "tributacao": "Sintética"
+        },
+        {
+          "adesao": 20260101,
+          "codigo_contrato": 999,
+          "data_referencia_final": "2026-08-31",
+          "data_referencia_inicial": "2026-08-01",
+          "plano": "Serviço adicional sintético",
+          "tipo_plano": 2,
+          "tipo_utilizacao_servico": "Sintético",
+          "tributacao": "Sintética"
+        }
+      ],
+      "cpf_cnpj": "11111111111",
+      "data_lancamento": "2026-08-01",
+      "data_liquidacao": "2026-08-09",
+      "data_vencimento": "2026-08-10",
+      "data_vencimento_original": "2026-08-10",
+      "descricao": "Fatura sintética liquidada",
+      "forma_pagamento": "Boleto",
+      "inscricao_estadual": "",
+      "inscricao_municipal": "",
+      "linha_digitavel_boleto": "",
+      "nome_razaosocial": "Cliente Sintético",
+      "nosso_numero": "0000000001",
+      "status": "Pago",
+      "tipo_documento_descricao": "Boleto sintético",
+      "valor_pago": "98.76",
+      "valor_total_faturas": "98.76"
     }
   ]
 }

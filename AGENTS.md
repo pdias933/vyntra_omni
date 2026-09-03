@@ -197,6 +197,9 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - Consulta MK real exige `MK_MODO=SOMENTE_LEITURA` e o controle PostgreSQL correspondente (`MK_CONSULTAS_CADASTRAIS_REAIS` ou `MK_CONSULTAS_FINANCEIRAS_REAIS`). Todos nascem desligados; `CARACTERIZACAO` nunca injeta provider nos casos de uso.
 - Cliente e contrato são contexto explícito obrigatório em consulta de contrato/fatura. Não complete relação por cache, primeiro resultado ou inferência.
 - A consulta financeira MK declara cobertura limitada a um mês. Propague a cobertura até a UI, não conclua ausência de débito fora dela e não permita que o Motor de Fluxos a trate como integral.
+- Autenticação MK é descartável e vinculada ao único código mínimo fixo da rota: `6` documento, `8` contratos, `9` conexões e `22` faturas. Não aceite código por variável, `9999`, lista de serviços adicional, cache ou reaproveitamento do token.
+- Em faturas MK, `003` significa lista vazia; abertas e pagas são consultadas separadamente e unidas sem duplicidade. O contrato consultado deve aparecer exatamente uma vez, mesmo que existam outros contratos relacionados. Fatura paga não oferece linha digitável como complemento pagável.
+- Consulta direta de cliente por identificador externo permanece não habilitada até existir serviço mínimo caracterizado; não reutilize token de outro serviço nem reintroduza a rota externa removida.
 - `MK_CONSULTAS_CADASTRAIS_REAIS` fica reservado e sem consumidor de runtime na PR 117. Não exponha identificadores externos em rota para “usar” o controle; crie primeiro um caso de uso correlacionado por UUIDs internos e revise o DTO.
 - Transporte MK usa apenas caminhos exatos de leitura, prazo absoluto e DNS público fixado à conexão. Erro externo não caracterizado nunca justifica repetição ou reautenticação automática.
 - `AccessSessionAdapter`/`AdaptadorSessaoAcesso` é separado do ERP.

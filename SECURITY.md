@@ -396,7 +396,8 @@ Replay ou duplicidade retorna sucesso compatível sem repetir o efeito. Status f
 - URL com token/query sensível nunca é logada;
 - configuração MK aceita somente origem HTTPS exata em allowlist, sem credencial embutida, query, fragmento ou caminho; o adapter fixa os caminhos, recusa redirecionamento e limita o corpo antes de interpretar JSON;
 - o prazo de transporte é absoluto e inclui espera por concorrência e DNS; caminhos permitidos formam uma lista exata somente de leitura, e erro externo não caracterizado não autoriza repetição ou reautenticação automática;
-- segredo estático vem exclusivamente de arquivo secreto/cofre, e a credencial temporária existe somente em memória por prazo conservador;
+- segredo estático vem exclusivamente de arquivo secreto/cofre, com arquivo regular e tamanho validado antes da leitura; cada credencial temporária é pedida para um único código de serviço, usada uma vez, mantida somente em memória e descartada;
+- os códigos mínimos são fixos no adapter por rota (`6` documento, `8` contratos, `9` conexões e `22` faturas); autenticação com serviço divergente/adicional, inclusive perfil amplo, falha fechada;
 - resposta externa é tratada como não confiável e validada pelo adapter;
 - simulador Meta não recebe segredo, não é registrado no runtime e nunca substitui assinatura, deduplicação PostgreSQL ou validação do webhook real;
 - simulador ERP não recebe segredo nem DTO MK, não é registrado no runtime e separa efeito comprovadamente ausente de efeito incerto; memória de teste nunca substitui operação/idempotência PostgreSQL;
