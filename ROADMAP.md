@@ -760,7 +760,9 @@ As credenciais usadas no ensaio devem ser revogadas/rotacionadas antes de nova c
 
 ### PR 117A — correções pós-caracterização do adapter MK
 
-Em andamento em 2 de setembro de 2026. A correção separa autenticação pelos serviços mínimos fixos `6`, `8`, `9` e `22`, elimina código global e cache de token, recusa autorização ampla, fecha a consulta direta por identificador externo sem serviço confirmado e incorpora faturas pagas, erro `003` como ausência e relações multicontrato sem enfraquecer o vínculo explícito. Também impede complemento pagável em fatura liquidada, limita arquivo secreto antes da leitura e amplia o bloqueio IPv6 especial. O deploy deve conservar MK integralmente desligado. Effort recomendado: `xhigh`, pela correção de fronteira de autenticação e normalização financeira baseada em evidência real.
+Concluída em 2 de setembro de 2026 no commit `1631aee` e publicada em staging pela release imutável `pr-117a-1631aee`. A correção separa autenticação pelos serviços mínimos fixos `6`, `8`, `9` e `22`, elimina código global e cache de token, recusa autorização ampla, fecha a consulta direta por identificador externo sem serviço confirmado e incorpora faturas pagas, erro `003` como ausência e relações multicontrato sem enfraquecer o vínculo explícito. Também impede complemento pagável em fatura liquidada, limita arquivo secreto antes da leitura e amplia o bloqueio IPv6 especial.
+
+Lint, tipos, testes completos e adversariais, contratos, matriz Expo, auditoria de dependências, Gitleaks 8.30.0 e builds web/API/iOS/Android passaram. O checklist de produção permaneceu corretamente `ESTRUTURA_VALIDA_COM_PENDENCIAS`. O job único confirmou 57 migrations e nenhuma pendência; API, web, proxy, duas réplicas do worker, PostgreSQL, Redis e S3 passaram prontidão e smoke privado/público. O staging preserva `MK_MODO=DESATIVADO`, nenhum segredo MK montado e ambos os controles desativados com rollout zero. Produção e piloto real continuam bloqueados. Effort recomendado e confirmado: `xhigh`, pela correção de fronteira de autenticação e normalização financeira baseada em evidência real.
 
 ## 12. Mobile
 
