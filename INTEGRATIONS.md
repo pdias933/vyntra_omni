@@ -165,13 +165,14 @@ Contrato interno dividido por consulta e escrita.
 localizarClientes(telefone?, documento?, nome?, id_externo?)
 consultarCliente(cliente_externo_id)
 listarContratos(cliente_externo_id)
-consultarContrato(contrato_externo_id)
+consultarContrato({ cliente_externo_id, contrato_externo_id })
+listarConexoes(cliente_externo_id)
 
 consultarSituacaoFinanceira(cliente/contrato)
-listarFaturas(contrato)
-consultarFatura(fatura)
-obterDocumentoFatura(fatura)
-obterDadosPagamento(fatura)
+listarFaturas({ cliente_externo_id, contrato_externo_id })
+consultarFatura({ cliente_externo_id, contrato_externo_id, fatura_externa_id })
+obterDocumentoFatura({ cliente_externo_id, contrato_externo_id, fatura_externa_id })
+obterDadosPagamentoFatura({ cliente_externo_id, contrato_externo_id, fatura_externa_id })
 
 listarAtendimentos(cliente/contrato)
 consultarAtendimento(protocolo)
@@ -213,15 +214,15 @@ A PR 020 materializa `AdaptadorErp` como composição de `ConsultasErp` e `Escri
 
 `AdaptadorErpSimulado` recebe apenas dados sintéticos e relógio controlado. Criação confirmada devolve protocolo oficial determinístico; indisponibilidade anterior à chamada declara que não existe efeito externo; perda de resposta cria o efeito simulado, devolve `RESULTADO_INCERTO` e permite encontrá-lo apenas pela reconciliação. Repetição compatível reaproveita o resultado e chave divergente falha. A memória existe somente para testes: produção continua exigindo `OperacaoIntegracao`, idempotência PostgreSQL, caixa de saída e auditoria.
 
-O simulador não contém DTO MK, credencial, endpoint ou inferência sobre campos reais e não é registrado no runtime. `AdaptadorMkSolutions` permanece bloqueado até a caracterização da seção 4.3; `AdaptadorSessaoAcesso` continua uma porta separada.
+O simulador não contém DTO MK, credencial, endpoint ou inferência sobre campos reais e não é registrado no runtime. A PR 117 acrescenta um provider real apenas para a fatia `ConsultasErp` observada; `ADAPTADOR_ERP` continua sem provider e `AdaptadorSessaoAcesso` permanece uma porta separada.
 
-A PR 060 completa a semântica interna de busca e detalhe com `consultarCliente` e `consultarContrato`. `ServicoConsultasClienteContratoErp` valida critérios antes da porta e revalida a resposta normalizada: limites, identificadores relacionados, estados canônicos e allowlist de campos. Campo desconhecido ou contrato pertencente a outro cliente falha fechado como `RESPOSTA_CONSULTA_ERP_INVALIDA`; ausência exata é distinta de indisponibilidade. Toda resposta bem-sucedida informa `TEMPO_REAL`. O serviço, a porta e seus consumidores não conhecem nomes MK, famílias WSMK ou DTOs externos. O adapter real continua sem provider até existirem fixtures reais aprovadas; os testes desta etapa usam somente o simulador sintético.
+A PR 060 completa a semântica interna de busca e detalhe com `consultarCliente` e `consultarContrato`. `ServicoConsultasClienteContratoErp` valida critérios antes da porta e revalida a resposta normalizada: limites, identificadores relacionados, estados canônicos e allowlist de campos. Campo desconhecido ou contrato pertencente a outro cliente falha fechado como `RESPOSTA_CONSULTA_ERP_INVALIDA`; ausência exata é distinta de indisponibilidade. Toda resposta bem-sucedida informa `TEMPO_REAL`. O serviço, a porta e seus consumidores não conhecem nomes MK, famílias WSMK ou DTOs externos. Até a PR 116, os testes usavam somente o simulador sintético e não existia provider real; a PR 117 passa a registrar apenas a fatia de leitura caracterizada, desligada por padrão e sem alterar a porta de escritas.
 
-A PR 061 acrescenta `consultarFatura`, `obterDocumentoFatura` e `obterDadosPagamentoFatura` à porta interna. `ServicoFinanceiroErp` valida vínculo fatura↔contrato, estado, valor, vencimento, assinatura e teto do PDF, formato de Pix e linha digitável. Documento e pagamento têm disponibilidade independente; ausência ou capacidade não habilitada produz resposta `PARCIAL` com motivo explícito, nunca valor inventado. Fatura inexistente e ERP indisponível continuam distintos. Sucesso sempre declara `TEMPO_REAL`; financeiro não usa snapshot como fallback. O documento cru é convertido pelo adapter em bytes internos e não transporta URL, Base64 ou nomenclatura do fornecedor.
+A PR 061 acrescenta `consultarFatura`, `obterDocumentoFatura` e `obterDadosPagamentoFatura` à porta interna. A PR 117 torna explícito em todas essas assinaturas o contexto cliente+contrato+fatura e torna cliente+contrato obrigatório para listagem financeira e detalhe de contrato; o fornecedor real recusou consulta financeira baseada somente em contrato. `ServicoFinanceiroErp` valida vínculo cliente↔contrato↔fatura, estado, valor, vencimento, assinatura e teto do PDF, formato de Pix e linha digitável. A listagem passa a declarar cobertura `INTEGRAL` ou `JANELA_LIMITADA`; o adapter MK declara honestamente `JANELA_LIMITADA` de um mês. O console mostra esse limite e o Motor de Fluxos recusa a resposta parcial, sem concluir que não existem débitos fora da janela. Documento e pagamento têm disponibilidade independente; ausência ou capacidade não habilitada produz resposta `PARCIAL` com motivo explícito, nunca valor inventado. Fatura inexistente e ERP indisponível continuam distintos. Sucesso sempre declara `TEMPO_REAL`; financeiro não usa snapshot como fallback. O documento cru é convertido pelo adapter em bytes internos e não transporta URL, Base64 ou nomenclatura do fornecedor.
 
 ## 4. `AdaptadorMkSolutions`
 
-É a primeira implementação de `AdaptadorErp`.
+A implementação completa continua sendo a candidata inicial a `AdaptadorErp`. A PR 117 implementa deliberadamente apenas `ConsultasErp` sob o token `CONSULTAS_ERP`; como nenhuma escrita foi caracterizada, ela não implementa nem registra o contrato completo `ADAPTADOR_ERP`.
 
 ### 4.1 Capacidades esperadas
 
@@ -239,6 +240,16 @@ A PR 061 acrescenta `consultarFatura`, `obterDocumentoFatura` e `obterDadosPagam
 - listar chamados/OS quando a API permitir.
 
 Parte dessas capacidades depende de APIs especiais/licenciamento/liberação comercial. Nenhuma funcionalidade deve ser marcada pronta apenas porque aparece em documentação pública.
+
+Escopo real comprovado da PR 117:
+
+- autenticação geral e consultas por referência exata já observada;
+- cliente por documento ou referência externa;
+- contratos e conexões cadastradas por cliente;
+- faturas pendentes, listagem financeira e linha digitável dentro do contexto explícito cliente+contrato;
+- cobertura financeira explicitamente limitada a um mês, sem semântica de extrato integral;
+- normalização conservadora de estados, datas e valores;
+- nenhuma escrita, busca por nome/telefone, incremental, documento, Pix, segunda via, sessão de acesso ou capacidade do Motor de Fluxos.
 
 ### 4.2 Clientes internos
 
@@ -268,7 +279,9 @@ Antes de congelar DTOs, executar chamadas reais controladas e guardar fixtures s
 
 Não inventar campos ausentes nem transformar imagem de documentação em contrato.
 
-A PR 059 registrou a caracterização pública em `docs/integracoes/PR-059-CARACTERIZACAO-MK-SOLUTIONS.md`. As fontes oficiais comprovam perfil de webservice, restrição por IP, token expirável, famílias gerais e um catálogo especial sujeito a contratação/liberação. Como não foi fornecido ambiente real, os exemplos públicos de saída são imagens e não há semântica pública suficiente de paginação ou erros, a fixture permanece `FIXTURE_PUBLICA_SANITIZADA`: respostas `NAO_OBSERVADA`, DTO `NAO_CONGELADO` e paginação `NAO_DOCUMENTADA` quando aplicável. `ValidadorCaracterizacaoMkSolutions` só permite ativação com evidência `AMBIENTE_REAL` completa. Nenhum provider MK foi registrado.
+A PR 059 registrou a caracterização pública em `docs/integracoes/PR-059-CARACTERIZACAO-MK-SOLUTIONS.md`. Em 2 de setembro de 2026, a caracterização controlada real observou autenticação geral, cliente, contratos, conexões cadastradas, faturas pendentes, faturas detalhadas e erros de consulta, sempre sem escrita. A evidência sanitizada confirma somente essa fatia: paginação, incremental, exclusões, documentos, Pix, segunda via, sessão de acesso e todas as escritas continuam não caracterizados.
+
+A PR 117 congela DTO externo apenas dentro do adapter para as respostas efetivamente observadas e converte imediatamente para o contrato interno. Critério ou capacidade não observado retorna `CAPACIDADE_NAO_HABILITADA`; envelope inválido, relação divergente ou campo obrigatório ausente falha fechado. A fixture nunca contém endereço da instalação, identificador real, documento, credencial, valor, payload bruto ou dado de cliente.
 
 ### 4.4 Segurança MK
 
@@ -278,12 +291,36 @@ A PR 059 registrou a caracterização pública em `docs/integracoes/PR-059-CARAC
 - HTTPS obrigatório;
 - IP allowlist e VPN/rede privada quando disponíveis;
 - token/credencial em secret manager;
+- segredo estático entregue somente por arquivo secreto/cofre e credencial temporária mantida apenas em memória;
 - não logar URL completa quando houver segredo/query sensível;
 - timeout curto por operação, circuit breaker e limite de concorrência;
+- origem HTTPS exata em allowlist, sem credencial embutida, query, fragmento ou caminho configurável; destinos e caminhos são fixos no adapter;
+- redirecionamento recusado e corpo limitado antes da desserialização;
 - sanitizar toda resposta antes de log/trace;
 - registrar somente código normalizado, duração, tentativa e correlação.
 
-### 4.5 Desbloqueio de confiança
+As credenciais usadas na caracterização real foram compartilhadas fora de um cofre aprovado e devem ser consideradas comprometidas. Revogação/rotação é obrigatória antes de nova caracterização ou ativação. Remover o valor de uma conversa ou log não substitui emitir credenciais novas, exclusivas por ambiente e com menor privilégio.
+
+### 4.5 Consultas reais controladas da PR 117
+
+`MK_MODO` é o primeiro portão e nasce `DESATIVADO`:
+
+```text
+DESATIVADO      → nenhum provider MK
+CARACTERIZACAO  → ferramenta controlada; não injeta porta nos casos de uso
+SOMENTE_LEITURA → registra somente CONSULTAS_ERP
+```
+
+Mesmo em `SOMENTE_LEITURA`, existem dois controles PostgreSQL independentes:
+
+- `MK_CONSULTAS_CADASTRAIS_REAIS`, reservado e sem consumidor de runtime nesta PR;
+- `MK_CONSULTAS_FINANCEIRAS_REAIS`, verificado pela consulta financeira autenticada do console antes da rede.
+
+Ambos nascem desativados, com rollout de zero por cento e sem alvo. Sessão, RBAC, fila, recurso e contexto explícito continuam obrigatórios no consumidor financeiro. O controle cadastral não deve ser ligado até existir um caso de uso interno aprovado, com correlação por IDs locais e DTO público mínimo. Ele não libera financeiro; nenhum dos dois libera `ADAPTADOR_ERP`, escrita, snapshot, sessão de acesso ou nós do Motor de Fluxos. Erro externo não caracterizado não dispara reautenticação nem repetição automática da consulta.
+
+Staging mantém dados sintéticos ou sanitizados e recebe a PR 117 com modo e controles desligados; `PILOTO_MK_REAL` permanece falso. O ensaio real permanece transitório e supervisionado. A PR não emite telemetria externa MK; observabilidade sanitizada de código normalizado, duração e circuito é portão adicional para qualquer rollout futuro. Produção e piloto real continuam bloqueados enquanto as credenciais não forem rotacionadas e o checklist `MK_REAL_CARACTERIZADO` não tiver evidência completa.
+
+### 4.6 Desbloqueio de confiança
 
 Fluxo obrigatório:
 

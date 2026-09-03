@@ -174,9 +174,11 @@ export interface DetalhesContatoWeb {
 }
 
 export interface ResultadoFinanceiroContatoWeb {
+  readonly cobertura?: 'INTEGRAL' | 'JANELA_LIMITADA';
   readonly codigo?: string;
-  readonly faturas: readonly { readonly referencia: string; readonly situacao: string; readonly valorCentavos: number; readonly vencimento: string }[];
+  readonly faturas: readonly { readonly situacao: string; readonly valorCentavos: number; readonly vencimento: string }[];
   readonly origem: 'INDISPONIVEL' | 'TEMPO_REAL';
+  readonly quantidadeMeses?: number;
 }
 
 export type AcaoErpWeb = 'CRIAR_ORDEM_SERVICO' | 'EXECUTAR_DESBLOQUEIO';

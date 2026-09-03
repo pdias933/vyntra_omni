@@ -296,11 +296,25 @@ export class EntradaAlterarContextoWebDto {
   @ApiProperty({ minimum: 1 }) @IsInt() @Min(1) public readonly versao_esperada!: number;
 }
 
+class FaturaFinanceiraContatoWebDto {
+  @ApiProperty() public readonly situacao: string;
+  @ApiProperty() public readonly valor_centavos: number;
+  @ApiProperty() public readonly vencimento: string;
+
+  public constructor(item: ResultadoFinanceiroContatoWeb['faturas'][number]) {
+    this.situacao = item.situacao;
+    this.valor_centavos = item.valorCentavos;
+    this.vencimento = item.vencimento;
+  }
+}
+
 export class ResultadoFinanceiroContatoWebDto {
   @ApiProperty({ enum: ['INDISPONIVEL', 'TEMPO_REAL'] }) public readonly origem: 'INDISPONIVEL' | 'TEMPO_REAL';
+  @ApiProperty({ enum: ['INTEGRAL', 'JANELA_LIMITADA'], required: false }) public readonly cobertura?: 'INTEGRAL' | 'JANELA_LIMITADA';
+  @ApiProperty({ minimum: 1, required: false }) public readonly quantidade_meses?: number;
   @ApiProperty({ required: false }) public readonly codigo?: string;
-  @ApiProperty({ type: 'array', items: { type: 'object', properties: { referencia: { type: 'string' }, situacao: { type: 'string' }, valor_centavos: { type: 'number' }, vencimento: { type: 'string' } } } }) public readonly faturas: readonly { readonly referencia: string; readonly situacao: string; readonly valor_centavos: number; readonly vencimento: string }[];
-  public constructor(item: ResultadoFinanceiroContatoWeb) { this.origem = item.origem; if (item.codigo !== undefined) this.codigo = item.codigo; this.faturas = item.faturas.map((fatura) => ({ referencia: fatura.referencia, situacao: fatura.situacao, valor_centavos: fatura.valorCentavos, vencimento: fatura.vencimento })); }
+  @ApiProperty({ type: [FaturaFinanceiraContatoWebDto] }) public readonly faturas: readonly FaturaFinanceiraContatoWebDto[];
+  public constructor(item: ResultadoFinanceiroContatoWeb) { this.origem = item.origem; if (item.cobertura !== undefined) this.cobertura = item.cobertura; if (item.quantidadeMeses !== undefined) this.quantidade_meses = item.quantidadeMeses; if (item.codigo !== undefined) this.codigo = item.codigo; this.faturas = item.faturas.map((fatura) => new FaturaFinanceiraContatoWebDto(fatura)); }
 }
 
 export class EntradaPrepararAcaoErpWebDto { @ApiProperty({ enum: ['CRIAR_ORDEM_SERVICO', 'EXECUTAR_DESBLOQUEIO'] }) @IsIn(['CRIAR_ORDEM_SERVICO', 'EXECUTAR_DESBLOQUEIO']) public readonly acao!: AcaoErpWeb; }

@@ -3,7 +3,7 @@ import { Inject, Injectable, Optional } from '@nestjs/common';
 import type { ContextoSessaoAutorizacao, CodigoPermissaoAutorizacao } from '../autorizacao/modelo-autorizacao.js';
 import { ErroPermissaoNegada } from '../autorizacao/erros-autorizacao.js';
 import { ServicoAutorizacao } from '../autorizacao/servico-autorizacao.js';
-import { ADAPTADOR_ERP, type AdaptadorErp } from '../erp/adaptador-erp.js';
+import { ADAPTADOR_ERP, CONSULTAS_ERP, type AdaptadorErp, type ConsultasErp } from '../erp/adaptador-erp.js';
 import { CANAL_MENSAGERIA, type CanalMensageria } from '../mensageria/porta-mensageria.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import { ADAPTADOR_SESSAO_ACESSO, type AdaptadorSessaoAcesso } from '../sessao-acesso/adaptador-sessao-acesso.js';
@@ -13,7 +13,7 @@ const RECURSO_ADMINISTRACAO = '11111111-1111-4111-8111-111111111131';
 
 @Injectable()
 export class ServicoAdministracaoOperacional {
-  public constructor(@Inject(ServicoPrisma) private readonly prisma: ServicoPrisma, @Inject(ServicoAutorizacao) private readonly autorizacao: ServicoAutorizacao, @Optional() @Inject(ADAPTADOR_ERP) private readonly erp?: AdaptadorErp, @Optional() @Inject(CANAL_MENSAGERIA) private readonly canal?: CanalMensageria, @Optional() @Inject(ADAPTADOR_SESSAO_ACESSO) private readonly sessaoAcesso?: AdaptadorSessaoAcesso) {}
+  public constructor(@Inject(ServicoPrisma) private readonly prisma: ServicoPrisma, @Inject(ServicoAutorizacao) private readonly autorizacao: ServicoAutorizacao, @Optional() @Inject(ADAPTADOR_ERP) private readonly erp?: AdaptadorErp, @Optional() @Inject(CANAL_MENSAGERIA) private readonly canal?: CanalMensageria, @Optional() @Inject(ADAPTADOR_SESSAO_ACESSO) private readonly sessaoAcesso?: AdaptadorSessaoAcesso, @Optional() @Inject(CONSULTAS_ERP) private readonly consultasErp?: ConsultasErp) {}
 
   public async listar(sessao: ContextoSessaoAutorizacao): Promise<PainelAdministracaoOperacional> {
     return this.prisma.executarLeituraConsistente(async (transacao) => {
@@ -37,7 +37,7 @@ export class ServicoAdministracaoOperacional {
         integracoes: capacidades.administrarIntegracoes ? [
           { codigo: 'POSTGRESQL', detalhe: 'Autoridade operacional conectada', estado: 'ATIVA' },
           { codigo: 'CANAL_WHATSAPP', detalhe: this.canal === undefined ? 'Adaptador de produção não configurado' : 'Adaptador de produção registrado', estado: this.canal === undefined ? 'NAO_CONFIGURADA' : 'ATIVA' },
-          { codigo: 'SISTEMA_GESTAO', detalhe: this.erp === undefined ? 'Adaptador não configurado' : 'Adaptador registrado', estado: this.erp === undefined ? 'NAO_CONFIGURADA' : 'ATIVA' },
+          { codigo: 'SISTEMA_GESTAO', detalhe: this.erp !== undefined ? 'Consultas e escritas registradas' : this.consultasErp !== undefined ? 'Provedor somente leitura registrado; liberações condicionadas' : 'Adaptador não configurado', estado: this.erp !== undefined ? 'ATIVA' : this.consultasErp !== undefined ? 'PARCIAL' : 'NAO_CONFIGURADA' },
           { codigo: 'SESSAO_ACESSO', detalhe: this.sessaoAcesso === undefined ? 'Recurso condicional desligado' : 'Adaptador registrado', estado: this.sessaoAcesso === undefined ? 'NAO_CONFIGURADA' : 'ATIVA' },
         ] : [],
       };

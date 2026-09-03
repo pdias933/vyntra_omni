@@ -38,8 +38,20 @@ test('cliente mobile usa somente SDK gerado, contratos fechados e uma renovaçã
   assert.doesNotMatch(adaptador, /fetch\(/u);
   assert.match(modelo, /chavesExatas/u);
   assert.match(modelo, /CONTRATO_ATENDIMENTO_MOBILE_INVALIDO/u);
+  assert.match(modelo, /JANELA_LIMITADA/u);
+  assert.match(modelo, /resposta\.cobertura === 'JANELA_LIMITADA'/u);
+  assert.match(modelo, /resposta\.quantidade_meses === undefined/u);
+  assert.match(modelo, /faturas\.length !== 0/u);
+  assert.doesNotMatch(modelo, /readonly referencia: string/u);
   assert.match(servico, /erro\.statusHttp !== 401/u);
   assert.match(servico, /obterCredenciaisSincronizacao\(true\)/u);
+});
+
+test('detalhes mobile qualifica a cobertura financeira sem ID externo', async () => {
+  const tela = await ler('apps/mobile/src/telas/TelaDetalhesContatoMobile.tsx');
+  assert.match(tela, /Período consultado no ERP/u);
+  assert.match(tela, /Nenhuma fatura retornada no período consultado/u);
+  assert.doesNotMatch(tela, /fatura\.referencia/u);
 });
 
 test('timeline local pagina o snapshot autorizado por conversa sem inventar eventos', async () => {

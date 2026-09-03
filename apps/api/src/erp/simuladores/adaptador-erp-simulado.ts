@@ -21,6 +21,9 @@ import type {
   ComandoReconciliarEncerramentoAtendimentoErp,
   ComandoReconciliarAtendimentoErp,
   ContratoErpNormalizado,
+  ConexaoCadastradaErpNormalizada,
+  ContextoConsultaContratoErp,
+  ContextoConsultaFaturaErp,
   CriteriosLocalizacaoClienteErp,
   FaturaErpNormalizada,
   DadosPagamentoFaturaErpNormalizados,
@@ -28,6 +31,7 @@ import type {
   ElegibilidadeDesbloqueioErpNormalizada,
   ResultadoComplementoFaturaErp,
   ResultadoConsultaErp,
+  ResultadoConsultaFaturasErp,
   ResultadoConsultaUnicaErp,
   ResultadoCriacaoAtendimentoErp,
   ResultadoCriacaoOrdemServicoErp,
@@ -54,6 +58,7 @@ export interface ClienteErpSimulado extends ClienteErpNormalizado {
 export interface DadosErpSimulados {
   readonly clientes?: readonly ClienteErpSimulado[];
   readonly contratos?: readonly ContratoErpNormalizado[];
+  readonly conexoes?: readonly ConexaoCadastradaErpNormalizada[];
   readonly faturas?: readonly FaturaErpNormalizada[];
   readonly documentosFatura?: readonly DocumentoFaturaErpNormalizado[];
   readonly dadosPagamentoFatura?: readonly DadosPagamentoFaturaErpNormalizados[];
@@ -394,12 +399,15 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
   }
 
   public async consultarContrato(
-    contratoExternoId: string,
+    contexto: ContextoConsultaContratoErp,
   ): Promise<ResultadoConsultaUnicaErp<ContratoErpNormalizado>> {
-    this.validarIdentificadorExterno(contratoExternoId);
+    this.validarIdentificadorExterno(contexto.clienteExternoId);
+    this.validarIdentificadorExterno(contexto.contratoExternoId);
     if (!this.consultasDisponiveis) return this.indisponivel();
     const contrato = (this.dados.contratos ?? []).find(
-      (item) => item.contratoExternoId === contratoExternoId,
+      (item) =>
+        item.clienteExternoId === contexto.clienteExternoId &&
+        item.contratoExternoId === contexto.contratoExternoId,
     );
     if (contrato === undefined) {
       return { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' };
@@ -411,24 +419,59 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     };
   }
 
-  public async listarFaturas(
-    contratoExternoId: string,
-  ): Promise<ResultadoConsultaErp<FaturaErpNormalizada>> {
-    this.validarIdentificadorExterno(contratoExternoId);
+  public async listarConexoes(
+    clienteExternoId: string,
+  ): Promise<ResultadoConsultaErp<ConexaoCadastradaErpNormalizada>> {
+    this.validarIdentificadorExterno(clienteExternoId);
     if (!this.consultasDisponiveis) return this.indisponivel();
-    const itens = (this.dados.faturas ?? [])
-      .filter((fatura) => fatura.contratoExternoId === contratoExternoId)
-      .map((fatura) => ({ ...fatura }));
+    const itens = (this.dados.conexoes ?? [])
+      .filter((item) => item.clienteExternoId === clienteExternoId)
+      .map((item) => ({ ...item }));
     return { itens, origem: 'TEMPO_REAL', resultado: 'SUCESSO' };
   }
 
-  public async consultarFatura(
-    faturaExternaId: string,
-  ): Promise<ResultadoConsultaUnicaErp<FaturaErpNormalizada>> {
-    this.validarIdentificadorExterno(faturaExternaId);
+  public async listarFaturas(
+    contexto: ContextoConsultaContratoErp,
+  ): Promise<ResultadoConsultaFaturasErp> {
+    this.validarIdentificadorExterno(contexto.clienteExternoId);
+    this.validarIdentificadorExterno(contexto.contratoExternoId);
     if (!this.consultasDisponiveis) return this.indisponivel();
+    if (!this.contextoContratoUnivoco(contexto)) {
+      return {
+        cobertura: { tipo: 'INTEGRAL' },
+        itens: [],
+        origem: 'TEMPO_REAL',
+        resultado: 'SUCESSO',
+      };
+    }
+    const itens = (this.dados.faturas ?? [])
+      .filter(
+        (fatura) =>
+          fatura.clienteExternoId === contexto.clienteExternoId &&
+          fatura.contratoExternoId === contexto.contratoExternoId,
+      )
+      .map((fatura) => ({ ...fatura }));
+    return {
+      cobertura: { tipo: 'INTEGRAL' },
+      itens,
+      origem: 'TEMPO_REAL',
+      resultado: 'SUCESSO',
+    };
+  }
+
+  public async consultarFatura(
+    contexto: ContextoConsultaFaturaErp,
+  ): Promise<ResultadoConsultaUnicaErp<FaturaErpNormalizada>> {
+    this.validarContextoFatura(contexto);
+    if (!this.consultasDisponiveis) return this.indisponivel();
+    if (!this.contextoContratoUnivoco(contexto)) {
+      return { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' };
+    }
     const fatura = (this.dados.faturas ?? []).find(
-      (item) => item.faturaExternaId === faturaExternaId,
+      (item) =>
+        item.clienteExternoId === contexto.clienteExternoId &&
+        item.contratoExternoId === contexto.contratoExternoId &&
+        item.faturaExternaId === contexto.faturaExternaId,
     );
     if (fatura === undefined) {
       return { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' };
@@ -437,12 +480,17 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
   }
 
   public async obterDocumentoFatura(
-    faturaExternaId: string,
+    contexto: ContextoConsultaFaturaErp,
   ): Promise<ResultadoComplementoFaturaErp<DocumentoFaturaErpNormalizado>> {
-    this.validarIdentificadorExterno(faturaExternaId);
+    this.validarContextoFatura(contexto);
     if (!this.consultasDisponiveis) return this.indisponivel();
+    const fatura = await this.consultarFatura(contexto);
+    if (fatura.resultado !== 'SUCESSO') return fatura;
     const documento = (this.dados.documentosFatura ?? []).find(
-      (item) => item.faturaExternaId === faturaExternaId,
+      (item) =>
+        item.clienteExternoId === contexto.clienteExternoId &&
+        item.contratoExternoId === contexto.contratoExternoId &&
+        item.faturaExternaId === contexto.faturaExternaId,
     );
     if (documento === undefined) {
       return { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' };
@@ -455,14 +503,19 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
   }
 
   public async obterDadosPagamentoFatura(
-    faturaExternaId: string,
+    contexto: ContextoConsultaFaturaErp,
   ): Promise<
     ResultadoComplementoFaturaErp<DadosPagamentoFaturaErpNormalizados>
   > {
-    this.validarIdentificadorExterno(faturaExternaId);
+    this.validarContextoFatura(contexto);
     if (!this.consultasDisponiveis) return this.indisponivel();
+    const fatura = await this.consultarFatura(contexto);
+    if (fatura.resultado !== 'SUCESSO') return fatura;
     const dados = (this.dados.dadosPagamentoFatura ?? []).find(
-      (item) => item.faturaExternaId === faturaExternaId,
+      (item) =>
+        item.clienteExternoId === contexto.clienteExternoId &&
+        item.contratoExternoId === contexto.contratoExternoId &&
+        item.faturaExternaId === contexto.faturaExternaId,
     );
     if (dados === undefined) {
       return { origem: 'TEMPO_REAL', resultado: 'NAO_ENCONTRADO' };
@@ -1041,6 +1094,23 @@ export class AdaptadorErpSimulado implements AdaptadorErp {
     if (!textoValido(identificador, 256)) {
       throw new ErroConsultaErpInvalida();
     }
+  }
+
+  private validarContextoFatura(contexto: ContextoConsultaFaturaErp): void {
+    this.validarIdentificadorExterno(contexto.clienteExternoId);
+    this.validarIdentificadorExterno(contexto.contratoExternoId);
+    this.validarIdentificadorExterno(contexto.faturaExternaId);
+  }
+
+  private contextoContratoUnivoco(
+    contexto: ContextoConsultaContratoErp,
+  ): boolean {
+    const contratos = (this.dados.contratos ?? []).filter(
+      ({ clienteExternoId, contratoExternoId }) =>
+        clienteExternoId === contexto.clienteExternoId &&
+        contratoExternoId === contexto.contratoExternoId,
+    );
+    return contratos.length === 1;
   }
 
   private validarComandoCriacao(comando: ComandoCriarAtendimentoErp): void {

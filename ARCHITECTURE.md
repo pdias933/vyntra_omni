@@ -599,16 +599,24 @@ CPF exato usa índice protegido/HMAC gerenciado por chave, nunca hash simples de
 
 ## 13. Fluxos e integrações
 
-O Motor de Fluxos e os adapters seguem estes caminhos:
+Consultas reais e operações ERP seguem fronteiras distintas:
 
 ```text
-ExecucaoFluxo
-   ↓ No CONSULTAR_FATURAS
-ServicoFinanceiro
-   ↓ contrato AdaptadorErp
-AdaptadorMkSolutions
-   ↓ DTO externo
+Console web/mobile
+   ↓ serviço de aplicação + autorização + controle de recurso
+ConsultasErp (token CONSULTAS_ERP)
+   ↓ adapter somente leitura
+DTO externo
+   ↓
 MK Solutions
+```
+
+```text
+Motor de Fluxos / escrita ERP
+   ↓ serviço de domínio recuperável
+AdaptadorErp (token ADAPTADOR_ERP)
+   ↓ sem provider real enquanto escritas não forem caracterizadas
+INDISPONIVEL
 ```
 
 ```text
@@ -652,6 +660,10 @@ Na PR 020, `AdaptadorErp` separa consultas e escritas e devolve somente modelos 
 Na PR 060, busca e detalhe de cliente/contrato entram por `ServicoConsultasClienteContratoErp`. O caso de uso valida a entrada, delega à porta genérica e aceita de volta somente a allowlist do modelo normalizado, com coerência entre cliente e contrato e limite de resultados. Ausência, indisponibilidade e resposta externa inválida permanecem resultados distintos. Nenhuma rota nem provider MK é registrada: a fronteira real segue bloqueada até caracterização de respostas reais, enquanto os módulos internos permanecem independentes do fornecedor.
 
 Na PR 061, `ServicoFinanceiroErp` compõe a fatura corrente com dois complementos independentes: documento PDF e dados de pagamento. A fatura-base precisa existir em `TEMPO_REAL`; cada complemento é validado e declara `DISPONIVEL` ou `INDISPONIVEL` com motivo. O resultado é `COMPLETA` somente quando ambos existem e são válidos, ou `PARCIAL` sem preencher lacunas. PDF fica em bytes normalizados para o pipeline privado de mídia, nunca em URL externa. Não há fallback financeiro para `SnapshotCliente`, controller ou provider MK real nesta etapa.
+
+Na PR 117, a aplicação pode registrar uma implementação real somente em `CONSULTAS_ERP`; `ADAPTADOR_ERP` continua ausente. Isso impede que a presença de consultas habilite por descoberta desbloqueio, protocolo, ordem de serviço, comentário, encerramento ou nós do Motor de Fluxos. O modo `MK_MODO` nasce `DESATIVADO`; `CARACTERIZACAO` não injeta a porta e `SOMENTE_LEITURA` injeta apenas o provider de consulta. Os controles PostgreSQL `MK_CONSULTAS_CADASTRAIS_REAIS` e `MK_CONSULTAS_FINANCEIRAS_REAIS` nascem independentes e desligados. Nesta PR, somente o controle financeiro possui consumidor de runtime: a consulta autenticada do console verifica sessão, RBAC, fila, contexto e rollout antes da rede. O controle cadastral fica reservado e não deve ser ligado até existir um caso de uso interno que correlacione UUIDs locais sem expor identificadores do ERP em rota pública.
+
+Contrato e financeiro recebem cliente+contrato explícitos, e detalhe financeiro recebe também a fatura exata. A listagem MK caracterizada cobre somente uma janela declarada de um mês; essa cobertura parcial atravessa domínio, OpenAPI e interface, e o Motor de Fluxos a recusa em vez de assumir uma visão integral. O adapter mantém a credencial temporária somente em memória, coalesce autenticação concorrente e não repete automaticamente uma consulta após erro externo não caracterizado. O transporte usa origem HTTPS em allowlist, resolução DNS pública fixada à conexão, caminhos exatos somente de leitura, redirecionamento recusado, prazo absoluto incluindo espera por vaga, teto de corpo, limite de concorrência e circuit breaker. DTO e códigos externos terminam no adapter. Conexão cadastrada é apenas um modelo de leitura cadastral ainda sem rota de runtime; não alimenta `AdaptadorSessaoAcesso` e não prova presença online.
 
 Na PR 021, `AdaptadorSessaoAcesso` é uma porta independente de `AdaptadorErp`, com leitura, desconexão e reconciliação próprias. O simulador nasce `DESATIVADO`, preserva apenas estados explicitamente fornecidos e recusa desconectar `DESCONHECIDA`. A migration semeia `SESSAO_ACESSO` desativado e sem alvos; nenhuma rota ou provider real é registrado. A integração real permanece condicional ao PR 068.
 
@@ -738,7 +750,7 @@ Não criar abstrações vazias para IA, ACS, massivas ou outros ERPs na V1. As f
 Antes dos PRs correspondentes, confirmar:
 
 - versão/capacidades reais das APIs Meta na conta;
-- contratos e respostas reais do MK;
+- contratos e respostas reais ainda não observados do MK, especialmente paginação, incremental, documentos, Pix, sessão e toda escrita;
 - fonte real do `AccessSessionAdapter`;
 - timeouts externos e limites que possam ser menores que os tetos internos aprovados;
 - política jurídica/DPO de retenção, eliminação e conteúdo exportável antes de habilitar link público;
@@ -800,7 +812,7 @@ A migration da PR 091 instala `pg_trgm` e cria índices aditivos: GIN para texto
 
 `ServicoContatoAcoesWeb` usa o atendimento somente como porta de entrada: resolve fila e contato, chama `ServicoAutorizacao` e apenas depois consulta identidade, vínculos, snapshots e contagens. Permissões de cliente, contrato, financeiro, dado sensível, ordem de serviço e desbloqueio são independentes. BSUID não é projetado sem permissão explícita; telefone continua mascarado.
 
-A troca de contexto deriva fila e identificadores externos dos vínculos persistidos, usa versão esperada e delega a mutação auditada a `ServicoContextosCliente`. Consulta financeira encerra a leitura/autorização local antes de chamar `AdaptadorErp` e devolve somente resultado normalizado em `TEMPO_REAL`; adaptador ausente ou falha nunca cai para snapshot. Ações sensíveis seguem duas chamadas: preparar revalida permissão/contexto/elegibilidade e executar recebe confirmação literal, gera efeito somente pelos serviços recuperáveis e idempotentes existentes. O web consome tudo pelo SDK OpenAPI gerado.
+A troca de contexto deriva fila e identificadores externos dos vínculos persistidos, usa versão esperada e delega a mutação auditada a `ServicoContextosCliente`. Consulta financeira encerra a leitura/autorização local antes de chamar `CONSULTAS_ERP`, exige o controle financeiro e devolve somente resultado normalizado em `TEMPO_REAL`; provider ausente, controle desligado ou falha nunca cai para snapshot. Ações sensíveis continuam dependendo separadamente de `ADAPTADOR_ERP`: preparar revalida permissão/contexto/elegibilidade e executar recebe confirmação literal, gera efeito somente pelos serviços recuperáveis e idempotentes existentes. O web consome tudo pelo SDK OpenAPI gerado.
 
 ### 13.17 Administração de usuários e RBAC
 
@@ -808,7 +820,7 @@ A PR 093 projeta usuários, perfis, ajustes de permissão, filas, quantidades de
 
 ### 13.18 Administração operacional
 
-A PR 094 resolve separadamente `ADMINISTRAR_INTEGRACOES`, `ADMINISTRAR_FILAS` e `ADMINISTRAR_CALENDARIOS` antes de consultar cada projeção. Contas de canal não expõem identificadores externos; filas agregam somente contagens operacionais, calendário e limites SLA. O estado de integração vem da presença do provider no runtime, nunca de variável declarada pelo cliente: adapter ausente aparece como `NAO_CONFIGURADA`.
+A PR 094 resolve separadamente `ADMINISTRAR_INTEGRACOES`, `ADMINISTRAR_FILAS` e `ADMINISTRAR_CALENDARIOS` antes de consultar cada projeção. Contas de canal não expõem identificadores externos; filas agregam somente contagens operacionais, calendário e limites SLA. O estado de integração vem da presença do provider no runtime, nunca de variável declarada pelo cliente: adapter ausente aparece como `NAO_CONFIGURADA`. Desde a PR 117, somente `CONSULTAS_ERP` presente aparece `PARCIAL`, com consultas habilitáveis e escritas desativadas; apenas um futuro `ADAPTADOR_ERP` completo poderá aparecer `ATIVA`.
 
 Criação/inativação de fila e override temporário de calendário reutilizam `ServicoFilas` e `ServicoCalendarios`, preservando RBAC, locks, invalidação e auditoria existentes. Política SLA é somente projetada nesta etapa; não existe editor que grave limites sem um serviço de domínio correspondente.
 

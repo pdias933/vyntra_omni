@@ -85,7 +85,7 @@ export type CalendarioOperacionalDto = {
 
 export type IntegracaoOperacionalDto = {
     codigo: string;
-    estado: 'ATIVA' | 'NAO_CONFIGURADA';
+    estado: 'ATIVA' | 'NAO_CONFIGURADA' | 'PARCIAL';
     detalhe: string;
 };
 
@@ -421,15 +421,18 @@ export type DetalhesContatoWebDto = {
     vinculos: Array<VinculoContatoWebDto>;
 };
 
+export type FaturaFinanceiraContatoWebDto = {
+    situacao: string;
+    valor_centavos: number;
+    vencimento: string;
+};
+
 export type ResultadoFinanceiroContatoWebDto = {
     origem: 'INDISPONIVEL' | 'TEMPO_REAL';
+    cobertura?: 'INTEGRAL' | 'JANELA_LIMITADA';
+    quantidade_meses?: number;
     codigo?: string;
-    faturas: Array<{
-        referencia?: string;
-        situacao?: string;
-        valor_centavos?: number;
-        vencimento?: string;
-    }>;
+    faturas: Array<FaturaFinanceiraContatoWebDto>;
 };
 
 export type EntradaPrepararAcaoErpWebDto = {

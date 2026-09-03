@@ -1,0 +1,121 @@
+{
+  "autenticacao": {
+    "Expire": "31/12/2099 23:59:59",
+    "LimiteUso": 100,
+    "ServicosAutorizados": [6, 8, 9],
+    "Token": "token-publico-sintetico",
+    "status": "OK"
+  },
+  "clientePorCodigo": [
+    {
+      "CPF_CNPJ": "11111111111",
+      "CodigoPessoa": 101,
+      "Email": "cliente@example.invalid",
+      "Fone": "5500000000000",
+      "InscricaoEstadual": "",
+      "InscricaoMunicipal": "",
+      "Latitude": "0",
+      "Longitude": "0",
+      "Nome": "Cliente Sintético",
+      "Situacao": "Ativo",
+      "contratos": [],
+      "endereco": {}
+    }
+  ],
+  "clientePorDocumento": {
+    "CEP": "00000000",
+    "CodigoPessoa": 101,
+    "Email": "cliente@example.invalid",
+    "Endereco": "Endereço sintético",
+    "Fone": "5500000000000",
+    "Latitude": "0",
+    "Longitude": "0",
+    "Nome": "Cliente Sintético",
+    "Outros": [],
+    "Situacao": "Ativo",
+    "status": "OK"
+  },
+  "contratos": {
+    "CodigoPessoa": 101,
+    "ContratosAtivos": [
+      {
+        "adesao": "2026-01-01",
+        "cd_empresa": null,
+        "codcontrato": 202,
+        "nome_empresa": "Empresa Sintética",
+        "plano_acesso": "Plano sintético",
+        "previsao_vencimento": "2027-01-01"
+      }
+    ],
+    "Nome": "Cliente Sintético",
+    "status": "OK"
+  },
+  "conexoes": {
+    "CodigoPessoa": 101,
+    "Conexoes": [
+      {
+        "bloqueada": "Não",
+        "cadastro": "2026-01-01",
+        "cep": "00000000",
+        "codconexao": 303,
+        "contrato": 202,
+        "endereco": "Endereço sintético",
+        "esta_reduzida": "Não",
+        "latitude": "0",
+        "longitude": "0",
+        "mac_address": "00:00:00:00:00:00",
+        "motivo_bloqueio": null,
+        "tecnologia": "Fibra sintética",
+        "username": "usuario-sintetico"
+      }
+    ],
+    "Nome": "Cliente Sintético",
+    "status": "OK"
+  },
+  "faturas": [
+    {
+      "banco": "Banco sintético",
+      "codfatura": 404,
+      "codigo_profile": "1",
+      "contas": [
+        {
+          "codconta": 505,
+          "data_referencia_final": 20260930,
+          "data_referencia_inicial": 20260901,
+          "descricao_conta": "Conta sintética",
+          "nomenclatura_integracao": "mensalidade",
+          "tipo_documento": "boleto",
+          "valor_lancamento": 123.45
+        }
+      ],
+      "contratos": [
+        {
+          "adesao": 20260101,
+          "codigo_contrato": 202,
+          "data_referencia_final": "2026-09-30",
+          "data_referencia_inicial": "2026-09-01",
+          "plano": "Plano sintético",
+          "tipo_plano": 1,
+          "tipo_utilizacao_servico": "Sintético",
+          "tributacao": "Sintética"
+        }
+      ],
+      "cpf_cnpj": "11111111111",
+      "data_lancamento": "2026-09-01",
+      "data_liquidacao": "",
+      "data_vencimento": "2026-09-10",
+      "data_vencimento_original": "2026-09-10",
+      "descricao": "Fatura sintética",
+      "forma_pagamento": "Boleto",
+      "inscricao_estadual": "",
+      "inscricao_municipal": "",
+      "linha_digitavel_boleto": "12345678901234567890123456789012345678901234",
+      "nome_razaosocial": "Cliente Sintético",
+      "nosso_numero": "0000000000",
+      "status": "Aberta",
+      "tipo_documento_descricao": "Boleto sintético",
+      "valor_pago": "0.00",
+      "valor_total_faturas": "123.45"
+    }
+  ]
+}

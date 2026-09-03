@@ -120,16 +120,29 @@ export interface DetalhesContatoMobile {
   readonly vinculos: readonly VinculoContatoMobile[];
 }
 
-export interface ResumoFinanceiroContatoMobile {
-  readonly codigo?: string;
-  readonly faturas: readonly {
-    readonly referencia: string;
-    readonly situacao: string;
-    readonly valorCentavos: number;
-    readonly vencimento: string;
-  }[];
-  readonly origem: 'INDISPONIVEL' | 'TEMPO_REAL';
+interface FaturaResumoFinanceiroMobile {
+  readonly situacao: string;
+  readonly valorCentavos: number;
+  readonly vencimento: string;
 }
+
+export type ResumoFinanceiroContatoMobile =
+  | {
+      readonly codigo?: string;
+      readonly faturas: readonly [];
+      readonly origem: 'INDISPONIVEL';
+    }
+  | {
+      readonly cobertura: 'INTEGRAL';
+      readonly faturas: readonly FaturaResumoFinanceiroMobile[];
+      readonly origem: 'TEMPO_REAL';
+    }
+  | {
+      readonly cobertura: 'JANELA_LIMITADA';
+      readonly faturas: readonly FaturaResumoFinanceiroMobile[];
+      readonly origem: 'TEMPO_REAL';
+      readonly quantidadeMeses: number;
+    };
 
 export interface RespostaRapidaMobile {
   readonly atalho: string;
@@ -536,7 +549,11 @@ export function normalizarResumoFinanceiroMobile(
   valor: unknown,
 ): ResumoFinanceiroContatoMobile {
   const resposta = objeto(valor);
-  chavesExatas(resposta, ['faturas', 'origem'], ['codigo']);
+  chavesExatas(
+    resposta,
+    ['faturas', 'origem'],
+    ['codigo', 'cobertura', 'quantidade_meses'],
+  );
   if (
     (resposta.origem !== 'INDISPONIVEL' && resposta.origem !== 'TEMPO_REAL') ||
     !Array.isArray(resposta.faturas) ||
@@ -544,27 +561,54 @@ export function normalizarResumoFinanceiroMobile(
   ) {
     throw new Error('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
   }
-  return {
-    ...(resposta.codigo === undefined
-      ? {}
-      : { codigo: texto(resposta.codigo, 100) }),
-    faturas: resposta.faturas.map((valorFatura) => {
-      const fatura = objeto(valorFatura);
-      chavesExatas(fatura, [
-        'referencia',
-        'situacao',
-        'valor_centavos',
-        'vencimento',
-      ]);
-      return {
-        referencia: texto(fatura.referencia, 200),
-        situacao: texto(fatura.situacao, 100),
-        valorCentavos: inteiro(fatura.valor_centavos),
-        vencimento: texto(fatura.vencimento, 40),
-      };
-    }),
-    origem: resposta.origem,
-  };
+  const faturas = resposta.faturas.map((valorFatura) => {
+    const fatura = objeto(valorFatura);
+    chavesExatas(fatura, ['situacao', 'valor_centavos', 'vencimento']);
+    return {
+      situacao: texto(fatura.situacao, 100),
+      valorCentavos: inteiro(fatura.valor_centavos),
+      vencimento: texto(fatura.vencimento, 40),
+    };
+  });
+  if (resposta.origem === 'INDISPONIVEL') {
+    if (
+      faturas.length !== 0 ||
+      resposta.cobertura !== undefined ||
+      resposta.quantidade_meses !== undefined
+    ) {
+      throw new Error('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+    }
+    return {
+      ...(resposta.codigo === undefined
+        ? {}
+        : { codigo: texto(resposta.codigo, 100) }),
+      faturas: [],
+      origem: 'INDISPONIVEL',
+    };
+  }
+  if (resposta.codigo !== undefined) {
+    throw new Error('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
+  }
+  if (
+    resposta.cobertura === 'JANELA_LIMITADA' &&
+    Number.isSafeInteger(resposta.quantidade_meses) &&
+    Number(resposta.quantidade_meses) >= 1 &&
+    Number(resposta.quantidade_meses) <= 120
+  ) {
+    return {
+      cobertura: 'JANELA_LIMITADA',
+      faturas,
+      origem: 'TEMPO_REAL',
+      quantidadeMeses: Number(resposta.quantidade_meses),
+    };
+  }
+  if (
+    resposta.cobertura === 'INTEGRAL' &&
+    resposta.quantidade_meses === undefined
+  ) {
+    return { cobertura: 'INTEGRAL', faturas, origem: 'TEMPO_REAL' };
+  }
+  throw new Error('CONTRATO_ATENDIMENTO_MOBILE_INVALIDO');
 }
 
 export function normalizarRespostasRapidasMobile(

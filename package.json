@@ -35,7 +35,7 @@
     "piloto:exigir-ativo": "node scripts/piloto-controlado.mjs --exigir-ativo",
     "restaurar:staging": "node scripts/restaurar-backup-staging.mjs",
     "test": "node scripts/verificar-contratos.mjs && node scripts/executar-turbo.mjs test && node --test \"tests/*.test.mjs\"",
-    "test:adversarial": "pnpm --filter @vyntra/api build && node --test apps/api/test/autorizacao.test.mjs apps/api/test/entrada-meta-cloud.test.mjs apps/api/test/midias.test.mjs apps/api/test/mensagens-saida.test.mjs apps/api/test/sse-sem-lacuna.test.mjs tests/adversarial-integrado.test.mjs tests/mobile-offline-reconciliacao.test.mjs",
+    "test:adversarial": "pnpm --filter @vyntra/api build && node --test apps/api/test/adaptador-consultas-mk-solutions.test.mjs apps/api/test/autorizacao.test.mjs apps/api/test/entrada-meta-cloud.test.mjs apps/api/test/midias.test.mjs apps/api/test/mensagens-saida.test.mjs apps/api/test/sse-sem-lacuna.test.mjs tests/adversarial-integrado.test.mjs tests/mobile-offline-reconciliacao.test.mjs",
     "typecheck": "node scripts/executar-turbo.mjs typecheck",
     "verificar:dependencias": "node scripts/verificar-dependencias.mjs",
     "verificar:contratos": "node scripts/verificar-contratos.mjs",

@@ -129,6 +129,36 @@ test('desligamento emergencial e estados inativos prevalecem sobre alvos', async
   });
 });
 
+test('controle direcionado a fila vale somente para a fila atual', async () => {
+  const cenario = criarCenario({
+    contexto: {
+      controles: [
+        controle('ALVO_FILA_EXATA', {
+          filaAlvo: true,
+          filasAlvo: [filaId],
+        }),
+      ],
+      papelBase: 'ATENDENTE',
+      perfilAtivo: true,
+      usuarioAtivo: true,
+    },
+  });
+  assert.equal(
+    (await cenario.servico.obterControlesUsuario(usuarioId, filaId))
+      .ALVO_FILA_EXATA,
+    true,
+  );
+  assert.equal(
+    (
+      await cenario.servico.obterControlesUsuario(
+        usuarioId,
+        randomUUID(),
+      )
+    ).ALVO_FILA_EXATA,
+    false,
+  );
+});
+
 test('liberação administrativa é explícita e depende de perfil ativo', async () => {
   const base = {
     controles: [controle('ADMIN', { liberarAdministradores: true })],

@@ -149,6 +149,7 @@ export class ServicoFaturasFluxo {
     return (
       atual !== undefined &&
       atual.atendimentoId === preparacao.contexto.atendimentoId &&
+      atual.clienteExternoId === preparacao.contexto.clienteExternoId &&
       atual.contaWhatsAppId === preparacao.contexto.contaWhatsAppId &&
       atual.contatoId === preparacao.contexto.contatoId &&
       atual.contratoExternoId === preparacao.contexto.contratoExternoId &&
@@ -199,10 +200,19 @@ export class ServicoFaturasFluxo {
   ): Promise<ResultadoNoFaturaFluxo> {
     const financeiro = new ServicoFinanceiroErp(this.consultas as ConsultasErp);
     const resposta = await financeiro.listarFaturas(
-      preparacao.contexto.contratoExternoId,
+      {
+        clienteExternoId: preparacao.contexto.clienteExternoId,
+        contratoExternoId: preparacao.contexto.contratoExternoId,
+      },
     );
     if (resposta.resultado === 'INDISPONIVEL') {
       return { resultado: 'ERP_INDISPONIVEL' };
+    }
+    if (resposta.cobertura.tipo !== 'INTEGRAL') {
+      return {
+        codigo: 'COBERTURA_FINANCEIRA_INCOMPLETA',
+        resultado: 'FALHA',
+      };
     }
     const pagaveis = resposta.itens.filter(
       ({ situacao }) => situacao === 'ABERTA' || situacao === 'VENCIDA',
@@ -237,7 +247,11 @@ export class ServicoFaturasFluxo {
   ): Promise<ResultadoNoFaturaFluxo> {
     const financeiro = new ServicoFinanceiroErp(this.consultas as ConsultasErp);
     const resposta = await financeiro.consultarDetalhesFatura(
-      preparacao.selecao.faturaExternaId,
+      {
+        clienteExternoId: preparacao.contexto.clienteExternoId,
+        contratoExternoId: preparacao.contexto.contratoExternoId,
+        faturaExternaId: preparacao.selecao.faturaExternaId,
+      },
     );
     if (resposta.resultado === 'INDISPONIVEL') {
       return { resultado: 'ERP_INDISPONIVEL' };

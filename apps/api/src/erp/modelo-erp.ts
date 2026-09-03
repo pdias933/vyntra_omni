@@ -22,7 +22,28 @@ export interface ContratoErpNormalizado {
   readonly enderecoResumido?: string;
 }
 
+export interface ConexaoCadastradaErpNormalizada {
+  readonly clienteExternoId: string;
+  readonly conexaoExternaId: string;
+  readonly contratoExternoId: string;
+  readonly enderecoResumido?: string;
+  readonly reduzida?: boolean;
+  readonly situacaoCadastro: 'BLOQUEADA' | 'DESCONHECIDA' | 'LIBERADA';
+  readonly tecnologia?: string;
+}
+
+export interface ContextoConsultaContratoErp {
+  readonly clienteExternoId: string;
+  readonly contratoExternoId: string;
+}
+
+export interface ContextoConsultaFaturaErp
+  extends ContextoConsultaContratoErp {
+  readonly faturaExternaId: string;
+}
+
 export interface FaturaErpNormalizada {
+  readonly clienteExternoId: string;
   readonly faturaExternaId: string;
   readonly contratoExternoId: string;
   readonly situacao: 'ABERTA' | 'CANCELADA' | 'PAGA' | 'VENCIDA';
@@ -31,6 +52,8 @@ export interface FaturaErpNormalizada {
 }
 
 export interface DocumentoFaturaErpNormalizado {
+  readonly clienteExternoId: string;
+  readonly contratoExternoId: string;
   readonly faturaExternaId: string;
   readonly nomeArquivo: string;
   readonly tipoArquivo: 'PDF';
@@ -38,6 +61,8 @@ export interface DocumentoFaturaErpNormalizado {
 }
 
 export interface DadosPagamentoFaturaErpNormalizados {
+  readonly clienteExternoId: string;
+  readonly contratoExternoId: string;
   readonly faturaExternaId: string;
   readonly pixCopiaCola?: string;
   readonly linhaDigitavel?: string;
@@ -86,7 +111,26 @@ export type ResultadoConsultaErp<T> =
     }
   | {
       readonly resultado: 'INDISPONIVEL';
-      readonly codigo: 'ERP_INDISPONIVEL';
+      readonly codigo: 'CAPACIDADE_NAO_HABILITADA' | 'ERP_INDISPONIVEL';
+    };
+
+export type CoberturaConsultaFaturasErp =
+  | { readonly tipo: 'INTEGRAL' }
+  | {
+      readonly tipo: 'JANELA_LIMITADA';
+      readonly quantidadeMeses: number;
+    };
+
+export type ResultadoConsultaFaturasErp =
+  | {
+      readonly resultado: 'SUCESSO';
+      readonly origem: OrigemConsultaErp;
+      readonly itens: readonly FaturaErpNormalizada[];
+      readonly cobertura: CoberturaConsultaFaturasErp;
+    }
+  | {
+      readonly resultado: 'INDISPONIVEL';
+      readonly codigo: 'CAPACIDADE_NAO_HABILITADA' | 'ERP_INDISPONIVEL';
     };
 
 export type ResultadoConsultaUnicaErp<T> =
@@ -101,7 +145,7 @@ export type ResultadoConsultaUnicaErp<T> =
     }
   | {
       readonly resultado: 'INDISPONIVEL';
-      readonly codigo: 'ERP_INDISPONIVEL';
+      readonly codigo: 'CAPACIDADE_NAO_HABILITADA' | 'ERP_INDISPONIVEL';
     };
 
 export interface ComandoCriarAtendimentoErp {

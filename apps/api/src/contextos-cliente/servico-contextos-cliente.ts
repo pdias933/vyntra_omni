@@ -210,6 +210,7 @@ export class ServicoContextosCliente {
     }
     return {
       atendimentoId,
+      clienteExternoId: contexto.clienteExternoId,
       contaWhatsAppId: origem.contaWhatsAppId,
       contatoId: origem.contatoId,
       contratoExternoId: contexto.contratoExternoId,

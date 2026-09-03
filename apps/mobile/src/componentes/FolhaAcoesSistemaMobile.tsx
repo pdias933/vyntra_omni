@@ -71,6 +71,17 @@ function dinheiro(valorCentavos: number): string {
   }).format(valorCentavos / 100);
 }
 
+function descricaoOrigemFinanceira(
+  financeiro: ResumoFinanceiroContatoMobile,
+): string {
+  if (financeiro.origem === 'INDISPONIVEL') {
+    return 'ERP indisponível — nenhum snapshot usado';
+  }
+  return financeiro.cobertura === 'JANELA_LIMITADA'
+    ? `Dados do ERP em tempo real · período consultado: ${financeiro.quantidadeMeses} mês`
+    : 'Dados do ERP em tempo real · cobertura integral';
+}
+
 function mensagemResultado(resultado: ResultadoAcaoErpMobile): string {
   if (resultado.situacao === 'CONCLUIDO' || resultado.situacao === 'CONCLUIDA') {
     return 'A ação foi confirmada pelo ERP.';
@@ -329,16 +340,16 @@ export function FolhaAcoesSistemaMobile({
               <View style={estilos.origem}>
                 <Ionicons color={financeiro.origem === 'TEMPO_REAL' ? CORES.acao : '#805A00'} name="pulse-outline" size={18} />
                 <Text style={estilos.textoOrigem}>
-                  {financeiro.origem === 'TEMPO_REAL' ? 'Dados do ERP em tempo real' : 'ERP indisponível — nenhum snapshot usado'}
+                  {descricaoOrigemFinanceira(financeiro)}
                 </Text>
               </View>
               {financeiro.faturas.length === 0 ? (
-                <Text style={estilos.vazio}>{financeiro.origem === 'TEMPO_REAL' ? 'Nenhuma fatura retornada.' : 'Tente novamente quando a integração normalizar.'}</Text>
-              ) : financeiro.faturas.map((fatura) => (
-                <View key={fatura.referencia} style={estilos.fatura}>
+                <Text style={estilos.vazio}>{financeiro.origem === 'TEMPO_REAL' ? 'Nenhuma fatura retornada no período consultado.' : 'Tente novamente quando a integração normalizar.'}</Text>
+              ) : financeiro.faturas.map((fatura, indice) => (
+                <View key={`${fatura.vencimento}-${fatura.situacao}-${fatura.valorCentavos}-${indice}`} style={estilos.fatura}>
                   <View style={estilos.textoFatura}>
-                    <Text style={estilos.nomeFatura}>{fatura.referencia}</Text>
-                    <Text style={estilos.metaFatura}>{fatura.situacao} · vence {fatura.vencimento}</Text>
+                    <Text style={estilos.nomeFatura}>Vencimento {fatura.vencimento}</Text>
+                    <Text style={estilos.metaFatura}>{fatura.situacao}</Text>
                   </View>
                   <Text style={estilos.valorFatura}>{dinheiro(fatura.valorCentavos)}</Text>
                 </View>

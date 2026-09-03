@@ -386,7 +386,17 @@ Replay ou duplicidade retorna sucesso compatível sem repetir o efeito. Status f
 - credenciais separadas por ambiente e menor privilégio;
 - usuário MK exclusivo, serviços mínimos e IP allowlist/VPN quando possível;
 - consultas e escritas podem usar perfis separados;
+- a fatia real da PR 117 implementa somente `ConsultasErp`; registrá-la como `ADAPTADOR_ERP` ou torná-la alcançável por um caso de escrita é falha de segurança;
+- `MK_MODO` nasce `DESATIVADO`; `CARACTERIZACAO` nunca injeta provider nos casos de uso e `SOMENTE_LEITURA` injeta apenas `CONSULTAS_ERP`;
+- ambiente marcado para dados sintéticos/sanitizados recusa startup em `SOMENTE_LEITURA`; a caracterização não contorna essa política;
+- consultas reais exigem ainda o controle PostgreSQL correspondente: `MK_CONSULTAS_CADASTRAIS_REAIS` ou `MK_CONSULTAS_FINANCEIRAS_REAIS`, ambos desativados e com rollout zero por padrão;
+- o backend aplica sessão, RBAC, fila/recurso e contexto explícito antes do controle de recurso e da chamada; habilitar um controle não habilita o outro;
+- cliente e contrato são obrigatórios nas consultas de contrato/fatura; cache, primeiro resultado e relação implícita nunca substituem o contexto confirmado;
+- a listagem financeira real declara cobertura limitada a um mês; UI e automação não podem tratá-la como extrato integral, e o Motor de Fluxos deve recusá-la;
 - URL com token/query sensível nunca é logada;
+- configuração MK aceita somente origem HTTPS exata em allowlist, sem credencial embutida, query, fragmento ou caminho; o adapter fixa os caminhos, recusa redirecionamento e limita o corpo antes de interpretar JSON;
+- o prazo de transporte é absoluto e inclui espera por concorrência e DNS; caminhos permitidos formam uma lista exata somente de leitura, e erro externo não caracterizado não autoriza repetição ou reautenticação automática;
+- segredo estático vem exclusivamente de arquivo secreto/cofre, e a credencial temporária existe somente em memória por prazo conservador;
 - resposta externa é tratada como não confiável e validada pelo adapter;
 - simulador Meta não recebe segredo, não é registrado no runtime e nunca substitui assinatura, deduplicação PostgreSQL ou validação do webhook real;
 - simulador ERP não recebe segredo nem DTO MK, não é registrado no runtime e separa efeito comprovadamente ausente de efeito incerto; memória de teste nunca substitui operação/idempotência PostgreSQL;
@@ -530,6 +540,8 @@ Controles de persistência obrigatórios:
 | Mídia descoberta | Bucket privado, autorização e URL assinada curta. |
 | CPF em log/push | Máscara, criptografia, HMAC de busca e sanitização central. |
 | Segredo em Git/log | Secret manager, secret scan e proibição de payload bruto. |
+| Credencial MK compartilhada fora do cofre | Considerá-la comprometida, revogar/rotacionar antes de novo ensaio ou ativação e emitir material exclusivo por ambiente com menor privilégio. |
+| Consulta MK ativada por configuração isolada | Exigir `MK_MODO=SOMENTE_LEITURA` e o controle PostgreSQL cadastral ou financeiro correspondente; ambos os controles nascem desligados e a porta de escrita permanece ausente. |
 | Contaminação de staging por produção | Projeto, banco, Redis, storage, volumes e credenciais exclusivos; sem importador; marcador de dados sintéticos/sanitizados e confirmação operacional. |
 | Backup roubado | Criptografia, cópia externa e acesso mínimo. |
 | MK comprometido/fora | Adapter, validação, timeout, circuit breaker e snapshot somente leitura. |
@@ -590,10 +602,14 @@ Testes mínimos:
 - fluxo com referência inválida, loop sem limite e nó sensível sem permissão;
 - backend/worker reiniciado entre commit e efeito externo;
 - Redis apagado;
+- modo MK desligado, caracterização sem provider, controles cadastral/financeiro independentes e tentativa de alcançar escrita pela porta somente leitura;
+- resposta MK redirecionada, excessiva, malformada ou com relação cliente↔contrato↔fatura divergente;
 - restauração real de backup;
 - secret scan, dependências e baseline OWASP ASVS/Mobile.
 
 Falha em teste de segurança crítico bloqueia deploy; não é candidata a feature flag.
+
+A caracterização somente de leitura da PR 117 não satisfaz o portão de produção do MK. Produção permanece bloqueada até a rotação das credenciais expostas, comprovação do perfil de menor privilégio, capacidade/limites sustentados e caracterização separada de cada escrita com idempotência e reconciliação de resultado incerto. Staging continua sintético ou sanitizado, com o provider e os dois controles reais desligados no deploy normal.
 
 ## 17. Controles dos nós de mensagem
 

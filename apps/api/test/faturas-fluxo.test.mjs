@@ -7,12 +7,14 @@ import { ServicoFaturasFluxo } from '../dist/execucoes-fluxo/servico-faturas-flu
 
 const contexto = {
   atendimentoId: randomUUID(),
+  clienteExternoId: 'cliente-sintetico-078',
   contaWhatsAppId: randomUUID(),
   contatoId: randomUUID(),
   contratoExternoId: 'contrato-sintetico-078',
   versao: 2,
 };
 const fatura = {
+  clienteExternoId: contexto.clienteExternoId,
   contratoExternoId: contexto.contratoExternoId,
   faturaExternaId: 'fatura-sintetica-078',
   situacao: 'ABERTA',
@@ -47,8 +49,17 @@ function criarServico({ adaptador, contextoAtual = contexto } = {}) {
 
 function adaptadorComFaturas(faturas = [fatura]) {
   return new AdaptadorErpSimulado({
+    contratos: [
+      {
+        clienteExternoId: contexto.clienteExternoId,
+        contratoExternoId: contexto.contratoExternoId,
+        situacao: 'ATIVO',
+      },
+    ],
     dadosPagamentoFatura: [
       {
+        clienteExternoId: fatura.clienteExternoId,
+        contratoExternoId: fatura.contratoExternoId,
         faturaExternaId: fatura.faturaExternaId,
         linhaDigitavel: linha,
         pixCopiaCola: pix,
@@ -56,7 +67,9 @@ function adaptadorComFaturas(faturas = [fatura]) {
     ],
     documentosFatura: [
       {
+        clienteExternoId: fatura.clienteExternoId,
         conteudo: pdf,
+        contratoExternoId: fatura.contratoExternoId,
         faturaExternaId: fatura.faturaExternaId,
         nomeArquivo: 'fatura-sintetica.pdf',
         tipoArquivo: 'PDF',
@@ -112,6 +125,29 @@ test('não escolhe primeira fatura e ERP ausente permanece indisponível', async
   );
   assert.deepEqual(await semProvider.servico.executar(semProviderPreparado), {
     resultado: 'ERP_INDISPONIVEL',
+  });
+});
+
+test('automação recusa consulta financeira com cobertura limitada', async () => {
+  const parcial = criarServico({
+    adaptador: {
+      listarFaturas: async () => ({
+        cobertura: { quantidadeMeses: 1, tipo: 'JANELA_LIMITADA' },
+        itens: [fatura],
+        origem: 'TEMPO_REAL',
+        resultado: 'SUCESSO',
+      }),
+    },
+  });
+  const preparacao = await parcial.servico.preparar(
+    'CONSULTAR_FATURAS',
+    contexto.atendimentoId,
+    {},
+    {},
+  );
+  assert.deepEqual(await parcial.servico.executar(preparacao), {
+    codigo: 'COBERTURA_FINANCEIRA_INCOMPLETA',
+    resultado: 'FALHA',
   });
 });
 

@@ -13,6 +13,9 @@ import type {
   ComandoReconciliarEncerramentoAtendimentoErp,
   ComandoReconciliarAtendimentoErp,
   ContratoErpNormalizado,
+  ConexaoCadastradaErpNormalizada,
+  ContextoConsultaContratoErp,
+  ContextoConsultaFaturaErp,
   CriteriosLocalizacaoClienteErp,
   FaturaErpNormalizada,
   DadosPagamentoFaturaErpNormalizados,
@@ -20,6 +23,7 @@ import type {
   ResultadoElegibilidadeDesbloqueioErp,
   ResultadoComplementoFaturaErp,
   ResultadoConsultaErp,
+  ResultadoConsultaFaturasErp,
   ResultadoConsultaUnicaErp,
   ResultadoCriacaoAtendimentoErp,
   ResultadoCriacaoOrdemServicoErp,
@@ -34,6 +38,7 @@ import type {
 } from './modelo-erp.js';
 
 export const ADAPTADOR_ERP = Symbol('ADAPTADOR_ERP');
+export const CONSULTAS_ERP = Symbol('CONSULTAS_ERP');
 
 export interface ConsultasErp {
   localizarClientes(
@@ -49,23 +54,27 @@ export interface ConsultasErp {
   ): Promise<ResultadoConsultaErp<ContratoErpNormalizado>>;
 
   consultarContrato(
-    contratoExternoId: string,
+    contexto: ContextoConsultaContratoErp,
   ): Promise<ResultadoConsultaUnicaErp<ContratoErpNormalizado>>;
 
+  listarConexoes(
+    clienteExternoId: string,
+  ): Promise<ResultadoConsultaErp<ConexaoCadastradaErpNormalizada>>;
+
   listarFaturas(
-    contratoExternoId: string,
-  ): Promise<ResultadoConsultaErp<FaturaErpNormalizada>>;
+    contexto: ContextoConsultaContratoErp,
+  ): Promise<ResultadoConsultaFaturasErp>;
 
   consultarFatura(
-    faturaExternaId: string,
+    contexto: ContextoConsultaFaturaErp,
   ): Promise<ResultadoConsultaUnicaErp<FaturaErpNormalizada>>;
 
   obterDocumentoFatura(
-    faturaExternaId: string,
+    contexto: ContextoConsultaFaturaErp,
   ): Promise<ResultadoComplementoFaturaErp<DocumentoFaturaErpNormalizado>>;
 
   obterDadosPagamentoFatura(
-    faturaExternaId: string,
+    contexto: ContextoConsultaFaturaErp,
   ): Promise<
     ResultadoComplementoFaturaErp<DadosPagamentoFaturaErpNormalizados>
   >;

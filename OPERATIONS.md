@@ -59,6 +59,8 @@ pnpm staging:estado
 
 O marcador local `DADOS_PERMITIDOS=sinteticos_ou_sanitizados` é obrigatório e indivisível com o conjunto de segredos. A confirmação de subida é uma guarda contra erro operacional; não autoriza importar produção. Não existe comando de importação, restauração ou reset automático no wrapper. Detalhes estão no [runbook da PR 005](docs/operacoes/PR-005.md).
 
+A PR 117 não altera essa política. Seu deploy normal em staging usa `MK_MODO=DESATIVADO`, `MK_CONSULTAS_CADASTRAIS_REAIS` desativado e `MK_CONSULTAS_FINANCEIRAS_REAIS` desativado. A caracterização real é uma execução transitória, supervisionada e separada do runtime publicado; ela não autoriza armazenar dados reais, persistir credenciais MK no conjunto padrão de staging ou apresentar o provider como saudável.
+
 A entrega intermediária PR 096A adiciona a imagem imutável do console, a borda Caddy não privilegiada e o TLS público automático. O volume de certificados não é cache e deve ser preservado entre recriações. A origem permitida da sessão web é exatamente `https://omni.up100.com.br`; aliases e acesso direto por IP não são origens de autenticação válidas. O smoke confere HTML, API pela mesma origem, certificado confiável, redirecionamento e cabeçalhos defensivos. Detalhes e reversão estão no [runbook da PR 096A](docs/operacoes/PR-096A.md).
 
 ### Produção
@@ -151,6 +153,8 @@ Requisitos:
 - acesso auditado;
 - secret scan em todo PR;
 - resposta a vazamento inclui revogação e nova emissão, não apenas remoção do Git.
+
+O material usado na caracterização MK da PR 117 foi compartilhado fora de um cofre aprovado e deve ser tratado como comprometido. Antes de qualquer novo ensaio ou ativação, revogar/rotacionar todo o conjunto, emitir credenciais exclusivas por ambiente e confirmar o menor privilégio. A nova configuração entra somente por arquivos secretos montados no processo autorizado; nunca por Git, Compose, fixture, parâmetro de processo, evidência ou log.
 
 ## 6. PostgreSQL
 
@@ -363,6 +367,8 @@ A PR 116 acrescenta o plano fechado de piloto em `infra/staging/piloto.json`. El
 
 Na PR 018, controles e políticas são autoridade do PostgreSQL. O backend calcula rollout estável por código+usuário e aplica primeiro estado, atividade de usuário/perfil e desligamento emergencial. Escritas administrativas exigem `ADMINISTRAR_RELEASES`, CSRF/origem, versão esperada e auditoria transacional. Apps abaixo da mínima recebem `426 ATUALIZACAO_OBRIGATORIA` em login, pareamento, autenticação e refresh; a avaliação pública serve apenas para antecipar a tela obrigatória. A marca de prontidão passa a ser `20260831000900_criar_controles_recurso_versao`.
 
+Na PR 117, o registro técnico do provider e o rollout de negócio são portões diferentes. `MK_MODO` aceita somente `DESATIVADO`, `CARACTERIZACAO` ou `SOMENTE_LEITURA` e nasce desligado. O último modo registra somente `CONSULTAS_ERP`; `CARACTERIZACAO` não injeta a porta nos casos de uso. No PostgreSQL, `MK_CONSULTAS_CADASTRAIS_REAIS` e `MK_CONSULTAS_FINANCEIRAS_REAIS` nascem desativados, com zero por cento e sem alvo. Alterar um não altera o outro e nenhum deles registra `ADAPTADOR_ERP`, habilita escrita, sessão de acesso ou Motor de Fluxos.
+
 ## 14. Health checks
 
 ### `/saude/vivo`
@@ -553,6 +559,8 @@ Não antecipar Kubernetes ou microserviços sem evidência.
 - parâmetros Argon2id calibrados no hardware de produção e limites de login/QR/identidade/ERP carregados por ambiente;
 - runbooks acessíveis;
 - capacidades Meta/MK confirmadas;
+- credenciais MK usadas na caracterização revogadas/rotacionadas e novo perfil de menor privilégio entregue por cofre;
+- modo MK e controles cadastral/financeiro aprovados separadamente, com evidência de rollback; a fatia somente leitura não aprova qualquer escrita;
 - política jurídica/LGPD de retenção e conteúdo exportável aprovada e ensaiada;
 - contrato real de disparo ERP, consentimento/opt-out e callbacks aprovados antes de habilitar o endpoint;
 - RPO/RTO medidos e aceitos;
@@ -789,3 +797,11 @@ Limites iniciais: caixa de saída acima de 300 segundos, operação recuperável
 Cada publicação recebe `VYNTRA_RELEASE` imutável e informa `VYNTRA_RELEASE_ANTERIOR`. `VYNTRA_CONFIRMAR_DEPLOY=PUBLICAR_<release>` é obrigatório. O comando valida que o Docker é local, renderiza o Compose, constrói as cinco imagens, executa uma única vez `migrar` e aguarda API/web/worker antes de atualizar o proxy. A prontidão inclui a migration obrigatória, impedindo tráfego prematuro.
 
 Na reversão, usar `VYNTRA_CONFIRMAR_DEPLOY=REVERTER_<release>_PARA_<anterior>` e o comando `reverter`. Não rodar migration, não apagar tabela e não editar `_prisma_migrations`. A imagem anterior deve ter sido preservada e ser compatível com todas as migrations aditivas do release candidato. A API possui 15 segundos para drenar dentro de `stop_grace_period: 25s`; worker possui 30 segundos. SSE e WebSocket reconectam pelo cursor; worker não adquire novo ciclo depois do sinal. O runbook executável está em [docs/operacoes/PR-112.md](docs/operacoes/PR-112.md).
+
+## 51. Consultas reais MK controladas da PR 117
+
+O release pode ser implantado sem credencial MK porque `MK_MODO=DESATIVADO` é o padrão. Nesse estado, a integração aparece como não configurada e toda consulta real falha fechada sem tentar rede. `CARACTERIZACAO` existe somente para a ferramenta controlada e não torna o provider disponível à API. `SOMENTE_LEITURA` exige arquivos secretos válidos, origem HTTPS em allowlist e configuração de timeout, limite de concorrência, teto de resposta e circuit breaker dentro dos intervalos aprovados.
+
+Mesmo com o provider de leitura registrado, nenhuma chamada financeira atravessa enquanto `MK_CONSULTAS_FINANCEIRAS_REAIS` estiver desligado. O staging atual não pode mudar para `SOMENTE_LEITURA`: o marcador sintético/sanitizado deve fazer essa combinação falhar no startup. `MK_CONSULTAS_CADASTRAIS_REAIS` permanece reservado e sem consumidor de runtime nesta PR; ligá-lo não habilita rota nem chamada e é proibido até existir um caso de uso interno aprovado que correlacione identificadores locais. Em uma futura homologação real formalmente aprovada, o financeiro ainda exige rollout controlado, contexto cliente+contrato e evidência de que nenhum dado protegido alcança log, auditoria ou tracing. Seu resultado declara cobertura limitada a um mês, e não pode ser usado como extrato integral. Reverter consiste em desligar o controle afetado e então retornar `MK_MODO` a `DESATIVADO`; não exige apagar dado ou desfazer migration.
+
+O deploy de staging da PR 117 mantém modo e controles desligados, além de `PILOTO_MK_REAL=false`. Esta entrega não acrescenta telemetria externa do MK; portanto nenhum rollout real pode ser iniciado até existir observabilidade sanitizada de código normalizado, duração e estado do circuito, sem URL, parâmetro, identificador ou payload. Antes de qualquer ensaio real futuro, rotacionar as credenciais consideradas comprometidas e usar um perfil exclusivo de menor privilégio. Produção permanece bloqueada pelo checklist, pela caracterização incompleta e pelo piloto desligado. Nenhuma escrita, documento, Pix, segunda via, sessão de acesso, sincronização de snapshot ou nó do Motor de Fluxos pode ser ativado como consequência dessa entrega.

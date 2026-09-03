@@ -6,11 +6,12 @@ import { ServicoAutorizacao } from '../autorizacao/servico-autorizacao.js';
 import { ServicoContextosCliente } from '../contextos-cliente/servico-contextos-cliente.js';
 import { ServicoElegibilidadeDesbloqueioConfianca } from '../desbloqueios-confianca/servico-elegibilidade-desbloqueio-confianca.js';
 import { ServicoExecucaoDesbloqueioConfianca } from '../desbloqueios-confianca/servico-execucao-desbloqueio-confianca.js';
-import { ADAPTADOR_ERP, type AdaptadorErp } from '../erp/adaptador-erp.js';
+import { ADAPTADOR_ERP, CONSULTAS_ERP, type AdaptadorErp, type ConsultasErp } from '../erp/adaptador-erp.js';
 import { ServicoFinanceiroErp } from '../erp/servico-financeiro-erp.js';
 import { ServicoOrdensServicoErp } from '../ordens-servico/servico-ordens-servico.js';
 import { ServicoPrisma } from '../persistencia/servico-prisma.js';
 import type { TransacaoPrisma } from '../persistencia/transacao-prisma.js';
+import { ServicoReleases } from '../releases/servico-releases.js';
 import { ServicoSnapshotsCliente } from '../snapshots-cliente/servico-snapshots-cliente.js';
 import type { AcaoErpWeb, DetalhesContatoWeb, PreviaAcaoErpWeb, ResultadoFinanceiroContatoWeb } from './modelo-console-web.js';
 
@@ -26,17 +27,24 @@ export class ServicoContatoAcoesWeb {
     @Inject(ServicoElegibilidadeDesbloqueioConfianca) private readonly elegibilidade: ServicoElegibilidadeDesbloqueioConfianca,
     @Inject(ServicoExecucaoDesbloqueioConfianca) private readonly desbloqueios: ServicoExecucaoDesbloqueioConfianca,
     @Inject(ServicoOrdensServicoErp) private readonly ordens: ServicoOrdensServicoErp,
+    @Optional() @Inject(ServicoReleases) private readonly releases?: ServicoReleases,
+    @Optional() @Inject(CONSULTAS_ERP) private readonly consultas?: ConsultasErp,
     @Optional() @Inject(ADAPTADOR_ERP) private readonly adaptador?: AdaptadorErp,
   ) {}
 
   public async obterDetalhes(sessao: ContextoSessaoAutorizacao, atendimentoId: string): Promise<DetalhesContatoWeb> {
     return this.prisma.executarLeituraConsistente(async (transacao) => {
       const escopo = await this.autorizarAtendimento(sessao, atendimentoId, 'VISUALIZAR_FILA', transacao);
+      const consultasFinanceirasAtivas = await this.consultasFinanceirasAtivas(
+        sessao.usuarioId,
+        escopo.filaId,
+        transacao,
+      );
       const permissoes = {
         alterarContexto: await this.temPermissao(sessao, atendimentoId, escopo.filaId, 'ALTERAR_CONTEXTO_CLIENTE', transacao),
         consultarCliente: await this.temPermissao(sessao, atendimentoId, escopo.filaId, 'CONSULTAR_CLIENTE', transacao),
         consultarContrato: await this.temPermissao(sessao, atendimentoId, escopo.filaId, 'CONSULTAR_CONTRATO', transacao),
-        consultarFinanceiro: await this.temPermissao(sessao, atendimentoId, escopo.filaId, 'CONSULTAR_FINANCEIRO', transacao),
+        consultarFinanceiro: consultasFinanceirasAtivas && await this.temPermissao(sessao, atendimentoId, escopo.filaId, 'CONSULTAR_FINANCEIRO', transacao),
         criarOrdemServico: await this.temPermissao(sessao, atendimentoId, escopo.filaId, 'CRIAR_ORDEM_SERVICO', transacao),
         executarDesbloqueio: await this.temPermissao(sessao, atendimentoId, escopo.filaId, 'EXECUTAR_DESBLOQUEIO_CONFIANCA', transacao),
       };
@@ -122,14 +130,27 @@ export class ServicoContatoAcoesWeb {
   public async consultarFinanceiro(sessao: ContextoSessaoAutorizacao, atendimentoId: string): Promise<ResultadoFinanceiroContatoWeb> {
     const contexto = await this.prisma.executarLeituraConsistente(async (transacao) => {
       const escopo = await this.autorizarAtendimento(sessao, atendimentoId, 'CONSULTAR_FINANCEIRO', transacao);
-      const atual = await transacao.contextoAtendimento.findUnique({ select: { contratoExternoAtivoId: true }, where: { atendimentoId } });
-      if (atual === null || atual.contratoExternoAtivoId === null) throw new ErroPermissaoNegada();
-      return { contratoExternoId: atual.contratoExternoAtivoId, filaId: escopo.filaId };
+      const atual = await transacao.contextoAtendimento.findUnique({ select: { clienteExternoAtivoId: true, contratoExternoAtivoId: true }, where: { atendimentoId } });
+      if (atual === null || atual.clienteExternoAtivoId === null || atual.contratoExternoAtivoId === null) throw new ErroPermissaoNegada();
+      const consultasFinanceirasAtivas = await this.consultasFinanceirasAtivas(
+        sessao.usuarioId,
+        escopo.filaId,
+        transacao,
+      );
+      return { clienteExternoId: atual.clienteExternoAtivoId, consultasFinanceirasAtivas, contratoExternoId: atual.contratoExternoAtivoId, filaId: escopo.filaId };
     });
-    if (this.adaptador === undefined) return { codigo: 'ERP_NAO_CONFIGURADO', faturas: [], origem: 'INDISPONIVEL' };
-    const resultado = await new ServicoFinanceiroErp(this.adaptador).listarFaturas(contexto.contratoExternoId);
+    const consultas = this.consultas ?? this.adaptador;
+    if (consultas === undefined || !contexto.consultasFinanceirasAtivas) return { codigo: 'ERP_NAO_CONFIGURADO', faturas: [], origem: 'INDISPONIVEL' };
+    const resultado = await new ServicoFinanceiroErp(consultas).listarFaturas({ clienteExternoId: contexto.clienteExternoId, contratoExternoId: contexto.contratoExternoId });
     if (resultado.resultado === 'INDISPONIVEL') return { codigo: resultado.codigo, faturas: [], origem: 'INDISPONIVEL' };
-    return { faturas: resultado.itens.map((item) => ({ referencia: item.faturaExternaId, situacao: item.situacao, valorCentavos: item.valorCentavos, vencimento: item.vencimento })), origem: 'TEMPO_REAL' };
+    return {
+      cobertura: resultado.cobertura.tipo,
+      faturas: resultado.itens.map((item) => ({ situacao: item.situacao, valorCentavos: item.valorCentavos, vencimento: item.vencimento })),
+      origem: 'TEMPO_REAL',
+      ...(resultado.cobertura.tipo === 'JANELA_LIMITADA'
+        ? { quantidadeMeses: resultado.cobertura.quantidadeMeses }
+        : {}),
+    };
   }
 
   public async prepararAcao(sessao: ContextoSessaoAutorizacao, atendimentoId: string, acao: AcaoErpWeb): Promise<PreviaAcaoErpWeb> {
@@ -173,6 +194,21 @@ export class ServicoContatoAcoesWeb {
   private async temPermissao(sessao: ContextoSessaoAutorizacao, atendimentoId: string, filaId: string | undefined, permissao: CodigoPermissaoAutorizacao, transacao: TransacaoPrisma): Promise<boolean> {
     try { await this.autorizacao.autorizar({ ...(filaId === undefined ? {} : { filaId }), permissao, recurso: { id: atendimentoId, tipo: 'ATENDIMENTO' }, sessao }, async () => ({ acessivel: true, estadoPermiteAcao: true }), transacao); return true; }
     catch (erro) { if (erro instanceof ErroPermissaoNegada) return false; throw erro; }
+  }
+
+  private async consultasFinanceirasAtivas(
+    usuarioId: string,
+    filaId: string,
+    transacao: TransacaoPrisma,
+  ): Promise<boolean> {
+    if (this.consultas === undefined) return this.adaptador !== undefined;
+    if (this.releases === undefined) return false;
+    const controles = await this.releases.obterControlesUsuario(
+      usuarioId,
+      filaId,
+      transacao,
+    );
+    return controles.MK_CONSULTAS_FINANCEIRAS_REAIS === true;
   }
 
   private objeto(valor: unknown): Readonly<Record<string, unknown>> { return typeof valor === 'object' && valor !== null && !Array.isArray(valor) ? valor as Readonly<Record<string, unknown>> : {}; }

@@ -47,6 +47,7 @@ function adaptadorComDados() {
       ],
       faturas: [
         {
+          clienteExternoId: 'cliente-sintetico-001',
           contratoExternoId: 'contrato-sintetico-001',
           faturaExternaId: 'fatura-sintetica-001',
           situacao: 'ABERTA',
@@ -71,7 +72,10 @@ test('consultas retornam somente modelos internos normalizados em tempo real', a
     documento: 'DOC-SINTETICO-001',
   });
   const contratos = await adaptador.listarContratos('cliente-sintetico-001');
-  const faturas = await adaptador.listarFaturas('contrato-sintetico-001');
+  const faturas = await adaptador.listarFaturas({
+    clienteExternoId: 'cliente-sintetico-001',
+    contratoExternoId: 'contrato-sintetico-001',
+  });
 
   assert.deepEqual(clientes, {
     itens: [

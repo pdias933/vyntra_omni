@@ -22,3 +22,28 @@ test('painel resolve capacidades antes dos dados e não declara adapters ausente
   assert.equal(painel.integracoes.find(({ codigo }) => codigo === 'CANAL_WHATSAPP').estado, 'NAO_CONFIGURADA');
   assert.equal(painel.integracoes.find(({ codigo }) => codigo === 'SISTEMA_GESTAO').estado, 'NAO_CONFIGURADA');
 });
+
+test('painel distingue consultas ERP de uma integração com escritas', async () => {
+  const transacao = {
+    calendarioAtendimento: { findMany: async () => [] },
+    contaWhatsApp: { findMany: async () => [] },
+    fila: { findMany: async () => [] },
+  };
+  const servico = new ServicoAdministracaoOperacional(
+    { executarLeituraConsistente: async (operacao) => operacao(transacao) },
+    { autorizar: async () => undefined },
+    undefined,
+    undefined,
+    undefined,
+    {},
+  );
+  const painel = await servico.listar(sessao);
+  assert.deepEqual(
+    painel.integracoes.find(({ codigo }) => codigo === 'SISTEMA_GESTAO'),
+    {
+      codigo: 'SISTEMA_GESTAO',
+      detalhe: 'Provedor somente leitura registrado; liberações condicionadas',
+      estado: 'PARCIAL',
+    },
+  );
+});

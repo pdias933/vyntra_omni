@@ -1187,6 +1187,7 @@ test('formulário inativo ou de outra conta falha fechado sem enviar', async () 
 test('consulta de fatura chama ERP fora da transação e guarda seleção somente no contexto', async () => {
   const contextoFinanceiro = {
     atendimentoId: ids.atendimento,
+    clienteExternoId: 'cliente-sintetico-078',
     contaWhatsAppId: randomUUID(),
     contatoId: randomUUID(),
     contratoExternoId: 'contrato-sintetico-078',
@@ -1251,6 +1252,7 @@ test('envio revalida seleção, registra composição e não expõe Pix no passo
   const preparacaoFatura = {
     contexto: {
       atendimentoId: ids.atendimento,
+      clienteExternoId: 'cliente-sintetico-078',
       contaWhatsAppId,
       contatoId,
       contratoExternoId: selecao.contratoExternoId,

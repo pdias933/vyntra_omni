@@ -56,6 +56,27 @@ function dataSeparador(data: string): string {
   return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long' }).format(valor);
 }
 
+function dataFinanceira(data: string): string {
+  const [ano, mes, dia] = data.split('-');
+  return ano !== undefined && mes !== undefined && dia !== undefined
+    ? `${dia}/${mes}/${ano}`
+    : data;
+}
+
+function descricaoFinanceiro(
+  financeiro: ResultadoFinanceiroContatoWebDto,
+): string {
+  if (financeiro.origem !== 'TEMPO_REAL') {
+    return `Indisponível · ${financeiro.codigo ?? 'tente novamente'}`;
+  }
+  if (financeiro.cobertura === 'JANELA_LIMITADA') {
+    return `Dados em tempo real · cobertura parcial de ${financeiro.quantidade_meses ?? 1} mês`;
+  }
+  return financeiro.cobertura === 'INTEGRAL'
+    ? 'Dados em tempo real · cobertura integral'
+    : 'Dados em tempo real · cobertura não informada';
+}
+
 export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtendimentoWebDto }) {
   const [itens, definirItens] = useState<readonly ItemTimelineWebDto[]>([]);
   const [cursor, definirCursor] = useState<string>();
@@ -227,7 +248,7 @@ function PainelContatoWeb({ atendimentoId, aoFechar }: { readonly atendimentoId:
         {detalhes.vinculos.length === 0 ? <section className="cartao-vincular"><strong>Contato não identificado</strong><p>Vincule este número a um cliente para visualizar contratos e histórico.</p><button disabled type="button">Vincular a cliente</button><small>Disponível com a permissão e o cadastro do ERP.</small></section> : <section className="cartao-detalhes"><h3>Cliente e contrato ativos</h3>{detalhes.vinculos.map((vinculo) => <div className={`opcao-contexto ${clienteAtual === vinculo.id ? 'opcao-contexto--ativa' : ''}`} key={vinculo.id}><button disabled={!detalhes.permissoes.alterarContexto} onClick={() => definirSelecao({ clienteId: vinculo.id, ...(vinculo.contratos[0] === undefined ? {} : { contratoId: vinculo.contratos[0].id }) })} type="button"><strong>{vinculo.nome_exibicao}</strong><small>{vinculo.documento_mascarado ?? vinculo.tipo} · Snapshot {vinculo.estado_snapshot.toLocaleLowerCase('pt-BR')}</small></button>{vinculo.contratos.map((contrato) => <button className={contratoAtual === contrato.id ? 'contrato-ativo' : ''} disabled={!detalhes.permissoes.alterarContexto} key={contrato.id} onClick={() => definirSelecao({ clienteId: vinculo.id, contratoId: contrato.id })} type="button"><span>{contrato.servico ?? 'Contrato'}</span><small>{contrato.situacao}{contrato.endereco_resumido === undefined ? '' : ` · ${contrato.endereco_resumido}`}</small></button>)}</div>)}</section>}
         {selecao !== undefined && <section className="confirmacao-contexto"><strong>Confirmar troca de contexto?</strong><p>As próximas consultas e ações usarão o cliente e o contrato selecionados.</p><div><button onClick={() => definirSelecao(undefined)} type="button">Cancelar</button><button disabled={ocupado} onClick={() => void confirmarContexto()} type="button">Confirmar troca</button></div></section>}
         <section className="cartao-detalhes grade-contagens"><button type="button"><strong>{detalhes.contagens.atendimentos ?? 0}</strong><small>Atendimentos</small></button><button type="button"><strong>{detalhes.contagens.midias ?? 0}</strong><small>Mídias</small></button><button type="button"><strong>{detalhes.contagens.notas ?? 0}</strong><small>Notas</small></button><button type="button"><strong>{detalhes.contagens.ordens_servico ?? 0}</strong><small>Ordens</small></button></section>
-        {detalhes.permissoes.consultarFinanceiro && <section className="cartao-detalhes"><h3>Situação financeira</h3><button className="botao-consulta" disabled={ocupado} onClick={() => void consultarFinanceiro()} type="button">Consultar em tempo real</button>{financeiro !== undefined && <div className={`resultado-financeiro resultado-financeiro--${financeiro.origem.toLocaleLowerCase('pt-BR')}`}><small>{financeiro.origem === 'TEMPO_REAL' ? 'Dados em tempo real' : `Indisponível · ${financeiro.codigo ?? 'tente novamente'}`}</small>{financeiro.faturas.map((fatura) => <p key={fatura.referencia}>{fatura.referencia} · {fatura.situacao} · {formatarCentavos(fatura.valor_centavos)}</p>)}</div>}</section>}
+        {detalhes.permissoes.consultarFinanceiro && <section className="cartao-detalhes"><h3>Situação financeira</h3><button className="botao-consulta" disabled={ocupado} onClick={() => void consultarFinanceiro()} type="button">Consultar em tempo real</button>{financeiro !== undefined && <div className={`resultado-financeiro resultado-financeiro--${financeiro.origem.toLocaleLowerCase('pt-BR')}`}><small>{descricaoFinanceiro(financeiro)}</small>{financeiro.faturas.map((fatura, indice) => <p key={`${fatura.vencimento}-${fatura.situacao}-${fatura.valor_centavos}-${indice}`}>Vence em {dataFinanceira(fatura.vencimento)} · {fatura.situacao} · {formatarCentavos(fatura.valor_centavos)}</p>)}</div>}</section>}
         <section className="rodape-detalhes"><small>Protocolo ERP</small><strong>{detalhes.protocolo ?? 'Ainda não disponível'}</strong></section>
       </>}
     </div>

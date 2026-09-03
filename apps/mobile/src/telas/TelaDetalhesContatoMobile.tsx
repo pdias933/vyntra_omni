@@ -33,6 +33,14 @@ function dinheiro(valorCentavos: number): string {
   }).format(valorCentavos / 100);
 }
 
+function descricaoCoberturaFinanceira(
+  financeiro: Extract<ResumoFinanceiroContatoMobile, { readonly origem: 'TEMPO_REAL' }>,
+): string {
+  return financeiro.cobertura === 'JANELA_LIMITADA'
+    ? `Período consultado no ERP: ${financeiro.quantidadeMeses} mês`
+    : 'Cobertura integral informada pelo ERP';
+}
+
 function LinhaInformacao({
   icone,
   rotulo,
@@ -317,21 +325,24 @@ export function TelaDetalhesContatoMobile({
                   <Text style={estilos.textoSemContexto}>Consultando em tempo real…</Text>
                 ) : financeiro.origem === 'INDISPONIVEL' ? (
                   <Text style={estilos.textoSemContexto}>ERP indisponível. Nenhum snapshot é usado para ação financeira.</Text>
-                ) : financeiro.faturas.length === 0 ? (
-                  <View style={estilos.financeiroOk}>
-                    <Ionicons color={CORES.acao} name="checkmark-circle" size={20} />
-                    <Text style={estilos.textoFinanceiroOk}>Nenhuma fatura retornada em aberto</Text>
-                  </View>
                 ) : (
-                  financeiro.faturas.slice(0, 3).map((fatura) => (
-                    <View key={fatura.referencia} style={estilos.fatura}>
-                      <View>
-                        <Text style={estilos.nomeContrato}>{fatura.referencia}</Text>
-                        <Text style={estilos.metaContrato}>{fatura.situacao} · vence {fatura.vencimento}</Text>
+                  <>
+                    <Text style={estilos.textoSemContexto}>{descricaoCoberturaFinanceira(financeiro)}</Text>
+                    {financeiro.faturas.length === 0 ? (
+                      <View style={estilos.financeiroOk}>
+                        <Ionicons color={CORES.acao} name="information-circle" size={20} />
+                        <Text style={estilos.textoFinanceiroOk}>Nenhuma fatura retornada no período consultado</Text>
                       </View>
-                      <Text style={estilos.valorFatura}>{dinheiro(fatura.valorCentavos)}</Text>
-                    </View>
-                  ))
+                    ) : financeiro.faturas.slice(0, 3).map((fatura, indice) => (
+                      <View key={`${fatura.vencimento}-${fatura.situacao}-${fatura.valorCentavos}-${indice}`} style={estilos.fatura}>
+                        <View>
+                          <Text style={estilos.nomeContrato}>Vencimento {fatura.vencimento}</Text>
+                          <Text style={estilos.metaContrato}>{fatura.situacao}</Text>
+                        </View>
+                        <Text style={estilos.valorFatura}>{dinheiro(fatura.valorCentavos)}</Text>
+                      </View>
+                    ))}
+                  </>
                 )}
               </View>
             )}

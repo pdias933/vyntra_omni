@@ -198,6 +198,7 @@ services:
       BANCO_SENHA_FILE: /run/secrets/senha_postgresql
       BANCO_USUARIO: vyntra
       ENDERECO_HTTP: 0.0.0.0
+      MK_MODO: DESATIVADO
       NODE_ENV: development
       ORIGENS_WEB_PERMITIDAS: https://localhost:5173
       PORTA_HTTP: "3000"

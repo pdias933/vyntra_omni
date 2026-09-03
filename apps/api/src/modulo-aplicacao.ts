@@ -16,6 +16,7 @@ import { ModuloCopiasAtendimento } from './copias-atendimento/modulo-copias-aten
 import { ModuloContextosCliente } from './contextos-cliente/modulo-contextos-cliente.js';
 import { ModuloConversas } from './conversas/modulo-conversas.js';
 import { ModuloEventos } from './eventos/modulo-eventos.js';
+import { ModuloConsultasErp } from './erp/modulo-consultas-erp.js';
 import { ModuloExecucoesFluxo } from './execucoes-fluxo/modulo-execucoes-fluxo.js';
 import { ModuloDisponibilidade } from './disponibilidade/modulo-disponibilidade.js';
 import { ModuloDesbloqueiosConfianca } from './desbloqueios-confianca/modulo-desbloqueios-confianca.js';
@@ -67,6 +68,7 @@ import { ModuloSincronizacao } from './sincronizacao/modulo-sincronizacao.js';
     ModuloCopiasAtendimento,
     ModuloContextosCliente,
     ModuloConversas,
+    ModuloConsultasErp.registrar(),
     ModuloDesbloqueiosConfianca,
     ModuloEventos,
     ModuloExecucoesFluxo,

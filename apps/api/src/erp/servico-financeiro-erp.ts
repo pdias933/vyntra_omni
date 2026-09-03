@@ -2,10 +2,13 @@ import type { ConsultasErp } from './adaptador-erp.js';
 import { ErroConsultaErpInvalida } from './erros-erp.js';
 import { ErroRespostaConsultaErpInvalida } from './servico-consultas-cliente-contrato-erp.js';
 import type {
+  CoberturaConsultaFaturasErp,
   DadosPagamentoFaturaErpNormalizados,
   DocumentoFaturaErpNormalizado,
   FaturaErpNormalizada,
-  ResultadoConsultaErp,
+  ContextoConsultaContratoErp,
+  ContextoConsultaFaturaErp,
+  ResultadoConsultaFaturasErp,
   ResultadoConsultaUnicaErp,
 } from './modelo-erp.js';
 
@@ -42,41 +45,59 @@ export class ServicoFinanceiroErp {
   public constructor(private readonly consultas: ConsultasErp) {}
 
   public async listarFaturas(
-    contratoExternoId: string,
-  ): Promise<ResultadoConsultaErp<FaturaErpNormalizada>> {
-    this.validarIdentificador(contratoExternoId);
-    const resultado = await this.consultas.listarFaturas(contratoExternoId);
+    contexto: ContextoConsultaContratoErp,
+  ): Promise<ResultadoConsultaFaturasErp> {
+    this.validarContextoContrato(contexto);
+    const resultado = await this.consultas.listarFaturas(contexto);
     if (resultado.resultado !== 'SUCESSO') return { ...resultado };
     const itens = resultado.itens.map((item) => this.validarFatura(item));
     if (
       itens.length > 100 ||
-      itens.some((item) => item.contratoExternoId !== contratoExternoId)
+      itens.some(
+        (item) =>
+          item.clienteExternoId !== contexto.clienteExternoId ||
+          item.contratoExternoId !== contexto.contratoExternoId,
+      )
     ) {
       throw new ErroRespostaConsultaErpInvalida();
     }
-    return { itens, origem: 'TEMPO_REAL', resultado: 'SUCESSO' };
+    const cobertura = this.validarCobertura(resultado.cobertura);
+    return {
+      cobertura,
+      itens,
+      origem: 'TEMPO_REAL',
+      resultado: 'SUCESSO',
+    };
   }
 
   public async consultarDetalhesFatura(
-    faturaExternaId: string,
+    contexto: ContextoConsultaFaturaErp,
   ): Promise<ResultadoDetalhesFaturaErp> {
-    this.validarIdentificador(faturaExternaId);
-    const base = await this.consultas.consultarFatura(faturaExternaId);
+    this.validarContextoContrato(contexto);
+    this.validarIdentificador(contexto.faturaExternaId);
+    const base = await this.consultas.consultarFatura(contexto);
     if (base.resultado !== 'SUCESSO') return { ...base };
     const fatura = this.validarFatura(base.item);
-    if (fatura.faturaExternaId !== faturaExternaId) {
+    if (
+      fatura.faturaExternaId !== contexto.faturaExternaId ||
+      fatura.clienteExternoId !== contexto.clienteExternoId ||
+      fatura.contratoExternoId !== contexto.contratoExternoId
+    ) {
       throw new ErroRespostaConsultaErpInvalida();
     }
 
     const [resultadoDocumento, resultadoPagamento] = await Promise.all([
-      this.consultas.obterDocumentoFatura(faturaExternaId),
-      this.consultas.obterDadosPagamentoFatura(faturaExternaId),
+      this.consultas.obterDocumentoFatura(contexto),
+      this.consultas.obterDadosPagamentoFatura(contexto),
     ]);
     const documento =
       resultadoDocumento.resultado === 'SUCESSO'
         ? {
             estado: 'DISPONIVEL' as const,
-            item: this.validarDocumento(resultadoDocumento.item, faturaExternaId),
+            item: this.validarDocumento(
+              resultadoDocumento.item,
+              contexto,
+            ),
           }
         : {
             estado: 'INDISPONIVEL' as const,
@@ -91,7 +112,7 @@ export class ServicoFinanceiroErp {
             estado: 'DISPONIVEL' as const,
             item: this.validarDadosPagamento(
               resultadoPagamento.item,
-              faturaExternaId,
+              contexto,
             ),
           }
         : {
@@ -118,6 +139,7 @@ export class ServicoFinanceiroErp {
   private validarFatura(item: FaturaErpNormalizada): FaturaErpNormalizada {
     if (
       !this.chavesConhecidas(item, [
+        'clienteExternoId',
         'contratoExternoId',
         'faturaExternaId',
         'situacao',
@@ -125,29 +147,55 @@ export class ServicoFinanceiroErp {
         'vencimento',
       ]) ||
       !this.textoValido(item.faturaExternaId, 256) ||
+      !this.textoValido(item.clienteExternoId, 256) ||
       !this.textoValido(item.contratoExternoId, 256) ||
       !['ABERTA', 'CANCELADA', 'PAGA', 'VENCIDA'].includes(item.situacao) ||
       !Number.isSafeInteger(item.valorCentavos) ||
       item.valorCentavos < 0 ||
-      !DATA.test(item.vencimento)
+      !this.dataIsoValida(item.vencimento)
     ) {
       throw new ErroRespostaConsultaErpInvalida();
     }
     return { ...item };
   }
 
+  private validarCobertura(
+    cobertura: CoberturaConsultaFaturasErp,
+  ): CoberturaConsultaFaturasErp {
+    if (
+      !this.chavesConhecidas(cobertura, [
+        'quantidadeMeses',
+        'tipo',
+      ]) ||
+      (cobertura.tipo !== 'INTEGRAL' &&
+        (cobertura.tipo !== 'JANELA_LIMITADA' ||
+          !Number.isSafeInteger(cobertura.quantidadeMeses) ||
+          cobertura.quantidadeMeses < 1 ||
+          cobertura.quantidadeMeses > 120)) ||
+      (cobertura.tipo === 'INTEGRAL' &&
+        'quantidadeMeses' in cobertura)
+    ) {
+      throw new ErroRespostaConsultaErpInvalida();
+    }
+    return { ...cobertura };
+  }
+
   private validarDocumento(
     item: DocumentoFaturaErpNormalizado,
-    faturaExternaId: string,
+    contexto: ContextoConsultaFaturaErp,
   ): DocumentoFaturaErpNormalizado {
     if (
       !this.chavesConhecidas(item, [
+        'clienteExternoId',
         'conteudo',
+        'contratoExternoId',
         'faturaExternaId',
         'nomeArquivo',
         'tipoArquivo',
       ]) ||
-      item.faturaExternaId !== faturaExternaId ||
+      item.clienteExternoId !== contexto.clienteExternoId ||
+      item.contratoExternoId !== contexto.contratoExternoId ||
+      item.faturaExternaId !== contexto.faturaExternaId ||
       item.tipoArquivo !== 'PDF' ||
       !this.textoValido(item.nomeArquivo, 255) ||
       !(item.conteudo instanceof Uint8Array) ||
@@ -162,15 +210,19 @@ export class ServicoFinanceiroErp {
 
   private validarDadosPagamento(
     item: DadosPagamentoFaturaErpNormalizados,
-    faturaExternaId: string,
+    contexto: ContextoConsultaFaturaErp,
   ): DadosPagamentoFaturaErpNormalizados {
     if (
       !this.chavesConhecidas(item, [
+        'clienteExternoId',
+        'contratoExternoId',
         'faturaExternaId',
         'linhaDigitavel',
         'pixCopiaCola',
       ]) ||
-      item.faturaExternaId !== faturaExternaId ||
+      item.clienteExternoId !== contexto.clienteExternoId ||
+      item.contratoExternoId !== contexto.contratoExternoId ||
+      item.faturaExternaId !== contexto.faturaExternaId ||
       (item.pixCopiaCola === undefined && item.linhaDigitavel === undefined) ||
       (item.pixCopiaCola !== undefined && !PIX.test(item.pixCopiaCola)) ||
       (item.linhaDigitavel !== undefined && !LINHA_DIGITAVEL.test(item.linhaDigitavel))
@@ -178,6 +230,8 @@ export class ServicoFinanceiroErp {
       throw new ErroRespostaConsultaErpInvalida();
     }
     return {
+      clienteExternoId: item.clienteExternoId,
+      contratoExternoId: item.contratoExternoId,
       faturaExternaId: item.faturaExternaId,
       ...(item.linhaDigitavel === undefined
         ? {}
@@ -192,8 +246,36 @@ export class ServicoFinanceiroErp {
     if (!this.textoValido(valor, 256)) throw new ErroConsultaErpInvalida();
   }
 
+  private validarContextoContrato(contexto: ContextoConsultaContratoErp): void {
+    this.validarIdentificador(contexto.clienteExternoId);
+    this.validarIdentificador(contexto.contratoExternoId);
+  }
+
   private textoValido(valor: string, limite: number): boolean {
     return valor.trim().length > 0 && valor.length <= limite;
+  }
+
+  private dataIsoValida(valor: string): boolean {
+    if (!DATA.test(valor)) return false;
+    const [ano = 0, mes = 0, dia = 0] = valor.split('-').map(Number);
+    if (ano < 1 || mes < 1 || mes > 12 || dia < 1) return false;
+    const bissexto =
+      ano % 4 === 0 && (ano % 100 !== 0 || ano % 400 === 0);
+    const diasNoMes = [
+      31,
+      bissexto ? 29 : 28,
+      31,
+      30,
+      31,
+      30,
+      31,
+      31,
+      30,
+      31,
+      30,
+      31,
+    ];
+    return dia <= diasNoMes[mes - 1]!;
   }
 
   private chavesConhecidas(

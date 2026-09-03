@@ -134,10 +134,11 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 110 | CONCLUÍDA | `high` |
 | 111 | CONCLUÍDA | `high` |
 | 112 | CONCLUÍDA | `xhigh` |
-| 113 | PENDENTE | `xhigh` |
-| 114 | PENDENTE | `xhigh` |
-| 115 | PENDENTE | `high` |
-| 116 | PENDENTE | `xhigh` |
+| 113 | CONCLUÍDA | `xhigh` |
+| 114 | CONCLUÍDA | `high` |
+| 115 | CONCLUÍDA | `high` |
+| 116 | CONCLUÍDA | `high` |
+| 117 | EM ANDAMENTO | `xhigh` |
 
 ### Entregas intermediárias
 
@@ -147,7 +148,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
 
-`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR116 tiveram a engenharia concluída. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. O piloto real permanece desligado até os bloqueios externos da PR115 serem resolvidos; o próximo passo autorizado é o deploy cumulativo em staging.
+`096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR116 foram concluídas, e PR108–PR116 foram publicadas no deploy cumulativo de staging. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. O piloto real permanece desligado pelos bloqueios externos do checklist. A PR117 está em andamento para consultas reais MK estritamente somente leitura, com provider e controles desligados por padrão.
 
 ## 2. Portão zero
 
@@ -745,6 +746,16 @@ Aceite de engenharia concluído em 2 de setembro de 2026: o plano de piloto é v
 
 Concluído em staging em 2 de setembro de 2026 com a release imutável `pr-116-7f77efb`. Os portões locais aprovaram lint, tipos, contratos, testes completos, matriz Expo, dependências, segredos e builds web/API/iOS/Android. O job único encontrou 56 migrations concluídas e nenhuma pendência depois de aplicar `20260902000500_copia_segura_atendimento`; os dois gatilhos de proteção dessa tabela foram confirmados. API, web, proxy, PostgreSQL, Redis e Garage ficaram saudáveis, duas réplicas do worker permaneceram ativas e o smoke privado/público, S3 e o aceite MFA/QR/sessão mobile passaram. No ensaio controlado, Redis e worker não derrubaram a saúde e a API única retornou em aproximadamente 2,3 segundos; os erros de borda durante a interrupção intencional cessaram após a recuperação. As fontes de backup — dump PostgreSQL, snapshot/metadados e blocos de mídia — foram pré-validadas. A cópia/restauração externa continua pendente porque nenhum segundo destino/cofre foi fornecido; a mesma VM não foi apresentada como domínio de falha independente. O piloto continua `DESATIVADO` e produção permanece bloqueada pelo checklist da PR115.
 
+### PR 117 — adaptador MK para consultas reais controladas
+
+Estado atual: `EM ANDAMENTO`. Objetivo: conectar somente a fatia de `ConsultasErp` comprovada por caracterização real sanitizada, sem transformar a presença do provider em autorização de escrita.
+
+Escopo incluído: autenticação geral com credencial temporária somente em memória; cliente por critérios exatos observados; contratos e conexões cadastradas por cliente; faturas com cliente+contrato explícitos e cobertura declarada de um mês; normalização fechada; HTTPS/allowlist; resolução DNS pública fixada à conexão; caminhos exatos de leitura; redirecionamento recusado; prazo absoluto, teto de corpo, limite de concorrência e circuit breaker. `MK_MODO` nasce `DESATIVADO`, e os controles `MK_CONSULTAS_CADASTRAIS_REAIS` e `MK_CONSULTAS_FINANCEIRAS_REAIS` nascem independentes, desativados e com rollout zero. Somente o financeiro possui consumidor de runtime nesta PR; o controle cadastral fica reservado, sem rota.
+
+Fora do escopo: qualquer escrita, protocolo, comentário, encerramento, desbloqueio, ordem de serviço, documento, Pix, segunda via, busca não observada, incremental/snapshot, sessão de acesso, exposição cadastral em rota, uso da resposta parcial pelo Motor de Fluxos e telemetria externa MK. Conexão cadastrada não é sessão. `ADAPTADOR_ERP` permanece sem provider; observabilidade sanitizada é portão para rollout real futuro.
+
+Aceite para concluir: contratos e fixtures sanitizados, testes de falha fechada e isolamento leitura/escrita, guardas de SSRF/segredo, portões completos do monorepo, push rastreável e deploy de staging com provider/controles desligados. As credenciais usadas no ensaio devem ser revogadas/rotacionadas antes de nova caracterização ou ativação. Produção e piloto real permanecem bloqueados. Effort recomendado: `xhigh`, pela fronteira de segurança, contrato financeiro explícito e risco de habilitação acidental de capacidades não observadas.
+
 ## 12. Mobile
 
 | PR | Objetivo | Aceite principal |
@@ -774,6 +785,7 @@ Concluído em staging em 2 de setembro de 2026 com a release imutável `pr-116-7
 | 114 | Testes integrados adversariais e de falha | IDOR, webhook falso, XSS, upload, Redis/worker/VM e corrida offline cobertos; complementa testes de cada PR. |
 | 115 | Checklist de produção | Segredos, WAF, monitor externo, lojas, runbooks, capacidade e decisões do PR 001 conferidos. |
 | 116 | Piloto controlado | Flags desligadas por padrão, usuários/números controlados, métricas, reversão e responsável de plantão. |
+| 117 | Consultas reais MK controladas | Provider somente leitura, contexto explícito, dois controles independentes desligados e nenhuma escrita alcançável. |
 
 ## 14. Marcos
 
@@ -786,5 +798,6 @@ Concluído em staging em 2 de setembro de 2026 com a release imutável `pr-116-7
 | Automação configurável | 069–085 | Versões, executor, nós, resgate, editor e simulador. |
 | Interfaces operacionais | 086–108 | Web e mobile utilizáveis, inclusive offline/reconciliação. |
 | Piloto recuperável | 109–116 | Cópia segura, operação, deploy, backup, robustez e liberação gradual. |
+| ERP real controlado | 117 | Consultas MK caracterizadas entram por porta somente leitura; capacidades não observadas e produção continuam bloqueadas. |
 
 O roadmap é uma proposta de execução, não autorização para preencher lacunas externas. Se Meta, MK ou o provedor de sessão divergirem, atualize o adaptador, as fixtures e a documentação; não contamine o domínio com o contrato do fornecedor.

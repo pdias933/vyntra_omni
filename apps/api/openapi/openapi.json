@@ -4230,7 +4230,8 @@
             "type": "string",
             "enum": [
               "ATIVA",
-              "NAO_CONFIGURADA"
+              "NAO_CONFIGURADA",
+              "PARCIAL"
             ]
           },
           "detalhe": {
@@ -5508,6 +5509,25 @@
           "vinculos"
         ]
       },
+      "FaturaFinanceiraContatoWebDto": {
+        "type": "object",
+        "properties": {
+          "situacao": {
+            "type": "string"
+          },
+          "valor_centavos": {
+            "type": "number"
+          },
+          "vencimento": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "situacao",
+          "valor_centavos",
+          "vencimento"
+        ]
+      },
       "ResultadoFinanceiroContatoWebDto": {
         "type": "object",
         "properties": {
@@ -5518,27 +5538,24 @@
               "TEMPO_REAL"
             ]
           },
+          "cobertura": {
+            "type": "string",
+            "enum": [
+              "INTEGRAL",
+              "JANELA_LIMITADA"
+            ]
+          },
+          "quantidade_meses": {
+            "type": "number",
+            "minimum": 1
+          },
           "codigo": {
             "type": "string"
           },
           "faturas": {
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "referencia": {
-                  "type": "string"
-                },
-                "situacao": {
-                  "type": "string"
-                },
-                "valor_centavos": {
-                  "type": "number"
-                },
-                "vencimento": {
-                  "type": "string"
-                }
-              }
+              "$ref": "#/components/schemas/FaturaFinanceiraContatoWebDto"
             }
           }
         },

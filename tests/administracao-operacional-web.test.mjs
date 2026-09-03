@@ -21,5 +21,6 @@ test('web usa SDK gerado e confirma inativação de fila', async () => {
   assert.match(tela, /criarFilaAdministracaoOperacional/u);
   assert.match(tela, /Confirmar inativação/u);
   assert.match(tela, /definirOverrideCalendarioAdministracaoOperacional/u);
+  assert.match(tela, /estado === 'PARCIAL' \? 'Parcial'/u);
   assert.doesNotMatch(tela, /fetch\(/u);
 });

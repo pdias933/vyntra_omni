@@ -42,7 +42,10 @@ test('busca e detalhes expõem somente modelos internos normalizados', async () 
   });
   const cliente = await servico.consultarCliente('cliente-sintetico-060');
   const contratos = await servico.listarContratos('cliente-sintetico-060');
-  const contrato = await servico.consultarContrato('contrato-sintetico-060');
+  const contrato = await servico.consultarContrato({
+    clienteExternoId: 'cliente-sintetico-060',
+    contratoExternoId: 'contrato-sintetico-060',
+  });
 
   assert.equal(busca.resultado, 'SUCESSO');
   assert.equal(cliente.resultado, 'SUCESSO');
@@ -62,7 +65,10 @@ test('consulta exata diferencia ausência de indisponibilidade', async () => {
     resultado: 'NAO_ENCONTRADO',
   });
   adaptador.definirConsultasDisponiveis(false);
-  assert.deepEqual(await servico.consultarContrato('contrato-sintetico-060'), {
+  assert.deepEqual(await servico.consultarContrato({
+    clienteExternoId: 'cliente-sintetico-060',
+    contratoExternoId: 'contrato-sintetico-060',
+  }), {
     codigo: 'ERP_INDISPONIVEL',
     resultado: 'INDISPONIVEL',
   });

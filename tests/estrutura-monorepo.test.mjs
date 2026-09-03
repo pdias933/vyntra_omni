@@ -135,7 +135,7 @@ test('acompanha estado e Effort de todas as PRs do roadmap', async () => {
 
   assert.deepEqual(
     linhas.map(({ numero }) => numero),
-    Array.from({ length: 116 }, (_, indice) =>
+    Array.from({ length: 117 }, (_, indice) =>
       String(indice + 1).padStart(3, '0'),
     ),
   );

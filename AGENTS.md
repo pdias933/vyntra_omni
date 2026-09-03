@@ -193,7 +193,12 @@ Não acrescente permissões transversais, dado sensível ou exportação a papel
 - Antes de congelar adapter, usar contrato oficial vigente e fixtures sanitizadas de chamadas reais controladas.
 - Classificar erro externo em código interno estável.
 - Aplicar timeout, circuit breaker, limite de concorrência e sanitização no adapter.
-- `AdaptadorMkSolutions` implementa `AdaptadorErp`; nome MK não aparece no domínio.
+- O adapter MK completo, quando caracterizado, implementa `AdaptadorErp`; uma fatia real somente de leitura implementa apenas `ConsultasErp` sob `CONSULTAS_ERP`. Nunca registre a fatia parcial como `ADAPTADOR_ERP`; nome MK não aparece no domínio.
+- Consulta MK real exige `MK_MODO=SOMENTE_LEITURA` e o controle PostgreSQL correspondente (`MK_CONSULTAS_CADASTRAIS_REAIS` ou `MK_CONSULTAS_FINANCEIRAS_REAIS`). Todos nascem desligados; `CARACTERIZACAO` nunca injeta provider nos casos de uso.
+- Cliente e contrato são contexto explícito obrigatório em consulta de contrato/fatura. Não complete relação por cache, primeiro resultado ou inferência.
+- A consulta financeira MK declara cobertura limitada a um mês. Propague a cobertura até a UI, não conclua ausência de débito fora dela e não permita que o Motor de Fluxos a trate como integral.
+- `MK_CONSULTAS_CADASTRAIS_REAIS` fica reservado e sem consumidor de runtime na PR 117. Não exponha identificadores externos em rota para “usar” o controle; crie primeiro um caso de uso correlacionado por UUIDs internos e revise o DTO.
+- Transporte MK usa apenas caminhos exatos de leitura, prazo absoluto e DNS público fixado à conexão. Erro externo não caracterizado nunca justifica repetição ou reautenticação automática.
 - `AccessSessionAdapter`/`AdaptadorSessaoAcesso` é separado do ERP.
 - Não afirmar sessão `ATIVA` a partir de conexão apenas cadastrada no ERP.
 - A porta de sessão de acesso nasce sob `SESSAO_ACESSO=DESATIVADO`; simulador e presença de fixture nunca habilitam o recurso nem substituem uma fonte confiável.

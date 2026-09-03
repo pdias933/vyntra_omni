@@ -257,6 +257,7 @@ a {
 .grade-integracoes article { border-right: 1px solid #edf0ee; }
 .grade-integracoes i { width: 9px; height: 9px; border-radius: 50%; background: #d89b56; box-shadow: 0 0 0 4px #fff3e4; }
 .grade-integracoes i.integracao-ativa { background: #28a05a; box-shadow: 0 0 0 4px #e9f7ee; }
+.grade-integracoes i.integracao-parcial { background: #d89b56; box-shadow: 0 0 0 4px #fff3e4; }
 .grade-integracoes span { color: #77837b; font-size: 7px; }
 .painel-contas > p { padding: 18px; color: #7b877f; font-size: 9px; }
 .nova-fila { display: flex; gap: 7px; padding: 11px 15px; border-bottom: 1px solid #edf0ee; }

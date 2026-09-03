@@ -283,6 +283,7 @@ test('contexto financeiro do fluxo exige contrato e vínculo automatizável exat
     ),
     {
       atendimentoId: ids.atendimento,
+      clienteExternoId: alvo.clienteExternoId,
       contaWhatsAppId: ids.contaWhatsApp,
       contatoId: ids.contato,
       contratoExternoId: alvo.contratoExternoId,

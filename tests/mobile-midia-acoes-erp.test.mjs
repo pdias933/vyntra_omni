@@ -60,6 +60,8 @@ test('ações ERP expõem origem, prévia, confirmação e resultado incerto', a
     'apps/mobile/src/componentes/FolhaAcoesSistemaMobile.tsx',
   );
   assert.match(folha, /Dados do ERP em tempo real/u);
+  assert.match(folha, /período consultado/u);
+  assert.doesNotMatch(folha, /fatura\.referencia/u);
   assert.match(folha, /ERP indisponível — nenhum snapshot usado/u);
   assert.match(folha, /Revise antes de confirmar/u);
   assert.match(folha, /Confirmar e executar/u);

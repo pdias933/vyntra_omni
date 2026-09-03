@@ -244,6 +244,7 @@ services:
       DADOS_PERMITIDOS: sinteticos_ou_sanitizados
       ENDERECO_HTTP: 0.0.0.0
       MFA_CHAVE_PROTECAO_FILE: /run/secrets/chave_protecao_mfa
+      MK_MODO: DESATIVADO
       NODE_ENV: production
       ORIGENS_WEB_PERMITIDAS: https://omni.up100.com.br
       PORTA_HTTP: "3000"

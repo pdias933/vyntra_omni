@@ -2,7 +2,9 @@ import type { ConsultasErp } from './adaptador-erp.js';
 import { ErroConsultaErpInvalida } from './erros-erp.js';
 import type {
   ClienteErpNormalizado,
+  ConexaoCadastradaErpNormalizada,
   ContratoErpNormalizado,
+  ContextoConsultaContratoErp,
   CriteriosLocalizacaoClienteErp,
   ResultadoConsultaErp,
   ResultadoConsultaUnicaErp,
@@ -68,16 +70,36 @@ export class ServicoConsultasClienteContratoErp {
   }
 
   public async consultarContrato(
-    contratoExternoId: string,
+    contexto: ContextoConsultaContratoErp,
   ): Promise<ResultadoConsultaUnicaErp<ContratoErpNormalizado>> {
-    this.validarIdentificador(contratoExternoId);
-    const resultado = await this.consultas.consultarContrato(contratoExternoId);
+    this.validarIdentificador(contexto.clienteExternoId);
+    this.validarIdentificador(contexto.contratoExternoId);
+    const resultado = await this.consultas.consultarContrato(contexto);
     if (resultado.resultado !== 'SUCESSO') return { ...resultado };
     const item = this.validarContrato(resultado.item);
-    if (item.contratoExternoId !== contratoExternoId) {
+    if (
+      item.clienteExternoId !== contexto.clienteExternoId ||
+      item.contratoExternoId !== contexto.contratoExternoId
+    ) {
       throw new ErroRespostaConsultaErpInvalida();
     }
     return { item, origem: 'TEMPO_REAL', resultado: 'SUCESSO' };
+  }
+
+  public async listarConexoes(
+    clienteExternoId: string,
+  ): Promise<ResultadoConsultaErp<ConexaoCadastradaErpNormalizada>> {
+    this.validarIdentificador(clienteExternoId);
+    const resultado = await this.consultas.listarConexoes(clienteExternoId);
+    if (resultado.resultado !== 'SUCESSO') return { ...resultado };
+    const itens = resultado.itens.map((item) => this.validarConexao(item));
+    if (
+      itens.length > LIMITE_RESULTADOS_BUSCA ||
+      itens.some((item) => item.clienteExternoId !== clienteExternoId)
+    ) {
+      throw new ErroRespostaConsultaErpInvalida();
+    }
+    return { itens, origem: 'TEMPO_REAL', resultado: 'SUCESSO' };
   }
 
   private validarCriterios(criterios: CriteriosLocalizacaoClienteErp): void {
@@ -164,6 +186,34 @@ export class ServicoConsultasClienteContratoErp {
       ...(item.servico === undefined ? {} : { servico: item.servico }),
       situacao: item.situacao,
     };
+  }
+
+  private validarConexao(
+    item: ConexaoCadastradaErpNormalizada,
+  ): ConexaoCadastradaErpNormalizada {
+    if (
+      !this.chavesConhecidas(item, [
+        'clienteExternoId',
+        'conexaoExternaId',
+        'contratoExternoId',
+        'enderecoResumido',
+        'reduzida',
+        'situacaoCadastro',
+        'tecnologia',
+      ]) ||
+      !this.textoValido(item.clienteExternoId, 256) ||
+      !this.textoValido(item.conexaoExternaId, 256) ||
+      !this.textoValido(item.contratoExternoId, 256) ||
+      !['BLOQUEADA', 'DESCONHECIDA', 'LIBERADA'].includes(
+        item.situacaoCadastro,
+      ) ||
+      (item.reduzida !== undefined && typeof item.reduzida !== 'boolean') ||
+      !this.opcionalValido(item.enderecoResumido, 1_000) ||
+      !this.opcionalValido(item.tecnologia, 256)
+    ) {
+      throw new ErroRespostaConsultaErpInvalida();
+    }
+    return { ...item };
   }
 
   private chavesConhecidas(

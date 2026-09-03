@@ -8,6 +8,7 @@ import { ModuloMensagens } from '../mensagens/modulo-mensagens.js';
 import { ModuloMidias } from '../midias/modulo-midias.js';
 import { ModuloOrdensServico } from '../ordens-servico/modulo-ordens-servico.js';
 import { ModuloPersistencia } from '../persistencia/modulo-persistencia.js';
+import { ModuloPoliticaReleases } from '../releases/modulo-politica-releases.js';
 import { ModuloSnapshotsCliente } from '../snapshots-cliente/modulo-snapshots-cliente.js';
 import { ControladorConsoleWeb } from './controlador-console-web.js';
 import { ServicoBuscaGaleriaWeb } from './servico-busca-galeria-web.js';
@@ -28,6 +29,7 @@ import { ServicoTimelineWeb } from './servico-timeline-web.js';
     ModuloMidias,
     ModuloOrdensServico,
     ModuloPersistencia,
+    ModuloPoliticaReleases,
     ModuloSnapshotsCliente,
   ],
   providers: [ServicoBuscaGaleriaWeb, ServicoComposerWeb, ServicoContatoAcoesWeb, ServicoListaAtendimentosWeb, ServicoTimelineWeb],

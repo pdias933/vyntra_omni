@@ -89,10 +89,16 @@ export class ServicoReleases {
 
   public async obterControlesUsuario(
     usuarioId: string,
+    filaId?: string,
+    transacao?: TransacaoPrisma,
   ): Promise<Readonly<Record<string, boolean>>> {
     this.validarUuid(usuarioId);
+    if (filaId !== undefined) this.validarUuid(filaId);
     const contexto =
-      await this.repositorio.obterContextoControlesUsuario(usuarioId);
+      await this.repositorio.obterContextoControlesUsuario(
+        usuarioId,
+        transacao,
+      );
     const controlesRecurso: Record<string, boolean> = {};
     for (const controle of contexto?.controles ?? []) {
       controlesRecurso[controle.codigo] =
@@ -104,7 +110,9 @@ export class ServicoReleases {
         ((controle.liberarAdministradores &&
           contexto.papelBase === 'ADMINISTRADOR') ||
           controle.usuarioAlvo ||
-          controle.filaAlvo ||
+          (filaId === undefined
+            ? controle.filaAlvo
+            : controle.filasAlvo.includes(filaId)) ||
           this.estaNoPercentual(
             controle.codigo,
             usuarioId,

@@ -50,6 +50,7 @@ Instalação (uma empresa)
 | `VinculoCliente` | Associação entre um contato e um cliente do ERP; pode ser verificada, manual ou temporária. |
 | `ContextoAtendimento` | Cliente e contrato selecionados para as ações daquele atendimento. |
 | `SnapshotCliente` | Modelo de leitura persistente de contingência, sincronizado do ERP e armazenado no PostgreSQL. |
+| `ConexaoCadastradaErp` | Projeção minimizada de um cadastro técnico associado a cliente e contrato no ERP; não representa sessão de acesso nem presença online. |
 | `Fila` | Escopo operacional configurável no qual atendimentos aguardam resgate. |
 | `Atribuição` | Combinação atual de fila, responsável, modo e `versao_atribuicao`. |
 | `Resgate` | Operação atômica que transforma um pendente ou automação em atendimento de um humano. |
@@ -633,6 +634,10 @@ SNAPSHOT
 
 `SNAPSHOT` pode sustentar identificação, nome, documento mascarado, vínculos, contratos conhecidos, plano, velocidade e endereços. Fatura atual, Pix, financeiro atual, desbloqueio, protocolo, OS e qualquer escrita exigem `TEMPO_REAL`.
 
+Desde a PR 117, consulta real de contrato ou fatura recebe cliente e contrato explicitamente; detalhe de fatura recebe também sua referência exata. A associação devolvida pelo ERP precisa coincidir com todo o contexto solicitado. Cache, ordem da lista ou escolha do primeiro resultado não completam contexto ausente. Divergência falha fechada e não cai para snapshot.
+
+`ConexaoCadastradaErp` aceita somente cliente, contrato, referência técnica, situação cadastral normalizada e atributos mínimos permitidos. `LIBERADA`, `BLOQUEADA` ou `DESCONHECIDA` descrevem o cadastro observado; nenhum desses estados equivale a sessão `ATIVA`/`INATIVA`. Sessão e desconexão continuam exclusivas de `AdaptadorSessaoAcesso`, que requer fonte confiável própria.
+
 ### 12.1 Elegibilidade de desbloqueio de confiança
 
 A verificação é leitura e não produz efeito externo. Ela exige atendimento aberto, fila autorizada, contrato ativo exatamente igual ao contexto atual e permissão `VERIFICAR_DESBLOQUEIO_CONFIANCA`. Depois da autorização local, uma nova consulta ao ERP precisa responder com origem `TEMPO_REAL`; indisponibilidade ou capacidade ausente não cai para snapshot.
@@ -793,6 +798,8 @@ Regras:
 18. Eventos só são distribuídos depois do commit.
 19. Retirar permissão invalida acesso futuro e cache local correspondente.
 20. Histórico e auditoria não são apagados por encerramento, expiração de janela, transferência, deploy ou nova tentativa.
+21. Consulta de contrato ou fatura nunca infere cliente/contrato por cache, ordem externa ou primeiro resultado.
+22. Conexão cadastrada no ERP nunca prova sessão de acesso ativa nem autoriza desconexão.
 
 ## 15. Constraints e testes de domínio mínimos
 

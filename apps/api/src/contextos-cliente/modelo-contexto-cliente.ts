@@ -23,6 +23,7 @@ export interface ContextoAtendimentoPersistido extends AlvoContextoAtendimento {
 
 export interface ContextoFinanceiroFluxo {
   readonly atendimentoId: string;
+  readonly clienteExternoId: string;
   readonly contaWhatsAppId: string;
   readonly contatoId: string;
   readonly contratoExternoId: string;
