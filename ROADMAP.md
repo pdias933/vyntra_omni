@@ -138,7 +138,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 114 | CONCLUÍDA | `high` |
 | 115 | CONCLUÍDA | `high` |
 | 116 | CONCLUÍDA | `high` |
-| 117 | EM ANDAMENTO | `xhigh` |
+| 117 | CONCLUÍDA | `xhigh` |
 
 ### Entregas intermediárias
 
@@ -748,13 +748,15 @@ Concluído em staging em 2 de setembro de 2026 com a release imutável `pr-116-7
 
 ### PR 117 — adaptador MK para consultas reais controladas
 
-Estado atual: `EM ANDAMENTO`. Objetivo: conectar somente a fatia de `ConsultasErp` comprovada por caracterização real sanitizada, sem transformar a presença do provider em autorização de escrita.
+Aceite concluído em 2 de setembro de 2026 no commit `0469a0e` e publicado em staging pela release imutável `pr-117-0469a0e`. Foi conectada somente a fatia de `ConsultasErp` comprovada por caracterização real sanitizada, sem transformar a presença do provedor em autorização de escrita.
 
 Escopo incluído: autenticação geral com credencial temporária somente em memória; cliente por critérios exatos observados; contratos e conexões cadastradas por cliente; faturas com cliente+contrato explícitos e cobertura declarada de um mês; normalização fechada; HTTPS/allowlist; resolução DNS pública fixada à conexão; caminhos exatos de leitura; redirecionamento recusado; prazo absoluto, teto de corpo, limite de concorrência e circuit breaker. `MK_MODO` nasce `DESATIVADO`, e os controles `MK_CONSULTAS_CADASTRAIS_REAIS` e `MK_CONSULTAS_FINANCEIRAS_REAIS` nascem independentes, desativados e com rollout zero. Somente o financeiro possui consumidor de runtime nesta PR; o controle cadastral fica reservado, sem rota.
 
 Fora do escopo: qualquer escrita, protocolo, comentário, encerramento, desbloqueio, ordem de serviço, documento, Pix, segunda via, busca não observada, incremental/snapshot, sessão de acesso, exposição cadastral em rota, uso da resposta parcial pelo Motor de Fluxos e telemetria externa MK. Conexão cadastrada não é sessão. `ADAPTADOR_ERP` permanece sem provider; observabilidade sanitizada é portão para rollout real futuro.
 
-Aceite para concluir: contratos e fixtures sanitizados, testes de falha fechada e isolamento leitura/escrita, guardas de SSRF/segredo, portões completos do monorepo, push rastreável e deploy de staging com provider/controles desligados. As credenciais usadas no ensaio devem ser revogadas/rotacionadas antes de nova caracterização ou ativação. Produção e piloto real permanecem bloqueados. Effort recomendado: `xhigh`, pela fronteira de segurança, contrato financeiro explícito e risco de habilitação acidental de capacidades não observadas.
+O aceite aprovou contratos e fixtures sanitizados, testes de falha fechada e isolamento leitura/escrita, guardas de SSRF/segredo, portões completos do monorepo, revisão independente e push rastreável. Lint, tipos, testes completos e adversariais, contratos, matriz Expo, auditoria de dependências, Gitleaks 8.30.0 e builds web/API/iOS/Android passaram antes da publicação. Em staging, o job único aplicou a migration `20260902001000_criar_controles_consultas_mk_desativados`, totalizando 57 migrations válidas. API, web, proxy e duas réplicas do worker subiram com a tag da release e passaram o smoke privado/público, S3 e prontidão. O ambiente preserva `MK_MODO=DESATIVADO`, não possui credencial MK montada e aceita somente dados sintéticos ou sanitizados; ambos os controles permanecem desativados, com rollout zero e sem liberações para usuário ou fila.
+
+As credenciais usadas no ensaio devem ser revogadas/rotacionadas antes de nova caracterização ou ativação. Observabilidade sanitizada, teste TLS local ponta a ponta e governo dos limites retornados pela autenticação continuam portões explícitos para qualquer uso real. Produção e piloto real permanecem bloqueados. Effort recomendado e confirmado: `xhigh`, pela fronteira de segurança, contrato financeiro explícito e risco de habilitação acidental de capacidades não observadas.
 
 ## 12. Mobile
 
