@@ -59,6 +59,8 @@ Não adicionar Next.js como segundo backend, Elasticsearch/OpenSearch, Kubernete
 
 ### 2.1 Fronteiras de apresentação
 
+O [contrato de temas](design/TEMAS.md) usa `packages/tema`, pacote interno puro, sem dependência externa ou regra de negócio. Mobile observa a preferência nativa com provedor React e estilos memorizados por paleta; web aplica variáveis CSS por `data-tema`, inicializadas por script externo síncrono compatível com CSP. Preferência não integra sessão, SQLCipher, autorização, eventos ou backend. Troca não remonta clientes nem reinicia transportes.
+
 Mobile e web compartilham contratos, identidade, semântica de estados e linguagem visual, mas não uma composição de tela comum.
 
 - Mobile é uma experiência nativa de mensageria: um foco principal por vez, gestos naturais, bottom sheets, haptics, skeletons e transições fluidas.

@@ -20,4 +20,4 @@ Quando um elemento desenhado nessas imagens conflitar com a especificação text
 
 ## O que ainda não está congelado
 
-Paleta final, tipografia, escala, grid, raios, sombras, dimensões, posição exata, tema escuro e duração das animações continuam sujeitos a protótipo e validação. Alterá-los não pode enfraquecer a hierarquia, a limpeza, a semântica de estado ou os comportamentos definidos em `PRODUCT.md` e `MOBILE.md`.
+Tema claro/escuro e sua paleta semântica seguem agora [TEMAS.md](../TEMAS.md), aprovado para implementação nas PR118–PR124. As imagens em `../propostas-modo-noturno/` são conceituais. Tipografia, escala, grid, raios, dimensões e posição exata continuam sujeitos a ajustes finos que preservem hierarquia, limpeza, semântica e comportamentos definidos em `PRODUCT.md` e `MOBILE.md`.

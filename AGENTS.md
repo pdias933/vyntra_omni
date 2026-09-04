@@ -79,6 +79,8 @@ Não propague DTOs/nomenclatura Meta ou MK para domínio, UI ou Motor de Fluxos.
 
 ### 4.1 Guardas obrigatórias de experiência
 
+- Aparência segue `design/TEMAS.md` e `packages/tema`: padrão Sistema, escolhas Claro/Escuro persistentes, cores semânticas e contraste validado. Não adicionar cores literais em componentes. Exceções ópticas de QR/mídia usam tokens próprios. Trocar tema não remonta navegação/timeline/composer nem altera autorização ou sincronização. Relate teste físico separadamente de exportação nativa.
+
 - Mobile deve parecer mensageria nativa premium, nunca CRM web comprimido.
 - Web compartilha identidade e semântica, mas possui composição desktop própria; não ampliar literalmente o app.
 - Estado saudável não mostra atualização, horário de sync, cursor ou infraestrutura.

@@ -139,6 +139,13 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 115 | CONCLUÍDA | `high` |
 | 116 | CONCLUÍDA | `high` |
 | 117 | CONCLUÍDA | `xhigh` |
+| 118 | PRONTA | `high` |
+| 119 | PENDENTE | `high` |
+| 120 | PENDENTE | `xhigh` |
+| 121 | PENDENTE | `high` |
+| 122 | PENDENTE | `xhigh` |
+| 123 | PENDENTE | `xhigh` |
+| 124 | PENDENTE | `high` |
 
 ### Entregas intermediárias
 
@@ -797,6 +804,22 @@ Lint, tipos, testes completos e adversariais, contratos, matriz Expo, auditoria 
 | 117A | Correções pós-caracterização MK | Tokens por serviço mínimo, faturas abertas/pagas seguras e staging ainda desligado. |
 
 ## 14. Marcos
+
+### Temas claro e escuro — PR118–PR124
+
+Execução autorizada em 4 de setembro de 2026, baseada na PR117A publicada. A principal ainda contém somente a fundação documental; as entregas seguem em branches dependentes, sem presumir merge.
+
+| PR | Objetivo | Evidência esperada |
+|---:|---|---|
+| 118 | Contrato e tokens compartilhados | Especificação, paletas tipadas, contrastes AA e documentação. |
+| 119 | Motor mobile | Preferência local, sistema, navegação e barras reativas. |
+| 120 | Telas operacionais mobile | Entrada, lista, conversa, detalhes, composer e folhas tematizados. |
+| 121 | Motor web | Inicialização sem clarão, sistema e preferência entre abas. |
+| 122 | Telas operacionais web | Login, lateral, lista, conversa, detalhes e modais tematizados. |
+| 123 | Superfícies secundárias | Administração, saúde, relatórios, editor, QR, diagnóstico e perfil. |
+| 124 | Regressão e homologação | Portões completos, navegador real, exportação Expo e registro separado de aceite físico/staging. |
+
+PR118: contrato criado em `design/TEMAS.md`; pacote interno `@vyntra/tema` sem nova dependência externa. Testes de contraste e resolução da preferência, lint e tipos do pacote aprovados. Verificações cumulativas e publicação são registradas ao fechar a série.
 
 | Marco | PRs | Resultado |
 |---|---:|---|

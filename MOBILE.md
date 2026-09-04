@@ -20,6 +20,8 @@ Elas definem linguagem, hierarquia e comportamento, mas não devem ser copiadas 
 
 ## 2. Princípios de experiência
 
+A aparência segue [TEMAS.md](design/TEMAS.md). `Sistema`, `Claro` e `Escuro` usam tokens semânticos compartilhados. Preferência é local e independente da sessão; navegação, status bar, teclado, folhas, bloqueios e carregamentos acompanham o tema sem remontar a conversa. O splash nativo usa o tema do sistema; a escolha salva no app entra ao carregar a preferência. Teste em aparelho físico é registrado separadamente da exportação Expo.
+
 - conversa é a tela central;
 - lista se atualiza e reordena automaticamente;
 - infraestrutura normal fica invisível;

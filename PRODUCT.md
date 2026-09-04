@@ -73,6 +73,8 @@ Regras de linguagem:
 
 ### 3.4 Revelação progressiva
 
+Temas claro e escuro seguem o [contrato de aparência](design/TEMAS.md): `Sistema` por padrão, escolha persistente no navegador/aparelho e troca imediata sem perder foco, posição ou rascunho. Aparência fica no login e Perfil/lateral, sem ocupar a conversa. Notas, formulários e estados mantêm significado nos dois temas.
+
 A conversa contém cabeçalho e contexto essenciais, indicador/countdown da janela Meta quando relevante, timeline e composer. Não duplica atalhos de Cliente, Contrato, Histórico, Mídias ou Notas abaixo da janela Meta.
 
 Tocar no nome/avatar abre Detalhes do Contato sem perder posição da timeline ou rascunho. Essa tela concentra, conforme permissão, identidade WhatsApp, cliente ERP vinculado, CPF/CNPJ mascarado, contexto e troca de cliente/contrato ativo, contratos/serviços, planos, endereços, situação financeira resumida, vínculos, tags, mídias/documentos/links, notas e histórico. Contato não identificado oferece `Vincular a cliente`.
