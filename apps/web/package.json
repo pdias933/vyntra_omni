@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@vyntra/api-client": "workspace:*",
+    "@vyntra/tema": "workspace:*",
     "@xyflow/react": "12.11.6",
     "qrcode.react": "4.2.0",
     "react": "19.2.3",

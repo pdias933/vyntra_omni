@@ -14,6 +14,7 @@ import { ListaAtendimentosWeb } from './atendimentos/ListaAtendimentosWeb';
 import { SaudeReleasesWeb } from './saude/SaudeReleasesWeb';
 import { RelatoriosOperacionaisWeb } from './relatorios/RelatoriosOperacionaisWeb';
 import { obterCsrf } from './seguranca-web';
+import { SeletorAparenciaWeb } from '../aparencia/SeletorAparenciaWeb';
 
 const PareamentoCelularWeb = lazy(async () => {
   const modulo = await import('./PareamentoCelularWeb');
@@ -187,6 +188,7 @@ export function ShellWeb() {
           </GrupoNavegacao>
         </nav>
 
+        <SeletorAparenciaWeb />
         <div className="perfil-shell">
           <span aria-hidden="true">{sessao.nome_exibicao.slice(0, 1).toLocaleUpperCase('pt-BR')}</span>
           <div>

@@ -9,6 +9,8 @@
   },
   "packageManager": "pnpm@11.24.0",
   "scripts": {
+    "gerar:temas": "node scripts/gerar-temas-web.mjs",
+    "verificar:temas": "node scripts/gerar-temas-web.mjs --verificar",
     "ambiente:estado": "node scripts/ambiente-local.mjs estado",
     "ambiente:configuracao-mobile": "node scripts/ambiente-local.mjs configuracao-mobile",
     "ambiente:parar": "node scripts/ambiente-local.mjs parar",

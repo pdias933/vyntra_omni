@@ -205,6 +205,9 @@ importers:
       '@vyntra/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@vyntra/tema':
+        specifier: workspace:*
+        version: link:../../packages/tema
       '@xyflow/react':
         specifier: 12.11.6
         version: 12.11.6(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)

@@ -1,19 +1,27 @@
 :root {
-  color: #18201c;
-  background: #eef2ef;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
   font-family:
     Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --verde: #118847;
-  --verde-forte: #08743a;
-  --verde-suave: #e8f6ed;
-  --texto: #17201b;
-  --texto-secundario: #65716a;
-  --linha: #dfe5e1;
-  --painel: rgba(255, 255, 255, 0.96);
-  --sombra: 0 18px 50px rgba(20, 38, 28, 0.08);
+  --verde: var(--cor-acao);
+  --verde-forte: var(--cor-acaoPressionada);
+  --verde-suave: var(--cor-acaoClara);
+  --texto: var(--cor-texto);
+  --texto-secundario: var(--cor-textoSecundario);
+  --linha: var(--cor-borda);
+  --painel: var(--cor-superficie);
+  --sombra: 0 18px 50px var(--cor-sombra);
 }
+
+.aparencia-web { padding: 12px 0; color: var(--cor-textoSecundario); }
+.aparencia-web label { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; }
+.aparencia-web select { min-height: 36px; padding: 5px 10px; border: 1px solid var(--cor-bordaForte); border-radius: 9px; color: var(--cor-texto); background: var(--cor-superficie); }
+.aparencia-web small { display: block; margin-top: 8px; color: var(--cor-alerta); }
+.shell-web__lateral .aparencia-web { color: var(--cor-textoLateralSecundario); }
+.shell-web__lateral .aparencia-web select { background: var(--cor-fundoLateral); color: var(--cor-textoLateral); border-color: var(--cor-bordaLateral); }
+:where(button, a, input, textarea, select, [tabindex]):focus-visible { outline: 2px solid var(--cor-foco); outline-offset: 3px; }
 
 * {
   box-sizing: border-box;
