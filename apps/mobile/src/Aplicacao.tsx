@@ -5,7 +5,7 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useReducedMotion } from 'react-native-reanimated';
@@ -34,7 +34,8 @@ import {
 } from './navegacao/NavegacaoPrincipal';
 import { ServicoSincronizacaoAplicativo } from './sincronizacao/servico-sincronizacao-aplicativo';
 import type { EstadoSincronizacaoMobile } from './sincronizacao/motor-sincronizacao-mobile';
-import { CORES } from './tema';
+import { useTema } from './aparencia/contexto-tema';
+import type { CoresTema, ModoTema } from '@vyntra/tema';
 import { TelaBloqueio } from './telas/TelaBloqueio';
 import { TelaCarregamento } from './telas/TelaCarregamento';
 import { TelaEntrada, type RotasEntrada } from './telas/TelaEntrada';
@@ -146,8 +147,8 @@ function falhaPermiteAcessoOffline(erro: unknown): boolean {
   );
 }
 
-const TEMA_NAVEGACAO: Theme = {
-  dark: false,
+const criarTemaNavegacao = (CORES: CoresTema, modo: ModoTema): Theme => ({
+  dark: modo === 'escuro',
   colors: {
     background: CORES.fundo,
     border: CORES.borda,
@@ -162,9 +163,11 @@ const TEMA_NAVEGACAO: Theme = {
     medium: { fontFamily: 'System', fontWeight: '600' },
     regular: { fontFamily: 'System', fontWeight: '400' },
   },
-};
+});
 
 export function Aplicacao() {
+  const { cores, modo } = useTema();
+  const temaNavegacao = useMemo(() => criarTemaNavegacao(cores, modo), [cores, modo]);
   const reduzirMovimento = useReducedMotion();
   const [estado, definirEstado] = useState<EstadoAplicativo>('CARREGANDO');
   const [estadoPolitica, definirEstadoPolitica] =
@@ -501,7 +504,7 @@ export function Aplicacao() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <NavigationContainer ref={referenciaNavegacao} theme={TEMA_NAVEGACAO}>
+        <NavigationContainer ref={referenciaNavegacao} theme={temaNavegacao}>
           {estadoPolitica === 'VERIFICANDO' ? (
             <TelaCarregamento />
           ) : estadoPolitica === 'FALHA' ? (
@@ -584,7 +587,7 @@ export function Aplicacao() {
             </NavegacaoEntrada.Navigator>
           )}
         </NavigationContainer>
-        <StatusBar style="dark" />
+        <StatusBar style={modo === 'escuro' ? 'light' : 'dark'} />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

@@ -28,7 +28,7 @@
     ],
     "platforms": ["ios", "android"],
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "br.com.up100.vyntraomni",
       "supportsTablet": false
