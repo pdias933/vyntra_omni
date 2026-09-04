@@ -345,6 +345,7 @@ function TelaLogin({ aoAutenticar }: { readonly aoAutenticar: (sessao: SessaoWeb
       </section>
       <section className="login-formulario">
         <form onSubmit={(evento) => void entrar(evento)}>
+          <SeletorAparenciaWeb />
           <span className="login-formulario__selo">Acesso seguro</span>
           <h2>{mfaNecessario ? 'Confirme seu acesso' : 'Boas-vindas'}</h2>
           <p>{mfaNecessario ? 'Digite o código do autenticador ou um código de recuperação.' : 'Entre com suas credenciais da empresa.'}</p>
