@@ -1,6 +1,8 @@
+import type { CoresTema } from '@vyntra/tema';
+import { useTema, useEstilos } from '../aparencia/contexto-tema';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 
-import { CORES, RAIOS } from '../tema';
+import { RAIOS } from '../tema';
 
 export function BotaoPrimario({
   carregando = false,
@@ -15,6 +17,8 @@ export function BotaoPrimario({
   readonly texto: string;
   readonly variante?: 'primario' | 'secundario';
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const indisponivel = carregando || desabilitado;
   return (
     <Pressable
@@ -51,7 +55,7 @@ export function BotaoPrimario({
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   botao: {
     alignItems: 'center',
     backgroundColor: CORES.acao,

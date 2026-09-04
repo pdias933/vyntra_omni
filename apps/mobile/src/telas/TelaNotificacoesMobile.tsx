@@ -1,3 +1,5 @@
+import type { CoresTema } from '@vyntra/tema';
+import { useTema, useEstilos } from '../aparencia/contexto-tema';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
@@ -16,7 +18,7 @@ import type {
 } from '../avisos/caixa-avisos-mobile';
 import type { TipoAvisoMobile } from '../avisos/modelo-aviso-mobile';
 import { MarcaVyntra } from '../componentes/MarcaVyntra';
-import { CORES, ESPACOS, RAIOS } from '../tema';
+import { ESPACOS, RAIOS } from '../tema';
 
 const APRESENTACAO: Readonly<
   Record<
@@ -69,6 +71,8 @@ export function TelaNotificacoesMobile({
   readonly aoAbrir: (grupo: GrupoAvisosMobile) => Promise<void>;
   readonly caixa: CaixaAvisosMobile;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const [grupos, definirGrupos] = useState(() => caixa.listar());
   const [abrindo, definirAbrindo] = useState<string>();
   const [erro, definirErro] = useState<string>();
@@ -187,15 +191,15 @@ export function TelaNotificacoesMobile({
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   aviso: { alignItems: 'center', backgroundColor: CORES.superficie, borderBottomColor: CORES.borda, borderBottomWidth: 1, flexDirection: 'row', gap: 11, minHeight: 78, paddingHorizontal: ESPACOS.grande, paddingVertical: 12 },
-  avisoPressionado: { backgroundColor: '#F1F6F3' },
+  avisoPressionado: { backgroundColor: CORES.superficieElevada },
   cabecalho: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: ESPACOS.grande, paddingVertical: 18 },
   contagem: { alignItems: 'center', backgroundColor: CORES.acao, borderRadius: RAIOS.pílula, justifyContent: 'center', minHeight: 22, minWidth: 22, paddingHorizontal: 6 },
   contexto: { color: CORES.textoSecundario, fontSize: 13, marginTop: 2 },
   descricaoAviso: { color: CORES.textoSecundario, fontSize: 12, lineHeight: 17, marginTop: 4 },
   descricaoVazio: { color: CORES.textoSecundario, fontSize: 14, lineHeight: 21, maxWidth: 290, textAlign: 'center' },
-  erro: { backgroundColor: '#FFF1ED', color: '#9B3326', fontSize: 12, lineHeight: 17, paddingHorizontal: ESPACOS.grande, paddingVertical: 9 },
+  erro: { backgroundColor: CORES.alertaClara, color: CORES.alerta, fontSize: 12, lineHeight: 17, paddingHorizontal: ESPACOS.grande, paddingVertical: 9 },
   horario: { color: CORES.textoSecundario, fontSize: 11 },
   iconeAviso: { alignItems: 'center', backgroundColor: CORES.acaoClara, borderRadius: RAIOS.pílula, height: 42, justifyContent: 'center', width: 42 },
   iconeVazio: { alignItems: 'center', backgroundColor: CORES.acaoClara, borderRadius: RAIOS.cartao, height: 68, justifyContent: 'center', marginBottom: 18, width: 68 },

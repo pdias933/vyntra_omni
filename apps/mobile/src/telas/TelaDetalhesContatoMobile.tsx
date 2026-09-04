@@ -1,3 +1,5 @@
+import type { CoresTema } from '@vyntra/tema';
+import { useTema, useEstilos } from '../aparencia/contexto-tema';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
@@ -19,7 +21,7 @@ import type {
 } from '../atendimentos/modelo-atendimento-mobile';
 import type { ServicoAtendimentosMobile } from '../atendimentos/servico-atendimentos-mobile';
 import type { ResumoAtendimentoLocal } from '../offline/repositorio-replica-local';
-import { CORES, ESPACOS, RAIOS } from '../tema';
+import { ESPACOS, RAIOS } from '../tema';
 
 interface SelecaoContexto {
   readonly vinculoClienteId: string;
@@ -50,6 +52,8 @@ function LinhaInformacao({
   readonly rotulo: string;
   readonly valor: string;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   return (
     <View style={estilos.linhaInformacao}>
       <View style={estilos.iconeLinha}>
@@ -70,6 +74,8 @@ function CartaoContexto({
   readonly ativo: boolean;
   readonly vinculo: VinculoContatoMobile;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   return (
     <View style={[estilos.vinculo, ativo && estilos.vinculoAtivo]}>
       <View style={estilos.linhaVinculo}>
@@ -113,6 +119,8 @@ export function TelaDetalhesContatoMobile({
   readonly atendimento: ResumoAtendimentoLocal;
   readonly servico: ServicoAtendimentosMobile;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const reduzirMovimento = useReducedMotion();
   const [detalhes, definirDetalhes] = useState<DetalhesContatoMobile>();
   const [financeiro, definirFinanceiro] = useState<ResumoFinanceiroContatoMobile>();
@@ -231,7 +239,7 @@ export function TelaDetalhesContatoMobile({
 
         {acessoOffline && (
           <View style={estilos.avisoOffline}>
-            <Ionicons color="#805A00" name="cloud-offline-outline" size={20} />
+            <Ionicons color={CORES.atencao} name="cloud-offline-outline" size={20} />
             <View style={estilos.textoAviso}>
               <Text style={estilos.tituloAviso}>Detalhes online indisponíveis</Text>
               <Text style={estilos.descricaoAviso}>A conversa recente permanece acessível. Cliente, contrato e financeiro serão revalidados ao conectar.</Text>
@@ -249,7 +257,7 @@ export function TelaDetalhesContatoMobile({
 
         {falhou && (
           <View style={estilos.avisoOffline}>
-            <Ionicons color="#805A00" name="alert-circle-outline" size={20} />
+            <Ionicons color={CORES.atencao} name="alert-circle-outline" size={20} />
             <View style={estilos.textoAviso}>
               <Text style={estilos.tituloAviso}>Não foi possível atualizar os detalhes</Text>
               <Text style={estilos.descricaoAviso}>Volte à conversa e tente novamente quando a conexão normalizar.</Text>
@@ -262,7 +270,7 @@ export function TelaDetalhesContatoMobile({
             {detalhes.vinculos.length === 0 ? (
               <View style={estilos.naoIdentificado}>
                 <View style={estilos.iconeNaoIdentificado}>
-                  <Ionicons color="#6D4AD9" name="link-outline" size={24} />
+                  <Ionicons color={CORES.formulario} name="link-outline" size={24} />
                 </View>
                 <Text style={estilos.tituloNaoIdentificado}>Contato não identificado</Text>
                 <Text style={estilos.descricaoNaoIdentificado}>Vincule este número a um cliente existente para consultar dados e contratos.</Text>
@@ -417,46 +425,46 @@ export function TelaDetalhesContatoMobile({
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   acaoSecao: { color: CORES.acao, fontSize: 13, fontWeight: '700' },
   acoesFolha: { flexDirection: 'row', gap: 10, marginTop: 14 },
-  alca: { alignSelf: 'center', backgroundColor: '#D5DAD7', borderRadius: RAIOS.pílula, height: 4, marginBottom: 18, width: 38 },
-  avatar: { alignItems: 'center', backgroundColor: '#E4EAE7', borderRadius: 42, height: 84, justifyContent: 'center', position: 'relative', width: 84 },
-  avisoOffline: { alignItems: 'flex-start', backgroundColor: '#FFF5DF', borderColor: '#F1D99F', borderRadius: RAIOS.cartao, borderWidth: 1, flexDirection: 'row', gap: 11, padding: 14 },
+  alca: { alignSelf: 'center', backgroundColor: CORES.bordaForte, borderRadius: RAIOS.pílula, height: 4, marginBottom: 18, width: 38 },
+  avatar: { alignItems: 'center', backgroundColor: CORES.avatar, borderRadius: 42, height: 84, justifyContent: 'center', position: 'relative', width: 84 },
+  avisoOffline: { alignItems: 'flex-start', backgroundColor: CORES.atencaoClara, borderColor: CORES.atencaoBorda, borderRadius: RAIOS.cartao, borderWidth: 1, flexDirection: 'row', gap: 11, padding: 14 },
   botaoCancelar: { alignItems: 'center', borderColor: CORES.borda, borderRadius: RAIOS.campo, borderWidth: 1, flex: 1, justifyContent: 'center', minHeight: 48 },
   botaoConfirmar: { alignItems: 'center', backgroundColor: CORES.acao, borderRadius: RAIOS.campo, flex: 1.4, justifyContent: 'center', minHeight: 48 },
   botaoContrato: { alignItems: 'center', flexDirection: 'row', gap: 10, marginLeft: 30, paddingVertical: 9 },
   botaoOpcao: { alignItems: 'center', flexDirection: 'row', gap: 10, paddingVertical: 10 },
-  botaoVincular: { alignItems: 'center', backgroundColor: '#D9CDFB', borderRadius: RAIOS.campo, marginTop: 14, minHeight: 44, justifyContent: 'center', width: '100%' },
+  botaoVincular: { alignItems: 'center', backgroundColor: CORES.formularioClaro, borderRadius: RAIOS.campo, marginTop: 14, minHeight: 44, justifyContent: 'center', width: '100%' },
   cabecalho: { alignItems: 'center', backgroundColor: CORES.superficie, borderBottomColor: CORES.borda, borderBottomWidth: 1, flexDirection: 'row', minHeight: 58, paddingHorizontal: 4 },
   cabecalhoSecao: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
-  canal: { alignItems: 'center', backgroundColor: '#20B95A', borderColor: CORES.superficie, borderRadius: RAIOS.pílula, borderWidth: 2, bottom: 0, height: 24, justifyContent: 'center', position: 'absolute', right: -2, width: 24 },
+  canal: { alignItems: 'center', backgroundColor: CORES.acao, borderColor: CORES.superficie, borderRadius: RAIOS.pílula, borderWidth: 2, bottom: 0, height: 24, justifyContent: 'center', position: 'absolute', right: -2, width: 24 },
   conteudo: { gap: 12, padding: 12, paddingBottom: 34 },
-  contagem: { backgroundColor: '#F6F8F7', borderRadius: 12, minHeight: 74, padding: 11, width: '48%' },
+  contagem: { backgroundColor: CORES.fundo, borderRadius: 12, minHeight: 74, padding: 11, width: '48%' },
   contrato: { alignItems: 'flex-start', borderTopColor: CORES.borda, borderTopWidth: 1, flexDirection: 'row', gap: 9, marginTop: 10, paddingTop: 10 },
-  descricaoAviso: { color: '#715C2B', fontSize: 12, lineHeight: 17, marginTop: 2 },
+  descricaoAviso: { color: CORES.textoNota, fontSize: 12, lineHeight: 17, marginTop: 2 },
   descricaoFolha: { color: CORES.textoSecundario, fontSize: 13, lineHeight: 18, marginBottom: 12 },
   descricaoNaoIdentificado: { color: CORES.textoSecundario, fontSize: 13, lineHeight: 19, textAlign: 'center' },
   erroContexto: { color: CORES.alerta, fontSize: 12, lineHeight: 17, marginTop: 8 },
-  estadoIdentidade: { backgroundColor: '#E5F7EA', borderRadius: RAIOS.pílula, marginTop: 10, paddingHorizontal: 10, paddingVertical: 5 },
-  estadoNaoIdentificado: { backgroundColor: '#F0EAFF' },
+  estadoIdentidade: { backgroundColor: CORES.acaoClara, borderRadius: RAIOS.pílula, marginTop: 10, paddingHorizontal: 10, paddingVertical: 5 },
+  estadoNaoIdentificado: { backgroundColor: CORES.formularioClaro },
   fatura: { alignItems: 'center', borderTopColor: CORES.borda, borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 11 },
   financeiroOk: { alignItems: 'center', flexDirection: 'row', gap: 8, marginTop: 12 },
   folha: { backgroundColor: CORES.superficie, borderTopLeftRadius: 26, borderTopRightRadius: 26, maxHeight: '84%', padding: ESPACOS.grande, width: '100%' },
-  fundoModal: { backgroundColor: 'rgba(9,20,15,0.36)', flex: 1, justifyContent: 'flex-end' },
+  fundoModal: { backgroundColor: CORES.sobreposicao, flex: 1, justifyContent: 'flex-end' },
   gradeContagens: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   iconeCliente: { alignItems: 'center', backgroundColor: CORES.acaoClara, borderRadius: 10, height: 36, justifyContent: 'center', width: 36 },
-  iconeLinha: { alignItems: 'center', backgroundColor: '#EFF5F1', borderRadius: 10, height: 34, justifyContent: 'center', width: 34 },
-  iconeNaoIdentificado: { alignItems: 'center', backgroundColor: '#EEE7FF', borderRadius: RAIOS.pílula, height: 50, justifyContent: 'center', width: 50 },
+  iconeLinha: { alignItems: 'center', backgroundColor: CORES.superficieElevada, borderRadius: 10, height: 34, justifyContent: 'center', width: 34 },
+  iconeNaoIdentificado: { alignItems: 'center', backgroundColor: CORES.formularioClaro, borderRadius: RAIOS.pílula, height: 50, justifyContent: 'center', width: 50 },
   identidade: { alignItems: 'center', backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: RAIOS.cartao, borderWidth: 1, padding: 20 },
   identidadeSecundaria: { color: CORES.textoSecundario, fontSize: 13, marginTop: 3 },
   indisponivelVinculo: { color: CORES.textoSecundario, fontSize: 10, marginTop: 7 },
-  iniciais: { color: '#4A5B53', fontSize: 28, fontWeight: '700' },
+  iniciais: { color: CORES.textoAvatar, fontSize: 28, fontWeight: '700' },
   linhaInformacao: { alignItems: 'flex-start', flexDirection: 'row', gap: 10, marginTop: 12 },
   linhaVinculo: { alignItems: 'center', flexDirection: 'row', gap: 10 },
   metaContrato: { color: CORES.textoSecundario, fontSize: 11, lineHeight: 15, marginTop: 2 },
   metaVinculo: { color: CORES.textoSecundario, fontSize: 11, lineHeight: 15, marginTop: 2 },
-  naoIdentificado: { alignItems: 'center', backgroundColor: '#F8F5FF', borderColor: '#E8DFFF', borderRadius: RAIOS.cartao, borderWidth: 1, padding: 18 },
+  naoIdentificado: { alignItems: 'center', backgroundColor: CORES.formularioClaro, borderColor: CORES.formularioBorda, borderRadius: RAIOS.cartao, borderWidth: 1, padding: 18 },
   nome: { color: CORES.texto, fontSize: 20, fontWeight: '800', marginTop: 12 },
   nomeContrato: { color: CORES.texto, fontSize: 13, fontWeight: '700' },
   nomeVinculo: { color: CORES.texto, fontSize: 14, fontWeight: '700' },
@@ -466,30 +474,30 @@ const estilos = StyleSheet.create({
   rotuloContagem: { color: CORES.textoSecundario, fontSize: 11, lineHeight: 15, marginTop: 5 },
   rotuloLinha: { color: CORES.textoSecundario, fontSize: 10 },
   secao: { backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: RAIOS.cartao, borderWidth: 1, padding: 15 },
-  seloAtivo: { backgroundColor: '#E4F7E9', borderRadius: RAIOS.pílula, color: CORES.acao, fontSize: 10, fontWeight: '700', overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 4 },
+  seloAtivo: { backgroundColor: CORES.acaoClara, borderRadius: RAIOS.pílula, color: CORES.acao, fontSize: 10, fontWeight: '700', overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 4 },
   skeleton: { backgroundColor: CORES.superficie, borderRadius: RAIOS.cartao, gap: 13, padding: 18 },
-  skeletonLinha: { backgroundColor: '#E7ECE9', borderRadius: RAIOS.pílula, height: 12, width: '88%' },
-  skeletonLinhaGrande: { backgroundColor: '#E1E7E4', borderRadius: RAIOS.pílula, height: 17, width: '54%' },
+  skeletonLinha: { backgroundColor: CORES.skeleton, borderRadius: RAIOS.pílula, height: 12, width: '88%' },
+  skeletonLinhaGrande: { backgroundColor: CORES.skeleton, borderRadius: RAIOS.pílula, height: 17, width: '54%' },
   tela: { backgroundColor: CORES.fundo, flex: 1 },
   textoAviso: { flex: 1 },
-  textoBotaoVincular: { color: '#5D4DB4', fontSize: 13, fontWeight: '700' },
+  textoBotaoVincular: { color: CORES.formulario, fontSize: 13, fontWeight: '700' },
   textoCancelar: { color: CORES.texto, fontSize: 14, fontWeight: '700' },
   textoConfirmar: { color: CORES.textoInvertido, fontSize: 14, fontWeight: '700' },
   textoContrato: { flex: 1 },
   textoEstadoIdentidade: { color: CORES.acao, fontSize: 11, fontWeight: '700' },
   textoFinanceiroOk: { color: CORES.texto, fontSize: 13, fontWeight: '600' },
   textoLinha: { flex: 1 },
-  textoNaoIdentificado: { color: '#6D4AD9' },
+  textoNaoIdentificado: { color: CORES.formulario },
   textoSemContexto: { color: CORES.textoSecundario, fontSize: 12, lineHeight: 18, marginTop: 10 },
   textoVinculo: { flex: 1 },
   titulo: { color: CORES.texto, flex: 1, fontSize: 16, fontWeight: '700', textAlign: 'center' },
-  tituloAviso: { color: '#664D17', fontSize: 13, fontWeight: '700' },
+  tituloAviso: { color: CORES.textoNota, fontSize: 13, fontWeight: '700' },
   tituloFolha: { color: CORES.texto, fontSize: 20, fontWeight: '800' },
-  tituloNaoIdentificado: { color: '#4E347F', fontSize: 16, fontWeight: '800', marginBottom: 5, marginTop: 10 },
+  tituloNaoIdentificado: { color: CORES.formulario, fontSize: 16, fontWeight: '800', marginBottom: 5, marginTop: 10 },
   tituloSecao: { color: CORES.texto, fontSize: 14, fontWeight: '800' },
   valorFatura: { color: CORES.texto, fontSize: 13, fontWeight: '800' },
   valorLinha: { color: CORES.texto, fontSize: 13, lineHeight: 18, marginTop: 2 },
-  vinculo: { backgroundColor: '#F8FAF9', borderColor: CORES.borda, borderRadius: 14, borderWidth: 1, marginTop: 11, padding: 12 },
-  vinculoAtivo: { borderColor: '#BCE4CA' },
+  vinculo: { backgroundColor: CORES.superficieElevada, borderColor: CORES.borda, borderRadius: 14, borderWidth: 1, marginTop: 11, padding: 12 },
+  vinculoAtivo: { borderColor: CORES.acao },
   voltar: { alignItems: 'center', height: 42, justifyContent: 'center', width: 42 },
 });

@@ -1,3 +1,5 @@
+import type { CoresTema } from '@vyntra/tema';
+import { useTema, useEstilos } from '../aparencia/contexto-tema';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -26,7 +28,7 @@ import type {
   ResumoAtendimentoLocal,
 } from '../offline/repositorio-replica-local';
 import type { ServicoPendenciasSaidaMobile } from '../offline/servico-pendencias-saida-mobile';
-import { CORES, ESPACOS, RAIOS } from '../tema';
+import { ESPACOS, RAIOS } from '../tema';
 
 function dataSeparador(iso: string): string {
   const data = new Date(iso);
@@ -90,6 +92,8 @@ function ItemTimeline({
   readonly item: ItemTimelineMobile;
   readonly mostrarData: boolean;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const mensagemSaida = item.tipo === 'MENSAGEM' && item.direcao === 'SAIDA';
   const interno =
     item.tipo === 'NOTA_INTERNA' || item.tipo === 'EVENTO_OPERACIONAL';
@@ -115,7 +119,7 @@ function ItemTimeline({
       ) : interno ? (
         <View style={[estilos.interno, item.tipo === 'NOTA_INTERNA' && estilos.nota]}>
           <View style={estilos.rotuloEquipe}>
-            <Ionicons color="#805A00" name="lock-closed" size={12} />
+            <Ionicons color={CORES.atencao} name="lock-closed" size={12} />
             <Text style={estilos.textoEquipe}>Somente equipe</Text>
           </View>
           <Text style={estilos.textoInterno}>{item.texto ?? item.rotulo}</Text>
@@ -141,7 +145,7 @@ function ItemTimeline({
           )}
           {formulario && (
             <View style={estilos.tituloFormulario}>
-              <Ionicons color="#5D4DB4" name="reader-outline" size={18} />
+              <Ionicons color={CORES.formulario} name="reader-outline" size={18} />
               <Text style={estilos.textoTituloFormulario}>Informações recebidas</Text>
             </View>
           )}
@@ -155,7 +159,7 @@ function ItemTimeline({
               style={estilos.botaoVerFormulario}
             >
               <Text style={estilos.verFormulario}>Ver formulário</Text>
-              <Ionicons color="#5D4DB4" name="chevron-forward" size={15} />
+              <Ionicons color={CORES.formulario} name="chevron-forward" size={15} />
             </Pressable>
           )}
           {item.reacoes !== undefined && (
@@ -202,6 +206,8 @@ export function TelaConversaMobile({
   readonly servicoPendencias: ServicoPendenciasSaidaMobile;
   readonly usuarioId: string;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const reduzirMovimento = useReducedMotion();
   const lista = useRef<FlatList<ItemTimelineMobile>>(null);
   const leituraEmVoo = useRef<string | undefined>(undefined);
@@ -430,7 +436,7 @@ export function TelaConversaMobile({
             <View style={estilos.alcaFormulario} />
             <View style={estilos.cabecalhoFormulario}>
               <View style={estilos.iconeFormulario}>
-                <Ionicons color="#5D4DB4" name="reader-outline" size={21} />
+                <Ionicons color={CORES.formulario} name="reader-outline" size={21} />
               </View>
               <View style={estilos.textoCabecalhoFormulario}>
                 <Text style={estilos.tituloFolhaFormulario}>Informações recebidas</Text>
@@ -468,15 +474,15 @@ export function TelaConversaMobile({
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   acaoCabecalho: { alignItems: 'center', height: 42, justifyContent: 'center', width: 42 },
-  avatar: { alignItems: 'center', backgroundColor: '#DFE8E3', borderRadius: RAIOS.pílula, height: 42, justifyContent: 'center', width: 42 },
-  avisoOffline: { alignItems: 'center', backgroundColor: '#FFF4DE', paddingVertical: 6 },
-  alcaFormulario: { alignSelf: 'center', backgroundColor: '#D5DAD7', borderRadius: RAIOS.pílula, height: 4, marginBottom: 18, width: 38 },
+  avatar: { alignItems: 'center', backgroundColor: CORES.avatar, borderRadius: RAIOS.pílula, height: 42, justifyContent: 'center', width: 42 },
+  avisoOffline: { alignItems: 'center', backgroundColor: CORES.atencaoClara, paddingVertical: 6 },
+  alcaFormulario: { alignSelf: 'center', backgroundColor: CORES.bordaForte, borderRadius: RAIOS.pílula, height: 4, marginBottom: 18, width: 38 },
   bolha: { borderRadius: 17, marginBottom: 7, maxWidth: '84%', paddingHorizontal: 12, paddingVertical: 9 },
-  bolhaEntrada: { alignSelf: 'flex-start', backgroundColor: CORES.superficie, borderColor: CORES.borda, borderWidth: 1, borderTopLeftRadius: 5 },
-  bolhaFormulario: { borderColor: '#D9D2FF', paddingTop: 11 },
-  bolhaSaida: { alignSelf: 'flex-end', backgroundColor: '#DDF7E8', borderTopRightRadius: 5 },
+  bolhaEntrada: { alignSelf: 'flex-start', backgroundColor: CORES.mensagemRecebida, borderColor: CORES.borda, borderWidth: 1, borderTopLeftRadius: 5 },
+  bolhaFormulario: { backgroundColor: CORES.formularioClaro, borderColor: CORES.formularioBorda, paddingTop: 11 },
+  bolhaSaida: { alignSelf: 'flex-end', backgroundColor: CORES.mensagemEnviada, borderTopRightRadius: 5 },
   botaoVerFormulario: { alignItems: 'center', alignSelf: 'flex-start', flexDirection: 'row', gap: 2, marginTop: 8 },
   cabecalhoFormulario: { alignItems: 'center', flexDirection: 'row', gap: 10 },
   cabecalho: { alignItems: 'center', backgroundColor: CORES.superficie, borderBottomColor: CORES.borda, borderBottomWidth: 1, flexDirection: 'row', minHeight: 62, paddingHorizontal: 4 },
@@ -487,44 +493,44 @@ const estilos = StyleSheet.create({
   contatoCabecalho: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 10 },
   contextoContato: { color: CORES.textoSecundario, fontSize: 12, marginTop: 1 },
   corpoEvento: { alignItems: 'center' },
-  evento: { alignItems: 'center', alignSelf: 'center', backgroundColor: '#EEF1EF', borderRadius: 13, flexDirection: 'row', gap: 7, marginBottom: 10, maxWidth: '88%', paddingHorizontal: 12, paddingVertical: 8 },
+  evento: { alignItems: 'center', alignSelf: 'center', backgroundColor: CORES.superficieElevada, borderRadius: 13, flexDirection: 'row', gap: 7, marginBottom: 10, maxWidth: '88%', paddingHorizontal: 12, paddingVertical: 8 },
   fecharFormulario: { alignItems: 'center', height: 40, justifyContent: 'center', width: 40 },
   folhaFormulario: { backgroundColor: CORES.superficie, borderTopLeftRadius: 26, borderTopRightRadius: 26, maxHeight: '84%', padding: ESPACOS.grande, width: '100%' },
   formularioSemCampos: { color: CORES.textoSecundario, fontSize: 13, lineHeight: 19, marginTop: 18 },
-  fundoFormulario: { backgroundColor: 'rgba(9,20,15,0.36)', flex: 1, justifyContent: 'flex-end' },
-  horaInterna: { alignSelf: 'flex-end', color: '#896D31', fontSize: 10 },
+  fundoFormulario: { backgroundColor: CORES.sobreposicao, flex: 1, justifyContent: 'flex-end' },
+  horaInterna: { alignSelf: 'flex-end', color: CORES.textoNota, fontSize: 10 },
   horaMensagem: { color: CORES.textoSecundario, fontSize: 10 },
   identidadeCabecalho: { flex: 1 },
-  iconeFormulario: { alignItems: 'center', backgroundColor: '#EEE8FF', borderRadius: 12, height: 42, justifyContent: 'center', width: 42 },
-  iniciais: { color: '#4A5B53', fontSize: 16, fontWeight: '700' },
-  interno: { alignSelf: 'center', backgroundColor: '#EEF1EF', borderRadius: 14, marginBottom: 9, maxWidth: '88%', padding: 11 },
-  janelaMeta: { alignItems: 'center', backgroundColor: '#F2FBF5', borderBottomColor: '#DCEBE1', borderBottomWidth: 1, flexDirection: 'row', gap: 7, minHeight: 35, paddingHorizontal: ESPACOS.grande },
+  iconeFormulario: { alignItems: 'center', backgroundColor: CORES.formularioClaro, borderRadius: 12, height: 42, justifyContent: 'center', width: 42 },
+  iniciais: { color: CORES.textoAvatar, fontSize: 16, fontWeight: '700' },
+  interno: { alignSelf: 'center', backgroundColor: CORES.superficieElevada, borderRadius: 14, marginBottom: 9, maxWidth: '88%', padding: 11 },
+  janelaMeta: { alignItems: 'center', backgroundColor: CORES.acaoClara, borderBottomColor: CORES.borda, borderBottomWidth: 1, flexDirection: 'row', gap: 7, minHeight: 35, paddingHorizontal: ESPACOS.grande },
   listaTimeline: { flex: 1 },
   metaEvento: { color: CORES.textoSecundario, fontSize: 10, marginTop: 1 },
   metaMensagem: { alignItems: 'center', alignSelf: 'flex-end', flexDirection: 'row', gap: 3, marginTop: 3 },
   nomeContato: { color: CORES.texto, fontSize: 16, fontWeight: '700' },
   nomeFormulario: { color: CORES.textoSecundario, fontSize: 12, marginTop: 2 },
-  nota: { backgroundColor: '#FFF4D7', borderColor: '#F2D99A', borderWidth: 1 },
+  nota: { backgroundColor: CORES.nota, borderColor: CORES.bordaNota, borderWidth: 1 },
   origem: { color: CORES.acao, fontSize: 10, fontWeight: '700', marginBottom: 4 },
   privacidadeFormulario: { color: CORES.textoSecundario, fontSize: 10, lineHeight: 15, marginTop: 10 },
   reacoes: { alignSelf: 'flex-start', backgroundColor: CORES.superficie, borderRadius: RAIOS.pílula, fontSize: 15, marginTop: 5, paddingHorizontal: 7, paddingVertical: 3 },
   rotuloEquipe: { alignItems: 'center', flexDirection: 'row', gap: 4, marginBottom: 5 },
   separadorData: { alignItems: 'center', marginBottom: 10, marginTop: 4 },
   skeletonDireita: { alignSelf: 'flex-end', width: '66%' },
-  skeletonMensagem: { backgroundColor: '#E6EBE8', borderRadius: 17, height: 70, width: '74%' },
-  skeletonMensagemCurta: { backgroundColor: '#E6EBE8', borderRadius: 17, height: 52, width: '48%' },
-  tela: { backgroundColor: '#F3F6F4', flex: 1 },
+  skeletonMensagem: { backgroundColor: CORES.skeleton, borderRadius: 17, height: 70, width: '74%' },
+  skeletonMensagemCurta: { backgroundColor: CORES.skeleton, borderRadius: 17, height: 52, width: '48%' },
+  tela: { backgroundColor: CORES.fundo, flex: 1 },
   tempoJanela: { color: CORES.textoSecundario, fontSize: 11, marginLeft: 'auto' },
   textoCabecalhoFormulario: { flex: 1 },
   textoBolha: { color: CORES.texto, fontSize: 15, lineHeight: 21 },
   textoCitacao: { color: CORES.textoSecundario, fontSize: 12, lineHeight: 16 },
-  textoEquipe: { color: '#805A00', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+  textoEquipe: { color: CORES.atencao, fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
   textoEvento: { color: CORES.textoSecundario, fontSize: 12, textAlign: 'center' },
-  textoInterno: { color: '#5C4B25', fontSize: 13, lineHeight: 18 },
+  textoInterno: { color: CORES.textoNota, fontSize: 13, lineHeight: 18 },
   textoJanela: { color: CORES.acao, fontSize: 12, fontWeight: '700' },
-  textoOffline: { color: '#805A00', fontSize: 11, fontWeight: '600' },
-  textoSeparador: { backgroundColor: '#E8ECEA', borderRadius: RAIOS.pílula, color: CORES.textoSecundario, fontSize: 11, fontWeight: '600', overflow: 'hidden', paddingHorizontal: 11, paddingVertical: 5 },
-  textoTituloFormulario: { color: '#5D4DB4', fontSize: 13, fontWeight: '700' },
+  textoOffline: { color: CORES.atencao, fontSize: 11, fontWeight: '600' },
+  textoSeparador: { backgroundColor: CORES.superficieElevada, borderRadius: RAIOS.pílula, color: CORES.textoSecundario, fontSize: 11, fontWeight: '600', overflow: 'hidden', paddingHorizontal: 11, paddingVertical: 5 },
+  textoTituloFormulario: { color: CORES.formulario, fontSize: 13, fontWeight: '700' },
   textoVazio: { color: CORES.textoSecundario, fontSize: 13, marginTop: 5, textAlign: 'center' },
   timeline: { flexGrow: 1, paddingBottom: 18, paddingHorizontal: 12, paddingTop: 14 },
   tituloFormulario: { alignItems: 'center', flexDirection: 'row', gap: 7, marginBottom: 7 },
@@ -533,5 +539,5 @@ const estilos = StyleSheet.create({
   vazio: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: 30 },
   valorCampoFormulario: { color: CORES.texto, fontSize: 14, lineHeight: 20 },
   rotuloCampoFormulario: { color: CORES.textoSecundario, fontSize: 11, fontWeight: '600' },
-  verFormulario: { color: '#5D4DB4', fontSize: 12, fontWeight: '700' },
+  verFormulario: { color: CORES.formulario, fontSize: 12, fontWeight: '700' },
 });

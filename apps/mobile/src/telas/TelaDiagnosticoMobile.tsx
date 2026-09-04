@@ -1,3 +1,5 @@
+import type { CoresTema } from '@vyntra/tema';
+import { useTema, useEstilos } from '../aparencia/contexto-tema';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -15,9 +17,10 @@ import type {
   DiagnosticoMobile,
   ServicoDiagnosticoMobile,
 } from '../diagnostico/servico-diagnostico-mobile';
-import { CORES, ESPACOS, RAIOS } from '../tema';
+import { ESPACOS, RAIOS } from '../tema';
 
 function Linha({ rotulo, valor }: { readonly rotulo: string; readonly valor: string }) {
+  const estilos = useEstilos(criarEstilos);
   return (
     <View accessible accessibilityLabel={`${rotulo}: ${valor}`} style={estilos.linha}>
       <Text style={estilos.rotulo}>{rotulo}</Text>
@@ -33,6 +36,8 @@ export function TelaDiagnosticoMobile({
   readonly aoVoltar: () => void;
   readonly servico: ServicoDiagnosticoMobile;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const [diagnostico, definirDiagnostico] = useState<DiagnosticoMobile>();
   const [falhou, definirFalhou] = useState(false);
   const [carregando, definirCarregando] = useState(true);
@@ -150,7 +155,7 @@ export function TelaDiagnosticoMobile({
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   botaoCabecalho: { alignItems: 'center', minHeight: 44, justifyContent: 'center', width: 44 },
   cabecalho: { alignItems: 'center', backgroundColor: CORES.superficie, borderBottomColor: CORES.borda, borderBottomWidth: 1, flexDirection: 'row', justifyContent: 'space-between', minHeight: 62, paddingHorizontal: 5 },
   cartao: { backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: RAIOS.cartao, borderWidth: 1, overflow: 'hidden' },
@@ -160,7 +165,7 @@ const estilos = StyleSheet.create({
   erro: { alignItems: 'center', gap: 12, paddingVertical: 28 },
   estado: { color: CORES.textoSecundario, paddingVertical: 28, textAlign: 'center' },
   linha: { borderBottomColor: CORES.borda, borderBottomWidth: StyleSheet.hairlineWidth, gap: 4, minHeight: 62, paddingHorizontal: 16, paddingVertical: 11 },
-  privacidade: { alignItems: 'flex-start', backgroundColor: '#F3F6FF', borderColor: '#DDE5FA', borderRadius: RAIOS.campo, borderWidth: 1, flexDirection: 'row', gap: 10, padding: 14 },
+  privacidade: { alignItems: 'flex-start', backgroundColor: CORES.infoClara, borderColor: CORES.infoBorda, borderRadius: RAIOS.campo, borderWidth: 1, flexDirection: 'row', gap: 10, padding: 14 },
   rotulo: { color: CORES.textoSecundario, fontSize: 12, fontWeight: '600' },
   tela: { backgroundColor: CORES.fundo, flex: 1 },
   textoCompartilhar: { color: CORES.textoInvertido, fontSize: 14, fontWeight: '700' },

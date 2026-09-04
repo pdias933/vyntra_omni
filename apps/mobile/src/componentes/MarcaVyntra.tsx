@@ -1,8 +1,11 @@
+import type { CoresTema } from '@vyntra/tema';
+import { useEstilos } from '../aparencia/contexto-tema';
 import { Text, View, StyleSheet } from 'react-native';
 
-import { CORES, RAIOS } from '../tema';
+import { RAIOS } from '../tema';
 
 export function MarcaVyntra({ compacta = false }: { readonly compacta?: boolean }) {
+  const estilos = useEstilos(criarEstilos);
   return (
     <View accessibilityLabel="Vyntra Omni" style={estilos.linha}>
       <View style={[estilos.simbolo, compacta && estilos.simboloCompacto]}>
@@ -13,7 +16,7 @@ export function MarcaVyntra({ compacta = false }: { readonly compacta?: boolean 
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   letra: {
     color: CORES.textoInvertido,
     fontSize: 25,

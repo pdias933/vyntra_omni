@@ -1,3 +1,5 @@
+import type { CoresTema } from '@vyntra/tema';
+import { useTema, useEstilos } from '../aparencia/contexto-tema';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -27,7 +29,7 @@ import {
   type ResumoAtendimentoLocal,
 } from '../offline/repositorio-replica-local';
 import type { EstadoSincronizacaoMobile } from '../sincronizacao/motor-sincronizacao-mobile';
-import { CORES, ESPACOS, RAIOS } from '../tema';
+import { ESPACOS, RAIOS } from '../tema';
 
 const ROTULOS_FILTRO: Readonly<Record<FiltroAtendimentosMobile, string>> = {
   EM_AUTOMACAO: 'Em automação',
@@ -75,12 +77,12 @@ function horario(iso: string): string {
   return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 }
 
-function prazo(iso: string): { cor: string; texto: string } {
+function prazo(iso: string, CORES: CoresTema): { cor: string; texto: string } {
   const minutos = Math.ceil((new Date(iso).getTime() - Date.now()) / 60_000);
   if (minutos <= 0) return { cor: CORES.alerta, texto: 'Agora' };
   if (minutos < 60) {
     return {
-      cor: minutos <= 15 ? CORES.alerta : '#A15C00',
+      cor: minutos <= 15 ? CORES.alerta : CORES.atencao,
       texto: `${minutos} min`,
     };
   }
@@ -90,6 +92,7 @@ function prazo(iso: string): { cor: string; texto: string } {
 }
 
 function SkeletonLista() {
+  const estilos = useEstilos(criarEstilos);
   const opacidade = useSharedValue(0.45);
   useEffect(() => {
     opacidade.value = withRepeat(
@@ -122,8 +125,10 @@ const CartaoAtendimento = memo(function CartaoAtendimento({
   readonly aoAbrirAtendimento: (atendimento: ResumoAtendimentoLocal) => void;
   readonly item: ResumoAtendimentoLocal;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const limite = item.slaEm ?? item.janelaExpiraEm;
-  const marcadorPrazo = limite === undefined ? undefined : prazo(limite);
+  const marcadorPrazo = limite === undefined ? undefined : prazo(limite, CORES);
   return (
     <Pressable
       accessibilityHint="Abre a conversa"
@@ -208,6 +213,8 @@ export function TelaListaAtendimentos({
   readonly repositorio: RepositorioReplicaLocal;
   readonly usuarioId: string;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const reduzirMovimento = useReducedMotion();
   const [filtro, definirFiltro] = useState<FiltroAtendimentosMobile>('MEUS');
   const [itens, definirItens] = useState<readonly ResumoAtendimentoLocal[]>([]);
@@ -348,24 +355,24 @@ export function TelaListaAtendimentos({
   );
 }
 
-const estilos = StyleSheet.create({
-  avatar: { alignItems: 'center', backgroundColor: '#E3E9E6', borderRadius: 25, height: 50, justifyContent: 'center', position: 'relative', width: 50 },
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
+  avatar: { alignItems: 'center', backgroundColor: CORES.avatar, borderRadius: 25, height: 50, justifyContent: 'center', position: 'relative', width: 50 },
   cabecalho: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 14, paddingHorizontal: ESPACOS.grande, paddingTop: 17 },
-  canal: { alignItems: 'center', backgroundColor: '#20B95A', borderColor: CORES.superficie, borderRadius: RAIOS.pílula, borderWidth: 2, bottom: -2, height: 20, justifyContent: 'center', position: 'absolute', right: -3, width: 20 },
+  canal: { alignItems: 'center', backgroundColor: CORES.acao, borderColor: CORES.superficie, borderRadius: RAIOS.pílula, borderWidth: 2, bottom: -2, height: 20, justifyContent: 'center', position: 'absolute', right: -3, width: 20 },
   cartao: { alignItems: 'center', backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: 18, borderWidth: 1, flexDirection: 'row', gap: 13, marginBottom: 9, padding: 14 },
-  cartaoPressionado: { backgroundColor: '#F5F8F6', transform: [{ scale: 0.995 }] },
+  cartaoPressionado: { backgroundColor: CORES.superficieElevada, transform: [{ scale: 0.995 }] },
   contagemFiltro: { color: CORES.textoSecundario, fontSize: 11, fontWeight: '700' },
-  contagemFiltroAtiva: { color: '#CDEBDE' },
+  contagemFiltroAtiva: { color: CORES.acaoClara },
   corpoCartao: { flex: 1, gap: 5 },
-  faixaConexao: { alignItems: 'center', backgroundColor: '#EEF1EF', flexDirection: 'row', gap: 7, justifyContent: 'center', minHeight: 29, paddingHorizontal: 12 },
-  fila: { alignItems: 'center', backgroundColor: '#F1F4F2', borderRadius: RAIOS.pílula, flexDirection: 'row', gap: 5, maxWidth: '68%', paddingHorizontal: 8, paddingVertical: 4 },
+  faixaConexao: { alignItems: 'center', backgroundColor: CORES.superficieElevada, flexDirection: 'row', gap: 7, justifyContent: 'center', minHeight: 29, paddingHorizontal: 12 },
+  fila: { alignItems: 'center', backgroundColor: CORES.superficieElevada, borderRadius: RAIOS.pílula, flexDirection: 'row', gap: 5, maxWidth: '68%', paddingHorizontal: 8, paddingVertical: 4 },
   filtro: { alignItems: 'center', backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: RAIOS.pílula, borderWidth: 1, flexDirection: 'row', gap: 6, minHeight: 38, paddingHorizontal: 15 },
   filtroAtivo: { backgroundColor: CORES.acao, borderColor: CORES.acao },
   filtroPressionado: { opacity: 0.78 },
   filtros: { gap: 8, paddingHorizontal: ESPACOS.grande },
   horario: { color: CORES.textoSecundario, fontSize: 11 },
   iconeVazio: { alignItems: 'center', backgroundColor: CORES.acaoClara, borderRadius: RAIOS.pílula, height: 58, justifyContent: 'center', marginBottom: 15, width: 58 },
-  iniciais: { color: '#47534E', fontSize: 16, fontWeight: '700' },
+  iniciais: { color: CORES.textoSecundario, fontSize: 16, fontWeight: '700' },
   linhaContexto: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', minHeight: 23 },
   linhaMensagem: { alignItems: 'center', flexDirection: 'row', gap: 4 },
   linhaPrincipal: { alignItems: 'center', flexDirection: 'row', gap: 10, justifyContent: 'space-between' },
@@ -375,11 +382,11 @@ const estilos = StyleSheet.create({
   naoLidas: { alignItems: 'center', backgroundColor: CORES.acao, borderRadius: RAIOS.pílula, justifyContent: 'center', minHeight: 21, minWidth: 21, paddingHorizontal: 6 },
   nomeContato: { color: CORES.texto, flex: 1, fontSize: 16, fontWeight: '700' },
   prazo: { alignItems: 'center', flexDirection: 'row', gap: 3 },
-  skeletonAvatar: { backgroundColor: '#DDE4E0', borderRadius: 25, height: 50, width: 50 },
-  skeletonCartao: { alignItems: 'center', backgroundColor: '#EDF1EF', borderRadius: 18, flexDirection: 'row', gap: 13, height: 105, padding: 14 },
-  skeletonLinhaFila: { backgroundColor: '#DDE4E0', borderRadius: RAIOS.pílula, height: 16, width: '38%' },
-  skeletonLinhaMensagem: { backgroundColor: '#DDE4E0', borderRadius: RAIOS.pílula, height: 11, width: '88%' },
-  skeletonLinhaNome: { backgroundColor: '#D8E0DC', borderRadius: RAIOS.pílula, height: 14, width: '56%' },
+  skeletonAvatar: { backgroundColor: CORES.borda, borderRadius: 25, height: 50, width: 50 },
+  skeletonCartao: { alignItems: 'center', backgroundColor: CORES.superficieElevada, borderRadius: 18, flexDirection: 'row', gap: 13, height: 105, padding: 14 },
+  skeletonLinhaFila: { backgroundColor: CORES.borda, borderRadius: RAIOS.pílula, height: 16, width: '38%' },
+  skeletonLinhaMensagem: { backgroundColor: CORES.borda, borderRadius: RAIOS.pílula, height: 11, width: '88%' },
+  skeletonLinhaNome: { backgroundColor: CORES.borda, borderRadius: RAIOS.pílula, height: 14, width: '56%' },
   skeletonLista: { gap: 9, paddingHorizontal: ESPACOS.pequeno, paddingTop: 15 },
   skeletonTexto: { flex: 1, gap: 11 },
   subtitulo: { color: CORES.textoSecundario, fontSize: 12, marginTop: 2 },

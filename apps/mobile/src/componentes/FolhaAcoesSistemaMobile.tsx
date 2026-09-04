@@ -1,3 +1,5 @@
+import type { CoresTema } from '@vyntra/tema';
+import { useTema, useEstilos } from '../aparencia/contexto-tema';
 import { Ionicons } from '@expo/vector-icons';
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
@@ -21,7 +23,7 @@ import type {
   ResumoFinanceiroContatoMobile,
 } from '../atendimentos/modelo-atendimento-mobile';
 import type { ServicoAtendimentosMobile } from '../atendimentos/servico-atendimentos-mobile';
-import { CORES, ESPACOS, RAIOS } from '../tema';
+import { ESPACOS, RAIOS } from '../tema';
 
 type CodigoAcao =
   | 'CLIENTE'
@@ -115,6 +117,8 @@ export function FolhaAcoesSistemaMobile({
   readonly servico: ServicoAtendimentosMobile;
   readonly visivel: boolean;
 }) {
+  const { cores: CORES, modo } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const [detalhes, definirDetalhes] = useState<DetalhesContatoMobile>();
   const [financeiro, definirFinanceiro] =
     useState<ResumoFinanceiroContatoMobile>();
@@ -265,7 +269,7 @@ export function FolhaAcoesSistemaMobile({
 
           {acessoOffline && (
             <View style={estilos.aviso}>
-              <Ionicons color="#805A00" name="cloud-offline-outline" size={18} />
+              <Ionicons color={CORES.atencao} name="cloud-offline-outline" size={18} />
               <Text style={estilos.textoAviso}>Conecte-se para consultar ou executar ações.</Text>
             </View>
           )}
@@ -297,6 +301,8 @@ export function FolhaAcoesSistemaMobile({
                 <>
                   <Text style={estilos.rotuloCampo}>Assunto</Text>
                   <TextInput
+                    keyboardAppearance={modo === 'escuro' ? 'dark' : 'light'}
+                    selectionColor={CORES.acao}
                     maxLength={200}
                     onChangeText={definirAssunto}
                     style={estilos.campo}
@@ -304,11 +310,13 @@ export function FolhaAcoesSistemaMobile({
                   />
                   <Text style={estilos.rotuloCampo}>Descrição</Text>
                   <TextInput
+                    keyboardAppearance={modo === 'escuro' ? 'dark' : 'light'}
+                    selectionColor={CORES.acao}
                     maxLength={4_000}
                     multiline
                     onChangeText={definirDescricao}
                     placeholder="Descreva o que precisa ser atendido"
-                    placeholderTextColor="#8A948E"
+                    placeholderTextColor={CORES.textoSecundario}
                     style={[estilos.campo, estilos.campoDescricao]}
                     value={descricao}
                   />
@@ -338,7 +346,7 @@ export function FolhaAcoesSistemaMobile({
                 <Text style={estilos.textoVoltar}>Voltar às ações</Text>
               </Pressable>
               <View style={estilos.origem}>
-                <Ionicons color={financeiro.origem === 'TEMPO_REAL' ? CORES.acao : '#805A00'} name="pulse-outline" size={18} />
+                <Ionicons color={financeiro.origem === 'TEMPO_REAL' ? CORES.acao : CORES.atencao} name="pulse-outline" size={18} />
                 <Text style={estilos.textoOrigem}>
                   {descricaoOrigemFinanceira(financeiro)}
                 </Text>
@@ -395,16 +403,16 @@ export function FolhaAcoesSistemaMobile({
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   acao: { alignItems: 'center', flexDirection: 'row', gap: 10, minHeight: 50 },
   acaoPressionada: { opacity: 0.65 },
   acoesConfirmacao: { flexDirection: 'row', gap: 10, marginTop: 18 },
-  alca: { alignSelf: 'center', backgroundColor: '#D5DAD7', borderRadius: RAIOS.pílula, height: 4, marginBottom: 18, width: 38 },
-  aviso: { alignItems: 'center', backgroundColor: '#FFF5DF', borderRadius: RAIOS.campo, flexDirection: 'row', gap: 8, marginBottom: 12, padding: 11 },
+  alca: { alignSelf: 'center', backgroundColor: CORES.bordaForte, borderRadius: RAIOS.pílula, height: 4, marginBottom: 18, width: 38 },
+  aviso: { alignItems: 'center', backgroundColor: CORES.atencaoClara, borderRadius: RAIOS.campo, flexDirection: 'row', gap: 8, marginBottom: 12, padding: 11 },
   botaoCancelar: { alignItems: 'center', borderColor: CORES.borda, borderRadius: RAIOS.campo, borderWidth: 1, flex: 1, justifyContent: 'center', minHeight: 48 },
   botaoConfirmar: { alignItems: 'center', backgroundColor: CORES.acao, borderRadius: RAIOS.campo, flex: 1.5, justifyContent: 'center', minHeight: 48 },
   cabecalho: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 13 },
-  campo: { backgroundColor: '#F4F7F5', borderColor: CORES.borda, borderRadius: RAIOS.campo, borderWidth: 1, color: CORES.texto, fontSize: 14, minHeight: 46, padding: 12 },
+  campo: { backgroundColor: CORES.superficieElevada, borderColor: CORES.borda, borderRadius: RAIOS.campo, borderWidth: 1, color: CORES.texto, fontSize: 14, minHeight: 46, padding: 12 },
   campoDescricao: { minHeight: 100, textAlignVertical: 'top' },
   desabilitado: { opacity: 0.42 },
   descricao: { color: CORES.textoSecundario, fontSize: 13, marginTop: 3 },
@@ -413,22 +421,22 @@ const estilos = StyleSheet.create({
   erro: { color: CORES.alerta, fontSize: 12, lineHeight: 17, marginBottom: 10 },
   fatura: { alignItems: 'center', borderBottomColor: CORES.borda, borderBottomWidth: 1, flexDirection: 'row', gap: 10, paddingVertical: 14 },
   folha: { backgroundColor: CORES.superficie, borderTopLeftRadius: 26, borderTopRightRadius: 26, maxHeight: '88%', padding: ESPACOS.grande, width: '100%' },
-  fundoModal: { backgroundColor: 'rgba(9,20,15,0.36)', flex: 1, justifyContent: 'flex-end' },
+  fundoModal: { backgroundColor: CORES.sobreposicao, flex: 1, justifyContent: 'flex-end' },
   grupo: { borderTopColor: CORES.borda, borderTopWidth: 1, paddingVertical: 11 },
-  iconeAcao: { alignItems: 'center', backgroundColor: '#EFF5F1', borderRadius: 11, height: 36, justifyContent: 'center', width: 36 },
-  indisponivel: { backgroundColor: '#FFF5DF', borderRadius: RAIOS.campo, color: '#715C2B', fontSize: 12, lineHeight: 17, marginTop: 12, padding: 11 },
+  iconeAcao: { alignItems: 'center', backgroundColor: CORES.superficieElevada, borderRadius: 11, height: 36, justifyContent: 'center', width: 36 },
+  indisponivel: { backgroundColor: CORES.atencaoClara, borderRadius: RAIOS.campo, color: CORES.textoNota, fontSize: 12, lineHeight: 17, marginTop: 12, padding: 11 },
   itemResumo: { borderBottomColor: CORES.borda, borderBottomWidth: 1, paddingVertical: 9 },
   metaFatura: { color: CORES.textoSecundario, fontSize: 11, marginTop: 3 },
   nomeFatura: { color: CORES.texto, fontSize: 13, fontWeight: '700' },
   notaFatura: { color: CORES.textoSecundario, fontSize: 11, lineHeight: 16, marginTop: 14 },
-  origem: { alignItems: 'center', backgroundColor: '#EEF8F1', borderRadius: RAIOS.campo, flexDirection: 'row', gap: 8, marginBottom: 8, padding: 11 },
-  resultado: { alignItems: 'flex-start', backgroundColor: '#EEF8F1', borderRadius: RAIOS.campo, flexDirection: 'row', gap: 8, marginBottom: 12, padding: 11 },
-  resumo: { backgroundColor: '#F6F8F7', borderRadius: RAIOS.campo, marginBottom: 12, paddingHorizontal: 12 },
+  origem: { alignItems: 'center', backgroundColor: CORES.acaoClara, borderRadius: RAIOS.campo, flexDirection: 'row', gap: 8, marginBottom: 8, padding: 11 },
+  resultado: { alignItems: 'flex-start', backgroundColor: CORES.acaoClara, borderRadius: RAIOS.campo, flexDirection: 'row', gap: 8, marginBottom: 12, padding: 11 },
+  resumo: { backgroundColor: CORES.fundo, borderRadius: RAIOS.campo, marginBottom: 12, paddingHorizontal: 12 },
   rotuloAcao: { color: CORES.texto, flex: 1, fontSize: 14, fontWeight: '600' },
   rotuloCampo: { color: CORES.textoSecundario, fontSize: 11, fontWeight: '700', marginBottom: 5, marginTop: 10 },
   rotuloResumo: { color: CORES.textoSecundario, fontSize: 10 },
-  skeleton: { backgroundColor: '#E7ECE9', borderRadius: RAIOS.campo, height: 58, marginBottom: 10 },
-  textoAviso: { color: '#715C2B', flex: 1, fontSize: 12 },
+  skeleton: { backgroundColor: CORES.skeleton, borderRadius: RAIOS.campo, height: 58, marginBottom: 10 },
+  textoAviso: { color: CORES.textoNota, flex: 1, fontSize: 12 },
   textoCancelar: { color: CORES.textoSecundario, fontSize: 13, fontWeight: '700' },
   textoConfirmar: { color: CORES.textoInvertido, fontSize: 13, fontWeight: '700' },
   textoDesabilitado: { color: CORES.textoSecundario },

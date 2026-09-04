@@ -1,3 +1,5 @@
+import type { CoresTema } from '@vyntra/tema';
+import { useTema, useEstilos } from '../aparencia/contexto-tema';
 import { Ionicons } from '@expo/vector-icons';
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
@@ -35,7 +37,7 @@ import type {
   PendenciaSaidaTextoLocal,
 } from '../offline/repositorio-replica-local';
 import type { ServicoPendenciasSaidaMobile } from '../offline/servico-pendencias-saida-mobile';
-import { CORES, ESPACOS, RAIOS } from '../tema';
+import { ESPACOS, RAIOS } from '../tema';
 import { FolhaAcoesSistemaMobile } from './FolhaAcoesSistemaMobile';
 
 const seletorMidia = new AdaptadorSelecaoMidiaNativa();
@@ -93,6 +95,8 @@ export function ComposerMobile({
   readonly servicoPendencias: ServicoPendenciasSaidaMobile;
   readonly usuarioId: string;
 }) {
+  const { cores: CORES, modo } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const reduzirMovimento = useReducedMotion();
   const campo = useRef<TextInput>(null);
   const salvamento = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -432,7 +436,7 @@ export function ComposerMobile({
               <Ionicons
                 color={
                   pendencia.estado === 'REVISAO_NECESSARIA'
-                    ? '#8A5A00'
+                    ? CORES.atencao
                     : CORES.textoSecundario
                 }
                 name={
@@ -551,13 +555,15 @@ export function ComposerMobile({
             </Pressable>
             <View style={estilos.campo}>
               <TextInput
+                    keyboardAppearance={modo === 'escuro' ? 'dark' : 'light'}
+                    selectionColor={CORES.acao}
                 accessibilityLabel="Mensagem"
                 editable={!ocupado && janelaAberta}
                 maxLength={4_096}
                 multiline
                 onChangeText={alterarTexto}
                 placeholder={janelaAberta ? 'Digite uma mensagem…' : 'Janela encerrada — use mensagem aprovada'}
-                placeholderTextColor="#8A948E"
+                placeholderTextColor={CORES.textoSecundario}
                 ref={campo}
                 style={estilos.entrada}
                 value={texto}
@@ -756,6 +762,8 @@ export function ComposerMobile({
                   <View key={indice} style={estilos.parametro}>
                     <Text style={estilos.rotuloParametro}>Campo {indice + 1}</Text>
                     <TextInput
+                    keyboardAppearance={modo === 'escuro' ? 'dark' : 'light'}
+                    selectionColor={CORES.acao}
                       maxLength={1_000}
                       onChangeText={(novo) => definirParametros((atuais) =>
                         atuais.map((atual, posicao) => posicao === indice ? novo : atual))}
@@ -781,26 +789,26 @@ export function ComposerMobile({
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   acaoPendencia: { paddingHorizontal: 8, paddingVertical: 7 },
   acaoPendenciaDesabilitada: { opacity: 0.45 },
-  acaoPendenciaPrincipal: { backgroundColor: '#805A00', borderRadius: RAIOS.pílula, paddingHorizontal: 12, paddingVertical: 7 },
+  acaoPendenciaPrincipal: { backgroundColor: CORES.atencao, borderRadius: RAIOS.pílula, paddingHorizontal: 12, paddingVertical: 7 },
   acoesPendencia: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
-  alca: { alignSelf: 'center', backgroundColor: '#D5DAD7', borderRadius: RAIOS.pílula, height: 4, marginBottom: 18, width: 38 },
+  alca: { alignSelf: 'center', backgroundColor: CORES.bordaForte, borderRadius: RAIOS.pílula, height: 4, marginBottom: 18, width: 38 },
   acoesMidia: { flexDirection: 'row', gap: 10, marginTop: 18 },
   area: { backgroundColor: CORES.superficie, borderTopColor: CORES.borda, borderTopWidth: 1, position: 'relative' },
   atalho: { color: CORES.acao, fontSize: 12, fontWeight: '800' },
-  botaoDesabilitado: { backgroundColor: '#A9B4AE' },
+  botaoDesabilitado: { backgroundColor: CORES.superficieDesabilitada },
   botaoAnexoDesabilitado: { opacity: 0.42 },
   botaoPressionado: { opacity: 0.82, transform: [{ scale: 0.96 }] },
   botaoPrincipal: { alignItems: 'center', backgroundColor: CORES.acao, borderRadius: RAIOS.pílula, height: 44, justifyContent: 'center', width: 44 },
-  botaoModelo: { backgroundColor: '#E7F5EC', borderRadius: RAIOS.pílula, paddingHorizontal: 12, paddingVertical: 8 },
+  botaoModelo: { backgroundColor: CORES.acaoClara, borderRadius: RAIOS.pílula, paddingHorizontal: 12, paddingVertical: 8 },
   botaoSecundario: { alignItems: 'center', borderColor: CORES.borda, borderRadius: RAIOS.pílula, borderWidth: 1, height: 42, justifyContent: 'center', width: 42 },
   cancelarMidia: { alignItems: 'center', borderColor: CORES.borda, borderRadius: RAIOS.campo, borderWidth: 1, flex: 1, justifyContent: 'center', minHeight: 48 },
-  campo: { alignItems: 'center', backgroundColor: '#F3F6F4', borderColor: CORES.borda, borderRadius: 22, borderWidth: 1, flex: 1, flexDirection: 'row', minHeight: 44, paddingHorizontal: 13 },
+  campo: { alignItems: 'center', backgroundColor: CORES.superficieElevada, borderColor: CORES.borda, borderRadius: 22, borderWidth: 1, flex: 1, flexDirection: 'row', minHeight: 44, paddingHorizontal: 13 },
   cabecalhoModelos: { alignItems: 'center', flexDirection: 'row', gap: 8 },
   cabecalhoPendencia: { alignItems: 'center', flexDirection: 'row', gap: 6 },
-  descricaoPendencia: { color: '#725A20', fontSize: 11, lineHeight: 15, marginTop: 5 },
+  descricaoPendencia: { color: CORES.textoNota, fontSize: 11, lineHeight: 15, marginTop: 5 },
   descricaoJanelaFechada: { color: CORES.textoSecundario, fontSize: 10, marginTop: 2 },
   descricaoModelo: { color: CORES.textoSecundario, fontSize: 11, marginTop: 2 },
   descricaoFolha: { color: CORES.textoSecundario, fontSize: 13, marginBottom: 15, marginTop: 3 },
@@ -809,35 +817,35 @@ const estilos = StyleSheet.create({
   entrada: { color: CORES.texto, flex: 1, fontSize: 15, lineHeight: 20, maxHeight: 112, minHeight: 42, paddingVertical: 10 },
   entradaParametro: { borderColor: CORES.borda, borderRadius: RAIOS.campo, borderWidth: 1, color: CORES.texto, fontSize: 14, minHeight: 44, paddingHorizontal: 12 },
   enviarModelo: { alignItems: 'center', backgroundColor: CORES.acao, borderRadius: RAIOS.campo, justifyContent: 'center', marginTop: 14, minHeight: 48 },
-  erro: { backgroundColor: '#FFF1ED', color: '#9B3326', fontSize: 11, lineHeight: 16, paddingHorizontal: ESPACOS.grande, paddingVertical: 7 },
-  erroModelo: { color: '#9B3326', fontSize: 11, lineHeight: 16, marginTop: 10 },
-  erroMidia: { color: '#9B3326', fontSize: 11, lineHeight: 16, marginTop: 12 },
+  erro: { backgroundColor: CORES.alertaClara, color: CORES.alerta, fontSize: 11, lineHeight: 16, paddingHorizontal: ESPACOS.grande, paddingVertical: 7 },
+  erroModelo: { color: CORES.alerta, fontSize: 11, lineHeight: 16, marginTop: 10 },
+  erroMidia: { color: CORES.alerta, fontSize: 11, lineHeight: 16, marginTop: 12 },
   folha: { backgroundColor: CORES.superficie, borderTopLeftRadius: 26, borderTopRightRadius: 26, maxHeight: '84%', padding: ESPACOS.grande, width: '100%' },
   folhaMidia: { backgroundColor: CORES.superficie, borderTopLeftRadius: 26, borderTopRightRadius: 26, padding: ESPACOS.grande, width: '100%' },
-  fundoModal: { backgroundColor: 'rgba(9,20,15,0.36)', flex: 1, justifyContent: 'flex-end' },
-  iconeAcao: { alignItems: 'center', backgroundColor: '#EFF5F1', borderRadius: 10, height: 34, justifyContent: 'center', width: 34 },
-  janelaFechada: { alignItems: 'center', backgroundColor: '#FFF8E7', borderBottomColor: '#F0DEAC', borderBottomWidth: 1, flexDirection: 'row', gap: 10, justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8 },
+  fundoModal: { backgroundColor: CORES.sobreposicao, flex: 1, justifyContent: 'flex-end' },
+  iconeAcao: { alignItems: 'center', backgroundColor: CORES.superficieElevada, borderRadius: 10, height: 34, justifyContent: 'center', width: 34 },
+  janelaFechada: { alignItems: 'center', backgroundColor: CORES.atencaoClara, borderBottomColor: CORES.atencaoBorda, borderBottomWidth: 1, flexDirection: 'row', gap: 10, justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8 },
   linhaComposer: { alignItems: 'flex-end', flexDirection: 'row', gap: 8, paddingHorizontal: 10, paddingTop: 8 },
   listaSugestoes: { maxHeight: 250 },
   listaModelos: { marginTop: 15, maxHeight: 440 },
   modelo: { alignItems: 'center', borderTopColor: CORES.borda, borderTopWidth: 1, flexDirection: 'row', gap: 10, minHeight: 58, paddingVertical: 10 },
-  modeloSelecionado: { backgroundColor: '#F3F7F4', borderRadius: RAIOS.campo, marginBottom: 12, padding: 12 },
+  modeloSelecionado: { backgroundColor: CORES.superficieElevada, borderRadius: RAIOS.campo, marginBottom: 12, padding: 12 },
   metaArquivo: { color: CORES.textoSecundario, fontSize: 11, marginTop: 4 },
   nomeArquivo: { color: CORES.texto, fontSize: 14, fontWeight: '700', marginTop: 12 },
   nomeModelo: { color: CORES.texto, fontSize: 13, fontWeight: '700' },
   parametro: { gap: 5, marginBottom: 10 },
-  pendencia: { backgroundColor: '#F2F5F3', borderBottomColor: CORES.borda, borderBottomWidth: 1, paddingHorizontal: 14, paddingVertical: 9 },
-  pendenciaRevisao: { backgroundColor: '#FFF7E3', borderBottomColor: '#EEDAA6' },
+  pendencia: { backgroundColor: CORES.superficieElevada, borderBottomColor: CORES.borda, borderBottomWidth: 1, paddingHorizontal: 14, paddingVertical: 9 },
+  pendenciaRevisao: { backgroundColor: CORES.atencaoClara, borderBottomColor: CORES.atencaoBorda },
   previaResposta: { color: CORES.textoSecundario, fontSize: 11, lineHeight: 15, marginTop: 3 },
-  previaArquivo: { alignItems: 'center', backgroundColor: '#EFF5F1', borderRadius: RAIOS.campo, height: 144, justifyContent: 'center' },
-  previaImagem: { backgroundColor: '#EEF1EF', borderRadius: RAIOS.campo, height: 230, width: '100%' },
+  previaArquivo: { alignItems: 'center', backgroundColor: CORES.superficieElevada, borderRadius: RAIOS.campo, height: 144, justifyContent: 'center' },
+  previaImagem: { backgroundColor: CORES.superficieElevada, borderRadius: RAIOS.campo, height: 230, width: '100%' },
   resposta: { borderTopColor: CORES.borda, borderTopWidth: 1, paddingHorizontal: 14, paddingVertical: 10 },
-  respostaPressionada: { backgroundColor: '#F4F8F5' },
+  respostaPressionada: { backgroundColor: CORES.superficieElevada },
   rotuloParametro: { color: CORES.textoSecundario, fontSize: 11, fontWeight: '600' },
   rodape: { backgroundColor: CORES.superficie },
   sugestoes: { backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: 16, borderWidth: 1, bottom: '100%', left: 10, maxHeight: 290, overflow: 'hidden', position: 'absolute', right: 10, zIndex: 20 },
   semModelos: { color: CORES.textoSecundario, fontSize: 13, paddingVertical: 22, textAlign: 'center' },
-  skeletonModelo: { backgroundColor: '#E6EBE8', borderRadius: RAIOS.campo, height: 64 },
+  skeletonModelo: { backgroundColor: CORES.skeleton, borderRadius: RAIOS.campo, height: 64 },
   textoBotaoModelo: { color: CORES.acao, fontSize: 11, fontWeight: '700' },
   textoCancelarMidia: { color: CORES.textoSecundario, fontSize: 13, fontWeight: '700' },
   textoConfirmarMidia: { color: CORES.textoInvertido, fontSize: 13, fontWeight: '700' },
@@ -849,7 +857,7 @@ const estilos = StyleSheet.create({
   textoPendencia: { color: CORES.texto, fontSize: 12, lineHeight: 16, marginTop: 4 },
   tentarPendencia: { alignSelf: 'flex-start', marginTop: 5, paddingVertical: 4 },
   tituloFolha: { color: CORES.texto, fontSize: 20, fontWeight: '800' },
-  tituloJanelaFechada: { color: '#725A20', fontSize: 12, fontWeight: '700' },
+  tituloJanelaFechada: { color: CORES.textoNota, fontSize: 12, fontWeight: '700' },
   tituloPendencia: { color: CORES.texto, fontSize: 11, fontWeight: '800' },
   tituloResposta: { color: CORES.texto, fontSize: 13, fontWeight: '700', marginTop: 2 },
   tituloSugestoes: { color: CORES.textoSecundario, fontSize: 10, fontWeight: '800', letterSpacing: 0.5, padding: 11, textTransform: 'uppercase' },

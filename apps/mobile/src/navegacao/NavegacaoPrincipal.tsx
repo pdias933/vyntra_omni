@@ -1,10 +1,13 @@
+import type { CoresTema } from '@vyntra/tema';
+import { useTema, useEstilos } from '../aparencia/contexto-tema';
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
 import { type ComponentProps, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SeletorAparencia } from '../aparencia/SeletorAparencia';
 import { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -26,7 +29,7 @@ import { TelaNotificacoesMobile } from '../telas/TelaNotificacoesMobile';
 import { TelaConversaMobile } from '../telas/TelaConversaMobile';
 import { TelaDetalhesContatoMobile } from '../telas/TelaDetalhesContatoMobile';
 import { TelaDiagnosticoMobile } from '../telas/TelaDiagnosticoMobile';
-import { CORES, ESPACOS, RAIOS } from '../tema';
+import { ESPACOS, RAIOS } from '../tema';
 
 type NomeIcone = ComponentProps<typeof Ionicons>['name'];
 export type RotasAtendimentos = {
@@ -122,6 +125,8 @@ function TelaVazia({
   readonly icone: NomeIcone;
   readonly titulo: string;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   return (
     <SafeAreaView edges={['top']} style={estilos.tela}>
       <View style={estilos.cabecalho}>
@@ -163,6 +168,8 @@ function Perfil({
   readonly politicaVersao?: PoliticaVersaoAplicativo;
   readonly sessao: SessaoAplicativo;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const iniciais = sessao.nomeExibicao
     .split(/\s+/u)
     .slice(0, 2)
@@ -177,7 +184,8 @@ function Perfil({
         </View>
         <MarcaVyntra compacta />
       </View>
-      <View style={estilos.perfilConteudo}>
+      <ScrollView contentContainerStyle={estilos.perfilConteudo}>
+        <SeletorAparencia />
         {sessao.dispositivoSubstituido && (
           <View accessibilityLiveRegion="polite" style={estilos.avisoSubstituicao}>
             <Ionicons color={CORES.info} name="phone-portrait-outline" size={20} />
@@ -252,7 +260,7 @@ function Perfil({
           <Ionicons color={CORES.alerta} name="log-out-outline" size={21} />
           <Text style={estilos.textoSair}>{carregando ? 'Saindo…' : 'Sair deste aparelho'}</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -341,6 +349,8 @@ export function NavegacaoPrincipal({
   readonly saindo: boolean;
   readonly sessao: SessaoAplicativo;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const reduzirMovimento = useReducedMotion();
   const [quantidadeAvisos, definirQuantidadeAvisos] = useState(
     () => caixaAvisos.listar().length,
@@ -373,7 +383,7 @@ export function NavegacaoPrincipal({
           };
           return <Ionicons color={color} name={icones[route.name]} size={size + 1} />;
         },
-        tabBarInactiveTintColor: '#7B8681',
+        tabBarInactiveTintColor: CORES.textoSecundario,
         tabBarLabelStyle: estilos.rotuloAba,
         tabBarStyle: estilos.barraAbas,
       })}
@@ -431,12 +441,12 @@ export function NavegacaoPrincipal({
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   atualizar: { alignItems: 'center', borderColor: CORES.info, borderRadius: RAIOS.pílula, borderWidth: 1, justifyContent: 'center', minHeight: 36, paddingHorizontal: 12 },
-  atualizarPressionado: { backgroundColor: '#EAF0FF' },
+  atualizarPressionado: { backgroundColor: CORES.infoClara },
   avatar: { alignItems: 'center', backgroundColor: CORES.acao, borderRadius: RAIOS.pílula, height: 62, justifyContent: 'center', width: 62 },
-  avisoAtualizacao: { alignItems: 'center', backgroundColor: '#F3F6FF', borderColor: '#DDE5FA', borderRadius: RAIOS.campo, borderWidth: 1, flexDirection: 'row', gap: 11, padding: 14 },
-  avisoSubstituicao: { alignItems: 'center', backgroundColor: '#EAF0FF', borderRadius: RAIOS.campo, flexDirection: 'row', gap: 10, padding: 14 },
+  avisoAtualizacao: { alignItems: 'center', backgroundColor: CORES.infoClara, borderColor: CORES.infoBorda, borderRadius: RAIOS.campo, borderWidth: 1, flexDirection: 'row', gap: 11, padding: 14 },
+  avisoSubstituicao: { alignItems: 'center', backgroundColor: CORES.infoClara, borderRadius: RAIOS.campo, flexDirection: 'row', gap: 10, padding: 14 },
   badgeAba: { backgroundColor: CORES.alerta, color: CORES.textoInvertido, fontSize: 10, fontWeight: '800' },
   barraAbas: { borderTopColor: CORES.borda, height: 76, paddingBottom: 9, paddingTop: 7 },
   cabecalho: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: ESPACOS.grande, paddingVertical: 18 },
@@ -448,13 +458,13 @@ const estilos = StyleSheet.create({
   erroAtualizacao: { color: CORES.alerta, fontSize: 12, marginTop: 5 },
   estadoVazio: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: 28 },
   iconeVazio: { alignItems: 'center', backgroundColor: CORES.acaoClara, borderRadius: RAIOS.cartao, height: 68, justifyContent: 'center', marginBottom: 18, width: 68 },
-  iconeAtualizacao: { alignItems: 'center', backgroundColor: '#E7EDFF', borderRadius: RAIOS.pílula, height: 38, justifyContent: 'center', width: 38 },
-  iconeOpcaoPerfil: { alignItems: 'center', backgroundColor: '#F3F6FF', borderRadius: RAIOS.pílula, height: 38, justifyContent: 'center', width: 38 },
+  iconeAtualizacao: { alignItems: 'center', backgroundColor: CORES.infoClara, borderRadius: RAIOS.pílula, height: 38, justifyContent: 'center', width: 38 },
+  iconeOpcaoPerfil: { alignItems: 'center', backgroundColor: CORES.infoClara, borderRadius: RAIOS.pílula, height: 38, justifyContent: 'center', width: 38 },
   identidade: { flex: 1 },
   iniciais: { color: CORES.textoInvertido, fontSize: 20, fontWeight: '700' },
   nome: { color: CORES.texto, fontSize: 19, fontWeight: '700' },
   opcaoPerfil: { alignItems: 'center', backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: RAIOS.campo, borderWidth: 1, flexDirection: 'row', gap: 11, minHeight: 58, paddingHorizontal: 14, paddingVertical: 9 },
-  opcaoPerfilPressionada: { backgroundColor: '#F5F8F6' },
+  opcaoPerfilPressionada: { backgroundColor: CORES.superficieElevada },
   perfilConteudo: { gap: ESPACOS.medio, padding: ESPACOS.grande },
   protegida: { alignItems: 'center', flexDirection: 'row', gap: 6, marginTop: 7 },
   rotuloAba: { fontSize: 11, fontWeight: '600' },

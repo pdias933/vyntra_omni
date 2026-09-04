@@ -1,3 +1,6 @@
+import type { CoresTema } from '@vyntra/tema';
+import { SeletorAparencia } from '../aparencia/SeletorAparencia';
+import { useTema, useEstilos } from '../aparencia/contexto-tema';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
@@ -21,7 +24,7 @@ import {
 } from '../autenticacao/servico-autenticacao-aplicativo';
 import { BotaoPrimario } from '../componentes/BotaoPrimario';
 import { MarcaVyntra } from '../componentes/MarcaVyntra';
-import { CORES, ESPACOS, RAIOS } from '../tema';
+import { ESPACOS, RAIOS } from '../tema';
 
 export type RotasEntrada = {
   Entrada: undefined;
@@ -44,6 +47,8 @@ export function TelaEntrada({
   entrar,
   navigation,
 }: Propriedades) {
+  const { cores: CORES, modo } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const [identificador, definirIdentificador] = useState('');
   const [senha, definirSenha] = useState('');
   const [codigoMfa, definirCodigoMfa] = useState('');
@@ -116,6 +121,8 @@ export function TelaEntrada({
               <View style={estilos.campo}>
                 <Ionicons color={CORES.textoSecundario} name="person-outline" size={20} />
                 <TextInput
+                    keyboardAppearance={modo === 'escuro' ? 'dark' : 'light'}
+                    selectionColor={CORES.acao}
                   accessibilityLabel="Usuário"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -123,7 +130,7 @@ export function TelaEntrada({
                   maxLength={120}
                   onChangeText={definirIdentificador}
                   placeholder="seu.usuario"
-                  placeholderTextColor="#8A9690"
+                  placeholderTextColor={CORES.textoSecundario}
                   returnKeyType="next"
                   style={estilos.entrada}
                   textContentType="username"
@@ -137,13 +144,15 @@ export function TelaEntrada({
               <View style={estilos.campo}>
                 <Ionicons color={CORES.textoSecundario} name="lock-closed-outline" size={20} />
                 <TextInput
+                    keyboardAppearance={modo === 'escuro' ? 'dark' : 'light'}
+                    selectionColor={CORES.acao}
                   accessibilityLabel="Senha"
                   editable={!carregando}
                   maxLength={128}
                   onChangeText={definirSenha}
                   onSubmitEditing={() => void enviar()}
                   placeholder="Sua senha"
-                  placeholderTextColor="#8A9690"
+                  placeholderTextColor={CORES.textoSecundario}
                   returnKeyType={solicitaMfa ? 'next' : 'go'}
                   secureTextEntry={!mostrarSenha}
                   style={estilos.entrada}
@@ -174,6 +183,8 @@ export function TelaEntrada({
                 <View style={estilos.campo}>
                   <Ionicons color={CORES.textoSecundario} name="shield-checkmark-outline" size={20} />
                   <TextInput
+                    keyboardAppearance={modo === 'escuro' ? 'dark' : 'light'}
+                    selectionColor={CORES.acao}
                     accessibilityLabel="Código de segurança"
                     autoCapitalize="characters"
                     autoCorrect={false}
@@ -182,7 +193,7 @@ export function TelaEntrada({
                     onChangeText={definirCodigoMfa}
                     onSubmitEditing={() => void enviar()}
                     placeholder="6 dígitos ou recuperação"
-                    placeholderTextColor="#8A9690"
+                    placeholderTextColor={CORES.textoSecundario}
                     returnKeyType="go"
                     style={estilos.entrada}
                     textContentType="oneTimeCode"
@@ -230,13 +241,14 @@ export function TelaEntrada({
           </Pressable>
         </Animated.View>
 
+        <SeletorAparencia />
         <Text style={estilos.rodape}>Acesso protegido e vinculado a este aparelho</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   apresentacao: { gap: 10, marginTop: 34 },
   avisoErro: {
     alignItems: 'center',
@@ -270,11 +282,11 @@ const estilos = StyleSheet.create({
   },
   cartao: {
     backgroundColor: CORES.superficie,
-    borderColor: 'rgba(16, 25, 21, 0.06)',
+    borderColor: CORES.sombra,
     borderRadius: 30,
     borderWidth: 1,
     padding: ESPACOS.grande,
-    shadowColor: '#0A2118',
+    shadowColor: CORES.sombra,
     shadowOffset: { height: 18, width: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 40,
@@ -300,7 +312,7 @@ const estilos = StyleSheet.create({
   },
   linha: { backgroundColor: CORES.borda, flex: 1, height: 1 },
   orbeInferior: {
-    backgroundColor: '#D8F1E6',
+    backgroundColor: CORES.acaoClara,
     borderRadius: 160,
     bottom: -55,
     height: 210,
@@ -309,7 +321,7 @@ const estilos = StyleSheet.create({
     width: 210,
   },
   orbeSuperior: {
-    backgroundColor: '#E7EFEA',
+    backgroundColor: CORES.superficieElevada,
     borderRadius: 130,
     height: 180,
     left: -85,

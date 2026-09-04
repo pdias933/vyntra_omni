@@ -1,3 +1,5 @@
+import type { CoresTema } from '@vyntra/tema';
+import { useTema, useEstilos } from '../aparencia/contexto-tema';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
@@ -6,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { PoliticaVersaoAplicativo } from '../atualizacao/adaptador-politica-versao-http';
 import { BotaoPrimario } from '../componentes/BotaoPrimario';
 import { MarcaVyntra } from '../componentes/MarcaVyntra';
-import { CORES, ESPACOS, RAIOS } from '../tema';
+import { ESPACOS, RAIOS } from '../tema';
 
 export function TelaAtualizacaoObrigatoria({
   abrindoLoja,
@@ -23,6 +25,8 @@ export function TelaAtualizacaoObrigatoria({
   readonly politica: PoliticaVersaoAplicativo;
   readonly verificando: boolean;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   return (
     <SafeAreaView style={estilos.tela}>
       <View style={estilos.marca}>
@@ -81,6 +85,8 @@ export function TelaFalhaVerificacaoVersao({
   readonly aoTentarNovamente: () => void;
   readonly verificando: boolean;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   return (
     <SafeAreaView style={estilos.tela}>
       <View style={estilos.marca}>
@@ -108,12 +114,12 @@ export function TelaFalhaVerificacaoVersao({
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   acoes: { alignSelf: 'stretch', gap: ESPACOS.pequeno, marginTop: 28 },
   avisoErro: { alignItems: 'center', alignSelf: 'stretch', backgroundColor: CORES.alertaClara, borderRadius: RAIOS.campo, flexDirection: 'row', gap: 9, marginTop: 22, padding: 13 },
   conteudo: { alignItems: 'center', flex: 1, justifyContent: 'center', paddingHorizontal: 30 },
   descricao: { color: CORES.textoSecundario, fontSize: 15, lineHeight: 22, maxWidth: 350, textAlign: 'center' },
-  icone: { alignItems: 'center', backgroundColor: '#EAF0FF', borderRadius: RAIOS.cartao, height: 86, justifyContent: 'center', marginBottom: 24, width: 86 },
+  icone: { alignItems: 'center', backgroundColor: CORES.infoClara, borderRadius: RAIOS.cartao, height: 86, justifyContent: 'center', marginBottom: 24, width: 86 },
   iconeAtencao: { backgroundColor: CORES.alertaClara },
   marca: { paddingHorizontal: ESPACOS.grande, paddingTop: ESPACOS.medio },
   rodape: { color: CORES.textoSecundario, fontSize: 12, padding: ESPACOS.grande, textAlign: 'center' },

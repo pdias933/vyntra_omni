@@ -1,3 +1,5 @@
+import type { CoresTema } from '@vyntra/tema';
+import { useTema, useEstilos } from '../aparencia/contexto-tema';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -14,7 +16,7 @@ import {
   type ServicoAutenticacaoAplicativo,
 } from '../autenticacao/servico-autenticacao-aplicativo';
 import { BotaoPrimario } from '../componentes/BotaoPrimario';
-import { CORES, ESPACOS, RAIOS } from '../tema';
+import { ESPACOS, RAIOS } from '../tema';
 import type { RotasEntrada } from './TelaEntrada';
 
 type Propriedades = NativeStackScreenProps<RotasEntrada, 'PareamentoQr'> & {
@@ -32,6 +34,8 @@ export function TelaPareamentoQr({
   autenticacao,
   navigation,
 }: Propriedades) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   const insets = useSafeAreaInsets();
   const [permissao, solicitarPermissao] = useCameraPermissions();
   const [estado, definirEstado] = useState<EstadoPareamento>('SOLICITAR_CAMERA');
@@ -185,7 +189,7 @@ export function TelaPareamentoQr({
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   acaoCamera: { alignSelf: 'stretch', marginTop: ESPACOS.medio },
   areaCamera: { flex: 1, overflow: 'hidden' },
   cabecalho: {
@@ -196,21 +200,21 @@ const estilos = StyleSheet.create({
     paddingHorizontal: 14,
   },
   descricaoEstado: { color: CORES.textoSecundario, fontSize: 15, lineHeight: 22, maxWidth: 330, textAlign: 'center' },
-  descricaoInstrucao: { color: 'rgba(255,255,255,0.72)', fontSize: 13, marginTop: 5, textAlign: 'center' },
+  descricaoInstrucao: { color: CORES.textoMidiaSecundario, fontSize: 13, marginTop: 5, textAlign: 'center' },
   espacoCabecalho: { width: 42 },
   estadoCentral: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: 30 },
-  guiaQr: { borderColor: CORES.textoInvertido, borderRadius: 28, borderWidth: 3, height: 246, width: 246 },
+  guiaQr: { borderColor: CORES.textoSobreMidia, borderRadius: 28, borderWidth: 3, height: 246, width: 246 },
   iconeErro: { backgroundColor: CORES.alertaClara },
   iconeEstado: { alignItems: 'center', backgroundColor: CORES.acaoClara, borderRadius: RAIOS.cartao, height: 72, justifyContent: 'center', marginBottom: 22, width: 72 },
-  instrucaoCamera: { backgroundColor: CORES.primario, paddingHorizontal: 20, paddingTop: 22 },
-  mascaraCamera: { alignItems: 'center', backgroundColor: 'rgba(4, 16, 11, 0.28)', flex: 1, justifyContent: 'center' },
-  ponto: { backgroundColor: '#B9C4BE', borderRadius: RAIOS.pílula, height: 7, width: 7 },
+  instrucaoCamera: { backgroundColor: CORES.fundoMidia, paddingHorizontal: 20, paddingTop: 22 },
+  mascaraCamera: { alignItems: 'center', backgroundColor: CORES.sobreposicao, flex: 1, justifyContent: 'center' },
+  ponto: { backgroundColor: CORES.bordaForte, borderRadius: RAIOS.pílula, height: 7, width: 7 },
   pontoAtivo: { backgroundColor: CORES.acao, borderRadius: RAIOS.pílula, height: 7, width: 24 },
   pontos: { flexDirection: 'row', gap: 7, marginTop: 26 },
   tela: { backgroundColor: CORES.fundo, flex: 1 },
   tituloCabecalho: { color: CORES.texto, flex: 1, fontSize: 17, fontWeight: '700', textAlign: 'center' },
   tituloEstado: { color: CORES.texto, fontSize: 25, fontWeight: '700', letterSpacing: -0.5, marginBottom: 10, textAlign: 'center' },
-  tituloInstrucao: { color: CORES.textoInvertido, fontSize: 16, fontWeight: '700', textAlign: 'center' },
+  tituloInstrucao: { color: CORES.textoSobreMidia, fontSize: 16, fontWeight: '700', textAlign: 'center' },
   validade: { color: CORES.acao, fontSize: 13, fontWeight: '600', marginTop: 18 },
   voltar: { alignItems: 'center', height: 42, justifyContent: 'center', width: 42 },
 });

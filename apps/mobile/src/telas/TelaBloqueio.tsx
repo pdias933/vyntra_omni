@@ -1,3 +1,5 @@
+import type { CoresTema } from '@vyntra/tema';
+import { useTema, useEstilos } from '../aparencia/contexto-tema';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View, Pressable } from 'react-native';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
@@ -5,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BotaoPrimario } from '../componentes/BotaoPrimario';
 import { MarcaVyntra } from '../componentes/MarcaVyntra';
-import { CORES, ESPACOS, RAIOS } from '../tema';
+import { ESPACOS, RAIOS } from '../tema';
 
 export function TelaBloqueio({
   carregando,
@@ -20,6 +22,8 @@ export function TelaBloqueio({
   readonly aoDesbloquear: () => void;
   readonly aoUsarSenha: () => void;
 }) {
+  const { cores: CORES } = useTema();
+  const estilos = useEstilos(criarEstilos);
   return (
     <SafeAreaView style={estilos.tela}>
       <View style={estilos.marca}>
@@ -65,7 +69,7 @@ export function TelaBloqueio({
   );
 }
 
-const estilos = StyleSheet.create({
+const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   acoes: { alignSelf: 'stretch', gap: ESPACOS.pequeno, marginTop: 34 },
   conteudo: { alignItems: 'center', flex: 1, justifyContent: 'center', paddingHorizontal: 30 },
   descricao: { color: CORES.textoSecundario, fontSize: 15, lineHeight: 22, maxWidth: 330, textAlign: 'center' },
@@ -73,7 +77,7 @@ const estilos = StyleSheet.create({
   marca: { paddingHorizontal: ESPACOS.grande, paddingTop: ESPACOS.medio },
   rodape: { alignItems: 'center', flexDirection: 'row', gap: 8, justifyContent: 'center', padding: ESPACOS.grande },
   senha: { alignItems: 'center', borderRadius: RAIOS.botao, height: 50, justifyContent: 'center' },
-  senhaPressionada: { backgroundColor: '#EAEFEC' },
+  senhaPressionada: { backgroundColor: CORES.skeleton },
   tela: { backgroundColor: CORES.fundo, flex: 1 },
   textoRodape: { color: CORES.textoSecundario, flexShrink: 1, fontSize: 12 },
   textoSenha: { color: CORES.texto, fontSize: 14, fontWeight: '600' },
