@@ -15,7 +15,7 @@ Validação em 4 de setembro de 2026, sobre a cadeia baseada em PR117A. Claro, E
 | Expo | Matriz de dependências aprovada; exportações iOS e Android geradas. |
 | Auditoria | Dependências e segredos aprovados; exceção preexistente permanece documentada. |
 | Aparelhos físicos | Pendente; não confundir exportação com execução nativa ou distribuição de binário. |
-| Staging | Publicação cumulativa em preparação; evidência operacional será registrada após prontidão e smoke HTTPS. |
+| Staging | Release `pr-124-f0abf38` publicada e validada em HTTPS, com API/web/proxy e dois workers homogêneos. |
 
 ## Cobertura real no navegador
 
@@ -40,6 +40,8 @@ Os módulos oficiais e a necessidade de nova development build estão em [TEMAS.
 
 ## Aceite ainda necessário em iOS e Android
 
+Os aparelhos iOS registrados neste computador retornaram indisponíveis para o ensaio; não foi executada homologação física em nenhuma plataforma.
+
 - Gerar e instalar uma nova development build com os módulos nativos; manter configuração de API e chave pública offline verificadas.
 - Validar abertura fria pelo sistema e override salvo, barras, teclado, seletor de anexos, câmera, leitor QR, biometria e tela de atualização obrigatória.
 - Testar lista, conversa, notas/formulários, mídia, ações, detalhes, navegação de volta, rascunho e posição durante troca de tema.
@@ -49,3 +51,16 @@ Os módulos oficiais e a necessidade de nova development build estão em [TEMAS.
 ## Rastreabilidade
 
 As branches `codex/pr-118-contrato-temas` até `codex/pr-124-regressao-homologacao-temas` são dependentes e devem ser revisadas nessa ordem. Publicação de branch não significa merge. A integração GitHub recusou a abertura dos objetos de pull request com HTTP 403; nenhuma PR aberta foi presumida. O painel e o Effort de cada etapa ficam em [ROADMAP.md](../ROADMAP.md).
+
+## Publicação verificada
+
+Release de aplicação `pr-124-f0abf38`, commit `f0abf38dfe37b2afe2b960fa4b89eaae880d800a`, em [omni.up100.com.br](https://omni.up100.com.br). O deploy compatível terminou com código zero: um job de migration reconheceu 57 migrations, sem pendência; API, web e proxy ficaram saudáveis, e os dois workers usam o mesmo release. PostgreSQL, Redis e storage permaneceram saudáveis. O apontamento `current` foi atualizado após prontidão; a release anterior `pr-117a-1631aee` permanece disponível para reversão compatível.
+
+O ensaio `scripts/aceitar-temas-staging.mjs` usa somente leitura, sem usuário autenticado ou API simulada. Confirmou prontidão HTTP 200, login nos dois temas, persistência após recarga, ausência de erro de aplicação, CSP com `script-src 'self'` e arquivos públicos idênticos à fonte:
+
+| Arquivo | SHA-256 | Cache |
+|---|---|---|
+| `/temas.css` | `d6448036c4861beb317ea1835b0f67f10755b4ed69a2eb7283fc1451dc697c0f` | `no-cache, must-revalidate` |
+| `/aparencia-inicial.js` | `059cac001db08b98a1752efb44ebbdce89f4338cd18cb30609d1d9729183127f` | `no-cache, must-revalidate` |
+
+Reprodução: usar as mesmas variáveis de Playwright/Chrome do ensaio local e executar `node scripts/aceitar-temas-staging.mjs`. Capturas e JSON ficam em `outputs/temas-validacao/staging/`. Modo MK foi confirmado `DESATIVADO`; os dois controles MK permanecem `DESATIVADO`, percentual zero e sem liberação administrativa. O piloto continua desligado, sem usuários/contas/recursos ativos. Esta publicação não libera produção.

@@ -139,12 +139,12 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 115 | CONCLUÍDA | `high` |
 | 116 | CONCLUÍDA | `high` |
 | 117 | CONCLUÍDA | `xhigh` |
-| 118 | PRONTA | `high` |
-| 119 | PRONTA | `high` |
-| 120 | PRONTA | `xhigh` |
-| 121 | PRONTA | `high` |
-| 122 | PRONTA | `xhigh` |
-| 123 | PRONTA | `xhigh` |
+| 118 | CONCLUÍDA | `high` |
+| 119 | CONCLUÍDA | `high` |
+| 120 | CONCLUÍDA | `xhigh` |
+| 121 | CONCLUÍDA | `high` |
+| 122 | CONCLUÍDA | `xhigh` |
+| 123 | CONCLUÍDA | `xhigh` |
 | 124 | EM ANDAMENTO | `high` |
 
 ### Entregas intermediárias
@@ -819,7 +819,11 @@ Execução autorizada em 4 de setembro de 2026, baseada na PR117A publicada. A p
 | 123 | Superfícies secundárias | Administração, saúde, relatórios, editor, QR, diagnóstico e perfil. |
 | 124 | Regressão e homologação | Portões completos, navegador real, exportação Expo e registro separado de aceite físico/staging. |
 
-PR118: contrato criado em `design/TEMAS.md`; pacote interno `@vyntra/tema` sem nova dependência externa. Testes de contraste e resolução da preferência, lint e tipos do pacote aprovados. Verificações cumulativas e publicação são registradas ao fechar a série.
+PR118–PR123 concluídas em 4 de setembro de 2026: contrato e paletas semânticas compartilhadas, preferência persistente Sistema/Claro/Escuro, motores web/mobile, telas operacionais e secundárias, editor e superfícies nativas implementados e publicados em branches dependentes. Lint, tipos, contratos, 478 testes da API (cache do backend inalterado), 355 testes de arquitetura/comportamento, builds web/API e exportações iOS/Android, matriz Expo, dependências e segredos aprovados. O navegador real preservou rascunho, foco, rolagem não nula e posição do editor, com QR óptico invariável e sem requisição extra na troca de aparência.
+
+O deploy cumulativo `pr-124-f0abf38` foi aceito em `https://omni.up100.com.br`, com API/web/proxy e dois workers homogêneos; 57 migrations reconhecidas, nenhuma pendente. HTTPS, prontidão, hashes/cache dos arquivos de aparência, CSP e login claro/escuro foram conferidos no endereço real. A release anterior `pr-117a-1631aee` foi preservada. MK permanece `DESATIVADO`, seus dois controles com rollout zero e piloto real desligado. Produção não foi liberada.
+
+PR124 permanece `EM ANDAMENTO`: engenharia, regressão automatizada e deploy concluídos, mas faltam nova development build e homologação física iOS/Android. Não há aprovação de distribuição nas lojas. As branches foram enviadas ao GitHub; a integração recusou a abertura automática dos objetos de pull request (403), e não houve merge presumido. Evidências e roteiro pendente: [design/VALIDACAO-TEMAS.md](design/VALIDACAO-TEMAS.md).
 
 | Marco | PRs | Resultado |
 |---|---:|---|
