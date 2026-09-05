@@ -23,6 +23,18 @@ const paginaInicial = await fetch(origem, { signal: AbortSignal.timeout(15000) }
 assert.equal(paginaInicial.status, 200);
 const csp = paginaInicial.headers.get('content-security-policy');
 assert.match(csp, /script-src 'self'(?:;|$)/);
+const html = await paginaInicial.text();
+const estilos = [...html.matchAll(/href="(\/assets\/[A-Za-z0-9_-]+\.css)"/g)].map(([,caminho])=>caminho);
+assert.ok(estilos.length>0,'HTML precisa referenciar o CSS compilado');
+for (const caminho of estilos) {
+  const resposta = await fetch(origem+caminho, {signal:AbortSignal.timeout(15000)});
+  assert.equal(resposta.status,200);
+  assert.match(resposta.headers.get('cache-control'),/immutable/);
+  const esperado = await readFile(new URL('../apps/web/dist'+caminho,import.meta.url));
+  const recebido = Buffer.from(await resposta.arrayBuffer());
+  assert.equal(hash(recebido),hash(esperado),'CSS responsivo do release deve ser o validado localmente');
+  evidencias.push({caminho,sha256:hash(recebido),cache:resposta.headers.get('cache-control')});
+}
 const prontidao = await fetch(origem + '/api/v1/saude/pronto', { signal: AbortSignal.timeout(15000) });
 assert.equal(prontidao.status, 200);
 

@@ -346,6 +346,8 @@ Reversão de aplicação não presume reversão destrutiva de banco.
 
 O release de aparência segue o deploy compatível da PR112 em staging, sem nova migration ou mudança de contrato. A imagem web inclui `packages/tema` e os arquivos públicos `/temas.css` e `/aparencia-inicial.js`; esses dois arquivos exigem revalidação de cache, enquanto assets com hash continuam imutáveis. O bootstrap é externo e precede a aplicação; não flexibilizar CSP. Validar HTTPS, conteúdo/tipo dos assets e os dois temas no login após a publicação. Modo MK e piloto real permanecem desligados. O mobile exige nova development build, pois a entrega inclui módulos nativos; exportação não distribui binário nem comprova aceite físico. Evidências e pendências estão em [design/VALIDACAO-TEMAS.md](design/VALIDACAO-TEMAS.md).
 
+A revisão visual PR124A está publicada como `pr-124a-a668c3e`, sem nova migration. O aceite também compara o hash do CSS compilado referenciado pelo HTML, evitando aprovar somente a paleta enquanto um layout antigo continua servido. Reversão compatível para `pr-124-f0abf38`, preservada, sem apagar dados. Evidências, hashes e limites de homologação em [design/VALIDACAO-PR124A.md](design/VALIDACAO-PR124A.md). Recarregar uma aba já aberta carrega o novo HTML; não pedir limpeza de sessão/armazenamento como procedimento de atualização visual.
+
 Painel web permite:
 
 - ativar/desativar recurso já implementado;

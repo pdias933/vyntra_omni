@@ -154,7 +154,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096A | CONCLUÍDA | `high` |
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
-| 124A | EM ANDAMENTO | `xhigh` |
+| 124A | CONCLUÍDA | `xhigh` |
 
 `096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR116 foram concluídas, e PR108–PR116 foram publicadas no deploy cumulativo de staging. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. O piloto real permanece desligado pelos bloqueios externos do checklist. A PR117 está em andamento para consultas reais MK estritamente somente leitura, com provider e controles desligados por padrão.
 
@@ -828,7 +828,7 @@ PR124 permanece `EM ANDAMENTO`: engenharia, regressão automatizada e deploy con
 
 ### PR124A — ajuste visual e responsividade
 
-Solicitado após a captura do Safari: retirar o fundo verde-escuro, corrigir proporções e aproximar a composição da referência conceitual. Effort recomendado: `xhigh`, pelo reflow desktop/compacto, conservação de rascunho/posição/leitura e validação entre motores. Paleta grafite compartilhada, lateral compacta, lista limitada, tipografia legível, detalhes adaptativos e navegação de retorno estão em implementação. Aceite exige regressão Chromium/WebKit, portões de engenharia, branch publicada e deploy de staging; não encerra a homologação física mobile da PR124.
+Concluída em 4 de setembro de 2026 após a captura do Safari: fundo verde-escuro substituído por grafite neutro, lateral compacta, lista de 320–420 px, conversa predominante, tipografia legível, detalhes adaptativos e composer com altura ajustável. Retorno compacto preserva rascunho e posição; conversa recolhida não confirma mensagens novas como lidas. Chromium 152 e WebKit 26.5 aprovaram 22 combinações de tema/largura cada, fonte ampliada a 200%, foco, editor, QR e ausência de transbordamento. Lint, tipos, contratos, 478 testes da API (cache), 355 testes de arquitetura/comportamento, builds web/API/iOS/Android, Expo, dependências e segredos aprovados. Branch `codex/pr-124a-ajuste-visual-responsivo` publicada no GitHub; não há merge ou objeto de pull request presumido. Release de staging `pr-124a-a668c3e` saudável e com hashes públicos conferidos, 57 migrations reconhecidas e nenhuma pendência; anterior `pr-124-f0abf38` preservada. MK e piloto continuam desligados. Effort recomendado e confirmado: `xhigh`, pelo reflow e conservação de estado entre motores. Não encerra o aceite físico mobile da PR124. Evidências: [design/VALIDACAO-PR124A.md](design/VALIDACAO-PR124A.md).
 
 | Marco | PRs | Resultado |
 |---|---:|---|
