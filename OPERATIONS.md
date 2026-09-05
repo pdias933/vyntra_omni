@@ -342,6 +342,10 @@ Reversão de aplicação não presume reversão destrutiva de banco.
 
 ## 13. Feature flags e releases
 
+### Aparência — PR118–PR124
+
+O release de aparência segue o deploy compatível da PR112 em staging, sem nova migration ou mudança de contrato. A imagem web inclui `packages/tema` e os arquivos públicos `/temas.css` e `/aparencia-inicial.js`; esses dois arquivos exigem revalidação de cache, enquanto assets com hash continuam imutáveis. O bootstrap é externo e precede a aplicação; não flexibilizar CSP. Validar HTTPS, conteúdo/tipo dos assets e os dois temas no login após a publicação. Modo MK e piloto real permanecem desligados. O mobile exige nova development build, pois a entrega inclui módulos nativos; exportação não distribui binário nem comprova aceite físico. Evidências e pendências estão em [design/VALIDACAO-TEMAS.md](design/VALIDACAO-TEMAS.md).
+
 Painel web permite:
 
 - ativar/desativar recurso já implementado;

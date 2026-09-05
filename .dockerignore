@@ -29,6 +29,10 @@
 !apps/web/src
 !apps/web/src/**/*.ts
 !apps/web/src/**/*.tsx
+!apps/web/src/**/*.css
+!apps/web/public
+!apps/web/public/*.css
+!apps/web/public/*.js
 
 !packages
 !packages/api-client
@@ -36,6 +40,10 @@
 !packages/api-client/tsconfig.json
 !packages/api-client/src
 !packages/api-client/src/**/*.ts
+!packages/tema
+!packages/tema/package.json
+!packages/tema/src
+!packages/tema/src/**/*.ts
 !packages/eslint-config
 !packages/eslint-config/package.json
 !packages/typescript-config

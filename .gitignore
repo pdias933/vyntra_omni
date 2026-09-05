@@ -19,3 +19,4 @@ apps/mobile/.expo/
 apps/mobile/android/
 apps/mobile/ios/
 apps/api/src/gerado/prisma/
+/outputs/temas-validacao/

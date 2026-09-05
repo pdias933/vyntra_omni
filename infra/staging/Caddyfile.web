@@ -9,6 +9,8 @@ http://:8080 {
 
 	@ativos path /assets/*
 	header @ativos Cache-Control "public, max-age=31536000, immutable"
+	@aparencia path /temas.css /aparencia-inicial.js
+	header @aparencia Cache-Control "no-cache, must-revalidate"
 
 	route {
 		try_files {path} /index.html

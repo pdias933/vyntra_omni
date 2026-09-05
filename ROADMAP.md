@@ -145,7 +145,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 121 | PRONTA | `high` |
 | 122 | PRONTA | `xhigh` |
 | 123 | PRONTA | `xhigh` |
-| 124 | PENDENTE | `high` |
+| 124 | EM ANDAMENTO | `high` |
 
 ### Entregas intermediárias
 

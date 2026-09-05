@@ -110,7 +110,7 @@ test('expõe os comandos obrigatórios na raiz', async () => {
 
   assert.equal(
     manifesto.scripts.test,
-    'node scripts/verificar-contratos.mjs && node scripts/executar-turbo.mjs test && node --test "tests/*.test.mjs"',
+    'node scripts/gerar-temas-web.mjs --verificar && node scripts/verificar-contratos.mjs && node scripts/executar-turbo.mjs test && node --test "tests/*.test.mjs"',
   );
 });
 
@@ -135,7 +135,7 @@ test('acompanha estado e Effort de todas as PRs do roadmap', async () => {
 
   assert.deepEqual(
     linhas.map(({ numero }) => numero),
-    Array.from({ length: 117 }, (_, indice) =>
+    Array.from({ length: 124 }, (_, indice) =>
       String(indice + 1).padStart(3, '0'),
     ),
   );

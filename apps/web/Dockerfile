@@ -20,6 +20,7 @@ RUN npm install --global --ignore-scripts --no-audit --no-fund /tmp/pnpm.tgz \
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/package.json
 COPY packages/api-client/package.json packages/api-client/package.json
+COPY packages/tema/package.json packages/tema/package.json
 COPY packages/eslint-config/package.json packages/eslint-config/package.json
 COPY packages/typescript-config/package.json packages/typescript-config/package.json
 
@@ -28,6 +29,8 @@ RUN pnpm --filter '@vyntra/web...' install --frozen-lockfile
 COPY tsconfig.json ./
 COPY apps/web/index.html apps/web/tsconfig.app.json apps/web/tsconfig.json apps/web/tsconfig.node.json apps/web/vite.config.ts apps/web/
 COPY apps/web/src apps/web/src
+COPY apps/web/public apps/web/public
+COPY packages/tema/src packages/tema/src
 COPY packages/api-client/tsconfig.json packages/api-client/
 COPY packages/api-client/src packages/api-client/src
 COPY packages/typescript-config/*.json packages/typescript-config/
