@@ -28,8 +28,10 @@ Reprodução: iniciar o web local e executar `node scripts/aceitar-temas-web.mjs
 ## Correções encontradas na revisão
 
 - Delimitar seletores da tela vazia para não atingir cabeçalho e janela Meta da conversa aberta.
+- Permitir que a coluna de conversa encolha dentro da grade: histórico longo rola na timeline, sem empurrar o composer para fora da janela. O teste exige posição de rolagem maior que zero.
 - Aplicar contraste próprio à marca, prévias, estados e botão de vínculo desabilitado.
 - Incluir pacote compartilhado, CSS e inicialização de aparência no contexto e na imagem Docker web.
+- Incluir o `tsconfig` próprio do pacote no construtor Docker. A primeira tentativa detectou a ausência antes de migração/troca dos serviços; a release anterior permaneceu atendendo.
 - Revalidar os arquivos públicos de aparência a cada acesso; arquivos versionados de `/assets/` conservam cache imutável. CSP permanece inalterada, sem liberar script inline.
 
 ## Dependências nativas

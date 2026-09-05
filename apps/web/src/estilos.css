@@ -369,7 +369,7 @@ a {
 .tempo-atendimento--critico { color: var(--cor-alerta); background: var(--cor-alertaClara); }
 .tempo-atendimento--atencao { color: var(--cor-atencao); background: var(--cor-atencaoClara); }
 .tempo-atendimento--normal { color: var(--cor-acao); background: var(--cor-superficieElevada); }
-.previa-atendimento { display: grid; min-width: 0; place-items: center; background: var(--cor-fundo); }
+.previa-atendimento { display: grid; min-width: 0; min-height: 0; place-items: center; background: var(--cor-fundo); }
 .previa-atendimento > div { display: grid; max-width: 310px; justify-items: center; color: var(--cor-textoSecundario); text-align: center; }
 .previa-atendimento > div > span { display: grid; width: 62px; height: 62px; margin-bottom: 17px; place-items: center; border: 1px solid var(--cor-borda); border-radius: 20px; color: var(--cor-acao); background: var(--cor-superficie); box-shadow: var(--sombra); font-size: 30px; }
 .previa-atendimento > div > strong { color: var(--cor-textoSecundario); font-size: 14px; }

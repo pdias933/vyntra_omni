@@ -20,6 +20,7 @@ const iso = (minutos) => new Date(agora + minutos * 60_000).toISOString();
 const id = (n) => '00000000-0000-4000-8000-'+String(n).padStart(12,'0');
 const atendimento = { atendimento_id: id(1), conversa_id: id(2), contato_id: id(3), conta_whatsapp_id: id(4), fila_id: id(5), fila_nome: 'Suporte', nome_contato: 'Contato de Teste', modo: 'HUMANO', estado: 'EM_ATENDIMENTO', ultima_atividade_em: iso(-1), ultima_mensagem_resumo: 'Obrigado pela ajuda!', ultima_mensagem_direcao: 'ENTRADA', quantidade_nao_lida: 2, janela_expira_em: iso(115), sla_em: iso(20) };
 const itens = [
+  ...Array.from({length:18},(_,i)=>({id:id(100+i),tipo:'MENSAGEM',direcao:'ENTRADA',texto:`Mensagem anterior de teste ${i+1}.`,ocorrido_em:iso(-50+i)})),
   { id:id(10), tipo:'SEPARADOR_ATENDIMENTO', rotulo:'Atendimento de teste · Protocolo demonstrativo', ocorrido_em:iso(-20) },
   { id:id(11), tipo:'MENSAGEM', direcao:'ENTRADA', texto:'Bom dia! Preciso de ajuda com meu contrato.', ocorrido_em:iso(-15) },
   { id:id(12), tipo:'MENSAGEM', direcao:'SAIDA', texto:'Bom dia! Vou conferir as informações para você.', estado_mensagem:'LIDA', ocorrido_em:iso(-14) },
@@ -79,8 +80,9 @@ await pagina.locator('.cartao-atendimento').first().click();
 await pagina.locator('.bloco-nota-interna').waitFor();
 await pagina.getByLabel('Mensagem',{exact:true}).fill('Rascunho preservado ao trocar aparência.');
 const timeline=pagina.locator('.timeline-web');
-await timeline.evaluate(el=>el.scrollTop=70);
+await timeline.evaluate(el=>el.scrollTop=el.scrollHeight-el.clientHeight-50);
 const antes=await timeline.evaluate(el=>el.scrollTop);
+assert.ok(antes>0,'A fixture deve exigir rolagem real, não apenas preservar zero');
 const chamadasAntes=chamadas;
 await pagina.getByRole('combobox',{name:'Aparência'}).selectOption('claro');
 await capturar('web-conversa-claro','claro');

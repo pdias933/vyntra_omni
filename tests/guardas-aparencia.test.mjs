@@ -42,11 +42,11 @@ test('configuração nativa inclui tema automático e abertura equivalente aos t
 
 test('imagem web inclui pacote e bootstrap públicos, com revalidação sem enfraquecer CSP', async () => {
   const dockerfile = await readFile(new URL('apps/web/Dockerfile', raiz), 'utf8');
-  for (const caminho of ['packages/tema/package.json', 'packages/tema/src', 'apps/web/public']) {
+  for (const caminho of ['packages/tema/package.json', 'packages/tema/tsconfig.json', 'packages/tema/src', 'apps/web/public']) {
     assert.ok(dockerfile.includes(`COPY ${caminho} ${caminho}`), caminho);
   }
   const contexto = await readFile(new URL('.dockerignore', raiz), 'utf8');
-  for (const permitido of ['packages/tema', 'packages/tema/package.json', 'packages/tema/src', 'packages/tema/src/**/*.ts', 'apps/web/public', 'apps/web/public/*.css', 'apps/web/public/*.js', 'apps/web/src/**/*.css']) {
+  for (const permitido of ['packages/tema', 'packages/tema/package.json', 'packages/tema/tsconfig.json', 'packages/tema/src', 'packages/tema/src/**/*.ts', 'apps/web/public', 'apps/web/public/*.css', 'apps/web/public/*.js', 'apps/web/src/**/*.css']) {
     assert.ok(contexto.split('\n').includes(`!${permitido}`), permitido);
   }
   const caddy = await readFile(new URL('infra/staging/Caddyfile.web', raiz), 'utf8');

@@ -42,6 +42,7 @@
 !packages/api-client/src/**/*.ts
 !packages/tema
 !packages/tema/package.json
+!packages/tema/tsconfig.json
 !packages/tema/src
 !packages/tema/src/**/*.ts
 !packages/eslint-config

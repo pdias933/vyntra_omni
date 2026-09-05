@@ -31,6 +31,7 @@ COPY apps/web/index.html apps/web/tsconfig.app.json apps/web/tsconfig.json apps/
 COPY apps/web/src apps/web/src
 COPY apps/web/public apps/web/public
 COPY packages/tema/src packages/tema/src
+COPY packages/tema/tsconfig.json packages/tema/tsconfig.json
 COPY packages/api-client/tsconfig.json packages/api-client/
 COPY packages/api-client/src packages/api-client/src
 COPY packages/typescript-config/*.json packages/typescript-config/
