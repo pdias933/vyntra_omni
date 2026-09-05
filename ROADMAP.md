@@ -154,6 +154,7 @@ Effort possível: `low`, `medium`, `high` e `xhigh`. Nenhuma PR atual é `low`: 
 | 096A | CONCLUÍDA | `high` |
 | 096B | CONCLUÍDA | `xhigh` |
 | 096C | CONCLUÍDA | `low` |
+| 124A | EM ANDAMENTO | `xhigh` |
 
 `096A`, `096B` e `096C` foram inseridas sem renumerar o lote mobile aprovado. A PR096B entregou MFA TOTP, recuperação e provisionamento seguro do primeiro Administrador de staging. A PR096C corrigiu o reconhecimento do desafio MFA pelo console e foi aceita no deploy cumulativo `pr-097`. O lote mobile foi retomado em 2 de setembro de 2026; PR097–PR116 foram concluídas, e PR108–PR116 foram publicadas no deploy cumulativo de staging. O link público permanece condicionado ao jurídico/DPO e não integra a cópia interna da PR109. O piloto real permanece desligado pelos bloqueios externos do checklist. A PR117 está em andamento para consultas reais MK estritamente somente leitura, com provider e controles desligados por padrão.
 
@@ -824,6 +825,10 @@ PR118–PR123 concluídas em 4 de setembro de 2026: contrato e paletas semântic
 O deploy cumulativo `pr-124-f0abf38` foi aceito em `https://omni.up100.com.br`, com API/web/proxy e dois workers homogêneos; 57 migrations reconhecidas, nenhuma pendente. HTTPS, prontidão, hashes/cache dos arquivos de aparência, CSP e login claro/escuro foram conferidos no endereço real. A release anterior `pr-117a-1631aee` foi preservada. MK permanece `DESATIVADO`, seus dois controles com rollout zero e piloto real desligado. Produção não foi liberada.
 
 PR124 permanece `EM ANDAMENTO`: engenharia, regressão automatizada e deploy concluídos, mas faltam nova development build e homologação física iOS/Android. Não há aprovação de distribuição nas lojas. As branches foram enviadas ao GitHub; a integração recusou a abertura automática dos objetos de pull request (403), e não houve merge presumido. Evidências e roteiro pendente: [design/VALIDACAO-TEMAS.md](design/VALIDACAO-TEMAS.md).
+
+### PR124A — ajuste visual e responsividade
+
+Solicitado após a captura do Safari: retirar o fundo verde-escuro, corrigir proporções e aproximar a composição da referência conceitual. Effort recomendado: `xhigh`, pelo reflow desktop/compacto, conservação de rascunho/posição/leitura e validação entre motores. Paleta grafite compartilhada, lateral compacta, lista limitada, tipografia legível, detalhes adaptativos e navegação de retorno estão em implementação. Aceite exige regressão Chromium/WebKit, portões de engenharia, branch publicada e deploy de staging; não encerra a homologação física mobile da PR124.
 
 | Marco | PRs | Resultado |
 |---|---:|---|

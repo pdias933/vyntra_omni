@@ -1,0 +1,195 @@
+/* PR124A — composição de mensageria, superfícies neutras e viewport dinâmica. */
+html, body, #root { min-width: 320px; min-height: 0; height: 100%; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 1rem; }
+button, input, select, textarea { font-family: inherit; }
+button, summary { touch-action: manipulation; }
+summary:focus-visible { outline: 2px solid var(--cor-foco); outline-offset: 3px; }
+.shell-web { height: 100vh; height: 100dvh; grid-template-columns: 76px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); overflow: hidden; }
+.shell-web__lateral { gap: 20px; padding: 20px 10px 12px; background: var(--cor-fundoLateral); border-right: 1px solid var(--cor-bordaLateral); box-shadow: none; overflow-y: auto; scrollbar-width: none; }
+.marca-shell { justify-content: center; padding: 0; }
+.marca-shell > strong, .navegacao-shell section > span, .rotulo-navegacao, .perfil-shell > div { display: none; }
+.marca-shell > span { width: 36px; height: 36px; border-radius: 12px; font-size: 23px; }
+.navegacao-shell { gap: 16px; }
+.navegacao-shell section { display: grid; gap: 8px; margin: 0; }
+.navegacao-shell button { justify-content: center; width: 48px; height: 48px; min-height: 48px; padding: 0; border-radius: 13px; color: var(--cor-textoLateralSecundario); box-shadow: none; }
+.navegacao-shell button.ativo { color: var(--cor-acaoLateral); background: var(--cor-superficieLateral); box-shadow: none; }
+.navegacao-shell svg { flex-shrink: 0; }
+.perfil-shell { display: flex; flex-direction: column; gap: 12px; padding: 14px 0 0; align-items: center; }
+.perfil-shell > span { width: 36px; height: 36px; }
+.perfil-shell button { width: 40px; min-height: 36px; font-size: 22px; }
+.shell-web__lateral .aparencia-web { margin-top: auto; padding: 0; }
+.shell-web__lateral .aparencia-web label { position: relative; display: grid; place-items: center; justify-content: center; gap: 0; width: 48px; min-height: 44px; }
+.shell-web__lateral .aparencia-web label > span { position: absolute; font-size: 0; }
+.shell-web__lateral .aparencia-web label::before { content: '◐'; color: var(--cor-textoLateral); font-size: 24px; pointer-events: none; }
+.shell-web__lateral .aparencia-web select { position: absolute; inset: 0; width: 100%; min-height: 44px; appearance: none; -webkit-appearance: none; color: transparent; border: 0; background: transparent; cursor: pointer; }
+.shell-web__lateral .aparencia-web option { color: var(--cor-texto); background: var(--cor-superficie); }
+.shell-web__lateral .aparencia-web small { font-size: 12px; overflow-wrap: anywhere; }
+.shell-web__conteudo { min-height: 0; overflow: auto; }
+.pagina-atendimentos { grid-template-columns: clamp(320px, 27vw, 420px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); overflow: hidden; }
+.lista-atendimentos { padding-top: 24px; }
+.lista-atendimentos > .cabecalho-pagina { padding: 0 20px 22px; min-height: 0; }
+.lista-atendimentos .cabecalho-pagina h1 { margin: 0; font-size: 1.4rem; font-weight: 650; letter-spacing: -.025em; }
+.lista-atendimentos .cabecalho-pagina p { display: none; }
+.filtros-atendimentos { gap: 6px; padding: 0 14px 18px; scroll-padding-inline: 14px; }
+.filtros-atendimentos button { height: 36px; padding: 0 12px; font-size: .8125rem; font-weight: 550; box-shadow: none; }
+.filtros-atendimentos button.ativo { box-shadow: none; }
+.lista-atendimentos__corpo { padding: 10px 12px 16px; }
+.cartao-atendimento { gap: 12px; min-height: 106px; padding: 14px 12px; margin-bottom: 8px; border: 1px solid var(--cor-borda); border-radius: 14px; grid-template-columns: 44px minmax(0, 1fr); background: var(--cor-superficie); }
+.cartao-atendimento:hover { background: var(--cor-superficieElevada); }
+.cartao-atendimento--ativo { border-color: var(--cor-acao); background: var(--cor-superficieElevada); box-shadow: none; }
+.avatar-atendimento { width: 44px; height: 44px; background: var(--cor-avatar); color: var(--cor-textoAvatar); font-size: 15px; }
+.cartao-atendimento__topo { gap: 8px; }
+.cartao-atendimento__topo strong { font-size: .9375rem; font-weight: 650; }
+.cartao-atendimento__topo time { font-size: .75rem; flex-shrink: 0; }
+.cartao-atendimento__mensagem { margin-top: 6px; font-size: .8125rem; line-height: 1.4; }
+.cartao-atendimento__metadados { padding-right: 82px; margin-top: 10px; }
+.cartao-atendimento__metadados i, .cartao-atendimento__metadados small { padding: 0; font-size: .75rem; background: transparent; color: var(--cor-textoSecundario); }
+.cartao-atendimento__estado { position: absolute; right: 12px; bottom: 12px; min-width: 0; flex-direction: row; align-items: center; gap: 5px; }
+.tempo-atendimento { padding: 3px 5px; font-size: .75rem; }
+.cartao-atendimento__estado b { min-width: 20px; height: 20px; font-size: 12px; }
+.previa-atendimento { min-height: 0; }
+.previa-atendimento > div { max-width: 360px; padding: 24px; }
+.previa-atendimento > div > strong { font-size: 1rem; color: var(--cor-texto); }
+.previa-atendimento > div > p { font-size: .875rem; line-height: 1.6; }
+.conversa-web { grid-template-rows: auto minmax(0, 1fr) auto; }
+.conversa-web__cabecalho { min-height: 90px; padding: 14px 24px; gap: 14px; grid-template-columns: 48px minmax(0, 1fr) auto auto; background: var(--cor-superficie); backdrop-filter: none; }
+.conversa-web__avatar { width: 48px; height: 48px; border: 0; cursor: pointer; font-size: 18px; background: var(--cor-avatar); color: var(--cor-textoAvatar); }
+.conversa-web__contato strong { font-size: 1rem; font-weight: 650; }
+.conversa-web__contato small { margin-top: 6px; font-size: .8125rem; }
+.janela-meta { display: grid; gap: 4px; border: 0; border-radius: 0; padding: 0; text-align: right; background: transparent; color: var(--cor-textoSecundario); white-space: nowrap; }
+.janela-meta small { font-size: .75rem; font-weight: 400; }
+.janela-meta strong { font-size: .8125rem; font-weight: 550; color: var(--cor-acao); }
+.janela-meta--atencao strong { color: var(--cor-atencao); }
+.voltar-atendimentos { display: none; }
+.menu-conversa { position: relative; }
+.menu-conversa > summary { display: grid; width: 40px; height: 44px; place-items: center; border-radius: 10px; font-size: 26px; color: var(--cor-textoSecundario); list-style: none; cursor: pointer; }
+.menu-conversa > summary::-webkit-details-marker { display: none; }
+.menu-conversa > div { position: absolute; top: 48px; right: 0; z-index: 25; display: grid; width: 230px; padding: 6px; background: var(--cor-superficieElevada); border: 1px solid var(--cor-borda); border-radius: 12px; box-shadow: 0 12px 32px var(--cor-sombra); }
+.menu-conversa .acao-cabecalho { min-height: 44px; border: 0; text-align: left; font-size: .875rem; background: transparent; }
+.menu-conversa .acao-cabecalho:hover { background: var(--cor-superficie); }
+.timeline-web { padding: 24px clamp(20px, 3vw, 56px); overscroll-behavior-y: contain; }
+.bolha-mensagem { min-width: 148px; max-width: min(82%, 540px); padding: 12px 15px 9px; margin-block: 10px; border-radius: 5px 16px 16px 16px; box-shadow: 0 2px 4px var(--cor-sombra); }
+.bolha-mensagem--saida { border-radius: 16px 5px 16px 16px; }
+.bolha-mensagem p { font-size: .9375rem; line-height: 1.55; overflow-wrap: anywhere; }
+.bolha-mensagem small { margin-top: 7px; font-size: .75rem; line-height: 1.4; overflow-wrap: anywhere; }
+.bolha-mensagem button, .citacao-mensagem span { font-size: .8125rem; }
+.acoes-mensagem { max-width: min(300px, calc(100vw - 90px)); flex-wrap: wrap; white-space: normal; }
+.separador-data { margin: 12px auto 22px; font-size: .75rem; background: transparent; box-shadow: none; }
+.separador-atendimento { max-width: 92%; margin: 20px auto; padding: 8px 12px; background: transparent; }
+.separador-atendimento span { font-size: .75rem; overflow-wrap: anywhere; }
+.separador-atendimento small { margin-top: 4px; font-size: .75rem; overflow-wrap: anywhere; }
+.bloco-nota-interna { width: min(82%, 540px); padding: 16px; margin-block: 20px; border-left-width: 2px; border-radius: 14px; }
+.bloco-nota-interna span, .bloco-nota-interna time { font-size: .75rem; }
+.bloco-nota-interna p { font-size: .875rem; line-height: 1.55; }
+.evento-operacional { max-width: 88%; margin-block: 20px; padding: 10px 14px; }
+.evento-operacional strong, .evento-operacional small { font-size: .75rem; line-height: 1.5; font-weight: 450; }
+.formulario-recebido { font-size: .875rem; }
+.detalhes-formulario, .detalhes-formulario dt, .detalhes-formulario dd { font-size: .8125rem; }
+.composer-web { min-height: 84px; padding: 14px 18px calc(14px + env(safe-area-inset-bottom, 0px)); gap: 10px; grid-template-columns: 44px minmax(0,1fr) 44px auto; }
+.composer-web > button { width: 44px; height: 44px; font-size: 20px; }
+.composer-web .campo-composer { min-height: 48px; border-radius: 16px; padding-inline: 14px; background: var(--cor-fundo); }
+.campo-composer textarea { min-height: calc(1.45em + 24px); max-height: 144px; padding-block: 12px; font-family: inherit; font-size: 1rem; line-height: 1.45; }
+.composer-web > button.abrir-modelos { max-width: 7rem; height: auto; min-height: 44px; white-space: normal; overflow-wrap: anywhere; font-size: .75rem; line-height: 1.3; font-weight: 550; }
+.painel-conversa { width: min(360px, 100%); backdrop-filter: none; box-shadow: -8px 0 24px var(--cor-sombra); }
+.painel-conversa > header { min-height: 80px; padding: 18px; }
+.painel-conversa > header strong { font-size: 1rem; }
+.rodape-detalhes { font-size: .8125rem; }
+.painel-conversa > input { font-size: 1rem; }
+.painel-conversa > nav { flex-wrap: wrap; }
+.painel-conversa > nav button { min-height: 40px; font-size: .8125rem; }
+.composer-web .campo-composer:focus-within { outline: 2px solid var(--cor-foco); outline-offset: 2px; }
+:root .composer-web textarea:focus-visible { outline: none; }
+.painel-conversa > header small, .painel-conversa small, .painel-conversa p { font-size: .8125rem; line-height: 1.5; }
+.painel-conversa > header button { width: 40px; height: 40px; font-size: 20px; }
+.painel-conversa__lista { padding: 6px 12px 20px; }
+.cartao-detalhes, .cartao-vincular, .grupo-acoes, .previa-acao { box-shadow: none; padding: 16px; background: var(--cor-superficie); }
+.cartao-detalhes h3, .grupo-acoes h3 { font-size: .8125rem; color: var(--cor-texto); text-transform: none; letter-spacing: 0; }
+.identidade-detalhes { align-items: flex-start; }
+.identidade-detalhes div { min-width: 0; overflow-wrap: anywhere; }
+.identidade-detalhes strong { font-size: 1rem; }
+.avatar-detalhes { flex-shrink: 0; }
+.cartao-vincular button, .botao-consulta, .opcao-contexto button, .grupo-acoes button { min-height: 44px; font-size: .8125rem; }
+.grade-contagens { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+.grade-contagens small { font-size: .75rem; }
+.sugestoes-respostas, .painel-modelos { bottom: calc(100% - 8px); }
+.sugestoes-respostas small, .sugestoes-respostas span, .painel-modelos small, .painel-modelos label, .erro-composer { font-size: .8125rem; }
+.tela-login { min-height: 100vh; min-height: 100dvh; height: auto; grid-template-columns: minmax(0,1fr) minmax(360px,.9fr); }
+.login-apresentacao { background: var(--cor-fundoLateral); color: var(--cor-textoLateral); }
+.login-apresentacao h1 { font-size: clamp(36px, 4.5vw, 68px); }
+.marca-login { color: var(--cor-textoLateral); }
+.login-formulario { width: 100%; padding: 32px; }
+.login-formulario input:not([type='checkbox']) { min-height: 48px; font-size: 1rem; }
+.login-formulario label, .login-formulario p { font-size: .875rem; }
+.pagina-shell { min-width: 0; }
+.grade-administracao-usuarios, .grade-configuracao-operacional, .grade-saude { min-width: 0; }
+@media (min-width: 1440px) {
+  .conversa-web:has(> .painel-contato) { grid-template-columns: minmax(0,1fr) 340px; }
+  .conversa-web:has(> .painel-contato) > .conversa-web__cabecalho,
+  .conversa-web:has(> .painel-contato) > .timeline-web,
+  .conversa-web:has(> .painel-contato) > .composer-web { grid-column: 1; }
+  .conversa-web > .painel-contato { position: relative; top: auto; right: auto; bottom: auto; grid-column: 2; grid-row: 1 / 4; width: auto; min-height: 0; box-shadow: none; }
+  .conversa-web:has(> .painel-contato) .conversa-web__cabecalho { padding-inline: 16px; gap: 10px; }
+}
+@media (max-width: 1100px) {
+  .pagina-atendimentos { grid-template-columns: 320px minmax(0,1fr); }
+  .conversa-web__cabecalho { padding-inline: 14px; gap: 10px; }
+  .timeline-web { padding-inline: 18px; }
+  .composer-web { padding-inline: 12px; gap: 6px; }
+  .grade-administracao-usuarios { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 860px) {
+  .shell-web { grid-template-columns: 64px minmax(0,1fr); }
+  .shell-web__lateral { padding-inline: 7px; }
+  .pagina-atendimentos { grid-template-columns: minmax(0,1fr); }
+  .pagina-atendimentos:not(.pagina-atendimentos--conversa) > .previa-atendimento,
+  .pagina-atendimentos--conversa > .lista-atendimentos { display: none; }
+  .voltar-atendimentos { display: grid; place-items: center; border: 0; border-radius: 10px; width: 32px; height: 44px; background: transparent; color: var(--cor-texto); font-size: 24px; }
+  .conversa-web__cabecalho { grid-template-columns: 32px 40px minmax(0,1fr) auto; min-height: 84px; }
+  .conversa-web__avatar { width: 40px; height: 40px; }
+  .conversa-web__contato { grid-column: 3; }
+  .janela-meta { grid-column: 3; grid-row: 2; text-align: left; display: block; }
+  .janela-meta small { display: none; }
+  .menu-conversa { grid-column: 4; grid-row: 1 / 3; }
+  .conversa-web__cabecalho:has(.janela-meta) .voltar-atendimentos,
+  .conversa-web__cabecalho:has(.janela-meta) .conversa-web__avatar { grid-row: 1 / 3; }
+  .tela-login { display: grid; grid-template-columns: minmax(0,1fr); }
+  .login-apresentacao { display: none; }
+  .login-formulario { padding: 24px; }
+  .pagina-shell { padding: 24px 18px; }
+  .grade-operacional, .grade-integracoes, .grade-controles-recurso { grid-template-columns: minmax(0,1fr); }
+  .cabecalho-pagina { flex-wrap: wrap; gap: 16px; }
+}
+@media (max-width: 540px) {
+  .shell-web { grid-template-columns: 52px minmax(0,1fr); }
+  .shell-web__lateral { padding: 14px 4px 8px; gap: 12px; }
+  .navegacao-shell button, .shell-web__lateral .aparencia-web label { width: 44px; }
+  .marca-shell > span { width: 32px; height: 32px; }
+  .conversa-web__cabecalho { gap: 6px; padding: 10px; grid-template-columns: 28px minmax(0,1fr) 32px; }
+  .conversa-web__avatar { display: none; }
+  .conversa-web__contato { grid-column: 2; }
+  .janela-meta { grid-column: 2; }
+  .menu-conversa { grid-column: 3; }
+  .conversa-web__contato strong { font-size: .9375rem; }
+  .timeline-web { padding: 16px 10px; }
+  .bolha-mensagem { max-width: 92%; padding: 10px 12px; }
+  .bolha-mensagem p { font-size: .9375rem; }
+  .bloco-nota-interna { width: 92%; }
+  .composer-web { grid-template-columns: 36px minmax(0,1fr) 36px; padding: 10px 8px calc(10px + env(safe-area-inset-bottom, 0px)); gap: 5px; }
+  .composer-web > button { width: 36px; }
+  .composer-web > .abrir-modelos { grid-column: 2; justify-self: end; max-width: none; min-height: 32px; padding: 4px 8px; }
+  .lista-atendimentos > .cabecalho-pagina { padding-inline: 16px; }
+  .filtros-atendimentos { padding-inline: 12px; }
+  .lista-atendimentos__corpo { padding-inline: 8px; }
+  .cartao-atendimento { padding-inline: 10px; grid-template-columns: 36px minmax(0,1fr); gap: 8px; }
+  .avatar-atendimento { width: 36px; height: 36px; font-size: 13px; }
+  .cartao-atendimento__metadados { padding-right: 78px; }
+  .cartao-atendimento__topo strong { font-size: .875rem; }
+  .cartao-atendimento__topo time { font-size: .75rem; }
+  .login-formulario { padding: 24px; }
+  .grade-componentes-saude, .grade-metricas-observabilidade, .resumo-recuperacao, .grade-indicadores-relatorio, .grade-detalhes-relatorio { grid-template-columns: minmax(0,1fr); }
+  .quadro-qr { width: 100%; height: auto; aspect-ratio: 1; }
+  .quadro-qr svg { width: 90%; height: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cartao-atendimento, .filtros-atendimentos button, .acoes-mensagem { animation: none; transition: none; }
+}

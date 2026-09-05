@@ -21,3 +21,5 @@ Quando um elemento desenhado nessas imagens conflitar com a especificação text
 ## O que ainda não está congelado
 
 Tema claro/escuro e sua paleta semântica seguem agora [TEMAS.md](../TEMAS.md), aprovado para implementação nas PR118–PR124. As imagens em `../propostas-modo-noturno/` são conceituais. Tipografia, escala, grid, raios, dimensões e posição exata continuam sujeitos a ajustes finos que preservem hierarquia, limpeza, semântica e comportamentos definidos em `PRODUCT.md` e `MOBILE.md`.
+
+A revisão PR124A incorpora a captura do Safari e a rejeição expressa do fundo verde-escuro. A referência anterior continua orientando hierarquia, mas sua tonalidade verde não prevalece: usar superfícies grafite, leitura confortável, navegação compacta, lista proporcional e conversa predominante. Não inserir conteúdo fictício, fotografia ou controle sem capacidade real para imitar a ilustração.

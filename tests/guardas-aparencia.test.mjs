@@ -25,7 +25,7 @@ test('componentes não reintroduzem cores literais ou paleta clara estática', a
 });
 
 test('variáveis web referenciam apenas tokens presentes nas duas paletas', async () => {
-  const css = await readFile(new URL('apps/web/src/estilos.css', raiz), 'utf8');
+  const css = (await Promise.all(['estilos.css', 'layout-responsivo.css'].map(nome => readFile(new URL(`apps/web/src/${nome}`, raiz), 'utf8')))).join('\n');
   for (const [, nome] of css.matchAll(/var\(--cor-(\w+)\)/g)) {
     assert.ok(nome in TEMAS.claro && nome in TEMAS.escuro, nome);
   }

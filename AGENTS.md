@@ -80,6 +80,7 @@ Não propague DTOs/nomenclatura Meta ou MK para domínio, UI ou Motor de Fluxos.
 ### 4.1 Guardas obrigatórias de experiência
 
 - Aparência segue `design/TEMAS.md` e `packages/tema`: padrão Sistema, escolhas Claro/Escuro persistentes, cores semânticas e contraste validado. Não adicionar cores literais em componentes. Exceções ópticas de QR/mídia usam tokens próprios. Trocar tema não remonta navegação/timeline/composer nem altera autorização ou sincronização. Relate teste físico separadamente de exportação nativa.
+- PR124A: não restaurar fundos tingidos de verde; usar grafite neutro e verde restrito a ações/estados. Preservar lateral compacta, lista limitada, tipografia legível e reflow web conforme `design/TEMAS.md`. Voltar à lista em tela estreita não descarta rascunho/posição nem confirma mensagens novas como lidas enquanto a conversa está recolhida. Validar geometria em Chromium/WebKit, sem confundir esse teste com o Safari físico ou com o app nativo.
 
 - Mobile deve parecer mensageria nativa premium, nunca CRM web comprimido.
 - Web compartilha identidade e semântica, mas possui composição desktop própria; não ampliar literalmente o app.

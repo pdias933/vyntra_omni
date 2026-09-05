@@ -15,6 +15,7 @@ import { SaudeReleasesWeb } from './saude/SaudeReleasesWeb';
 import { RelatoriosOperacionaisWeb } from './relatorios/RelatoriosOperacionaisWeb';
 import { obterCsrf } from './seguranca-web';
 import { SeletorAparenciaWeb } from '../aparencia/SeletorAparenciaWeb';
+import { Icone } from './Icone';
 
 const PareamentoCelularWeb = lazy(async () => {
   const modulo = await import('./PareamentoCelularWeb');
@@ -177,14 +178,14 @@ export function ShellWeb() {
 
         <nav aria-label="Navegação principal" className="navegacao-shell">
           <GrupoNavegacao rotulo="Operação">
-            <ItemNavegacao ativo={rota === '/atendimentos'} icone="◫" rotulo="Atendimentos" aoSelecionar={() => navegar('/atendimentos')} />
-            <ItemNavegacao ativo={rota === '/relatorios'} icone="⌁" rotulo="Relatórios" aoSelecionar={() => navegar('/relatorios')} />
+            <ItemNavegacao ativo={rota === '/atendimentos'} icone="conversa" rotulo="Atendimentos" aoSelecionar={() => navegar('/atendimentos')} />
+            <ItemNavegacao ativo={rota === '/relatorios'} icone="relatorio" rotulo="Relatórios" aoSelecionar={() => navegar('/relatorios')} />
           </GrupoNavegacao>
           <GrupoNavegacao rotulo="Administração">
-            <ItemNavegacao ativo={rota === '/administracao/usuarios'} icone="♙" rotulo="Usuários e acessos" aoSelecionar={() => navegar('/administracao/usuarios')} />
-            <ItemNavegacao ativo={rota === '/administracao/operacao'} icone="⌘" rotulo="Configuração" aoSelecionar={() => navegar('/administracao/operacao')} />
-            <ItemNavegacao ativo={rota === '/administracao/fluxos'} icone="⌁" rotulo="Fluxos" aoSelecionar={() => navegar('/administracao/fluxos')} />
-            <ItemNavegacao ativo={rota === '/saude'} icone="◎" rotulo="Saúde e releases" aoSelecionar={() => navegar('/saude')} />
+            <ItemNavegacao ativo={rota === '/administracao/usuarios'} icone="usuarios" rotulo="Usuários e acessos" aoSelecionar={() => navegar('/administracao/usuarios')} />
+            <ItemNavegacao ativo={rota === '/administracao/operacao'} icone="configuracao" rotulo="Configuração" aoSelecionar={() => navegar('/administracao/operacao')} />
+            <ItemNavegacao ativo={rota === '/administracao/fluxos'} icone="fluxos" rotulo="Fluxos" aoSelecionar={() => navegar('/administracao/fluxos')} />
+            <ItemNavegacao ativo={rota === '/saude'} icone="saude" rotulo="Saúde e releases" aoSelecionar={() => navegar('/saude')} />
           </GrupoNavegacao>
         </nav>
 
@@ -276,8 +277,8 @@ function GrupoNavegacao({ children, rotulo }: { readonly children: ReactNode; re
 
 function ItemNavegacao({ ativo, aoSelecionar, icone, rotulo }: { readonly ativo: boolean; readonly aoSelecionar: () => void; readonly icone: string; readonly rotulo: string }) {
   return (
-    <button aria-current={ativo ? 'page' : undefined} className={ativo ? 'ativo' : ''} onClick={aoSelecionar} type="button">
-      <span aria-hidden="true">{icone}</span>{rotulo}
+    <button aria-label={rotulo} title={rotulo} aria-current={ativo ? 'page' : undefined} className={ativo ? 'ativo' : ''} onClick={aoSelecionar} type="button">
+      <Icone nome={icone} /><span className="rotulo-navegacao">{rotulo}</span>
     </button>
   );
 }

@@ -22,6 +22,8 @@ Elas definem linguagem, hierarquia e comportamento, mas não devem ser copiadas 
 
 A aparência segue [TEMAS.md](design/TEMAS.md). `Sistema`, `Claro` e `Escuro` usam tokens semânticos compartilhados. Preferência é local e independente da sessão; navegação, status bar, teclado, folhas, bloqueios e carregamentos acompanham o tema sem remontar a conversa. O splash nativo usa o tema do sistema; a escolha salva no app entra ao carregar a preferência. Teste em aparelho físico é registrado separadamente da exportação Expo.
 
+Na revisão PR124A, a paleta compartilhada passa a grafite neutro: verde não tinge os fundos, ficando em ações e estados. O splash acompanha os novos tokens. Os ajustes de colunas e retorno compacto desta revisão pertencem à web; não substituir navegação, safe areas ou bottom sheets nativos por essa composição. Publicar a web não entrega o binário mobile: nova development build e aceite físico da PR124 continuam necessários.
+
 - conversa é a tela central;
 - lista se atualiza e reordena automaticamente;
 - infraestrutura normal fica invisível;

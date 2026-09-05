@@ -26,7 +26,7 @@ import {
   type ResumoAtendimentoWebDto,
   type ResultadoFinanceiroContatoWebDto,
 } from '@vyntra/api-client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import { obterCsrf } from '../seguranca-web';
@@ -77,7 +77,7 @@ function descricaoFinanceiro(
     : 'Dados em tempo real · cobertura não informada';
 }
 
-export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtendimentoWebDto }) {
+export function ConversaWeb({ atendimento, aoVoltar, visivel = true }: { readonly atendimento: ResumoAtendimentoWebDto; readonly aoVoltar?: () => void; readonly visivel?: boolean }) {
   const [itens, definirItens] = useState<readonly ItemTimelineWebDto[]>([]);
   const [cursor, definirCursor] = useState<string>();
   const [marcador, definirMarcador] = useState<Marcador>({ marcadaNaoLida: false, versao: 0 });
@@ -95,7 +95,9 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
       definirCursor(resposta.data.proximo_cursor);
       definirMarcador(marcadorSeguro(resposta.data.marcador));
       definirEstado('PRONTO');
-      window.requestAnimationFrame(() => finalTimeline.current?.scrollIntoView({ block: 'end' }));
+      window.requestAnimationFrame(() => {
+        if (finalTimeline.current?.getClientRects().length) finalTimeline.current.scrollIntoView({ block: 'end' });
+      });
     } catch {
       definirEstado('ERRO');
     }
@@ -113,7 +115,7 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
   }, [carregar]);
 
   useEffect(() => {
-    if (estado !== 'PRONTO') return;
+    if (!visivel || estado !== 'PRONTO') return;
     const ultima = [...itens].reverse().find((item) => item.tipo === 'MENSAGEM' || item.tipo === 'FORMULARIO');
     if (ultima === undefined || ultima.id === marcador.ultimaMensagemLidaId || leituraEmVoo.current === ultima.id) return;
     leituraEmVoo.current = ultima.id;
@@ -124,7 +126,7 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
       throwOnError: true,
     }).then((resposta) => definirMarcador({ marcadaNaoLida: false, ultimaMensagemLidaId: ultima.id, versao: resposta.data.versao }))
       .finally(() => { leituraEmVoo.current = undefined; });
-  }, [atendimento.atendimento_id, estado, itens, marcador]);
+  }, [atendimento.atendimento_id, estado, itens, marcador, visivel]);
 
   async function carregarAnteriores() {
     if (cursor === undefined) return;
@@ -160,16 +162,22 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
   return (
     <section className="conversa-web">
       <header className="conversa-web__cabecalho">
-        <span className="conversa-web__avatar">{atendimento.nome_contato.slice(0, 1).toLocaleUpperCase('pt-BR')}</span>
+        <button aria-label="Voltar aos atendimentos" className="voltar-atendimentos" onClick={aoVoltar} type="button">←</button>
+        <button aria-label="Abrir detalhes do contato" className="conversa-web__avatar" onClick={() => definirPainel('CONTATO')} type="button">{atendimento.nome_contato.slice(0, 1).toLocaleUpperCase('pt-BR')}</button>
         <button className="conversa-web__contato" onClick={() => definirPainel('CONTATO')} type="button">
           <strong>{atendimento.nome_contato}</strong>
           <small>{atendimento.identidade_secundaria ?? atendimento.fila_nome}</small>
         </button>
-        {atendimento.janela_expira_em !== undefined && <span className="janela-meta">Janela Meta ativa</span>}
-        <button aria-label="Buscar na conversa" className="acao-cabecalho" onClick={() => definirPainel('BUSCA')} type="button">⌕</button>
-        <button className="acao-cabecalho" onClick={() => definirPainel('GALERIA')} type="button">Mídias</button>
-        <button className="acao-cabecalho" onClick={() => definirPainel('ACOES')} type="button">Ações</button>
-        <button className="acao-cabecalho" onClick={() => void marcarNaoLida()} type="button">{marcador.marcadaNaoLida ? 'Não lida' : 'Marcar não lida'}</button>
+        {atendimento.janela_expira_em !== undefined && <JanelaConversa expiraEm={atendimento.janela_expira_em} />}
+        <details className="menu-conversa" onKeyDown={(evento) => { if (evento.key === 'Escape') { evento.currentTarget.removeAttribute('open'); evento.currentTarget.querySelector('summary')?.focus(); } }}>
+          <summary aria-label="Mais ações da conversa" title="Mais ações">⋮</summary>
+          <div>
+            <button className="acao-cabecalho" onClick={(evento) => { evento.currentTarget.closest('details')?.removeAttribute('open'); definirPainel('BUSCA'); }} type="button">Buscar na conversa</button>
+            <button className="acao-cabecalho" onClick={(evento) => { evento.currentTarget.closest('details')?.removeAttribute('open'); definirPainel('GALERIA'); }} type="button">Mídias</button>
+            <button className="acao-cabecalho" onClick={(evento) => { evento.currentTarget.closest('details')?.removeAttribute('open'); definirPainel('ACOES'); }} type="button">Ações do sistema</button>
+            <button className="acao-cabecalho" onClick={(evento) => { evento.currentTarget.closest('details')?.removeAttribute('open'); void marcarNaoLida(); }} type="button">{marcador.marcadaNaoLida ? 'Não lida' : 'Marcar não lida'}</button>
+          </div>
+        </details>
       </header>
       <div className="timeline-web" aria-live="polite">
         {cursor !== undefined && <button className="carregar-anteriores" onClick={() => void carregarAnteriores()} type="button">Carregar mensagens anteriores</button>}
@@ -192,6 +200,14 @@ export function ConversaWeb({ atendimento }: { readonly atendimento: ResumoAtend
       {painel === 'ACOES' && <PainelAcoesErpWeb atendimentoId={atendimento.atendimento_id} aoFechar={() => definirPainel(undefined)} />}
     </section>
   );
+}
+
+function JanelaConversa({ expiraEm }: { readonly expiraEm: string }) {
+  const [agora, definirAgora] = useState(Date.now);
+  useEffect(() => { const intervalo = window.setInterval(() => definirAgora(Date.now()), 30_000); return () => window.clearInterval(intervalo); }, []);
+  const minutos = Math.max(0, Math.ceil((new Date(expiraEm).getTime() - agora) / 60_000));
+  const descricao = !Number.isFinite(minutos) ? 'Prazo indisponível' : minutos === 0 ? 'Janela encerrada' : minutos < 60 ? `Expira em ${minutos} min` : `Expira em ${Math.floor(minutos / 60)}h ${minutos % 60}min`;
+  return <span className={`janela-meta${minutos < 30 ? ' janela-meta--atencao' : ''}`}><small>Janela WhatsApp</small><strong>{descricao}</strong></span>;
 }
 
 function PainelContatoWeb({ atendimentoId, aoFechar }: { readonly atendimentoId: string; readonly aoFechar: () => void }) {
@@ -359,6 +375,29 @@ function PainelBuscaGaleriaWeb({ atendimentoId, aoFechar, modo }: { readonly ate
 
 function ComposerWeb({ atendimento, aoAbrirAcoes, aoCancelarResposta, aoEnviar, respondendo }: { readonly atendimento: ResumoAtendimentoWebDto; readonly aoAbrirAcoes: () => void; readonly aoCancelarResposta: () => void; readonly aoEnviar: () => Promise<void>; readonly respondendo: ItemTimelineWebDto | undefined }) {
   const [texto, definirTexto] = useState('');
+  const campoRef = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const campo = campoRef.current;
+    if (campo === null) return;
+    let larguraAnterior = -1;
+    let quadro = 0;
+    const ajustar = () => {
+      if (campo.getClientRects().length === 0) return;
+      campo.style.height = 'auto';
+      campo.style.height = `${Math.min(campo.scrollHeight, Number.parseFloat(getComputedStyle(campo).maxHeight))}px`;
+    };
+    ajustar();
+    const observador = new ResizeObserver(([entrada]) => {
+      if (entrada !== undefined && entrada.contentRect.width !== larguraAnterior) {
+        larguraAnterior = entrada.contentRect.width;
+        window.cancelAnimationFrame(quadro);
+        quadro = window.requestAnimationFrame(ajustar);
+      }
+    });
+    observador.observe(campo);
+    window.addEventListener('resize', ajustar);
+    return () => { observador.disconnect(); window.cancelAnimationFrame(quadro); window.removeEventListener('resize', ajustar); };
+  }, [texto]);
   const [respostas, definirRespostas] = useState<readonly RespostaRapidaWebDto[]>([]);
   const [modelos, definirModelos] = useState<readonly ModeloAprovadoWebDto[]>([]);
   const [modelo, definirModelo] = useState<ModeloAprovadoWebDto>();
@@ -464,6 +503,7 @@ function ComposerWeb({ atendimento, aoAbrirAcoes, aoCancelarResposta, aoEnviar, 
         onKeyDown={(evento) => { if (evento.key === 'Enter' && !evento.shiftKey) { evento.preventDefault(); void enviarTexto(); } }}
         placeholder={janelaFechada ? 'Janela encerrada — use mensagem aprovada' : 'Digite uma mensagem…'}
         rows={1}
+        ref={campoRef}
         value={texto}
       />
       {!janelaFechada && texto.length === 0 && <kbd>/</kbd>}

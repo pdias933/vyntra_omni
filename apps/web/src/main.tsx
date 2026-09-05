@@ -5,6 +5,7 @@ import '@xyflow/react/dist/style.css';
 
 import { ShellWeb } from './web/ShellWeb';
 import './estilos.css';
+import './layout-responsivo.css';
 
 const raiz = document.getElementById('root');
 

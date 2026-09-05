@@ -2,7 +2,7 @@ import {
   listarAtendimentosWeb,
   type ResumoAtendimentoWebDto,
 } from '@vyntra/api-client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import { CabecalhoPagina } from '../ShellWeb';
 import { ConversaWeb } from './ConversaWeb';
@@ -48,11 +48,21 @@ function iniciais(nome: string): string {
     .toLocaleUpperCase('pt-BR');
 }
 
+function observarTelaCompacta(aoAlterar: () => void) {
+  const consulta = window.matchMedia('(max-width: 860px)');
+  consulta.addEventListener('change', aoAlterar);
+  return () => consulta.removeEventListener('change', aoAlterar);
+}
+
+function telaCompacta() { return window.matchMedia('(max-width: 860px)').matches; }
+
 export function ListaAtendimentosWeb() {
+  const compacta = useSyncExternalStore(observarTelaCompacta, telaCompacta);
   const [filtro, definirFiltro] = useState<Filtro>('MEUS');
   const [itens, definirItens] = useState<readonly ResumoAtendimentoWebDto[]>([]);
   const [estado, definirEstado] = useState<'CARREGANDO' | 'ERRO' | 'PRONTO'>('CARREGANDO');
   const [selecionado, definirSelecionado] = useState<string>();
+  const [conversaVisivel, definirConversaVisivel] = useState(false);
   const atendimentoSelecionado = itens.find((item) => item.atendimento_id === selecionado);
   const requisicaoAtual = useRef(0);
 
@@ -84,7 +94,7 @@ export function ListaAtendimentosWeb() {
   }, [carregar, filtro]);
 
   return (
-    <main className="pagina-atendimentos">
+    <main className={`pagina-atendimentos${conversaVisivel && atendimentoSelecionado !== undefined ? ' pagina-atendimentos--conversa' : ''}`}>
       <section className="lista-atendimentos">
         <CabecalhoPagina descricao="Prioridade, contexto e conversas em um só lugar." titulo="Atendimentos" />
         <div aria-label="Filtros de atendimentos" className="filtros-atendimentos" role="tablist">
@@ -122,7 +132,7 @@ export function ListaAtendimentosWeb() {
               ativo={selecionado === item.atendimento_id}
               item={item}
               key={item.conversa_id}
-              aoSelecionar={() => definirSelecionado(item.atendimento_id)}
+              aoSelecionar={() => { definirSelecionado(item.atendimento_id); definirConversaVisivel(true); }}
             />
           ))}
         </div>
@@ -132,7 +142,7 @@ export function ListaAtendimentosWeb() {
           <span aria-hidden="true">◌</span>
           <strong>Selecione uma conversa</strong>
           <p>O atendimento será aberto aqui sem tirar você da fila.</p>
-        </div> : <ConversaWeb atendimento={atendimentoSelecionado} />}
+        </div> : <ConversaWeb atendimento={atendimentoSelecionado} visivel={!compacta || conversaVisivel} aoVoltar={() => definirConversaVisivel(false)} />}
       </aside>
     </main>
   );

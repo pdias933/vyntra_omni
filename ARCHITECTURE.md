@@ -63,6 +63,8 @@ O [contrato de temas](design/TEMAS.md) usa `packages/tema`, pacote interno puro,
 
 Mobile e web compartilham contratos, identidade, semântica de estados e linguagem visual, mas não uma composição de tela comum.
 
+PR124A: `layout-responsivo.css` organiza o shell web em viewport dinâmica, colunas `minmax(0, 1fr)` e rolagens locais; a lateral não impõe largura mínima de desktop ao documento. Um observador de media query alinhado ao breakpoint de 860 px distingue conversa visível de conversa recolhida, preservando sua montagem, rascunho e posição. Sincronizar conteúdo recolhido não confirma leitura. Mudança de tamanho/tema não reinicia SSE nem concede permissão; a janela exibida deriva do prazo recebido e não substitui a recusa autoritativa de envio no backend. Detalhes em coluna a partir de 1440 px reutilizam o mesmo componente e a mesma consulta autorizada do painel compacto.
+
 - Mobile é uma experiência nativa de mensageria: um foco principal por vez, gestos naturais, bottom sheets, haptics, skeletons e transições fluidas.
 - Web explora densidade, teclado, múltiplos painéis e espaço próprios de desktop.
 - É proibido comprimir um CRM web no celular ou ampliar o app para produzir a web.

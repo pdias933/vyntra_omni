@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { TEMAS } from '../packages/tema/src/index.ts';
 
 // Somente leitura, sem login, interceptação de API, pareamento ou efeito externo.
 const origem = 'https://omni.up100.com.br';
@@ -38,7 +39,8 @@ try {
   assert.equal(await pagina.locator('html').getAttribute('data-tema'), 'escuro');
   for (const modo of ['escuro', 'claro']) {
     await pagina.getByRole('combobox', { name: 'Aparência' }).selectOption(modo);
-    await pagina.waitForFunction(modo => document.documentElement.dataset.tema === modo && getComputedStyle(document.querySelector('.tela-login')).backgroundColor === (modo === 'escuro' ? 'rgb(18, 24, 21)' : 'rgb(255, 255, 255)'), modo);
+    const superficie = `rgb(${TEMAS[modo].superficie.slice(1).match(/../g).map(par => parseInt(par,16)).join(', ')})`;
+    await pagina.waitForFunction(({modo, superficie}) => document.documentElement.dataset.tema === modo && getComputedStyle(document.querySelector('.tela-login')).backgroundColor === superficie, {modo, superficie});
     await pagina.screenshot({ path: new URL(`login-${modo}.png`, destino).pathname });
   }
   await pagina.reload();
