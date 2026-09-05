@@ -8,6 +8,7 @@ import {
 } from '@vyntra/api-client';
 import { useCallback, useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { TEMAS } from '@vyntra/tema';
 
 import { obterCsrf } from './seguranca-web';
 
@@ -135,8 +136,8 @@ export function PareamentoCelularWeb({
                 <div className="skeleton-qr" aria-label="Gerando código" />
               ) : (
                 <QRCodeSVG
-                  bgColor="#ffffff"
-                  fgColor="#12201a"
+                  bgColor={TEMAS.claro.qrFundo}
+                  fgColor={TEMAS.claro.qrTexto}
                   level="H"
                   marginSize={2}
                   size={224}

@@ -26,6 +26,8 @@ Web: atributo `data-tema` na raiz, variáveis CSS e `color-scheme`; inicializaç
 
 ## Aceite e publicação
 
+Dependências nativas da PR123: `expo-system-ui ~57.0.3` habilita aparência no Android e fundo da raiz; `expo-splash-screen ~57.0.8` configura abertura por tema. Ambas são módulos oficiais Expo, licença MIT, nas versões indicadas pelo SDK instalado, sem scripts de instalação autorizados adicionais. Não recebem conteúdo, credencial ou rede de negócio. Nova development build é necessária; atualização só de JavaScript não instala esses módulos. Referência: [Expo — Color themes](https://docs.expo.dev/develop/user-interface/color-themes/).
+
 Contraste mínimo de texto normal 4,5:1; texto grande e indicadores essenciais 3:1. Foco visível, campos identificáveis, fonte dinâmica e estados compreensíveis sem cor. Cores decorativas de separação não substituem indicadores essenciais.
 
 Testar preferência inválida, armazenamento indisponível, mudança de sistema, reinício, troca entre abas, foco/rascunho preservados e ambos os temas em superfícies principais e secundárias. Registrar separadamente testes automatizados, captura real do navegador, exportação mobile e homologação em aparelhos físicos; uma exportação Expo não comprova execução nativa.

@@ -10,6 +10,7 @@ import {
   type Connection,
 } from '@xyflow/react';
 import { useMemo, useState } from 'react';
+import { useAparencia } from '../aparencia/use-aparencia';
 
 import { NoFluxo } from './NoFluxo';
 import {
@@ -123,6 +124,7 @@ export function EditorFluxo({
   const [conexoes, definirConexoes, aoMudarConexoes] = useEdgesState([
     ...definicao.conexoes,
   ]);
+  const { modo, cores } = useAparencia();
   const [variaveis, definirVariaveis] = useState([...definicao.variaveis]);
   const [selecionadoId, definirSelecionadoId] = useState<string>();
   const [alterado, definirAlterado] = useState(false);
@@ -482,7 +484,7 @@ export function EditorFluxo({
             <span>{nos.length} nós · {conexoes.length} conexões</span>
           </div>
           <ReactFlow<NoEditor>
-            colorMode="light"
+            colorMode={modo === 'escuro' ? 'dark' : 'light'}
             defaultEdgeOptions={{ type: 'smoothstep' }}
             deleteKeyCode={null}
             edges={conexoes}
@@ -506,11 +508,11 @@ export function EditorFluxo({
             }}
             onPaneClick={() => definirSelecionadoId(undefined)}
           >
-            <Background color="#d9dfdc" gap={22} size={1} variant={BackgroundVariant.Dots} />
+            <Background color={cores.bordaForte} gap={22} size={1} variant={BackgroundVariant.Dots} />
             <Controls position="bottom-left" showInteractive={false} />
             <MiniMap
-              maskColor="rgba(245, 247, 246, 0.82)"
-              nodeColor="#b8d9c3"
+              maskColor={cores.sobreposicao}
+              nodeColor={cores.acao}
               pannable
               position="bottom-right"
               zoomable

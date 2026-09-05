@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Appearance, useColorScheme } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import * as SystemUI from 'expo-system-ui';
 import { normalizarPreferenciaTema, resolverModoTema, TEMAS, type PreferenciaTema } from '@vyntra/tema';
 import { ContextoTema } from './contexto-tema';
 
@@ -26,6 +27,12 @@ export function ProvedorTema({ children }: { readonly children: ReactNode }) {
   useEffect(() => {
     Appearance.setColorScheme(preferencia === 'sistema' ? 'unspecified' : preferencia === 'escuro' ? 'dark' : 'light');
   }, [preferencia]);
+
+  useEffect(() => {
+    void SystemUI.setBackgroundColorAsync(TEMAS[modo].fundo).catch(() => {
+      // O fundo React continua correto mesmo se o sistema recusar a decoração.
+    });
+  }, [modo]);
 
   const escolher = useCallback((valor: PreferenciaTema) => {
     const proxima = normalizarPreferenciaTema(valor);

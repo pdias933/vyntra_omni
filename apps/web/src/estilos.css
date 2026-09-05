@@ -459,7 +459,7 @@ a {
 .confirmacao-contexto button,
 .previa-acao > div:last-child button { padding: 8px 10px; border: 1px solid var(--cor-atencaoBorda); border-radius: 8px; background: var(--cor-superficie); cursor: pointer; font-size: 9px; font-weight: 700; }
 .confirmacao-contexto button:last-child,
-.previa-acao > div:last-child button:last-child { color: var(--cor-atencao); border-color: var(--cor-acao); background: var(--cor-acao); }
+.previa-acao > div:last-child button:last-child { color: var(--cor-textoInvertido); border-color: var(--cor-acao); background: var(--cor-acao); }
 .grade-contagens { display: grid; grid-template-columns: repeat(4,1fr); padding: 5px; }
 .grade-contagens button { display: grid; gap: 3px; padding: 8px 3px; border: 0; border-right: 1px solid var(--cor-borda); background: transparent; }
 .grade-contagens button:last-child { border: 0; }
@@ -793,7 +793,7 @@ textarea:focus-visible {
   height: 20px;
   place-items: center;
   border-radius: 50%;
-  color: var(--cor-atencao);
+  color: var(--cor-textoInvertido);
   background: var(--cor-atencao);
   font-weight: 800;
 }
@@ -1158,8 +1158,14 @@ textarea:focus-visible {
 }
 
 .react-flow__controls button {
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  fill: currentColor;
   border-bottom-color: var(--cor-borda);
 }
+
+.react-flow__controls button:hover { background: var(--cor-superficieElevada); }
+.react-flow { --xy-background-color: var(--cor-fundo); --xy-minimap-background-color: var(--cor-superficie); --xy-node-color: var(--cor-texto); --xy-node-background-color: var(--cor-superficie); }
 
 .react-flow__minimap {
   overflow: hidden;
@@ -1184,7 +1190,7 @@ textarea:focus-visible {
 }
 
 .react-flow__edge-textbg {
-  fill: var(--cor-textoInvertido);
+  fill: var(--cor-superficie);
 }
 
 .no-fluxo {

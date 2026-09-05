@@ -5,6 +5,14 @@
     "scheme": "vyntraomni",
     "version": "0.0.0",
     "plugins": [
+      "expo-system-ui",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F6F8F7",
+          "dark": { "backgroundColor": "#0B0F0D" }
+        }
+      ],
       "expo-camera",
       "expo-notifications",
       [
