@@ -832,7 +832,7 @@ Lote autorizado em 6 de setembro de 2026. Somente dados sintéticos, sem ativar 
 
 | PR | Entrega | Effort | Implementação | Integração | Testes | Deploy staging | Homologação física |
 |---|---|---|---|---|---|---|---|
-| 125 | Contexto operacional e resgate web/mobile | `xhigh` | Em andamento | SDK e clientes ligados; aceite HTTP integrado pendente | Tipos, lint, suíte e disputa PostgreSQL aprovados; UX em validação | Pendente, cumulativo na 128 | Pendente iPhone/Android |
+| 125 | Contexto operacional e resgate web/mobile | `xhigh` | Em andamento; branch publicada | SDK e clientes ligados; aceite HTTP integrado pendente | Tipos, lint, suíte, disputa PostgreSQL e regressão visual Chromium/WebKit aprovados; aceite funcional UI pendente | Pendente, cumulativo na 128 | Pendente iPhone/Android |
 | 126 | Disponibilidade própria e transferência | `xhigh` | Pendente | Pendente | Pendente | Pendente | Pendente |
 | 127 | Notas internas e rascunho SQLCipher | `high` | Pendente | Pendente | Pendente | Pendente | Pendente |
 | 128 | Aceite integrado, build nativa e publicação | `xhigh` | Pendente | Pendente | Pendente | Pendente; preservar release anterior | Pendente iPhone/Android |
