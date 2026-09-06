@@ -48,6 +48,9 @@ import {
   ResultadoAcaoErpWebDto,
 } from '../console-web/dto/console-web.dto.js';
 import { ServicoComposerWeb } from '../console-web/servico-composer-web.js';
+import { ParseUUIDPipe } from '@nestjs/common';
+import { ServicoOperacaoAtendimentos } from '../operacao-atendimentos/servico-operacao-atendimentos.js';
+import { ContextoOperacionalDto, EntradaResgateAtendimentoDto, OperacaoConfirmadaDto } from '../operacao-atendimentos/dto-operacao-atendimentos.js';
 import { ServicoContatoAcoesWeb } from '../console-web/servico-contato-acoes-web.js';
 import { ServicoTimelineWeb } from '../console-web/servico-timeline-web.js';
 import { ExcecaoHttpCanonica } from '../http/excecao-http-canonica.js';
@@ -92,7 +95,37 @@ export class ControladorConsoleMobile {
     private readonly contato: ServicoContatoAcoesWeb,
     @Inject(ServicoComposerWeb)
     private readonly composer: ServicoComposerWeb,
+    @Inject(ServicoOperacaoAtendimentos) private readonly operacao: ServicoOperacaoAtendimentos,
   ) {}
+
+  @Get('atendimentos/:atendimentoId/operacao')
+  @ApiOperation({ operationId: 'consultarOperacaoAtendimentoMobile', summary: 'Consulta atribuição e capacidades operacionais atuais' })
+  @ApiOkResponse({ type: ContextoOperacionalDto })
+  public async consultarOperacao(
+    @Param('atendimentoId', new ParseUUIDPipe()) atendimentoId: string,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<ContextoOperacionalDto> {
+    const sessao = await this.autenticar(autorizacao, dispositivoId, segredo);
+    return new ContextoOperacionalDto(await this.operacao.consultar(sessao.contexto, atendimentoId));
+  }
+
+  @Post('atendimentos/:atendimentoId/resgatar')
+  @ApiBody({ type: EntradaResgateAtendimentoDto })
+  @ApiOperation({ operationId: 'resgatarAtendimentoMobile', summary: 'Resgata explicitamente com versão e idempotência' })
+  @ApiOkResponse({ type: OperacaoConfirmadaDto })
+  public async resgatar(
+    @Param('atendimentoId', new ParseUUIDPipe()) atendimentoId: string,
+    @Body() entrada: EntradaResgateAtendimentoDto,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<OperacaoConfirmadaDto> {
+    await this.autenticacao.executarComSessaoAtual(tokenAcesso(autorizacao), cabecalhoObrigatorio(dispositivoId), cabecalhoObrigatorio(segredo),
+      (sessao, _agora, transacao) => this.operacao.resgatar(contexto(sessao), atendimentoId, entrada.chave_idempotencia, entrada.versao_atribuicao_esperada, transacao));
+    return new OperacaoConfirmadaDto();
+  }
 
   @Get('atendimentos/:atendimentoId/respostas-rapidas')
   @ApiQuery({ name: 'busca', required: false })

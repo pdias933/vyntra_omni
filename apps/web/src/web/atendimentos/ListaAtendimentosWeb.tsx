@@ -1,6 +1,7 @@
 import {
   listarAtendimentosWeb,
   type ResumoAtendimentoWebDto,
+  type EntradaResgateAtendimentoDto,
 } from '@vyntra/api-client';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
@@ -63,6 +64,8 @@ export function ListaAtendimentosWeb() {
   const [estado, definirEstado] = useState<'CARREGANDO' | 'ERRO' | 'PRONTO'>('CARREGANDO');
   const [selecionado, definirSelecionado] = useState<string>();
   const [conversaVisivel, definirConversaVisivel] = useState(false);
+  // Intenções efêmeras pertencem à área autenticada, não à projeção removida pelos filtros.
+  const [tentativasResgate] = useState(() => new Map<string, EntradaResgateAtendimentoDto>());
   const atendimentoSelecionado = itens.find((item) => item.atendimento_id === selecionado);
   const requisicaoAtual = useRef(0);
 
@@ -142,7 +145,7 @@ export function ListaAtendimentosWeb() {
           <span aria-hidden="true">◌</span>
           <strong>Selecione uma conversa</strong>
           <p>O atendimento será aberto aqui sem tirar você da fila.</p>
-        </div> : <ConversaWeb atendimento={atendimentoSelecionado} visivel={!compacta || conversaVisivel} aoVoltar={() => definirConversaVisivel(false)} />}
+        </div> : <ConversaWeb atendimento={atendimentoSelecionado} tentativasResgate={tentativasResgate} visivel={!compacta || conversaVisivel} aoResgatar={() => { definirFiltro('MEUS'); void carregar('MEUS', true); }} aoVoltar={() => definirConversaVisivel(false)} />}
       </aside>
     </main>
   );

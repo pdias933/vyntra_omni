@@ -22,6 +22,7 @@ import type {
 } from '../atendimentos/modelo-atendimento-mobile';
 import type { ServicoAtendimentosMobile } from '../atendimentos/servico-atendimentos-mobile';
 import { ComposerMobile } from '../componentes/ComposerMobile';
+import { ResgateAtendimentoMobile } from '../componentes/ResgateAtendimentoMobile';
 import type {
   ItemTimelineLocal,
   RepositorioReplicaLocal,
@@ -406,6 +407,7 @@ export function TelaConversaMobile({
           windowSize={9}
         />
       )}
+      <ResgateAtendimentoMobile atendimentoId={atendimento.atendimentoId} acessoOffline={acessoOffline || erro} repositorio={repositorio} servico={servico} aoConfirmar={carregar} key={atendimento.atendimentoId} />
       {!erro && (
         <ComposerMobile
           acessoOffline={acessoOffline}

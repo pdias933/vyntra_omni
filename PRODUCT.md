@@ -133,6 +133,8 @@ No composer, `/` abre respostas rápidas pesquisáveis. O botão dedicado de aç
 
 ### 4.4 Filas, resgate e transferência
 
+O lote funcional PR125–PR128 será homologado apenas com dados sintéticos. Abrir conversa não resgata. O resgate é explícito e só apresenta sucesso depois da confirmação do servidor; conflito exige reler o responsável. Transferência e notas serão integradas progressivamente. Vínculo de cliente e encerramento seguem pendentes, sem simulação de confirmação ERP.
+
 - Filas, calendários e SLAs configuráveis.
 - Usuário pode pertencer a uma ou mais filas.
 - Acesso à fila e permissão da ação são controles independentes.

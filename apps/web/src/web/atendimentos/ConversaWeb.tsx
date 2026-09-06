@@ -25,11 +25,13 @@ import {
   type PreviaAcaoErpWebDto,
   type ResumoAtendimentoWebDto,
   type ResultadoFinanceiroContatoWebDto,
+  type EntradaResgateAtendimentoDto,
 } from '@vyntra/api-client';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import { obterCsrf } from '../seguranca-web';
+import { ResgateAtendimentoWeb } from './ResgateAtendimentoWeb';
 
 interface Marcador { readonly marcadaNaoLida: boolean; readonly ultimaMensagemLidaId?: string; readonly versao: number }
 type EmojiReacao = '👍' | '❤️' | '😂' | '😮' | '😢' | '🙏';
@@ -77,7 +79,7 @@ function descricaoFinanceiro(
     : 'Dados em tempo real · cobertura não informada';
 }
 
-export function ConversaWeb({ atendimento, aoVoltar, visivel = true }: { readonly atendimento: ResumoAtendimentoWebDto; readonly aoVoltar?: () => void; readonly visivel?: boolean }) {
+export function ConversaWeb({ atendimento, aoVoltar, aoResgatar, tentativasResgate, visivel = true }: { readonly atendimento: ResumoAtendimentoWebDto; readonly aoVoltar?: () => void; readonly aoResgatar: () => void; readonly tentativasResgate: Map<string, EntradaResgateAtendimentoDto>; readonly visivel?: boolean }) {
   const [itens, definirItens] = useState<readonly ItemTimelineWebDto[]>([]);
   const [cursor, definirCursor] = useState<string>();
   const [marcador, definirMarcador] = useState<Marcador>({ marcadaNaoLida: false, versao: 0 });
@@ -194,7 +196,10 @@ export function ConversaWeb({ atendimento, aoVoltar, visivel = true }: { readonl
         ))}
         <div ref={finalTimeline} />
       </div>
-      <ComposerWeb atendimento={atendimento} aoAbrirAcoes={() => definirPainel('ACOES')} aoCancelarResposta={() => definirRespondendo(undefined)} aoEnviar={() => carregar(true)} respondendo={respondendo} />
+      <div>
+        <ResgateAtendimentoWeb atendimentoId={atendimento.atendimento_id} aoResgatar={aoResgatar} tentativas={tentativasResgate} key={atendimento.atendimento_id} />
+        {estado === 'PRONTO' && <ComposerWeb atendimento={atendimento} aoAbrirAcoes={() => definirPainel('ACOES')} aoCancelarResposta={() => definirRespondendo(undefined)} aoEnviar={() => carregar(true)} respondendo={respondendo} />}
+      </div>
       {(painel === 'BUSCA' || painel === 'GALERIA') && <PainelBuscaGaleriaWeb atendimentoId={atendimento.atendimento_id} key={painel} modo={painel} aoFechar={() => definirPainel(undefined)} />}
       {painel === 'CONTATO' && <PainelContatoWeb atendimentoId={atendimento.atendimento_id} aoFechar={() => definirPainel(undefined)} />}
       {painel === 'ACOES' && <PainelAcoesErpWeb atendimentoId={atendimento.atendimento_id} aoFechar={() => definirPainel(undefined)} />}

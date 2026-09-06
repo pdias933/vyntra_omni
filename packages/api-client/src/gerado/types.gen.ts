@@ -290,6 +290,25 @@ export type ResultadoAlteracaoAcessoUsuarioDto = {
     versao_permissoes: number;
 };
 
+export type ContextoOperacionalDto = {
+    atendimento_id: string;
+    estado: string;
+    fila_id: string;
+    responsavel_id: string | null;
+    responsavel_nome: string | null;
+    versao_atribuicao: number;
+    pode_resgatar: boolean;
+};
+
+export type EntradaResgateAtendimentoDto = {
+    chave_idempotencia: string;
+    versao_atribuicao_esperada: number;
+};
+
+export type OperacaoConfirmadaDto = {
+    situacao: 'CONFIRMADA';
+};
+
 export type RespostaRapidaWebDto = {
     id: string;
     titulo: string;
@@ -1414,6 +1433,44 @@ export type AlterarAcessoUsuarioAdministracaoResponses = {
 
 export type AlterarAcessoUsuarioAdministracaoResponse = AlterarAcessoUsuarioAdministracaoResponses[keyof AlterarAcessoUsuarioAdministracaoResponses];
 
+export type ConsultarOperacaoAtendimentoMobileData = {
+    body?: never;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/operacao';
+};
+
+export type ConsultarOperacaoAtendimentoMobileResponses = {
+    200: ContextoOperacionalDto;
+};
+
+export type ConsultarOperacaoAtendimentoMobileResponse = ConsultarOperacaoAtendimentoMobileResponses[keyof ConsultarOperacaoAtendimentoMobileResponses];
+
+export type ResgatarAtendimentoMobileData = {
+    body: EntradaResgateAtendimentoDto;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/resgatar';
+};
+
+export type ResgatarAtendimentoMobileResponses = {
+    200: OperacaoConfirmadaDto;
+};
+
+export type ResgatarAtendimentoMobileResponse = ResgatarAtendimentoMobileResponses[keyof ResgatarAtendimentoMobileResponses];
+
 export type ListarRespostasRapidasMobileData = {
     body?: never;
     headers: {
@@ -1669,6 +1726,39 @@ export type AlterarContextoContatoMobileResponses = {
 };
 
 export type AlterarContextoContatoMobileResponse = AlterarContextoContatoMobileResponses[keyof AlterarContextoContatoMobileResponses];
+
+export type ConsultarOperacaoAtendimentoWebData = {
+    body?: never;
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/operacao';
+};
+
+export type ConsultarOperacaoAtendimentoWebResponses = {
+    200: ContextoOperacionalDto;
+};
+
+export type ConsultarOperacaoAtendimentoWebResponse = ConsultarOperacaoAtendimentoWebResponses[keyof ConsultarOperacaoAtendimentoWebResponses];
+
+export type ResgatarAtendimentoWebData = {
+    body: EntradaResgateAtendimentoDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/resgatar';
+};
+
+export type ResgatarAtendimentoWebResponses = {
+    200: OperacaoConfirmadaDto;
+};
+
+export type ResgatarAtendimentoWebResponse = ResgatarAtendimentoWebResponses[keyof ResgatarAtendimentoWebResponses];
 
 export type ObterDetalhesContatoWebData = {
     body?: never;

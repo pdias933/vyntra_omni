@@ -826,6 +826,19 @@ O deploy cumulativo `pr-124-f0abf38` foi aceito em `https://omni.up100.com.br`, 
 
 PR124 permanece `EM ANDAMENTO`: engenharia, regressão automatizada e deploy concluídos, mas faltam nova development build e homologação física iOS/Android. Não há aprovação de distribuição nas lojas. As branches foram enviadas ao GitHub; a integração recusou a abertura automática dos objetos de pull request (403), e não houve merge presumido. Evidências e roteiro pendente: [design/VALIDACAO-TEMAS.md](design/VALIDACAO-TEMAS.md).
 
+### Primeiro lote funcional — PR125–PR128
+
+Lote autorizado em 6 de setembro de 2026. Somente dados sintéticos, sem ativar Meta, MK ou piloto. Vínculo de cliente e encerramento permanecem pendentes; este lote não encerra o primeiro item funcional completo.
+
+| PR | Entrega | Effort | Implementação | Integração | Testes | Deploy staging | Homologação física |
+|---|---|---|---|---|---|---|---|
+| 125 | Contexto operacional e resgate web/mobile | `xhigh` | Em andamento | SDK e clientes ligados; aceite HTTP integrado pendente | Tipos, lint, suíte e disputa PostgreSQL aprovados; UX em validação | Pendente, cumulativo na 128 | Pendente iPhone/Android |
+| 126 | Disponibilidade própria e transferência | `xhigh` | Pendente | Pendente | Pendente | Pendente | Pendente |
+| 127 | Notas internas e rascunho SQLCipher | `high` | Pendente | Pendente | Pendente | Pendente | Pendente |
+| 128 | Aceite integrado, build nativa e publicação | `xhigh` | Pendente | Pendente | Pendente | Pendente; preservar release anterior | Pendente iPhone/Android |
+
+Evidência incremental: [PR125](docs/operacoes/PR-125.md). Nenhuma PR deste lote está declarada concluída.
+
 ### PR124A — ajuste visual e responsividade
 
 Concluída em 4 de setembro de 2026 após a captura do Safari: fundo verde-escuro substituído por grafite neutro, lateral compacta, lista de 320–420 px, conversa predominante, tipografia legível, detalhes adaptativos e composer com altura ajustável. Retorno compacto preserva rascunho e posição; conversa recolhida não confirma mensagens novas como lidas. Chromium 152 e WebKit 26.5 aprovaram 22 combinações de tema/largura cada, fonte ampliada a 200%, foco, editor, QR e ausência de transbordamento. Lint, tipos, contratos, 478 testes da API (cache), 355 testes de arquitetura/comportamento, builds web/API/iOS/Android, Expo, dependências e segredos aprovados. Branch `codex/pr-124a-ajuste-visual-responsivo` publicada no GitHub; não há merge ou objeto de pull request presumido. Release de staging `pr-124a-a668c3e` saudável e com hashes públicos conferidos, 57 migrations reconhecidas e nenhuma pendência; anterior `pr-124-f0abf38` preservada. MK e piloto continuam desligados. Effort recomendado e confirmado: `xhigh`, pelo reflow e conservação de estado entre motores. Não encerra o aceite físico mobile da PR124. Evidências: [design/VALIDACAO-PR124A.md](design/VALIDACAO-PR124A.md).

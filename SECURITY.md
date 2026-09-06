@@ -407,6 +407,8 @@ Replay ou duplicidade retorna sucesso compatível sem repetir o efeito. Status f
 
 ### 11.1 Idempotência segura
 
+No resgate operacional da PR125, a sessão transacional e a autorização corrente precedem inclusive o retorno de repetição. Fila não é recebida do cliente: é resolvida sob o lock de autoridade. Assinatura inclui ação, atendimento e versão esperada; escopo pertence ao usuário autenticado. Resultado repetido não transporta histórico, notas ou responsável antigo. Estado conflitante não devolve identificador do vencedor sem nova consulta autorizada.
+
 - a chave de idempotência é UUID aleatório, obrigatória e única apenas dentro de escopo explícito;
 - o PostgreSQL armazena somente SHA-256 da chave; a assinatura do comando impede reutilização com conteúdo diferente;
 - a assinatura é produzida no backend a partir do comando canônico validado e minimizado; CPF, telefone, linha digitável e outros valores sensíveis ou de domínio pequeno não recebem hash simples;

@@ -1,4 +1,5 @@
 import type { ServicoAutenticacaoAplicativo } from '../autenticacao/servico-autenticacao-aplicativo';
+import type { EntradaResgateAtendimentoDto } from '@vyntra/api-client';
 import {
   AdaptadorAtendimentosHttp,
   ErroAtendimentoMobile,
@@ -6,6 +7,13 @@ import {
 import type { AcaoErpMobile } from './modelo-atendimento-mobile';
 
 export class ServicoAtendimentosMobile {
+  public consultarOperacao(atendimentoId: string) {
+    return this.executar((credenciais) => this.adaptador.consultarOperacao(credenciais, atendimentoId));
+  }
+
+  public resgatar(atendimentoId: string, entrada: EntradaResgateAtendimentoDto) {
+    return this.executar((credenciais) => this.adaptador.resgatar(credenciais, atendimentoId, entrada));
+  }
   public constructor(
     private readonly autenticacao: ServicoAutenticacaoAplicativo,
     private readonly adaptador = new AdaptadorAtendimentosHttp(),

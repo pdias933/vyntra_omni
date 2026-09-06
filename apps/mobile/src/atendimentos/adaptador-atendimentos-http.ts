@@ -1,5 +1,8 @@
 import {
   alterarContextoContatoMobile,
+  consultarOperacaoAtendimentoMobile,
+  resgatarAtendimentoMobile,
+  type EntradaResgateAtendimentoDto,
   client,
   confirmarLeituraTimelineMobile,
   consultarFinanceiroContatoMobile,
@@ -92,6 +95,13 @@ function opcoesAutenticadas(credenciais: CredenciaisSincronizacaoAplicativo) {
 client.setConfig({ baseUrl: CONFIGURACAO_APLICATIVO.servidor });
 
 export class AdaptadorAtendimentosHttp {
+  public async consultarOperacao(credenciais: CredenciaisSincronizacaoAplicativo, atendimentoId: string) {
+    return exigirDado(await consultarOperacaoAtendimentoMobile({ ...opcoesAutenticadas(credenciais), path: { atendimentoId } }));
+  }
+
+  public async resgatar(credenciais: CredenciaisSincronizacaoAplicativo, atendimentoId: string, entrada: EntradaResgateAtendimentoDto) {
+    return exigirDado(await resgatarAtendimentoMobile({ ...opcoesAutenticadas(credenciais), path: { atendimentoId }, body: entrada }));
+  }
   public async enviarMidia(
     credenciais: CredenciaisSincronizacaoAplicativo,
     atendimentoId: string,

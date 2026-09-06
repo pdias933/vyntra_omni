@@ -16,6 +16,9 @@ import { ServicoContatoAcoesWeb } from './servico-contato-acoes-web.js';
 import { ServicoListaAtendimentosWeb } from './servico-lista-atendimentos-web.js';
 import { ServicoTimelineWeb } from './servico-timeline-web.js';
 import { ServicoComposerWeb } from './servico-composer-web.js';
+import { ParseUUIDPipe } from '@nestjs/common';
+import { ServicoOperacaoAtendimentos } from '../operacao-atendimentos/servico-operacao-atendimentos.js';
+import { ContextoOperacionalDto, EntradaResgateAtendimentoDto, OperacaoConfirmadaDto } from '../operacao-atendimentos/dto-operacao-atendimentos.js';
 
 @ApiTags('console-web')
 @Controller('web')
@@ -28,7 +31,38 @@ export class ControladorConsoleWeb {
     @Inject(ServicoComposerWeb) private readonly composer: ServicoComposerWeb,
     @Inject(ServicoBuscaGaleriaWeb) private readonly buscaGaleria: ServicoBuscaGaleriaWeb,
     @Inject(ServicoContatoAcoesWeb) private readonly contatoAcoes: ServicoContatoAcoesWeb,
+    @Inject(ServicoOperacaoAtendimentos) private readonly operacao: ServicoOperacaoAtendimentos,
   ) {}
+
+  @Get('atendimentos/:atendimentoId/operacao')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiOperation({ operationId: 'consultarOperacaoAtendimentoWeb', summary: 'Consulta atribuição e capacidades operacionais atuais' })
+  @ApiOkResponse({ type: ContextoOperacionalDto })
+  public async consultarOperacao(
+    @Param('atendimentoId', new ParseUUIDPipe()) atendimentoId: string,
+    @Headers('cookie') cookies: string | undefined,
+  ): Promise<ContextoOperacionalDto> {
+    const sessao = await this.autenticacao.autenticar(obterTokenSessaoWeb(cookies));
+    return new ContextoOperacionalDto(await this.operacao.consultar(sessao.contexto, atendimentoId));
+  }
+
+  @Post('atendimentos/:atendimentoId/resgatar')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiHeader({ name: NOME_HEADER_CSRF_WEB, required: true })
+  @ApiBody({ type: EntradaResgateAtendimentoDto })
+  @ApiOperation({ operationId: 'resgatarAtendimentoWeb', summary: 'Resgata explicitamente com versão e idempotência' })
+  @ApiOkResponse({ type: OperacaoConfirmadaDto })
+  public async resgatar(
+    @Param('atendimentoId', new ParseUUIDPipe()) atendimentoId: string,
+    @Body() entrada: EntradaResgateAtendimentoDto,
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_CSRF_WEB) csrf: string | undefined,
+    @Headers('origin') origem: string | undefined,
+  ): Promise<OperacaoConfirmadaDto> {
+    await this.executarEscrita(cookies, csrf, origem, (sessao, transacao) =>
+      this.operacao.resgatar(sessao, atendimentoId, entrada.chave_idempotencia, entrada.versao_atribuicao_esperada, transacao));
+    return new OperacaoConfirmadaDto();
+  }
 
   @Get('atendimentos/:atendimentoId/contato')
   @ApiCookieAuth('sessaoWeb')

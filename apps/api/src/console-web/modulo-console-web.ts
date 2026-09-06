@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ModuloOperacaoAtendimentos } from '../operacao-atendimentos/modulo-operacao-atendimentos.js';
 
 import { ModuloAutenticacao } from '../autenticacao/modulo-autenticacao.js';
 import { ModuloAutorizacao } from '../autorizacao/modulo-autorizacao.js';
@@ -21,6 +22,7 @@ import { ServicoTimelineWeb } from './servico-timeline-web.js';
   controllers: [ControladorConsoleWeb],
   exports: [ServicoComposerWeb, ServicoContatoAcoesWeb, ServicoTimelineWeb],
   imports: [
+    ModuloOperacaoAtendimentos,
     ModuloAutenticacao,
     ModuloAutorizacao,
     ModuloContextosCliente,

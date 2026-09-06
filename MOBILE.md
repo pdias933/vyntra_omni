@@ -447,6 +447,8 @@ Falha de rede ao marcar leitura é reconciliada idempotentemente. Push não marc
 
 ## 13. Ações do sistema
 
+Lote PR125–PR128: resgate, transferência e notas exigem conexão já reconciliada. Não criam pendência operacional offline e não executam automaticamente ao reconectar. Resposta perdida conserva a chave para nova tentativa explícita; sucesso depende de confirmação do backend. Resgate não acontece ao abrir conversa. Desenvolvimento, exportação, development build e homologação física são evidências distintas.
+
 O botão dedicado ao lado do anexo, ativo/visível com o campo vazio, abre um bottom sheet organizado por categorias e pesquisável. O primeiro toque apenas seleciona a capacidade. Operação com efeito real exige contexto, prévia, confirmação e resposta inequívoca. Exemplos:
 
 - consultar/vincular cliente;
