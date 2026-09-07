@@ -284,6 +284,8 @@ export function TelaListaAtendimentos({
         contentContainerStyle={estilos.filtros}
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={estilos.faixaFiltros}
+        testID="filtros-atendimentos"
       >
         {FILTROS_ATENDIMENTOS_MOBILE.map((codigo) => {
           const ativo = filtro === codigo;
@@ -326,6 +328,7 @@ export function TelaListaAtendimentos({
         </View>
       ) : (
         <Animated.FlatList
+          style={estilos.areaLista}
           contentContainerStyle={itens.length === 0 ? estilos.listaVazia : estilos.lista}
           data={itens}
           initialNumToRender={12}
@@ -356,6 +359,7 @@ export function TelaListaAtendimentos({
 }
 
 const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
+  areaLista: { flex: 1, minHeight: 0 },
   avatar: { alignItems: 'center', backgroundColor: CORES.avatar, borderRadius: 25, height: 50, justifyContent: 'center', position: 'relative', width: 50 },
   cabecalho: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 14, paddingHorizontal: ESPACOS.grande, paddingTop: 17 },
   canal: { alignItems: 'center', backgroundColor: CORES.acao, borderColor: CORES.superficie, borderRadius: RAIOS.pílula, borderWidth: 2, bottom: -2, height: 20, justifyContent: 'center', position: 'absolute', right: -3, width: 20 },
@@ -365,11 +369,12 @@ const criarEstilos = (CORES: CoresTema) => StyleSheet.create({
   contagemFiltroAtiva: { color: CORES.acaoClara },
   corpoCartao: { flex: 1, gap: 5 },
   faixaConexao: { alignItems: 'center', backgroundColor: CORES.superficieElevada, flexDirection: 'row', gap: 7, justifyContent: 'center', minHeight: 29, paddingHorizontal: 12 },
+  faixaFiltros: { flexGrow: 0, flexShrink: 0 },
   fila: { alignItems: 'center', backgroundColor: CORES.superficieElevada, borderRadius: RAIOS.pílula, flexDirection: 'row', gap: 5, maxWidth: '68%', paddingHorizontal: 8, paddingVertical: 4 },
-  filtro: { alignItems: 'center', backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: RAIOS.pílula, borderWidth: 1, flexDirection: 'row', gap: 6, minHeight: 38, paddingHorizontal: 15 },
+  filtro: { alignItems: 'center', backgroundColor: CORES.superficie, borderColor: CORES.borda, borderRadius: RAIOS.pílula, borderWidth: 1, flexDirection: 'row', gap: 6, minHeight: 44, paddingHorizontal: 15, paddingVertical: 8 },
   filtroAtivo: { backgroundColor: CORES.acao, borderColor: CORES.acao },
   filtroPressionado: { opacity: 0.78 },
-  filtros: { gap: 8, paddingHorizontal: ESPACOS.grande },
+  filtros: { alignItems: 'center', gap: 8, paddingHorizontal: ESPACOS.grande, paddingVertical: 4 },
   horario: { color: CORES.textoSecundario, fontSize: 11 },
   iconeVazio: { alignItems: 'center', backgroundColor: CORES.acaoClara, borderRadius: RAIOS.pílula, height: 58, justifyContent: 'center', marginBottom: 15, width: 58 },
   iniciais: { color: CORES.textoSecundario, fontSize: 16, fontWeight: '700' },

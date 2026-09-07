@@ -86,6 +86,7 @@ Não propague DTOs/nomenclatura Meta ou MK para domínio, UI ou Motor de Fluxos.
 - Web compartilha identidade e semântica, mas possui composição desktop própria; não ampliar literalmente o app.
 - Estado saudável não mostra atualização, horário de sync, cursor ou infraestrutura.
 - A lista usa somente `Meus`, `Pendentes`, `Não lidos`, `SLA`, `Expirando` e `Em automação`; não duplicar esses estados em cards.
+- A faixa mobile de filtros não cresce na vertical com a lista; use altura natural, área de toque e fonte dinâmica, sem altura máxima ou corte para compactar.
 - Nova mensagem reorganiza a lista pela última atividade confirmada; `conversa_id` apenas preserva a identidade visual durante a animação.
 - A lista mobile consulta somente a projeção de snapshot já autorizada e íntegra; nunca carregue conjunto amplo para filtrar no app nem exiba réplica marcada para ressincronização.
 - Evento realtime saudável atualiza a lista em silêncio; não faça cada mensagem piscar `Sincronizando...`.

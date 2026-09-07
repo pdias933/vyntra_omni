@@ -69,6 +69,8 @@ São os únicos filtros superiores. Podem rolar horizontalmente em tela estreita
 - move suavemente a conversa para a posição correta;
 - não exige pull-to-refresh.
 
+A faixa de filtros não participa do crescimento vertical da tela (`flexGrow: 0`, `flexShrink: 0` no ScrollView), e seu conteúdo fica centralizado sem esticar os botões. Cada botão tem altura mínima de toque de 44 pontos e espaçamento vertical; não possui altura fixa/máxima nem limita a fonte dinâmica. A lista, não a faixa, ocupa a altura disponível. Esse ajuste surgiu no aceite físico Android da PR128 e se aplica também ao iOS.
+
 Atualização, realtime e recuperação acontecem silenciosamente. Não mostrar `Atualizar`, `Última atualização`, estado de WebSocket ou indicador de sincronização quando tudo funciona. Uma faixa superior temporária só aparece em exceção:
 
 ```text

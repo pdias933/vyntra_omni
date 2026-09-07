@@ -540,6 +540,8 @@ A PR 101 acrescenta ao snapshot a projeção mínima da lista mobile sem criar u
 
 No SQLCipher, `resumo_atendimento` é uma tabela de leitura derivada, não uma entidade de domínio. Snapshot e projeção entram no mesmo commit e a versão local 3 exige reconstrução para instalações anteriores. Os seis filtros executam consultas locais limitadas e parametrizadas; observadores recebem notificação somente depois do commit. Qualquer avanço incremental mantém a réplica suja até o próximo snapshot, portanto a interface não pode usar a projeção parcial como autoridade offline. `conversa_id` estabiliza a animação e `ultima_atividade_em` determina a ordem.
 
+Na composição nativa, o ScrollView horizontal dos filtros desabilita o crescimento vertical padrão do React Native; a FlatList virtualizada recebe o restante da altura. Essa geometria não remonta a navegação nem modifica estado, consultas ou seleção do filtro, e mantém a altura intrínseca para fonte ampliada.
+
 A referência inicial é retenção de 30 dias para eventos de sincronização, sujeita a medição e política operacional. Isso não limita histórico de conversa.
 
 ### 9.3 Alteração de permissão

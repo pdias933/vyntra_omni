@@ -12,6 +12,7 @@ Quando um elemento desenhado nessas imagens conflitar com a especificação text
 
 - não implementar os cards de resumo nem `Puxe para atualizar`/`Última atualização` mostrados em `02-lista-atendimentos.png`;
 - substituir `Fila(s)` por `Pendentes` e manter somente os filtros `Meus`, `Pendentes`, `Não lidos`, `SLA`, `Expirando` e `Em automação`;
+- manter esses filtros em faixa horizontal compacta de altura natural, sem expandir verticalmente junto com a lista; preservar fonte dinâmica e área de toque;
 - não implementar a faixa permanente `Cliente`, `Contrato`, `Histórico`, `Mídias` e `Notas` abaixo da janela Meta mostrada em `01-conversa.png`;
 - não manter uma segunda faixa permanente de ações abaixo do composer; ações do sistema abrem um bottom sheet contextual;
 - não introduzir Instagram, Messenger ou outro canal na V1; a V1 é WhatsApp;

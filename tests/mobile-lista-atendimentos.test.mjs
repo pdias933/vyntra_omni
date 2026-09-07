@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import ts from 'typescript';
 
 const raiz = new URL('../', import.meta.url);
 const ler = (caminho) => readFile(new URL(caminho, raiz), 'utf8');
@@ -97,4 +98,37 @@ test('cartão mantém hierarquia de mensageria sem repetir painéis de CRM', asy
   assert.ok(!tela.includes('Contrato'));
   assert.ok(!tela.includes('Cliente'));
   assert.ok(!tela.includes('cards de resumo'));
+});
+
+test('faixa de filtros não disputa altura com lista e preserva fonte dinâmica', async () => {
+  const tela = await ler('apps/mobile/src/telas/TelaListaAtendimentos.tsx');
+  const arvore = ts.createSourceFile('tela.tsx', tela, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  let inicializador;
+  function visitar(no) {
+    if (ts.isVariableDeclaration(no) && no.name.getText(arvore) === 'criarEstilos') inicializador = no.initializer;
+    ts.forEachChild(no, visitar);
+  }
+  visitar(arvore);
+  assert.ok(inicializador);
+  const compilado = ts.transpileModule(`module.exports = ${inicializador.getText(arvore)};`, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const modulo = { exports: undefined };
+  new Function('module', 'StyleSheet', 'ESPACOS', 'RAIOS', compilado)(
+    modulo, { create: (estilos) => estilos }, { grande: 24, pequeno: 12 }, { pílula: 999 },
+  );
+  const estilos = modulo.exports({});
+  assert.deepEqual(estilos.faixaFiltros, { flexGrow: 0, flexShrink: 0 });
+  assert.equal(estilos.filtros.alignItems, 'center');
+  assert.equal(estilos.areaLista.flex, 1);
+  assert.ok(estilos.filtro.minHeight >= 44);
+  assert.ok(estilos.filtro.paddingVertical > 0);
+  for (const estilo of [estilos.faixaFiltros, estilos.filtros, estilos.filtro]) {
+    assert.equal(estilo.height, undefined);
+    assert.equal(estilo.maxHeight, undefined);
+  }
+  assert.match(tela, /<ScrollView[\s\S]*?style=\{estilos\.faixaFiltros\}/);
+  assert.match(tela, /<Animated\.FlatList\s+style=\{estilos\.areaLista\}/);
+  assert.ok(!tela.includes('allowFontScaling={false}'));
+  assert.ok(!tela.includes('maxFontSizeMultiplier'));
 });

@@ -56,6 +56,8 @@ Notas e eventos internos aparecem cronologicamente, mas são impossíveis de con
 
 A lista se atualiza sozinha. Nova mensagem atualiza prévia, não lidas e posição da conversa. Os únicos filtros superiores são `Meus`, `Pendentes`, `Não lidos`, `SLA`, `Expirando` e `Em automação`, sem cards de resumo duplicados. Em uso normal não há botão, timestamp ou texto de atualização/sincronização; só estados excepcionais exibem faixa transitória `Sem conexão`, `Conectando...` ou `Sincronizando...`, removida automaticamente ao normalizar.
 
+No mobile, os filtros ocupam uma única faixa horizontal compacta, sem crescer para preencher a altura livre da tela. A lista de conversas recebe o espaço restante. Fonte ampliada aumenta a altura natural do conteúdo; não reduzir a fonte do sistema nem impor altura máxima que corte rótulos.
+
 ### 3.3 Linguagem de produto e referências
 
 A experiência é **mobile-first, moderna, premium e limpa**. No celular, deve parecer um aplicativo nativo de mensageria, nunca um CRM web comprimido. WhatsApp, Telegram, Linear e aplicativos modernos de produtividade são referências de qualidade, sem autorizar cópia pixel a pixel ou de marca.

@@ -9,8 +9,8 @@ Data: 7 de setembro de 2026. Estado: EM ANDAMENTO. Effort: `xhigh`.
 | Android | `:app:assembleDebug` aprovado; 502 tarefas, recompilação incremental de 21 segundos. |
 | iOS | `xcodebuild` Debug para aparelho: `BUILD SUCCEEDED`; assinatura Apple Development da equipe UP100 existente verificada. |
 | Instalação iPhone | Instalação e lançamento por `devicectl` aprovados; usuário confirmou abertura do login. |
-| Pareamento iPhone | Duas conclusões HTTP 200 após confirmação web; app falhou na preparação da réplica local. Correção implementada, repetição física pendente. |
-| Instalação Android | Samsung SM-S948B, Android 16/API 36: depuração autorizada pelo usuário, `adb install -r` com `Success`, atividade iniciada com `Status: ok` e processo ativo. Aparelho bloqueado na captura; login visual ainda não confirmado. |
+| Pareamento iPhone | Falhas locais iniciais após HTTP 200 corrigidas; depois de reiniciar com o código atual e repetir o pareamento, usuário confirmou sucesso no iPhone. |
+| Instalação Android | Samsung SM-S948B, Android 16/API 36: instalação/início por ADB aprovados. Usuário confirmou login e abertura da lista; filtros altos identificados e ajustados, validação visual do ajuste pendente. |
 | Lote operacional físico | Resgate → nota → transferência entre operadores, rede/revogação, SQLCipher/cofre e acessibilidade ainda pendentes. |
 | Servidor | Nenhum novo deploy. Staging permanece `pr-128a-df35243`, com releases anteriores preservadas. Nenhuma promoção a produção ou ativação Meta/MK/piloto. |
 
@@ -87,7 +87,7 @@ Banco novo, persistência/reabertura, arquivo cifrado, chave errada e adulteraç
 
 Uma tentativa posterior na web falhou por autenticação não recente: confirmação 401 com QR ainda válido, sessão ativa autenticada cerca de 18 minutos antes. A confirmação exige login de menos de 10 minutos. A mensagem genérica da web não distingue esse caso; sair/entrar novamente e gerar outro QR é o procedimento atual. Nenhum limite foi relaxado.
 
-Próximos passos: confirmar novo pareamento no iPhone com o código recarregado e login web recente; desbloquear o Samsung e confirmar login/pareamento; depois executar o lote operacional sintético em ambos. Não marcar PR125–128 ou aceite físico de aparência como concluídos apenas por abrir login. Vínculo de cliente e encerramento continuam fora deste lote.
+Próximos passos: validar a faixa ajustada de filtros no Samsung e executar o lote operacional sintético em ambos. Login confirmado nos dois aparelhos; não marcar PR125–128 ou aceite físico de aparência como concluídos apenas por isso. Vínculo de cliente e encerramento continuam fora deste lote.
 
 ## Segunda falha local — conexão transacional
 
@@ -98,3 +98,13 @@ O ensaio SQLCipher real reproduziu a recusa de leitura em conexão nova sem chav
 O teste nativo agora extrai as cinco migrations literais diretamente do método `migrar` e as executa com a biblioteca SQLCipher 4.7.0 do Expo e chaves estrangeiras ativas. Versão final 5, tabela de notas, verificação referencial, commit e rollback aprovados. Quinze testes da abertura/conexão cobrem também falha em início/escrita/commit, fechamento e operação recusada sem proteção. A suíte de SQL/rascunhos permanece separada do ensaio criptográfico.
 
 Tipos, lint, contratos, suíte completa (484 API por cache e 376 raiz), builds API/web e exportações iOS/Android aprovados. A correção precisa ser recarregada do Metro no iPhone; execução física bem-sucedida continua pendente. Nenhum novo deploy, segredo, dependência ou migration de servidor.
+
+## Aceite Android e faixa de filtros
+
+O usuário confirmou acesso à lista no Android e relatou que os filtros ocupavam cerca de metade da tela. Esclareceu explicitamente que o iPhone ainda não conseguiu entrar; não há aceite de login iOS.
+
+O ScrollView horizontal herdava `flexGrow: 1` e `flexShrink: 1` do React Native, sem estilo externo para limitar sua participação no layout. Agora a faixa define ambos como zero, o conteúdo alinha os botões ao centro e a FlatList recebe `flex: 1`. Botões conservam fonte de 13 pontos com escala nativa, altura mínima de toque de 44 pontos e espaçamento vertical; nenhuma altura fixa/máxima corta texto ampliado. Não foram alterados filtros, queries, autorização, estados ou animações.
+
+Teste executa a fábrica real de estilos e verifica ligação às duas superfícies, ausência de limites de fonte/altura e distribuição declarada do espaço. Isso não substitui medição física: confirmação visual do ajuste no Android e aceite iOS continuam pendentes. O Android já estava desconectado do ADB quando se tentou capturar a tela. O iPhone foi reiniciado via `devicectl`, sem reinstalação ou apagamento, para carregar o código atual; a sessão do depurador não retornou diagnóstico JavaScript, portanto nenhum erro interno novo foi presumido como causa confirmada.
+
+Confirmação posterior: o usuário respondeu que o novo pareamento **deu certo no iPhone**. O login agora está confirmado em iOS e Android. O aceite visual dos filtros e o lote operacional completo continuam pendentes. Tipos, lint, contratos, 484 testes API por cache + 377 raiz, builds e exportações aprovados para o ajuste; sem nova imagem de servidor, instalação nativa ou alteração de credenciais.
