@@ -1213,6 +1213,219 @@
         ]
       }
     },
+    "/api/v1/mobile/atendimentos/{atendimentoId}/destinos-transferencia": {
+      "get": {
+        "operationId": "listarDestinosTransferenciaMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DestinoTransferenciaDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Lista destinos autorizados e disponíveis",
+        "tags": [
+          "console-mobile"
+        ]
+      }
+    },
+    "/api/v1/mobile/atendimentos/{atendimentoId}/transferir": {
+      "post": {
+        "operationId": "transferirAtendimentoMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaTransferenciaAtendimentoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperacaoConfirmadaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Transfere após seleção e confirmação explícitas",
+        "tags": [
+          "console-mobile"
+        ]
+      }
+    },
+    "/api/v1/mobile/perfil/disponibilidade": {
+      "get": {
+        "operationId": "consultarDisponibilidadePropriaMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisponibilidadePropriaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Consulta a própria disponibilidade operacional",
+        "tags": [
+          "console-mobile"
+        ]
+      },
+      "post": {
+        "operationId": "definirDisponibilidadePropriaMobile",
+        "parameters": [
+          {
+            "name": "x-segredo-dispositivo",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dispositivo-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaDisponibilidadePropriaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperacaoConfirmadaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoMobile": []
+          }
+        ],
+        "summary": "Altera explicitamente a própria disponibilidade",
+        "tags": [
+          "console-mobile"
+        ]
+      }
+    },
     "/api/v1/mobile/atendimentos/{atendimentoId}/operacao": {
       "get": {
         "operationId": "consultarOperacaoAtendimentoMobile",
@@ -2124,6 +2337,170 @@
         "summary": "Troca o cliente e contrato ativos no aplicativo",
         "tags": [
           "console-mobile"
+        ]
+      }
+    },
+    "/api/v1/web/atendimentos/{atendimentoId}/destinos-transferencia": {
+      "get": {
+        "operationId": "listarDestinosTransferenciaWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DestinoTransferenciaDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Lista destinos autorizados e disponíveis",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
+    "/api/v1/web/atendimentos/{atendimentoId}/transferir": {
+      "post": {
+        "operationId": "transferirAtendimentoWeb",
+        "parameters": [
+          {
+            "name": "atendimentoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaTransferenciaAtendimentoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperacaoConfirmadaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Transfere após seleção e confirmação explícitas",
+        "tags": [
+          "console-web"
+        ]
+      }
+    },
+    "/api/v1/web/perfil/disponibilidade": {
+      "get": {
+        "operationId": "consultarDisponibilidadePropriaWeb",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisponibilidadePropriaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Consulta a própria disponibilidade operacional",
+        "tags": [
+          "console-web"
+        ]
+      },
+      "post": {
+        "operationId": "definirDisponibilidadePropriaWeb",
+        "parameters": [
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaDisponibilidadePropriaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperacaoConfirmadaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessaoWeb": []
+          }
+        ],
+        "summary": "Altera explicitamente a própria disponibilidade",
+        "tags": [
+          "console-web"
         ]
       }
     },
@@ -5228,6 +5605,120 @@
           "versao_permissoes"
         ]
       },
+      "DestinoTransferenciaDto": {
+        "type": "object",
+        "properties": {
+          "fila_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fila_nome": {
+            "type": "string"
+          },
+          "usuario_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "usuario_nome": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fila_id",
+          "fila_nome"
+        ]
+      },
+      "EntradaTransferenciaAtendimentoDto": {
+        "type": "object",
+        "properties": {
+          "chave_idempotencia": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versao_atribuicao_esperada": {
+            "type": "number",
+            "minimum": 1
+          },
+          "fila_destino_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "usuario_destino_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "confirmacao_explicita": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "chave_idempotencia",
+          "versao_atribuicao_esperada",
+          "fila_destino_id",
+          "confirmacao_explicita"
+        ]
+      },
+      "OperacaoConfirmadaDto": {
+        "type": "object",
+        "properties": {
+          "situacao": {
+            "type": "string",
+            "enum": [
+              "CONFIRMADA"
+            ]
+          }
+        },
+        "required": [
+          "situacao"
+        ]
+      },
+      "DisponibilidadePropriaDto": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "type": "string",
+            "enum": [
+              "DISPONIVEL",
+              "INDISPONIVEL"
+            ]
+          },
+          "versao": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "estado",
+          "versao"
+        ]
+      },
+      "EntradaDisponibilidadePropriaDto": {
+        "type": "object",
+        "properties": {
+          "chave_idempotencia": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versao_esperada": {
+            "type": "number",
+            "minimum": 0
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "DISPONIVEL",
+              "INDISPONIVEL"
+            ]
+          }
+        },
+        "required": [
+          "chave_idempotencia",
+          "versao_esperada",
+          "estado"
+        ]
+      },
       "ContextoOperacionalDto": {
         "type": "object",
         "properties": {
@@ -5259,6 +5750,9 @@
           },
           "pode_resgatar": {
             "type": "boolean"
+          },
+          "pode_transferir": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -5268,7 +5762,8 @@
           "responsavel_id",
           "responsavel_nome",
           "versao_atribuicao",
-          "pode_resgatar"
+          "pode_resgatar",
+          "pode_transferir"
         ]
       },
       "EntradaResgateAtendimentoDto": {
@@ -5286,20 +5781,6 @@
         "required": [
           "chave_idempotencia",
           "versao_atribuicao_esperada"
-        ]
-      },
-      "OperacaoConfirmadaDto": {
-        "type": "object",
-        "properties": {
-          "situacao": {
-            "type": "string",
-            "enum": [
-              "CONFIRMADA"
-            ]
-          }
-        },
-        "required": [
-          "situacao"
         ]
       },
       "RespostaRapidaWebDto": {

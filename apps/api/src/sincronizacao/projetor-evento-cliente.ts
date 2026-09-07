@@ -35,6 +35,7 @@ const TIPOS_PUBLICAVEIS = new Set([
   'ATENDIMENTO_TRANSFERIDO_PARA_USUARIO',
   'CLIENTE_AGUARDANDO',
   'DISPARO_TRANSACIONAL_CRIADO',
+  'DISPONIBILIDADE_USUARIO_ALTERADA',
   'ESTADO_MENSAGEM_ATUALIZADO',
   'FORMULARIO_RECEBIDO',
   'JANELA_CANAL_ATUALIZADA_POR_ENTRADA',
@@ -100,7 +101,7 @@ export class ProjetorEventoCliente {
     autorizacao: ContextoAutorizacaoProjecao,
   ): boolean {
     if (!autorizacao.sessaoValida) return false;
-    if (evento.tipo === 'PERMISSOES_ALTERADAS') {
+    if (evento.tipo === 'PERMISSOES_ALTERADAS' || evento.tipo === 'DISPONIBILIDADE_USUARIO_ALTERADA') {
       return evento.entidadeTipo === 'USUARIO' && evento.entidadeId === autorizacao.usuarioId;
     }
     return autorizacao.recursoAcessivel;

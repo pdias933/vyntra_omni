@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcompanharEventosWebData, AcompanharEventosWebResponses, AlterarAcessoUsuarioAdministracaoData, AlterarAcessoUsuarioAdministracaoResponses, AlterarContextoContatoMobileData, AlterarContextoContatoMobileResponses, AlterarContextoContatoWebData, AlterarContextoContatoWebResponses, AtualizarControleRecursoData, AtualizarControleRecursoResponses, AtualizarPoliticaVersaoMobileData, AtualizarPoliticaVersaoMobileResponses, AvaliarVersaoMobileData, AvaliarVersaoMobileResponses, BaixarCopiaAtendimentoWebData, BaixarCopiaAtendimentoWebResponses, BaixarMidiaWebData, BaixarMidiaWebResponses, BuscarConversaWebData, BuscarConversaWebResponses, CancelarPareamentoQrWebData, CancelarPareamentoQrWebResponses, ConcluirPareamentoQrMobileData, ConcluirPareamentoQrMobileResponses, ConfirmarLeituraTimelineMobileData, ConfirmarLeituraTimelineMobileResponses, ConfirmarLeituraTimelineWebData, ConfirmarLeituraTimelineWebResponses, ConfirmarPareamentoQrWebData, ConfirmarPareamentoQrWebResponses, ConsultarFinanceiroContatoMobileData, ConsultarFinanceiroContatoMobileResponses, ConsultarFinanceiroContatoWebData, ConsultarFinanceiroContatoWebResponses, ConsultarOperacaoAtendimentoMobileData, ConsultarOperacaoAtendimentoMobileResponses, ConsultarOperacaoAtendimentoWebData, ConsultarOperacaoAtendimentoWebResponses, ConsultarPareamentoQrMobileData, ConsultarPareamentoQrMobileResponses, ConsultarPareamentoQrWebData, ConsultarPareamentoQrWebResponses, CriarCopiaAtendimentoWebData, CriarCopiaAtendimentoWebResponses, CriarFilaAdministracaoOperacionalData, CriarFilaAdministracaoOperacionalResponses, CriarFluxoEditorData, CriarFluxoEditorResponses, CriarVersaoFluxoEditorData, CriarVersaoFluxoEditorResponses, DefinirOverrideCalendarioAdministracaoOperacionalData, DefinirOverrideCalendarioAdministracaoOperacionalResponses, EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, EnviarMidiaMobileData, EnviarMidiaMobileResponses, EnviarMidiaWebData, EnviarMidiaWebResponses, EnviarModeloAprovadoMobileData, EnviarModeloAprovadoMobileResponses, EnviarModeloAprovadoWebData, EnviarModeloAprovadoWebResponses, EnviarTextoMobileData, EnviarTextoMobileResponses, EnviarTextoWebData, EnviarTextoWebResponses, ExecutarAcaoErpContatoMobileData, ExecutarAcaoErpContatoMobileResponses, ExecutarAcaoErpContatoWebData, ExecutarAcaoErpContatoWebResponses, GerarPareamentoQrWebData, GerarPareamentoQrWebResponses, InativarFilaAdministracaoOperacionalData, InativarFilaAdministracaoOperacionalResponses, ListarAdministracaoOperacionalData, ListarAdministracaoOperacionalResponses, ListarAdministracaoReleasesData, ListarAdministracaoReleasesResponses, ListarAdministracaoUsuariosData, ListarAdministracaoUsuariosResponses, ListarAtendimentosWebData, ListarAtendimentosWebResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarFluxosEditorData, ListarFluxosEditorResponses, ListarGaleriaConversaWebData, ListarGaleriaConversaWebResponses, ListarModelosAprovadosMobileData, ListarModelosAprovadosMobileResponses, ListarModelosAprovadosWebData, ListarModelosAprovadosWebResponses, ListarRespostasRapidasMobileData, ListarRespostasRapidasMobileResponses, ListarRespostasRapidasWebData, ListarRespostasRapidasWebResponses, ListarSaudeAdministrativaData, ListarSaudeAdministrativaResponses, ListarSessoesWebData, ListarSessoesWebResponses, MarcarTimelineWebNaoLidaData, MarcarTimelineWebNaoLidaResponses, ObservarOperacaoData, ObservarOperacaoResponses, ObterConfiguracaoMobileAtualData, ObterConfiguracaoMobileAtualResponses, ObterConfiguracaoWebAtualData, ObterConfiguracaoWebAtualResponses, ObterDetalhesContatoMobileData, ObterDetalhesContatoMobileResponses, ObterDetalhesContatoWebData, ObterDetalhesContatoWebResponses, ObterFluxoEditorData, ObterFluxoEditorResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterRelatorioOperacionalData, ObterRelatorioOperacionalResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, ObterTimelineMobileData, ObterTimelineMobileResponses, ObterTimelineWebData, ObterTimelineWebResponses, PrepararAcaoErpContatoMobileData, PrepararAcaoErpContatoMobileResponses, PrepararAcaoErpContatoWebData, PrepararAcaoErpContatoWebResponses, PrepararPublicacaoFluxoEditorData, PrepararPublicacaoFluxoEditorResponses, PublicarVersaoFluxoEditorData, PublicarVersaoFluxoEditorResponses, ReagirMensagemWebData, ReagirMensagemWebResponses, ReconciliarTextoMobileData, ReconciliarTextoMobileResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, ReprocessarOperacaoAgoraData, ReprocessarOperacaoAgoraErrors, ReprocessarOperacaoAgoraResponses, ResgatarAtendimentoMobileData, ResgatarAtendimentoMobileResponses, ResgatarAtendimentoWebData, ResgatarAtendimentoWebResponses, ResgatarPareamentoQrMobileData, ResgatarPareamentoQrMobileResponses, RessincronizarCompletaData, RessincronizarCompletaResponses, ReverterVersaoFluxoEditorData, ReverterVersaoFluxoEditorResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, SalvarRascunhoFluxoEditorData, SalvarRascunhoFluxoEditorResponses, SimularFluxoEditorData, SimularFluxoEditorResponses, SincronizarIncrementalData, SincronizarIncrementalResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
+import type { AcompanharEventosWebData, AcompanharEventosWebResponses, AlterarAcessoUsuarioAdministracaoData, AlterarAcessoUsuarioAdministracaoResponses, AlterarContextoContatoMobileData, AlterarContextoContatoMobileResponses, AlterarContextoContatoWebData, AlterarContextoContatoWebResponses, AtualizarControleRecursoData, AtualizarControleRecursoResponses, AtualizarPoliticaVersaoMobileData, AtualizarPoliticaVersaoMobileResponses, AvaliarVersaoMobileData, AvaliarVersaoMobileResponses, BaixarCopiaAtendimentoWebData, BaixarCopiaAtendimentoWebResponses, BaixarMidiaWebData, BaixarMidiaWebResponses, BuscarConversaWebData, BuscarConversaWebResponses, CancelarPareamentoQrWebData, CancelarPareamentoQrWebResponses, ConcluirPareamentoQrMobileData, ConcluirPareamentoQrMobileResponses, ConfirmarLeituraTimelineMobileData, ConfirmarLeituraTimelineMobileResponses, ConfirmarLeituraTimelineWebData, ConfirmarLeituraTimelineWebResponses, ConfirmarPareamentoQrWebData, ConfirmarPareamentoQrWebResponses, ConsultarDisponibilidadePropriaMobileData, ConsultarDisponibilidadePropriaMobileResponses, ConsultarDisponibilidadePropriaWebData, ConsultarDisponibilidadePropriaWebResponses, ConsultarFinanceiroContatoMobileData, ConsultarFinanceiroContatoMobileResponses, ConsultarFinanceiroContatoWebData, ConsultarFinanceiroContatoWebResponses, ConsultarOperacaoAtendimentoMobileData, ConsultarOperacaoAtendimentoMobileResponses, ConsultarOperacaoAtendimentoWebData, ConsultarOperacaoAtendimentoWebResponses, ConsultarPareamentoQrMobileData, ConsultarPareamentoQrMobileResponses, ConsultarPareamentoQrWebData, ConsultarPareamentoQrWebResponses, CriarCopiaAtendimentoWebData, CriarCopiaAtendimentoWebResponses, CriarFilaAdministracaoOperacionalData, CriarFilaAdministracaoOperacionalResponses, CriarFluxoEditorData, CriarFluxoEditorResponses, CriarVersaoFluxoEditorData, CriarVersaoFluxoEditorResponses, DefinirDisponibilidadePropriaMobileData, DefinirDisponibilidadePropriaMobileResponses, DefinirDisponibilidadePropriaWebData, DefinirDisponibilidadePropriaWebResponses, DefinirOverrideCalendarioAdministracaoOperacionalData, DefinirOverrideCalendarioAdministracaoOperacionalResponses, EntrarSessaoMobileData, EntrarSessaoMobileResponses, EntrarSessaoWebData, EntrarSessaoWebResponses, EnviarMidiaMobileData, EnviarMidiaMobileResponses, EnviarMidiaWebData, EnviarMidiaWebResponses, EnviarModeloAprovadoMobileData, EnviarModeloAprovadoMobileResponses, EnviarModeloAprovadoWebData, EnviarModeloAprovadoWebResponses, EnviarTextoMobileData, EnviarTextoMobileResponses, EnviarTextoWebData, EnviarTextoWebResponses, ExecutarAcaoErpContatoMobileData, ExecutarAcaoErpContatoMobileResponses, ExecutarAcaoErpContatoWebData, ExecutarAcaoErpContatoWebResponses, GerarPareamentoQrWebData, GerarPareamentoQrWebResponses, InativarFilaAdministracaoOperacionalData, InativarFilaAdministracaoOperacionalResponses, ListarAdministracaoOperacionalData, ListarAdministracaoOperacionalResponses, ListarAdministracaoReleasesData, ListarAdministracaoReleasesResponses, ListarAdministracaoUsuariosData, ListarAdministracaoUsuariosResponses, ListarAtendimentosWebData, ListarAtendimentosWebResponses, ListarDestinosTransferenciaMobileData, ListarDestinosTransferenciaMobileResponses, ListarDestinosTransferenciaWebData, ListarDestinosTransferenciaWebResponses, ListarDispositivosMobileData, ListarDispositivosMobileResponses, ListarFluxosEditorData, ListarFluxosEditorResponses, ListarGaleriaConversaWebData, ListarGaleriaConversaWebResponses, ListarModelosAprovadosMobileData, ListarModelosAprovadosMobileResponses, ListarModelosAprovadosWebData, ListarModelosAprovadosWebResponses, ListarRespostasRapidasMobileData, ListarRespostasRapidasMobileResponses, ListarRespostasRapidasWebData, ListarRespostasRapidasWebResponses, ListarSaudeAdministrativaData, ListarSaudeAdministrativaResponses, ListarSessoesWebData, ListarSessoesWebResponses, MarcarTimelineWebNaoLidaData, MarcarTimelineWebNaoLidaResponses, ObservarOperacaoData, ObservarOperacaoResponses, ObterConfiguracaoMobileAtualData, ObterConfiguracaoMobileAtualResponses, ObterConfiguracaoWebAtualData, ObterConfiguracaoWebAtualResponses, ObterDetalhesContatoMobileData, ObterDetalhesContatoMobileResponses, ObterDetalhesContatoWebData, ObterDetalhesContatoWebResponses, ObterFluxoEditorData, ObterFluxoEditorResponses, ObterInformacoesApiData, ObterInformacoesApiErrors, ObterInformacoesApiResponses, ObterRelatorioOperacionalData, ObterRelatorioOperacionalResponses, ObterSessaoMobileData, ObterSessaoMobileResponses, ObterSessaoWebData, ObterSessaoWebResponses, ObterTimelineMobileData, ObterTimelineMobileResponses, ObterTimelineWebData, ObterTimelineWebResponses, PrepararAcaoErpContatoMobileData, PrepararAcaoErpContatoMobileResponses, PrepararAcaoErpContatoWebData, PrepararAcaoErpContatoWebResponses, PrepararPublicacaoFluxoEditorData, PrepararPublicacaoFluxoEditorResponses, PublicarVersaoFluxoEditorData, PublicarVersaoFluxoEditorResponses, ReagirMensagemWebData, ReagirMensagemWebResponses, ReconciliarTextoMobileData, ReconciliarTextoMobileResponses, RenovarSessaoMobileData, RenovarSessaoMobileResponses, ReprocessarOperacaoAgoraData, ReprocessarOperacaoAgoraErrors, ReprocessarOperacaoAgoraResponses, ResgatarAtendimentoMobileData, ResgatarAtendimentoMobileResponses, ResgatarAtendimentoWebData, ResgatarAtendimentoWebResponses, ResgatarPareamentoQrMobileData, ResgatarPareamentoQrMobileResponses, RessincronizarCompletaData, RessincronizarCompletaResponses, ReverterVersaoFluxoEditorData, ReverterVersaoFluxoEditorResponses, RevogarDispositivoMobileDoUsuarioData, RevogarDispositivoMobileDoUsuarioResponses, RevogarDispositivosMobileAdministrativamenteData, RevogarDispositivosMobileAdministrativamenteResponses, RevogarSessaoWebDoUsuarioData, RevogarSessaoWebDoUsuarioResponses, RevogarSessoesWebAdministrativamenteData, RevogarSessoesWebAdministrativamenteResponses, RotacionarSessaoWebData, RotacionarSessaoWebResponses, SairSessaoMobileData, SairSessaoMobileResponses, SairSessaoWebData, SairSessaoWebResponses, SairTodasSessoesWebData, SairTodasSessoesWebResponses, SalvarRascunhoFluxoEditorData, SalvarRascunhoFluxoEditorResponses, SimularFluxoEditorData, SimularFluxoEditorResponses, SincronizarIncrementalData, SincronizarIncrementalResponses, TransferirAtendimentoMobileData, TransferirAtendimentoMobileResponses, TransferirAtendimentoWebData, TransferirAtendimentoWebResponses, VerificarAplicacaoProntaData, VerificarAplicacaoProntaErrors, VerificarAplicacaoProntaResponses, VerificarProcessoVivoData, VerificarProcessoVivoResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -418,6 +418,50 @@ export const alterarAcessoUsuarioAdministracao = <ThrowOnError extends boolean =
 });
 
 /**
+ * Lista destinos autorizados e disponíveis
+ */
+export const listarDestinosTransferenciaMobile = <ThrowOnError extends boolean = false>(options: Options<ListarDestinosTransferenciaMobileData, ThrowOnError>): RequestResult<ListarDestinosTransferenciaMobileResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListarDestinosTransferenciaMobileResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/destinos-transferencia',
+    ...options
+});
+
+/**
+ * Transfere após seleção e confirmação explícitas
+ */
+export const transferirAtendimentoMobile = <ThrowOnError extends boolean = false>(options: Options<TransferirAtendimentoMobileData, ThrowOnError>): RequestResult<TransferirAtendimentoMobileResponses, unknown, ThrowOnError> => (options.client ?? client).post<TransferirAtendimentoMobileResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/transferir',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Consulta a própria disponibilidade operacional
+ */
+export const consultarDisponibilidadePropriaMobile = <ThrowOnError extends boolean = false>(options: Options<ConsultarDisponibilidadePropriaMobileData, ThrowOnError>): RequestResult<ConsultarDisponibilidadePropriaMobileResponses, unknown, ThrowOnError> => (options.client ?? client).get<ConsultarDisponibilidadePropriaMobileResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/mobile/perfil/disponibilidade',
+    ...options
+});
+
+/**
+ * Altera explicitamente a própria disponibilidade
+ */
+export const definirDisponibilidadePropriaMobile = <ThrowOnError extends boolean = false>(options: Options<DefinirDisponibilidadePropriaMobileData, ThrowOnError>): RequestResult<DefinirDisponibilidadePropriaMobileResponses, unknown, ThrowOnError> => (options.client ?? client).post<DefinirDisponibilidadePropriaMobileResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/mobile/perfil/disponibilidade',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Consulta atribuição e capacidades operacionais atuais
  */
 export const consultarOperacaoAtendimentoMobile = <ThrowOnError extends boolean = false>(options: Options<ConsultarOperacaoAtendimentoMobileData, ThrowOnError>): RequestResult<ConsultarOperacaoAtendimentoMobileResponses, unknown, ThrowOnError> => (options.client ?? client).get<ConsultarOperacaoAtendimentoMobileResponses, unknown, ThrowOnError>({
@@ -582,6 +626,66 @@ export const confirmarLeituraTimelineMobile = <ThrowOnError extends boolean = fa
 export const alterarContextoContatoMobile = <ThrowOnError extends boolean = false>(options: Options<AlterarContextoContatoMobileData, ThrowOnError>): RequestResult<AlterarContextoContatoMobileResponses, unknown, ThrowOnError> => (options.client ?? client).post<AlterarContextoContatoMobileResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/mobile/atendimentos/{atendimentoId}/contexto',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Lista destinos autorizados e disponíveis
+ */
+export const listarDestinosTransferenciaWeb = <ThrowOnError extends boolean = false>(options: Options<ListarDestinosTransferenciaWebData, ThrowOnError>): RequestResult<ListarDestinosTransferenciaWebResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListarDestinosTransferenciaWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/web/atendimentos/{atendimentoId}/destinos-transferencia',
+    ...options
+});
+
+/**
+ * Transfere após seleção e confirmação explícitas
+ */
+export const transferirAtendimentoWeb = <ThrowOnError extends boolean = false>(options: Options<TransferirAtendimentoWebData, ThrowOnError>): RequestResult<TransferirAtendimentoWebResponses, unknown, ThrowOnError> => (options.client ?? client).post<TransferirAtendimentoWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/web/atendimentos/{atendimentoId}/transferir',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Consulta a própria disponibilidade operacional
+ */
+export const consultarDisponibilidadePropriaWeb = <ThrowOnError extends boolean = false>(options?: Options<ConsultarDisponibilidadePropriaWebData, ThrowOnError>): RequestResult<ConsultarDisponibilidadePropriaWebResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ConsultarDisponibilidadePropriaWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/web/perfil/disponibilidade',
+    ...options
+});
+
+/**
+ * Altera explicitamente a própria disponibilidade
+ */
+export const definirDisponibilidadePropriaWeb = <ThrowOnError extends boolean = false>(options: Options<DefinirDisponibilidadePropriaWebData, ThrowOnError>): RequestResult<DefinirDisponibilidadePropriaWebResponses, unknown, ThrowOnError> => (options.client ?? client).post<DefinirDisponibilidadePropriaWebResponses, unknown, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-vyntra_sessao',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/web/perfil/disponibilidade',
     ...options,
     headers: {
         'Content-Type': 'application/json',

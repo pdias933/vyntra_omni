@@ -12,6 +12,7 @@ if (process.env.AMBIENTE_APLICACAO !== 'staging' || process.env.DADOS_PERMITIDOS
   throw new Error('ACEITE_POSTGRESQL_NAO_AUTORIZADO');
 }
 const app = await NestFactory.createApplicationContext(ModuloOperacaoAtendimentos, { logger: false });
+let etapa = 'CRIAR_CENARIO';
 try {
   const prisma = app.get(ServicoPrisma);
   const cliente = await prisma.obterCliente();
@@ -35,6 +36,7 @@ try {
     await historico.inicializar(ids.atendimento, { filaId: ids.fila, tipo: 'ENTRADA_FILA' }, tx);
   });
   const sessoes = [ids.usuarioA, ids.usuarioB].map((usuarioId) => ({ estado: 'ATIVA', usuarioId, sessaoId: randomUUID(), expiraEm: new Date(Date.now() + 300_000) }));
+  etapa = 'DISPUTA_RESGATE';
   const chaves = [randomUUID(), randomUUID()];
   const resultados = await Promise.allSettled(sessoes.map((sessao, indice) => prisma.executarTransacao((tx) => servico.resgatar(sessao, ids.atendimento, chaves[indice], 1, tx))));
   assert.equal(resultados.filter((resultado) => resultado.status === 'fulfilled').length, 1);
@@ -50,10 +52,55 @@ try {
   assert.equal(await cliente.operacaoRecuperavel.count({ where: { entidadeId: ids.atendimento, estado: 'CONCLUIDA' } }), 1);
   assert.equal(await cliente.historicoAtribuicao.count({ where: { atendimentoId: ids.atendimento, finalizadoEm: null } }), 1);
   await assert.rejects(prisma.executarTransacao((tx) => servico.resgatar(sessoes[vencedor], ids.atendimento, chaves[vencedor], 2, tx)), (erro) => erro.getResponse().codigo === 'CHAVE_IDEMPOTENCIA_REUTILIZADA');
+  const remetente = sessoes[vencedor];
+  etapa = 'DESTINATARIO_INDISPONIVEL';
+  const destinatario = sessoes[1 - vencedor];
+  const executar = (acao) => prisma.executarTransacao(acao);
+  const conflito = (erro) => erro.getResponse?.().codigo === 'CONFLITO_TRANSFERENCIA_ATENDIMENTO';
+  await assert.rejects(executar((tx) => servico.transferir(remetente, ids.atendimento, randomUUID(), 2, ids.fila, destinatario.usuarioId, tx)), conflito);
+  const chaveDisponibilidade = randomUUID();
+  etapa = 'DISPONIBILIDADE';
+  await executar((tx) => servico.definirDisponibilidade(destinatario, chaveDisponibilidade, 'DISPONIVEL', 0, tx));
+  await executar((tx) => servico.definirDisponibilidade(destinatario, chaveDisponibilidade, 'DISPONIVEL', 0, tx));
+  assert.deepEqual(await servico.consultarDisponibilidade(destinatario), { estado: 'DISPONIVEL', versao: 1 });
+  assert.equal(await cliente.eventoDominio.count({ where: { entidadeId: destinatario.usuarioId, tipo: 'DISPONIBILIDADE_USUARIO_ALTERADA' } }), 1);
+  assert.equal(await cliente.registroAuditoria.count({ where: { entidadeId: destinatario.usuarioId, tipoEvento: 'DISPONIBILIDADE_USUARIO_ALTERADA' } }), 1);
+  etapa = 'DESTINOS';
+  const destinos = await servico.destinos(remetente, ids.atendimento);
+  assert.ok(destinos.some((destino) => destino.usuarioId === destinatario.usuarioId && destino.filaId === ids.fila));
+  await assert.rejects(executar((tx) => servico.transferir(remetente, ids.atendimento, randomUUID(), 1, ids.fila, destinatario.usuarioId, tx)), conflito);
+  const chaveTransferencia = randomUUID();
+  etapa = 'TRANSFERENCIA_DIRETA';
+  await Promise.all([1, 2].map(() => executar((tx) => servico.transferir(remetente, ids.atendimento, chaveTransferencia, 2, ids.fila, destinatario.usuarioId, tx))));
+  assert.equal((await cliente.atendimento.findUniqueOrThrow({ where: { id: ids.atendimento } })).usuarioResponsavelId, destinatario.usuarioId);
+  assert.equal(await cliente.eventoDominio.count({ where: { atendimentoId: ids.atendimento, tipo: 'ATENDIMENTO_TRANSFERIDO_PARA_USUARIO' } }), 1);
+  assert.equal(await cliente.registroAuditoria.count({ where: { atendimentoId: ids.atendimento, tipoEvento: 'ATENDIMENTO_TRANSFERIDO_PARA_USUARIO' } }), 1);
+  await assert.rejects(executar((tx) => servico.transferir(remetente, ids.atendimento, chaveTransferencia, 3, ids.fila, destinatario.usuarioId, tx)), (erro) => erro.getResponse?.().codigo === 'CHAVE_IDEMPOTENCIA_REUTILIZADA');
+  const filaDestino = randomUUID();
+  etapa = 'TRANSFERENCIA_FILA';
+  await executar(async (tx) => {
+    await tx.fila.create({ data: { id: filaDestino, nome: 'Destino sintético PR126', nomeNormalizado: 'destino-' + filaDestino } });
+    await tx.acessoUsuarioFila.create({ data: { usuarioId: destinatario.usuarioId, filaId: filaDestino } });
+  });
+  await assert.rejects(executar((tx) => servico.transferir(remetente, ids.atendimento, randomUUID(), 3, filaDestino, undefined, tx)));
+  etapa = 'EXECUTAR_TRANSFERENCIA_FILA';
+  const chaveFila = randomUUID();
+  await executar((tx) => servico.transferir(destinatario, ids.atendimento, chaveFila, 3, filaDestino, undefined, tx));
+  await executar((tx) => servico.transferir(destinatario, ids.atendimento, chaveFila, 3, filaDestino, undefined, tx));
+  const transferido = await cliente.atendimento.findUniqueOrThrow({ where: { id: ids.atendimento } });
+  assert.equal(transferido.estado, 'AGUARDANDO');
+  assert.equal(transferido.usuarioResponsavelId, null);
+  assert.equal(transferido.versaoAtribuicao, 4);
+  assert.equal(await cliente.eventoDominio.count({ where: { atendimentoId: ids.atendimento, tipo: 'ATENDIMENTO_TRANSFERIDO_PARA_FILA' } }), 1);
+  assert.equal(await cliente.registroAuditoria.count({ where: { atendimentoId: ids.atendimento, tipoEvento: 'ATENDIMENTO_TRANSFERIDO_PARA_FILA' } }), 1);
+  etapa = 'REVOGAR_ACESSO';
+  await cliente.acessoUsuarioFila.update({ where: { usuarioId_filaId: { usuarioId: destinatario.usuarioId, filaId: filaDestino } }, data: { estado: 'REVOGADO', revogadoEm: new Date() } });
+  await assert.rejects(executar((tx) => servico.transferir(destinatario, ids.atendimento, chaveFila, 3, filaDestino, undefined, tx)));
+  console.log(JSON.stringify({ aceite: 'PR126_POSTGRESQL', aprovado: true, disponibilidade: true, transferenciaDireta: true, transferenciaFila: true, repeticaoUnica: true, negacaoFila: true, revogacao: true, atendimentoId: ids.atendimento }));
   // Sem credencial de login, sem conta ativa e sem adapter externo. Preservar evidência imutável.
   console.log(JSON.stringify({ aceite: 'PR125_POSTGRESQL', aprovado: true, vencedores: 1, efeitos: 1, eventos: 1, auditorias: 1, atendimentoId: ids.atendimento }));
 } catch (erro) {
-  console.error(JSON.stringify({ aceite: 'PR125_POSTGRESQL', aprovado: false, codigo: erro.code ?? erro.name, mensagem: erro instanceof assert.AssertionError ? erro.message : 'ACEITE_FALHOU' }));
+  console.error(JSON.stringify({ aceite: 'PR125_POSTGRESQL', aprovado: false, etapa, codigo: erro.code ?? erro.name, modelo: erro.meta?.modelName, causa: erro.meta?.driverAdapterError?.cause?.kind, restricao: erro.meta?.driverAdapterError?.cause?.constraint, mensagem: erro instanceof assert.AssertionError ? erro.message : 'ACEITE_FALHOU' }));
   process.exitCode = 1;
 } finally {
   await app.close();

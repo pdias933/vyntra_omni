@@ -8,7 +8,7 @@ import type { RepositorioDisponibilidade } from './repositorio-disponibilidade.j
 @Injectable()
 export class RepositorioDisponibilidadePrisma implements RepositorioDisponibilidade {
   public async bloquearUsuario(usuarioId: string, transacao: TransacaoPrisma): Promise<void> {
-    await transacao.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`disponibilidade\u0000${usuarioId}`}, 0))`);
+    await transacao.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`disponibilidade:${usuarioId}`}, 0))`);
   }
 
   public async usuarioEstaAtivo(usuarioId: string, transacao: TransacaoPrisma): Promise<boolean> {
@@ -29,4 +29,3 @@ export class RepositorioDisponibilidadePrisma implements RepositorioDisponibilid
     return resultado.count === 1;
   }
 }
-

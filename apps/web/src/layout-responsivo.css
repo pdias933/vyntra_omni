@@ -54,6 +54,10 @@ summary:focus-visible { outline: 2px solid var(--cor-foco); outline-offset: 3px;
 .conversa-web { grid-template-rows: auto minmax(0, 1fr) auto; }
 .operacao-atendimento { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; padding: .35rem .75rem; }
 .operacao-atendimento:empty { display: none; }
+.disponibilidade-propria { position: relative; margin-inline: auto; }
+.disponibilidade-propria summary { cursor: pointer; padding: .75rem; }
+.disponibilidade-propria > div { position: fixed; z-index: 50; bottom: 5rem; left: 5rem; max-width: min(20rem, calc(100vw - 6rem)); padding: 1rem; border: 1px solid var(--cor-borda); background: var(--cor-superficie); border-radius: 1rem; }
+.disponibilidade-propria small { display: block; margin-top: .5rem; }
 .conversa-web__cabecalho { min-height: 90px; padding: 14px 24px; gap: 14px; grid-template-columns: 48px minmax(0, 1fr) auto auto; background: var(--cor-superficie); backdrop-filter: none; }
 .conversa-web__avatar { width: 48px; height: 48px; border: 0; cursor: pointer; font-size: 18px; background: var(--cor-avatar); color: var(--cor-textoAvatar); }
 .conversa-web__contato strong { font-size: 1rem; font-weight: 650; }

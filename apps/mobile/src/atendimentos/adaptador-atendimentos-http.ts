@@ -1,5 +1,11 @@
 import {
   alterarContextoContatoMobile,
+  listarDestinosTransferenciaMobile,
+  transferirAtendimentoMobile,
+  consultarDisponibilidadePropriaMobile,
+  definirDisponibilidadePropriaMobile,
+  type EntradaTransferenciaAtendimentoDto,
+  type EntradaDisponibilidadePropriaDto,
   consultarOperacaoAtendimentoMobile,
   resgatarAtendimentoMobile,
   type EntradaResgateAtendimentoDto,
@@ -95,6 +101,18 @@ function opcoesAutenticadas(credenciais: CredenciaisSincronizacaoAplicativo) {
 client.setConfig({ baseUrl: CONFIGURACAO_APLICATIVO.servidor });
 
 export class AdaptadorAtendimentosHttp {
+  public async destinosTransferencia(credenciais: CredenciaisSincronizacaoAplicativo, atendimentoId: string) {
+    return exigirDado(await listarDestinosTransferenciaMobile({ ...opcoesAutenticadas(credenciais), path: { atendimentoId } }));
+  }
+  public async transferir(credenciais: CredenciaisSincronizacaoAplicativo, atendimentoId: string, entrada: EntradaTransferenciaAtendimentoDto) {
+    return exigirDado(await transferirAtendimentoMobile({ ...opcoesAutenticadas(credenciais), path: { atendimentoId }, body: entrada }));
+  }
+  public async consultarDisponibilidade(credenciais: CredenciaisSincronizacaoAplicativo) {
+    return exigirDado(await consultarDisponibilidadePropriaMobile(opcoesAutenticadas(credenciais)));
+  }
+  public async definirDisponibilidade(credenciais: CredenciaisSincronizacaoAplicativo, entrada: EntradaDisponibilidadePropriaDto) {
+    return exigirDado(await definirDisponibilidadePropriaMobile({ ...opcoesAutenticadas(credenciais), body: entrada }));
+  }
   public async consultarOperacao(credenciais: CredenciaisSincronizacaoAplicativo, atendimentoId: string) {
     return exigirDado(await consultarOperacaoAtendimentoMobile({ ...opcoesAutenticadas(credenciais), path: { atendimentoId } }));
   }

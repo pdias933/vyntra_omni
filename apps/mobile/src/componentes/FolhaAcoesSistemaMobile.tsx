@@ -24,6 +24,7 @@ import type {
 } from '../atendimentos/modelo-atendimento-mobile';
 import type { ServicoAtendimentosMobile } from '../atendimentos/servico-atendimentos-mobile';
 import { ESPACOS, RAIOS } from '../tema';
+import { TransferenciaAtendimentoMobile } from './TransferenciaAtendimentoMobile';
 
 type CodigoAcao =
   | 'CLIENTE'
@@ -32,6 +33,7 @@ type CodigoAcao =
   | 'FATURAS'
   | 'FORMULARIO'
   | 'NOTA'
+  | 'TRANSFERIR'
   | 'ORDEM_SERVICO';
 
 const GRUPOS_ACOES: readonly {
@@ -61,6 +63,7 @@ const GRUPOS_ACOES: readonly {
     acoes: [
       { codigo: 'FORMULARIO', icone: 'reader-outline', rotulo: 'Solicitar WhatsApp Flow' },
       { codigo: 'NOTA', icone: 'lock-closed-outline', rotulo: 'Adicionar nota interna' },
+      { codigo: 'TRANSFERIR', icone: 'swap-horizontal-outline', rotulo: 'Transferir atendimento' },
     ],
     titulo: 'Atendimento',
   },
@@ -119,6 +122,7 @@ export function FolhaAcoesSistemaMobile({
 }) {
   const { cores: CORES, modo } = useTema();
   const estilos = useEstilos(criarEstilos);
+  const [transferindo, definirTransferindo] = useState(false);
   const [detalhes, definirDetalhes] = useState<DetalhesContatoMobile>();
   const [financeiro, definirFinanceiro] =
     useState<ResumoFinanceiroContatoMobile>();
@@ -159,6 +163,7 @@ export function FolhaAcoesSistemaMobile({
   }, [acessoOffline, atendimentoId, servico, visivel]);
 
   function estaDisponivel(codigo: CodigoAcao): boolean {
+    if (codigo === 'TRANSFERIR') return !acessoOffline;
     if (acessoOffline || detalhes === undefined) return false;
     if (codigo === 'CLIENTE') return true;
     if (codigo === 'FATURAS') return detalhes.permissoes.consultarFinanceiro;
@@ -230,6 +235,7 @@ export function FolhaAcoesSistemaMobile({
   }
 
   function escolher(codigo: CodigoAcao) {
+    if (codigo === 'TRANSFERIR') { definirTransferindo(true); return; }
     if (codigo === 'CLIENTE') {
       aoFechar();
       aoAbrirDetalhes();
@@ -267,6 +273,8 @@ export function FolhaAcoesSistemaMobile({
             </Pressable>
           </View>
 
+          <TransferenciaAtendimentoMobile atendimentoId={atendimentoId} acessoOffline={acessoOffline} servico={servico} visivel={visivel && transferindo} aoVoltar={() => definirTransferindo(false)} />
+          {!transferindo && <>
           {acessoOffline && (
             <View style={estilos.aviso}>
               <Ionicons color={CORES.atencao} name="cloud-offline-outline" size={18} />
@@ -397,6 +405,7 @@ export function FolhaAcoesSistemaMobile({
               ))}
             </ScrollView>
           )}
+          </>}
         </SafeAreaView>
       </View>
     </Modal>

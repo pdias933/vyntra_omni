@@ -18,6 +18,7 @@ import { ServicoTimelineWeb } from './servico-timeline-web.js';
 import { ServicoComposerWeb } from './servico-composer-web.js';
 import { ParseUUIDPipe } from '@nestjs/common';
 import { ServicoOperacaoAtendimentos } from '../operacao-atendimentos/servico-operacao-atendimentos.js';
+import { DestinoTransferenciaDto, DisponibilidadePropriaDto, EntradaDisponibilidadePropriaDto, EntradaTransferenciaAtendimentoDto } from '../operacao-atendimentos/dto-operacao-atendimentos.js';
 import { ContextoOperacionalDto, EntradaResgateAtendimentoDto, OperacaoConfirmadaDto } from '../operacao-atendimentos/dto-operacao-atendimentos.js';
 
 @ApiTags('console-web')
@@ -33,6 +34,60 @@ export class ControladorConsoleWeb {
     @Inject(ServicoContatoAcoesWeb) private readonly contatoAcoes: ServicoContatoAcoesWeb,
     @Inject(ServicoOperacaoAtendimentos) private readonly operacao: ServicoOperacaoAtendimentos,
   ) {}
+
+  @Get('atendimentos/:atendimentoId/destinos-transferencia')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiOperation({ operationId: 'listarDestinosTransferenciaWeb', summary: 'Lista destinos autorizados e disponíveis' })
+  @ApiOkResponse({ type: DestinoTransferenciaDto, isArray: true })
+  public async destinosTransferencia(
+    @Param('atendimentoId', new ParseUUIDPipe()) atendimentoId: string,
+    @Headers('cookie') cookies: string | undefined,
+  ): Promise<DestinoTransferenciaDto[]> {
+    const sessao = await this.autenticacao.autenticar(obterTokenSessaoWeb(cookies));
+    return (await this.operacao.destinos(sessao.contexto, atendimentoId)).map((destino) => new DestinoTransferenciaDto(destino));
+  }
+
+  @Post('atendimentos/:atendimentoId/transferir')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiHeader({ name: NOME_HEADER_CSRF_WEB, required: true })
+  @ApiBody({ type: EntradaTransferenciaAtendimentoDto })
+  @ApiOperation({ operationId: 'transferirAtendimentoWeb', summary: 'Transfere após seleção e confirmação explícitas' })
+  @ApiOkResponse({ type: OperacaoConfirmadaDto })
+  public async transferir(
+    @Param('atendimentoId', new ParseUUIDPipe()) atendimentoId: string,
+    @Body() entrada: EntradaTransferenciaAtendimentoDto,
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_CSRF_WEB) csrf: string | undefined,
+    @Headers('origin') origem: string | undefined,
+  ): Promise<OperacaoConfirmadaDto> {
+    await this.executarEscrita(cookies, csrf, origem, (sessao, tx) => this.operacao.transferir(sessao, atendimentoId, entrada.chave_idempotencia, entrada.versao_atribuicao_esperada, entrada.fila_destino_id, entrada.usuario_destino_id, tx));
+    return new OperacaoConfirmadaDto();
+  }
+
+  @Get('perfil/disponibilidade')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiOperation({ operationId: 'consultarDisponibilidadePropriaWeb', summary: 'Consulta a própria disponibilidade operacional' })
+  @ApiOkResponse({ type: DisponibilidadePropriaDto })
+  public async consultarDisponibilidade(@Headers('cookie') cookies: string | undefined,): Promise<DisponibilidadePropriaDto> {
+    const sessao = await this.autenticacao.autenticar(obterTokenSessaoWeb(cookies));
+    return new DisponibilidadePropriaDto(await this.operacao.consultarDisponibilidade(sessao.contexto));
+  }
+
+  @Post('perfil/disponibilidade')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiHeader({ name: NOME_HEADER_CSRF_WEB, required: true })
+  @ApiBody({ type: EntradaDisponibilidadePropriaDto })
+  @ApiOperation({ operationId: 'definirDisponibilidadePropriaWeb', summary: 'Altera explicitamente a própria disponibilidade' })
+  @ApiOkResponse({ type: OperacaoConfirmadaDto })
+  public async definirDisponibilidade(
+    @Body() entrada: EntradaDisponibilidadePropriaDto,
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_CSRF_WEB) csrf: string | undefined,
+    @Headers('origin') origem: string | undefined,
+  ): Promise<OperacaoConfirmadaDto> {
+    await this.executarEscrita(cookies, csrf, origem, (sessao, tx) => this.operacao.definirDisponibilidade(sessao, entrada.chave_idempotencia, entrada.estado, entrada.versao_esperada, tx));
+    return new OperacaoConfirmadaDto();
+  }
 
   @Get('atendimentos/:atendimentoId/operacao')
   @ApiCookieAuth('sessaoWeb')

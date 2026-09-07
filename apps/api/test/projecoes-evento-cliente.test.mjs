@@ -50,3 +50,14 @@ test('evento de permissão alcança somente o próprio usuário e nunca gera pus
   assert.equal(projetor.projetar({ ...permissao, entidadeId: randomUUID() }, 'WEB', autorizado), undefined);
   assert.equal(projetor.projetar(permissao, 'PUSH', autorizado), undefined);
 });
+
+test('disponibilidade sincroniza somente com dispositivos do próprio operador, sem push', () => {
+  const projetor = new ProjetorEventoCliente();
+  const disponibilidade = { ...evento, classificacaoDados: 'OPERACIONAL', entidadeId: usuarioId, entidadeTipo: 'USUARIO', tipo: 'DISPONIBILIDADE_USUARIO_ALTERADA', dadosProtegidosMinimizados: { estado: 'DISPONIVEL', versao: 2 } };
+  for (const audiencia of ['WEB', 'MOBILE']) {
+    assert.deepEqual(projetor.projetar(disponibilidade, audiencia, { ...autorizado, recursoAcessivel: false }).dados, { estado: 'DISPONIVEL', versao: 2 });
+    assert.equal(projetor.projetar(disponibilidade, audiencia, { ...autorizado, usuarioId: randomUUID() }), undefined);
+    assert.equal(projetor.projetar(disponibilidade, audiencia, { ...autorizado, sessaoValida: false }), undefined);
+  }
+  assert.equal(projetor.projetar(disponibilidade, 'PUSH', autorizado), undefined);
+});

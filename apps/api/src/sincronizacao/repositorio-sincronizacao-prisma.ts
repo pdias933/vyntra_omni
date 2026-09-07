@@ -95,7 +95,7 @@ export class RepositorioSincronizacaoPrisma
         LIMIT ${limite}
       ), avaliados AS (
         SELECT c.*, ua."pode_ver_dado_sensivel",
-          CASE WHEN c."tipo"='PERMISSOES_ALTERADAS'
+          CASE WHEN c."tipo" IN ('PERMISSOES_ALTERADAS', 'DISPONIBILIDADE_USUARIO_ALTERADA')
             THEN c."entidade_tipo"='USUARIO' AND c."entidade_id"=ua."id"
             ELSE ua."pode_visualizar_fila" AND EXISTS (
               SELECT 1

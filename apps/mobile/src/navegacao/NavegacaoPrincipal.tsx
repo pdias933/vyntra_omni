@@ -27,6 +27,7 @@ import type { EstadoSincronizacaoMobile } from '../sincronizacao/motor-sincroniz
 import { TelaListaAtendimentos } from '../telas/TelaListaAtendimentos';
 import { TelaNotificacoesMobile } from '../telas/TelaNotificacoesMobile';
 import { TelaConversaMobile } from '../telas/TelaConversaMobile';
+import { DisponibilidadePropriaMobile } from '../componentes/DisponibilidadePropriaMobile';
 import { TelaDetalhesContatoMobile } from '../telas/TelaDetalhesContatoMobile';
 import { TelaDiagnosticoMobile } from '../telas/TelaDiagnosticoMobile';
 import { ESPACOS, RAIOS } from '../tema';
@@ -150,6 +151,8 @@ function TelaVazia({
 }
 
 function Perfil({
+  servicoAtendimentos,
+  conectado,
   abrindoLoja,
   aoAbrirDiagnostico,
   aoAtualizar,
@@ -159,6 +162,8 @@ function Perfil({
   politicaVersao,
   sessao,
 }: {
+  readonly servicoAtendimentos: ServicoAtendimentosMobile;
+  readonly conectado: boolean;
   readonly abrindoLoja: boolean;
   readonly aoAbrirDiagnostico: () => void;
   readonly aoAtualizar: () => void;
@@ -185,6 +190,7 @@ function Perfil({
         <MarcaVyntra compacta />
       </View>
       <ScrollView contentContainerStyle={estilos.perfilConteudo}>
+        <DisponibilidadePropriaMobile servico={servicoAtendimentos} conectado={conectado} />
         <SeletorAparencia />
         {sessao.dispositivoSubstituido && (
           <View accessibilityLiveRegion="polite" style={estilos.avisoSubstituicao}>
@@ -266,6 +272,8 @@ function Perfil({
 }
 
 function FluxoPerfil({
+  servicoAtendimentos,
+  conectado,
   abrindoLoja,
   aoAtualizar,
   aoSair,
@@ -275,6 +283,8 @@ function FluxoPerfil({
   servicoDiagnostico,
   sessao,
 }: {
+  readonly servicoAtendimentos: ServicoAtendimentosMobile;
+  readonly conectado: boolean;
   readonly abrindoLoja: boolean;
   readonly aoAtualizar: () => void;
   readonly aoSair: () => void;
@@ -295,6 +305,8 @@ function FluxoPerfil({
       <PilhaPerfil.Screen name="Resumo">
         {({ navigation }) => (
           <Perfil
+            servicoAtendimentos={servicoAtendimentos}
+            conectado={conectado}
             abrindoLoja={abrindoLoja}
             aoAbrirDiagnostico={() => navigation.navigate('Diagnostico')}
             aoAtualizar={aoAtualizar}
@@ -426,6 +438,8 @@ export function NavegacaoPrincipal({
       <Abas.Screen name="Perfil">
         {() => (
           <FluxoPerfil
+            servicoAtendimentos={servicoAtendimentos}
+            conectado={estadoSincronizacao === 'CONECTADO'}
             abrindoLoja={abrindoLoja}
             aoAtualizar={aoAtualizar}
             aoSair={aoSair}

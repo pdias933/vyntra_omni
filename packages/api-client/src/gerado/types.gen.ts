@@ -290,6 +290,36 @@ export type ResultadoAlteracaoAcessoUsuarioDto = {
     versao_permissoes: number;
 };
 
+export type DestinoTransferenciaDto = {
+    fila_id: string;
+    fila_nome: string;
+    usuario_id?: string;
+    usuario_nome?: string;
+};
+
+export type EntradaTransferenciaAtendimentoDto = {
+    chave_idempotencia: string;
+    versao_atribuicao_esperada: number;
+    fila_destino_id: string;
+    usuario_destino_id?: string;
+    confirmacao_explicita: true;
+};
+
+export type OperacaoConfirmadaDto = {
+    situacao: 'CONFIRMADA';
+};
+
+export type DisponibilidadePropriaDto = {
+    estado: 'DISPONIVEL' | 'INDISPONIVEL';
+    versao: number;
+};
+
+export type EntradaDisponibilidadePropriaDto = {
+    chave_idempotencia: string;
+    versao_esperada: number;
+    estado: 'DISPONIVEL' | 'INDISPONIVEL';
+};
+
 export type ContextoOperacionalDto = {
     atendimento_id: string;
     estado: string;
@@ -298,15 +328,12 @@ export type ContextoOperacionalDto = {
     responsavel_nome: string | null;
     versao_atribuicao: number;
     pode_resgatar: boolean;
+    pode_transferir: boolean;
 };
 
 export type EntradaResgateAtendimentoDto = {
     chave_idempotencia: string;
     versao_atribuicao_esperada: number;
-};
-
-export type OperacaoConfirmadaDto = {
-    situacao: 'CONFIRMADA';
 };
 
 export type RespostaRapidaWebDto = {
@@ -1433,6 +1460,78 @@ export type AlterarAcessoUsuarioAdministracaoResponses = {
 
 export type AlterarAcessoUsuarioAdministracaoResponse = AlterarAcessoUsuarioAdministracaoResponses[keyof AlterarAcessoUsuarioAdministracaoResponses];
 
+export type ListarDestinosTransferenciaMobileData = {
+    body?: never;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/destinos-transferencia';
+};
+
+export type ListarDestinosTransferenciaMobileResponses = {
+    200: Array<DestinoTransferenciaDto>;
+};
+
+export type ListarDestinosTransferenciaMobileResponse = ListarDestinosTransferenciaMobileResponses[keyof ListarDestinosTransferenciaMobileResponses];
+
+export type TransferirAtendimentoMobileData = {
+    body: EntradaTransferenciaAtendimentoDto;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/transferir';
+};
+
+export type TransferirAtendimentoMobileResponses = {
+    200: OperacaoConfirmadaDto;
+};
+
+export type TransferirAtendimentoMobileResponse = TransferirAtendimentoMobileResponses[keyof TransferirAtendimentoMobileResponses];
+
+export type ConsultarDisponibilidadePropriaMobileData = {
+    body?: never;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/mobile/perfil/disponibilidade';
+};
+
+export type ConsultarDisponibilidadePropriaMobileResponses = {
+    200: DisponibilidadePropriaDto;
+};
+
+export type ConsultarDisponibilidadePropriaMobileResponse = ConsultarDisponibilidadePropriaMobileResponses[keyof ConsultarDisponibilidadePropriaMobileResponses];
+
+export type DefinirDisponibilidadePropriaMobileData = {
+    body: EntradaDisponibilidadePropriaDto;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/mobile/perfil/disponibilidade';
+};
+
+export type DefinirDisponibilidadePropriaMobileResponses = {
+    200: OperacaoConfirmadaDto;
+};
+
+export type DefinirDisponibilidadePropriaMobileResponse = DefinirDisponibilidadePropriaMobileResponses[keyof DefinirDisponibilidadePropriaMobileResponses];
+
 export type ConsultarOperacaoAtendimentoMobileData = {
     body?: never;
     headers: {
@@ -1726,6 +1825,68 @@ export type AlterarContextoContatoMobileResponses = {
 };
 
 export type AlterarContextoContatoMobileResponse = AlterarContextoContatoMobileResponses[keyof AlterarContextoContatoMobileResponses];
+
+export type ListarDestinosTransferenciaWebData = {
+    body?: never;
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/destinos-transferencia';
+};
+
+export type ListarDestinosTransferenciaWebResponses = {
+    200: Array<DestinoTransferenciaDto>;
+};
+
+export type ListarDestinosTransferenciaWebResponse = ListarDestinosTransferenciaWebResponses[keyof ListarDestinosTransferenciaWebResponses];
+
+export type TransferirAtendimentoWebData = {
+    body: EntradaTransferenciaAtendimentoDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/transferir';
+};
+
+export type TransferirAtendimentoWebResponses = {
+    200: OperacaoConfirmadaDto;
+};
+
+export type TransferirAtendimentoWebResponse = TransferirAtendimentoWebResponses[keyof TransferirAtendimentoWebResponses];
+
+export type ConsultarDisponibilidadePropriaWebData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/web/perfil/disponibilidade';
+};
+
+export type ConsultarDisponibilidadePropriaWebResponses = {
+    200: DisponibilidadePropriaDto;
+};
+
+export type ConsultarDisponibilidadePropriaWebResponse = ConsultarDisponibilidadePropriaWebResponses[keyof ConsultarDisponibilidadePropriaWebResponses];
+
+export type DefinirDisponibilidadePropriaWebData = {
+    body: EntradaDisponibilidadePropriaDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/web/perfil/disponibilidade';
+};
+
+export type DefinirDisponibilidadePropriaWebResponses = {
+    200: OperacaoConfirmadaDto;
+};
+
+export type DefinirDisponibilidadePropriaWebResponse = DefinirDisponibilidadePropriaWebResponses[keyof DefinirDisponibilidadePropriaWebResponses];
 
 export type ConsultarOperacaoAtendimentoWebData = {
     body?: never;

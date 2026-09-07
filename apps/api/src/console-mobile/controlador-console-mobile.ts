@@ -50,6 +50,7 @@ import {
 import { ServicoComposerWeb } from '../console-web/servico-composer-web.js';
 import { ParseUUIDPipe } from '@nestjs/common';
 import { ServicoOperacaoAtendimentos } from '../operacao-atendimentos/servico-operacao-atendimentos.js';
+import { DestinoTransferenciaDto, DisponibilidadePropriaDto, EntradaDisponibilidadePropriaDto, EntradaTransferenciaAtendimentoDto } from '../operacao-atendimentos/dto-operacao-atendimentos.js';
 import { ContextoOperacionalDto, EntradaResgateAtendimentoDto, OperacaoConfirmadaDto } from '../operacao-atendimentos/dto-operacao-atendimentos.js';
 import { ServicoContatoAcoesWeb } from '../console-web/servico-contato-acoes-web.js';
 import { ServicoTimelineWeb } from '../console-web/servico-timeline-web.js';
@@ -97,6 +98,58 @@ export class ControladorConsoleMobile {
     private readonly composer: ServicoComposerWeb,
     @Inject(ServicoOperacaoAtendimentos) private readonly operacao: ServicoOperacaoAtendimentos,
   ) {}
+
+  @Get('atendimentos/:atendimentoId/destinos-transferencia')
+  @ApiOperation({ operationId: 'listarDestinosTransferenciaMobile', summary: 'Lista destinos autorizados e disponíveis' })
+  @ApiOkResponse({ type: DestinoTransferenciaDto, isArray: true })
+  public async destinosTransferencia(
+    @Param('atendimentoId', new ParseUUIDPipe()) atendimentoId: string,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<DestinoTransferenciaDto[]> {
+    const sessao = await this.autenticar(autorizacao, dispositivoId, segredo);
+    return (await this.operacao.destinos(sessao.contexto, atendimentoId)).map((destino) => new DestinoTransferenciaDto(destino));
+  }
+
+  @Post('atendimentos/:atendimentoId/transferir')
+  @ApiBody({ type: EntradaTransferenciaAtendimentoDto })
+  @ApiOperation({ operationId: 'transferirAtendimentoMobile', summary: 'Transfere após seleção e confirmação explícitas' })
+  @ApiOkResponse({ type: OperacaoConfirmadaDto })
+  public async transferir(
+    @Param('atendimentoId', new ParseUUIDPipe()) atendimentoId: string,
+    @Body() entrada: EntradaTransferenciaAtendimentoDto,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<OperacaoConfirmadaDto> {
+    await this.autenticacao.executarComSessaoAtual(tokenAcesso(autorizacao), cabecalhoObrigatorio(dispositivoId), cabecalhoObrigatorio(segredo), (sessao, _agora, tx) => this.operacao.transferir(contexto(sessao), atendimentoId, entrada.chave_idempotencia, entrada.versao_atribuicao_esperada, entrada.fila_destino_id, entrada.usuario_destino_id, tx));
+    return new OperacaoConfirmadaDto();
+  }
+
+  @Get('perfil/disponibilidade')
+  @ApiOperation({ operationId: 'consultarDisponibilidadePropriaMobile', summary: 'Consulta a própria disponibilidade operacional' })
+  @ApiOkResponse({ type: DisponibilidadePropriaDto })
+  public async consultarDisponibilidade(@Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,): Promise<DisponibilidadePropriaDto> {
+    const sessao = await this.autenticar(autorizacao, dispositivoId, segredo);
+    return new DisponibilidadePropriaDto(await this.operacao.consultarDisponibilidade(sessao.contexto));
+  }
+
+  @Post('perfil/disponibilidade')
+  @ApiBody({ type: EntradaDisponibilidadePropriaDto })
+  @ApiOperation({ operationId: 'definirDisponibilidadePropriaMobile', summary: 'Altera explicitamente a própria disponibilidade' })
+  @ApiOkResponse({ type: OperacaoConfirmadaDto })
+  public async definirDisponibilidade(
+    @Body() entrada: EntradaDisponibilidadePropriaDto,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<OperacaoConfirmadaDto> {
+    await this.autenticacao.executarComSessaoAtual(tokenAcesso(autorizacao), cabecalhoObrigatorio(dispositivoId), cabecalhoObrigatorio(segredo), (sessao, _agora, tx) => this.operacao.definirDisponibilidade(contexto(sessao), entrada.chave_idempotencia, entrada.estado, entrada.versao_esperada, tx));
+    return new OperacaoConfirmadaDto();
+  }
 
   @Get('atendimentos/:atendimentoId/operacao')
   @ApiOperation({ operationId: 'consultarOperacaoAtendimentoMobile', summary: 'Consulta atribuição e capacidades operacionais atuais' })

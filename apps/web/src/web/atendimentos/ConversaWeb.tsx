@@ -26,12 +26,14 @@ import {
   type ResumoAtendimentoWebDto,
   type ResultadoFinanceiroContatoWebDto,
   type EntradaResgateAtendimentoDto,
+  type EntradaTransferenciaAtendimentoDto,
 } from '@vyntra/api-client';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import { obterCsrf } from '../seguranca-web';
 import { ResgateAtendimentoWeb } from './ResgateAtendimentoWeb';
+import { TransferenciaAtendimentoWeb } from './TransferenciaAtendimentoWeb';
 
 interface Marcador { readonly marcadaNaoLida: boolean; readonly ultimaMensagemLidaId?: string; readonly versao: number }
 type EmojiReacao = '👍' | '❤️' | '😂' | '😮' | '😢' | '🙏';
@@ -79,13 +81,13 @@ function descricaoFinanceiro(
     : 'Dados em tempo real · cobertura não informada';
 }
 
-export function ConversaWeb({ atendimento, aoVoltar, aoResgatar, tentativasResgate, visivel = true }: { readonly atendimento: ResumoAtendimentoWebDto; readonly aoVoltar?: () => void; readonly aoResgatar: () => void; readonly tentativasResgate: Map<string, EntradaResgateAtendimentoDto>; readonly visivel?: boolean }) {
+export function ConversaWeb({ atendimento, aoVoltar, aoResgatar, tentativasResgate, tentativasTransferencia, visivel = true }: { readonly atendimento: ResumoAtendimentoWebDto; readonly aoVoltar?: () => void; readonly aoResgatar: () => void; readonly tentativasResgate: Map<string, EntradaResgateAtendimentoDto>; readonly tentativasTransferencia: Map<string, EntradaTransferenciaAtendimentoDto>; readonly visivel?: boolean }) {
   const [itens, definirItens] = useState<readonly ItemTimelineWebDto[]>([]);
   const [cursor, definirCursor] = useState<string>();
   const [marcador, definirMarcador] = useState<Marcador>({ marcadaNaoLida: false, versao: 0 });
   const [estado, definirEstado] = useState<'CARREGANDO' | 'ERRO' | 'PRONTO'>('CARREGANDO');
   const [respondendo, definirRespondendo] = useState<ItemTimelineWebDto>();
-  const [painel, definirPainel] = useState<'ACOES' | 'BUSCA' | 'CONTATO' | 'GALERIA'>();
+  const [painel, definirPainel] = useState<'ACOES' | 'BUSCA' | 'CONTATO' | 'GALERIA' | 'TRANSFERENCIA'>();
   const leituraEmVoo = useRef<string | undefined>(undefined);
   const finalTimeline = useRef<HTMLDivElement>(null);
 
@@ -202,7 +204,8 @@ export function ConversaWeb({ atendimento, aoVoltar, aoResgatar, tentativasResga
       </div>
       {(painel === 'BUSCA' || painel === 'GALERIA') && <PainelBuscaGaleriaWeb atendimentoId={atendimento.atendimento_id} key={painel} modo={painel} aoFechar={() => definirPainel(undefined)} />}
       {painel === 'CONTATO' && <PainelContatoWeb atendimentoId={atendimento.atendimento_id} aoFechar={() => definirPainel(undefined)} />}
-      {painel === 'ACOES' && <PainelAcoesErpWeb atendimentoId={atendimento.atendimento_id} aoFechar={() => definirPainel(undefined)} />}
+      {painel === 'ACOES' && <PainelAcoesErpWeb atendimentoId={atendimento.atendimento_id} aoTransferir={() => definirPainel('TRANSFERENCIA')} aoFechar={() => definirPainel(undefined)} />}
+      <TransferenciaAtendimentoWeb atendimentoId={atendimento.atendimento_id} tentativas={tentativasTransferencia} key={atendimento.atendimento_id + '-transferencia'} visivel={painel === 'TRANSFERENCIA'} aoFechar={() => definirPainel(undefined)} />
     </section>
   );
 }
@@ -278,7 +281,7 @@ function PainelContatoWeb({ atendimentoId, aoFechar }: { readonly atendimentoId:
 
 type AcaoErp = 'CRIAR_ORDEM_SERVICO' | 'EXECUTAR_DESBLOQUEIO';
 
-function PainelAcoesErpWeb({ atendimentoId, aoFechar }: { readonly atendimentoId: string; readonly aoFechar: () => void }) {
+function PainelAcoesErpWeb({ atendimentoId, aoFechar, aoTransferir }: { readonly atendimentoId: string; readonly aoFechar: () => void; readonly aoTransferir: () => void }) {
   const [previa, definirPrevia] = useState<PreviaAcaoErpWebDto>();
   const [assunto, definirAssunto] = useState('Suporte técnico');
   const [descricao, definirDescricao] = useState('Solicitação registrada durante o atendimento omnichannel.');
@@ -305,6 +308,7 @@ function PainelAcoesErpWeb({ atendimentoId, aoFechar }: { readonly atendimentoId
   return <aside aria-label="Ações do sistema" className="painel-conversa painel-acoes">
     <header><div><strong>Ações</strong><small>Sistema e ERP</small></div><button aria-label="Fechar ações" onClick={aoFechar} type="button">×</button></header>
     <div className="painel-conversa__lista">
+      <section className="grupo-acoes"><h3>Operação</h3><button onClick={aoTransferir} type="button">Transferir atendimento</button></section>
       <section className="grupo-acoes"><h3>Cliente e financeiro</h3><button onClick={() => void preparar('EXECUTAR_DESBLOQUEIO')} type="button"><span>⚡</span><div><strong>Desbloqueio de confiança</strong><small>Elegibilidade em tempo real</small></div></button>{['Consultar faturas', 'Segunda via e Pix', 'Consultar conexão'].map((item) => <button disabled key={item} type="button"><span>○</span><div><strong>{item}</strong><small>Capacidade depende da integração ativa</small></div></button>)}</section>
       <section className="grupo-acoes"><h3>Atendimento</h3><button onClick={() => void preparar('CRIAR_ORDEM_SERVICO')} type="button"><span>+</span><div><strong>Criar ordem de serviço</strong><small>Protocolo e contexto atuais</small></div></button>{['Solicitar WhatsApp Flow', 'Adicionar nota interna'].map((item) => <button disabled key={item} type="button"><span>○</span><div><strong>{item}</strong><small>Disponível no fluxo correspondente</small></div></button>)}</section>
       {previa !== undefined && <section className="previa-acao"><strong>Revise antes de confirmar</strong>{previa.resumo.map((item, indice) => <p key={`${item.rotulo}-${indice}`}><small>{item.rotulo}</small><span>{item.valor}</span></p>)}{previa.acao === 'CRIAR_ORDEM_SERVICO' && <><label>Assunto<input maxLength={200} onChange={(evento) => definirAssunto(evento.target.value)} value={assunto} /></label><label>Descrição<textarea maxLength={4000} onChange={(evento) => definirDescricao(evento.target.value)} value={descricao} /></label></>}{!previa.disponivel && <div className="aviso-indisponivel">Indisponível: {previa.motivo ?? 'capacidade não habilitada'}.</div>}<div><button onClick={() => definirPrevia(undefined)} type="button">Cancelar</button><button disabled={ocupado || !previa.disponivel} onClick={() => void executar()} type="button">Confirmar e executar</button></div></section>}

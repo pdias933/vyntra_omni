@@ -365,6 +365,8 @@ Uma chamada HTTP externa não deve permanecer dentro de uma transação PostgreS
 
 A PR125 introduz `ServicoOperacaoAtendimentos`, compartilhado pelos consoles web e mobile. O resgate delega ao serviço de atribuições existente; não cria outra máquina de estados ou armazenamento de idempotência. Lock de autoridade, autorização, atribuição, evento, auditoria e conclusão idempotente compartilham a transação autenticada. Repetição revalida acesso corrente e retorna apenas confirmação mínima; os clientes consultam novamente o contexto autorizado.
 
+A PR126 reutiliza esse serviço para transferência e disponibilidade própria. Destinos são filtrados por autorização antes de projetar nomes; disponibilidade do destinatário é revalidada sob lock compartilhado com sua alteração manual. O evento de disponibilidade alcança somente sessões do próprio usuário, não produz push nem invalidação de permissões. Login e conexão não escrevem disponibilidade.
+
 ### 7.1 REST
 
 REST recebe comandos e consultas. Rotas conceituais:

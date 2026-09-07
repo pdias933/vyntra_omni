@@ -1,5 +1,6 @@
 import type { ServicoAutenticacaoAplicativo } from '../autenticacao/servico-autenticacao-aplicativo';
 import type { EntradaResgateAtendimentoDto } from '@vyntra/api-client';
+import type { EntradaTransferenciaAtendimentoDto, EntradaDisponibilidadePropriaDto } from '@vyntra/api-client';
 import {
   AdaptadorAtendimentosHttp,
   ErroAtendimentoMobile,
@@ -7,6 +8,40 @@ import {
 import type { AcaoErpMobile } from './modelo-atendimento-mobile';
 
 export class ServicoAtendimentosMobile {
+  private sessaoTentativas?: string;
+  private readonly tentativasTransferencia = new Map<string, EntradaTransferenciaAtendimentoDto>();
+  public observarMudancas(observar: () => void) { return this.autenticacao.replica.observarMudancas(observar); }
+  public async obterTentativaTransferencia(atendimentoId: string) {
+    const { credencial } = await this.autenticacao.obterCredenciaisSincronizacao();
+    if (this.sessaoTentativas !== credencial.sessaoId) {
+      this.tentativasTransferencia.clear();
+      this.sessaoTentativas = credencial.sessaoId;
+    }
+    return this.tentativasTransferencia.get(atendimentoId);
+  }
+  public limparTentativaTransferencia(atendimentoId: string) { this.tentativasTransferencia.delete(atendimentoId); }
+  public destinosTransferencia(atendimentoId: string) {
+    return this.executar((credenciais) => this.adaptador.destinosTransferencia(credenciais, atendimentoId));
+  }
+  public async transferir(atendimentoId: string, entrada: EntradaTransferenciaAtendimentoDto) {
+    const anterior = await this.obterTentativaTransferencia(atendimentoId);
+    if (anterior !== undefined && JSON.stringify(anterior) !== JSON.stringify(entrada)) throw new Error('TENTATIVA_TRANSFERENCIA_PENDENTE');
+    this.tentativasTransferencia.set(atendimentoId, entrada);
+    try {
+      const resultado = await this.executar((credenciais) => this.adaptador.transferir(credenciais, atendimentoId, entrada));
+      if (resultado.situacao === 'CONFIRMADA') this.limparTentativaTransferencia(atendimentoId);
+      return resultado;
+    } catch (erro) {
+      if (erro instanceof ErroAtendimentoMobile && [401, 403, 409].includes(erro.statusHttp ?? 0)) this.limparTentativaTransferencia(atendimentoId);
+      throw erro;
+    }
+  }
+  public consultarDisponibilidade() {
+    return this.executar((credenciais) => this.adaptador.consultarDisponibilidade(credenciais));
+  }
+  public definirDisponibilidade(entrada: EntradaDisponibilidadePropriaDto) {
+    return this.executar((credenciais) => this.adaptador.definirDisponibilidade(credenciais, entrada));
+  }
   public consultarOperacao(atendimentoId: string) {
     return this.executar((credenciais) => this.adaptador.consultarOperacao(credenciais, atendimentoId));
   }
