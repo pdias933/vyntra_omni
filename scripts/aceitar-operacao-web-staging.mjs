@@ -55,9 +55,20 @@ try {
   await acoes(a);
   await a.getByRole('button', { name: 'Transferir atendimento', exact: true }).click();
   await a.getByLabel('Fila ou atendente').selectOption(cenario.ids.fila + ':' + cenario.usuarios[1].id);
+  const chavesTransferencia = [];
+  await ca.route('**/transferir', async (route) => {
+    chavesTransferencia.push(route.request().postDataJSON().chave_idempotencia);
+    const resposta = await route.fetch();
+    assert.ok(resposta.ok(), 'Transferência real deve confirmar antes de descartar a resposta');
+    if (chavesTransferencia.length === 1) await route.abort('failed');
+    else await route.fulfill({ response: resposta });
+  });
   await a.getByRole('button', { name: 'Confirmar transferência', exact: true }).click();
   // Realtime real: o segundo cliente deve receber sem reload ou evento artificial.
   await b.locator('.cartao-atendimento').filter({ hasText: 'Contato HTTP sintético PR128' }).waitFor({ timeout: 20000 });
+  await a.getByRole('button', { name: 'Verificar transferência pendente', exact: true }).click();
+  await a.getByText('Transferência confirmada.', { exact: true }).waitFor();
+  assert.equal(chavesTransferencia.length, 2); assert.equal(chavesTransferencia[0], chavesTransferencia[1]);
   await b.locator('.cartao-atendimento').filter({ hasText: 'Contato HTTP sintético PR128' }).click();
   await b.locator('.bloco-nota-interna').filter({ hasText: texto }).waitFor();
   assert.equal(await b.locator('.bloco-nota-interna').filter({ hasText: texto }).count(), 1);
@@ -68,7 +79,7 @@ try {
   assert.equal((await operacao.json()).responsavel_id, u.id);
   const timeline = await cb.request.get(rota + '/timeline', { headers });
   assert.equal((await timeline.json()).itens.filter((item) => item.tipo === 'NOTA_INTERNA' && item.texto === texto).length, 1);
-  console.log(JSON.stringify({ aceite: 'PR128_WEB_STAGING_REAL', motor, aprovado: true, respostaPerdidaNota: true, segundoOperadorViaSse: true, convergenciaApiMobile: true, atendimentoId: cenario.ids.atendimento }));
+  console.log(JSON.stringify({ aceite: 'PR128_WEB_STAGING_REAL', motor, aprovado: true, respostaPerdidaNota: true, respostaPerdidaTransferencia: true, segundoOperadorViaSse: true, convergenciaApiMobile: true, atendimentoId: cenario.ids.atendimento }));
 } finally {
   // Sessões sintéticas duram dez minutos; logout web revoga imediatamente quando disponível.
   for (const [indice, contexto] of contextos.entries()) {

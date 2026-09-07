@@ -449,6 +449,8 @@ Falha de rede ao marcar leitura é reconciliada idempotentemente. Push não marc
 
 Lote PR125–PR128: resgate, transferência e notas exigem conexão já reconciliada. Não criam pendência operacional offline e não executam automaticamente ao reconectar. Resposta perdida conserva a chave para nova tentativa explícita; sucesso depende de confirmação do backend. Resgate não acontece ao abrir conversa. Desenvolvimento, exportação, development build e homologação física são evidências distintas.
 
+Recibos incertos de resgate/transferência sobrevivem à desmontagem da conversa somente em memória da sessão. O Perfil permite verificá-los explicitamente mesmo após saída do atendimento do filtro; não mostra nome, histórico ou conteúdo que tenha saído do escopo. O backend reautoriza a repetição. Troca de sessão e recusa definitiva removem o recibo; encerramento do processo não tem recuperação garantida. Reconexão apenas atualiza a visualização, nunca dispara o comando.
+
 Na PR127, `user_version = 5` acrescenta `rascunho_nota` ao SQLCipher. Texto e chave de tentativa explícita são separados de mensagem/pendência de saída e vinculados ao atendimento/fila. Rascunho não é comando enfileirado. Perda de fila/permissão remove conteúdo; logout limpa a tabela. A migração preserva rascunhos de mensagem. O editor mantém “Somente equipe”, máximo 4.000 caracteres e confirmação “Salvar nota”, sem envio ao WhatsApp.
 
 O botão dedicado ao lado do anexo, ativo/visível com o campo vazio, abre um bottom sheet organizado por categorias e pesquisável. O primeiro toque apenas seleciona a capacidade. Operação com efeito real exige contexto, prévia, confirmação e resposta inequívoca. Exemplos:

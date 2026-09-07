@@ -832,12 +832,14 @@ Lote autorizado em 6 de setembro de 2026. Somente dados sintéticos, sem ativar 
 
 | PR | Entrega | Effort | Implementação | Integração | Testes | Deploy staging | Homologação física |
 |---|---|---|---|---|---|---|---|
-| 125 | Contexto operacional e resgate web/mobile | `xhigh` | Em andamento; branch publicada | SDK e clientes ligados; aceite HTTP integrado pendente | Tipos, lint, suíte, disputa PostgreSQL e regressão visual Chromium/WebKit aprovados; aceite funcional UI pendente | Pendente, cumulativo na 128 | Pendente iPhone/Android |
-| 126 | Disponibilidade própria e transferência | `xhigh` | Implementada; aceite integrado pendente | SDK e ambos os clientes ligados | Tipos, lint, suíte e PostgreSQL aprovados; UI/HTTP pendente | Pendente, cumulativo na 128 | Pendente iPhone/Android |
-| 127 | Notas internas e rascunho SQLCipher | `high` | Implementada; aceite integrado pendente | SDK, editores e migração local ligados | Tipos, lint, suíte, SQLite e privacidade PostgreSQL aprovados; UI/HTTP pendente | Pendente, cumulativo na 128 | Pendente iPhone/Android |
-| 128 | Aceite integrado, build nativa e publicação | `xhigh` | Em andamento | HTTP real aprovado; UI publicada em preparação | PostgreSQL, HTTP, SQLite, UI com fixtures e visual aprovados | Pendente; preservar release anterior | Pendente iPhone/Android; CocoaPods bloqueia build iOS |
+| 125 | Contexto operacional e resgate web/mobile | `xhigh` | Implementada; branch publicada | SDK, dois consoles HTTP e web publicada aprovados; UI nativa pendente | Disputa PostgreSQL, autenticação HTTP, suíte e web real aprovados | Concluído: `pr-128a-df35243` | Pendente iPhone/Android |
+| 126 | Disponibilidade própria e transferência | `xhigh` | Implementada; branch publicada | Ambos os clientes ligados; web real recebe via SSE; UI nativa pendente | PostgreSQL, HTTP, resposta perdida e realtime web aprovados | Concluído: `pr-128a-df35243` | Pendente iPhone/Android |
+| 127 | Notas internas e rascunho SQLCipher | `high` | Implementada; branch publicada | SDK, editores e migração local ligados; UI nativa pendente | Privacidade PostgreSQL, HTTP, SQLite e nota repetida na web real aprovados | Concluído: `pr-128a-df35243` | Pendente iPhone/Android; validar SQLCipher/cofre físico |
+| 128 | Aceite integrado, build nativa e publicação | `xhigh` | Em andamento; APK Android gerado; build iOS bloqueada por CocoaPods | Aceite web publicado Chromium/WebKit e convergência API mobile aprovados; UI nativa pendente | Portões completos, PostgreSQL, HTTP, SQLite, fixtures, visual e web real aprovados | Concluído; releases `pr-128-b9cccd6` e `pr-124a-a668c3e` preservadas | Pendente iPhone/Android; rede/revogação/acessibilidade nativas pendentes |
 
 Evidências incrementais: [PR125](docs/operacoes/PR-125.md), [PR126](docs/operacoes/PR-126.md), [PR127](docs/operacoes/PR-127.md), [PR128](docs/operacoes/PR-128.md). Nenhuma PR deste lote está declarada concluída.
+
+Fechamento de engenharia/staging em 6 de setembro de 2026: 484 testes API e 361 testes da raiz, tipos, lint, contratos, builds e exportações aprovados. A homologação publicada detectou e corrigiu o listener SSE nomeado; o segundo operador agora recebe a transferência sem reload. APK de desenvolvimento Android gerado; iOS exige CocoaPods. Branches PR125–128 enviadas ao GitHub, sem presumir criação/merge de objetos de pull request. MK permanece desativado, controles cadastral/financeiro com percentual zero e piloto desligado. Produção não foi promovida. As pendências físicas e o vínculo/encerramento do lote seguinte continuam explícitos.
 
 ### PR124A — ajuste visual e responsividade
 
