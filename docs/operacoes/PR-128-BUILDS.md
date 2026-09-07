@@ -10,7 +10,7 @@ Data: 7 de setembro de 2026. Estado: EM ANDAMENTO. Effort: `xhigh`.
 | iOS | `xcodebuild` Debug para aparelho: `BUILD SUCCEEDED`; assinatura Apple Development da equipe UP100 existente verificada. |
 | Instalação iPhone | Instalação e lançamento por `devicectl` aprovados; usuário confirmou abertura do login. |
 | Pareamento iPhone | Falhas locais iniciais após HTTP 200 corrigidas; depois de reiniciar com o código atual e repetir o pareamento, usuário confirmou sucesso no iPhone. |
-| Instalação Android | Samsung SM-S948B, Android 16/API 36: instalação/início por ADB aprovados. Usuário confirmou login e abertura da lista; filtros altos identificados e ajustados, validação visual do ajuste pendente. |
+| Instalação Android | Samsung SM-S948B, Android 16/API 36: instalação/início por ADB aprovados. Usuário confirmou login, abertura da lista e tamanho correto dos filtros após o ajuste. |
 | Lote operacional físico | Resgate → nota → transferência entre operadores, rede/revogação, SQLCipher/cofre e acessibilidade ainda pendentes. |
 | Servidor | Nenhum novo deploy. Staging permanece `pr-128a-df35243`, com releases anteriores preservadas. Nenhuma promoção a produção ou ativação Meta/MK/piloto. |
 
@@ -87,7 +87,7 @@ Banco novo, persistência/reabertura, arquivo cifrado, chave errada e adulteraç
 
 Uma tentativa posterior na web falhou por autenticação não recente: confirmação 401 com QR ainda válido, sessão ativa autenticada cerca de 18 minutos antes. A confirmação exige login de menos de 10 minutos. A mensagem genérica da web não distingue esse caso; sair/entrar novamente e gerar outro QR é o procedimento atual. Nenhum limite foi relaxado.
 
-Próximos passos: validar a faixa ajustada de filtros no Samsung e executar o lote operacional sintético em ambos. Login confirmado nos dois aparelhos; não marcar PR125–128 ou aceite físico de aparência como concluídos apenas por isso. Vínculo de cliente e encerramento continuam fora deste lote.
+Próximos passos: executar o lote operacional sintético em ambos e validar acessibilidade/rede/revogação. Login confirmado nos dois aparelhos e tamanho dos filtros confirmado pelo usuário no Android; não marcar PR125–128 ou aceite físico completo de aparência como concluídos apenas por isso. Vínculo de cliente e encerramento continuam fora deste lote.
 
 ## Segunda falha local — conexão transacional
 
@@ -107,4 +107,6 @@ O ScrollView horizontal herdava `flexGrow: 1` e `flexShrink: 1` do React Native,
 
 Teste executa a fábrica real de estilos e verifica ligação às duas superfícies, ausência de limites de fonte/altura e distribuição declarada do espaço. Isso não substitui medição física: confirmação visual do ajuste no Android e aceite iOS continuam pendentes. O Android já estava desconectado do ADB quando se tentou capturar a tela. O iPhone foi reiniciado via `devicectl`, sem reinstalação ou apagamento, para carregar o código atual; a sessão do depurador não retornou diagnóstico JavaScript, portanto nenhum erro interno novo foi presumido como causa confirmada.
 
-Confirmação posterior: o usuário respondeu que o novo pareamento **deu certo no iPhone**. O login agora está confirmado em iOS e Android. O aceite visual dos filtros e o lote operacional completo continuam pendentes. Tipos, lint, contratos, 484 testes API por cache + 377 raiz, builds e exportações aprovados para o ajuste; sem nova imagem de servidor, instalação nativa ou alteração de credenciais.
+Confirmação posterior: o usuário respondeu que o novo pareamento **deu certo no iPhone**. O login agora está confirmado em iOS e Android. Tipos, lint, contratos, 484 testes API por cache + 377 raiz, builds e exportações aprovados para o ajuste; sem nova imagem de servidor, instalação nativa ou alteração de credenciais.
+
+Confirmação visual posterior, em 7 de setembro: o usuário informou “icones do tamanho certo agora”, confirmando o tamanho dos filtros ajustados no Android. Evidência por relato do usuário, sem nova captura ou medição automatizada. Não estende o aceite visual ao iPhone, à fonte ampliada ou a Reduzir Movimento. Lote operacional completo permanece pendente; PR128 em andamento, Effort `xhigh`.
