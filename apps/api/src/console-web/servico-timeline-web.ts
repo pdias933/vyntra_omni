@@ -113,7 +113,7 @@ export class ServicoTimelineWeb {
           where: {
             atendimentoId: { in: idsAtendimentos },
             conversaId: contexto.conversaId,
-            tipo: { in: ['ATENDIMENTO_RESGATADO', 'ATENDIMENTO_TRANSFERIDO', 'ATENDIMENTO_ENCERRADO', 'PROTOCOLO_ERP_ABERTO'] },
+            tipo: { in: ['ATENDIMENTO_RESGATADO', 'ATENDIMENTO_TRANSFERIDO', 'ATENDIMENTO_TRANSFERIDO_PARA_FILA', 'ATENDIMENTO_TRANSFERIDO_PARA_USUARIO', 'ATENDIMENTO_ENCERRADO', 'PROTOCOLO_ERP_ABERTO'] },
             ...(cursor === undefined ? {} : { OR: [{ criadoEm: { lt: cursor.ocorridoEm } }, { criadoEm: cursor.ocorridoEm, id: { lt: cursor.id } }] }),
           },
         }),
@@ -389,6 +389,8 @@ export class ServicoTimelineWeb {
       ATENDIMENTO_ENCERRADO: 'Atendimento encerrado',
       ATENDIMENTO_RESGATADO: 'Atendimento resgatado',
       ATENDIMENTO_TRANSFERIDO: 'Atendimento transferido',
+      ATENDIMENTO_TRANSFERIDO_PARA_FILA: 'Atendimento transferido para fila',
+      ATENDIMENTO_TRANSFERIDO_PARA_USUARIO: 'Atendimento transferido para atendente',
       PROTOCOLO_ERP_ABERTO: 'Protocolo do ERP aberto',
     } as Readonly<Record<string, string>>)[tipo] ?? 'Evento operacional';
   }

@@ -50,6 +50,7 @@ import {
 import { ServicoComposerWeb } from '../console-web/servico-composer-web.js';
 import { ParseUUIDPipe } from '@nestjs/common';
 import { ServicoOperacaoAtendimentos } from '../operacao-atendimentos/servico-operacao-atendimentos.js';
+import { EntradaNotaInternaDto } from '../operacao-atendimentos/dto-operacao-atendimentos.js';
 import { DestinoTransferenciaDto, DisponibilidadePropriaDto, EntradaDisponibilidadePropriaDto, EntradaTransferenciaAtendimentoDto } from '../operacao-atendimentos/dto-operacao-atendimentos.js';
 import { ContextoOperacionalDto, EntradaResgateAtendimentoDto, OperacaoConfirmadaDto } from '../operacao-atendimentos/dto-operacao-atendimentos.js';
 import { ServicoContatoAcoesWeb } from '../console-web/servico-contato-acoes-web.js';
@@ -98,6 +99,21 @@ export class ControladorConsoleMobile {
     private readonly composer: ServicoComposerWeb,
     @Inject(ServicoOperacaoAtendimentos) private readonly operacao: ServicoOperacaoAtendimentos,
   ) {}
+
+  @Post('atendimentos/:atendimentoId/notas-internas')
+  @ApiBody({ type: EntradaNotaInternaDto })
+  @ApiOperation({ operationId: 'adicionarNotaInternaMobile', summary: 'Registra nota privada sem envio ao canal externo' })
+  @ApiOkResponse({ type: OperacaoConfirmadaDto })
+  public async adicionarNota(
+    @Param('atendimentoId', new ParseUUIDPipe()) atendimentoId: string,
+    @Body() entrada: EntradaNotaInternaDto,
+    @Headers('authorization') autorizacao: string | undefined,
+    @Headers(NOME_HEADER_DISPOSITIVO_MOBILE) dispositivoId: string | undefined,
+    @Headers(NOME_HEADER_SEGREDO_DISPOSITIVO_MOBILE) segredo: string | undefined,
+  ): Promise<OperacaoConfirmadaDto> {
+    await this.autenticacao.executarComSessaoAtual(tokenAcesso(autorizacao), cabecalhoObrigatorio(dispositivoId), cabecalhoObrigatorio(segredo), (sessao, _agora, tx) => this.operacao.adicionarNota(contexto(sessao), atendimentoId, entrada.chave_idempotencia, entrada.texto, tx));
+    return new OperacaoConfirmadaDto();
+  }
 
   @Get('atendimentos/:atendimentoId/destinos-transferencia')
   @ApiOperation({ operationId: 'listarDestinosTransferenciaMobile', summary: 'Lista destinos autorizados e disponíveis' })

@@ -12,6 +12,8 @@ function cenario() {
   const sessao = { usuarioId: randomUUID(), sessaoId: randomUUID(), estado: 'ATIVA', expiraEm: new Date('2099-01-01') };
   let negado = false;
   let efeito = 0;
+  let notas = 0;
+  const conversaId = randomUUID();
   let registro;
   const ordem = [];
   const transacao = {
@@ -19,7 +21,7 @@ function cenario() {
     atendimento: {
       findUnique: async () => ({ filaAtualId: filaId }),
       count: async () => 1,
-      findFirst: async () => ({ estado: efeito ? 'EM_ATENDIMENTO' : 'AGUARDANDO', usuarioResponsavelId: efeito ? sessao.usuarioId : null, versaoAtribuicao: efeito + 1, usuarioResponsavel: efeito ? { nomeExibicao: 'Operador sintético' } : null }),
+      findFirst: async () => ({ conversaId, estado: efeito ? 'EM_ATENDIMENTO' : 'AGUARDANDO', usuarioResponsavelId: efeito ? sessao.usuarioId : null, versaoAtribuicao: efeito + 1, usuarioResponsavel: efeito ? { nomeExibicao: 'Operador sintético' } : null }),
     },
   };
   const autorizacao = { autorizar: async (entrada, verificar, tx) => {
@@ -49,8 +51,13 @@ function cenario() {
     concederExecucao: async (id, _prazo, tx) => { assert.equal(tx, transacao); return { operacaoId: id, tokenConcessao: randomUUID() }; },
     concluir: async (entrada, tx) => { assert.equal(tx, transacao); assert.deepEqual(entrada.dados, { confirmado: true }); ordem.push('CONFIRMAR'); },
   };
-  const servico = new ServicoOperacaoAtendimentos({ executarTransacao: (executar) => executar(transacao) }, autorizacao, atribuicoes, idempotencia);
-  return { atendimentoId, sessao, transacao, servico, ordem, negar: () => { negado = true; }, efeitos: () => efeito };
+  const servicoNotas = { adicionar: async (ator, conversa, atendimento, fila, texto, tx) => {
+    assert.equal(ator, sessao); assert.equal(conversa, conversaId); assert.equal(atendimento, atendimentoId);
+    assert.equal(fila, filaId); assert.equal(tx, transacao); assert.equal(typeof texto, 'string');
+    notas++;
+  } };
+  const servico = new ServicoOperacaoAtendimentos({ executarTransacao: (executar) => executar(transacao) }, autorizacao, atribuicoes, idempotencia, undefined, undefined, servicoNotas);
+  return { atendimentoId, sessao, transacao, servico, ordem, negar: () => { negado = true; }, efeitos: () => efeito, notas: () => notas };
 }
 
 test('consulta operacional não resgata e só projeta capacidades autorizadas', async () => {
@@ -59,6 +66,19 @@ test('consulta operacional não resgata e só projeta capacidades autorizadas', 
   assert.equal(resultado.podeResgatar, true);
   assert.equal(resultado.responsavelId, null);
   assert.equal(x.efeitos(), 0);
+});
+
+test('nota resolve conversa e fila no servidor e reautoriza antes de repetir', async () => {
+  const x = cenario(), chave = randomUUID();
+  await x.servico.adicionarNota(x.sessao, x.atendimentoId, chave, 'Nota sintética', x.transacao);
+  await x.servico.adicionarNota(x.sessao, x.atendimentoId, chave, 'Nota sintética', x.transacao);
+  assert.equal(x.notas(), 1);
+  assert.equal(x.efeitos(), 0);
+  assert.equal(x.ordem.filter((item) => item === 'CONFIRMAR').length, 1);
+  await assert.rejects(x.servico.adicionarNota(x.sessao, x.atendimentoId, chave, 'Outra nota', x.transacao), (erro) => erro.getResponse().codigo === 'CHAVE_IDEMPOTENCIA_REUTILIZADA');
+  x.negar();
+  await assert.rejects(x.servico.adicionarNota(x.sessao, x.atendimentoId, chave, 'Nota sintética', x.transacao), ErroPermissaoNegada);
+  assert.equal(x.notas(), 1);
 });
 
 test('resgate delega e conclui idempotência na mesma transação; replay não duplica', async () => {

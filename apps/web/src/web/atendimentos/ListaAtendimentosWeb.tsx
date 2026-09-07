@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 
 import { CabecalhoPagina } from '../ShellWeb';
 import { ConversaWeb } from './ConversaWeb';
+import type { RascunhoNotaWeb } from './NotaInternaWeb';
 
 type Filtro =
   | 'EM_AUTOMACAO'
@@ -68,6 +69,7 @@ export function ListaAtendimentosWeb() {
   // Intenções efêmeras pertencem à área autenticada, não à projeção removida pelos filtros.
   const [tentativasResgate] = useState(() => new Map<string, EntradaResgateAtendimentoDto>());
   const [tentativasTransferencia] = useState(() => new Map<string, EntradaTransferenciaAtendimentoDto>());
+  const [rascunhosNota] = useState(() => new Map<string, RascunhoNotaWeb>());
   const atendimentoSelecionado = itens.find((item) => item.atendimento_id === selecionado);
   const requisicaoAtual = useRef(0);
 
@@ -147,7 +149,7 @@ export function ListaAtendimentosWeb() {
           <span aria-hidden="true">◌</span>
           <strong>Selecione uma conversa</strong>
           <p>O atendimento será aberto aqui sem tirar você da fila.</p>
-        </div> : <ConversaWeb atendimento={atendimentoSelecionado} tentativasResgate={tentativasResgate} tentativasTransferencia={tentativasTransferencia} visivel={!compacta || conversaVisivel} aoResgatar={() => { definirFiltro('MEUS'); void carregar('MEUS', true); }} aoVoltar={() => definirConversaVisivel(false)} />}
+        </div> : <ConversaWeb atendimento={atendimentoSelecionado} rascunhosNota={rascunhosNota} tentativasResgate={tentativasResgate} tentativasTransferencia={tentativasTransferencia} visivel={!compacta || conversaVisivel} aoResgatar={() => { definirFiltro('MEUS'); void carregar('MEUS', true); }} aoVoltar={() => definirConversaVisivel(false)} />}
       </aside>
     </main>
   );

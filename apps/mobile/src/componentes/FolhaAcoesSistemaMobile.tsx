@@ -25,6 +25,8 @@ import type {
 import type { ServicoAtendimentosMobile } from '../atendimentos/servico-atendimentos-mobile';
 import { ESPACOS, RAIOS } from '../tema';
 import { TransferenciaAtendimentoMobile } from './TransferenciaAtendimentoMobile';
+import { NotaInternaMobile } from './NotaInternaMobile';
+import type { RepositorioReplicaLocal } from '../offline/repositorio-replica-local';
 
 type CodigoAcao =
   | 'CLIENTE'
@@ -108,6 +110,7 @@ export function FolhaAcoesSistemaMobile({
   aoAbrirDetalhes,
   aoFechar,
   atendimentoId,
+  repositorio,
   reduzirMovimento,
   servico,
   visivel,
@@ -116,6 +119,7 @@ export function FolhaAcoesSistemaMobile({
   readonly aoAbrirDetalhes: () => void;
   readonly aoFechar: () => void;
   readonly atendimentoId: string;
+  readonly repositorio: RepositorioReplicaLocal;
   readonly reduzirMovimento: boolean;
   readonly servico: ServicoAtendimentosMobile;
   readonly visivel: boolean;
@@ -123,6 +127,7 @@ export function FolhaAcoesSistemaMobile({
   const { cores: CORES, modo } = useTema();
   const estilos = useEstilos(criarEstilos);
   const [transferindo, definirTransferindo] = useState(false);
+  const [anotando, definirAnotando] = useState(false);
   const [detalhes, definirDetalhes] = useState<DetalhesContatoMobile>();
   const [financeiro, definirFinanceiro] =
     useState<ResumoFinanceiroContatoMobile>();
@@ -163,7 +168,7 @@ export function FolhaAcoesSistemaMobile({
   }, [acessoOffline, atendimentoId, servico, visivel]);
 
   function estaDisponivel(codigo: CodigoAcao): boolean {
-    if (codigo === 'TRANSFERIR') return !acessoOffline;
+    if (codigo === 'TRANSFERIR' || codigo === 'NOTA') return !acessoOffline;
     if (acessoOffline || detalhes === undefined) return false;
     if (codigo === 'CLIENTE') return true;
     if (codigo === 'FATURAS') return detalhes.permissoes.consultarFinanceiro;
@@ -235,6 +240,7 @@ export function FolhaAcoesSistemaMobile({
   }
 
   function escolher(codigo: CodigoAcao) {
+    if (codigo === 'NOTA') { definirAnotando(true); return; }
     if (codigo === 'TRANSFERIR') { definirTransferindo(true); return; }
     if (codigo === 'CLIENTE') {
       aoFechar();
@@ -274,7 +280,8 @@ export function FolhaAcoesSistemaMobile({
           </View>
 
           <TransferenciaAtendimentoMobile atendimentoId={atendimentoId} acessoOffline={acessoOffline} servico={servico} visivel={visivel && transferindo} aoVoltar={() => definirTransferindo(false)} />
-          {!transferindo && <>
+          <NotaInternaMobile atendimentoId={atendimentoId} acessoOffline={acessoOffline} servico={servico} repositorio={repositorio} visivel={visivel && anotando} aoVoltar={() => definirAnotando(false)} />
+          {!transferindo && !anotando && <>
           {acessoOffline && (
             <View style={estilos.aviso}>
               <Ionicons color={CORES.atencao} name="cloud-offline-outline" size={18} />

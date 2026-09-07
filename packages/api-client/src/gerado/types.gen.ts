@@ -290,6 +290,15 @@ export type ResultadoAlteracaoAcessoUsuarioDto = {
     versao_permissoes: number;
 };
 
+export type EntradaNotaInternaDto = {
+    chave_idempotencia: string;
+    texto: string;
+};
+
+export type OperacaoConfirmadaDto = {
+    situacao: 'CONFIRMADA';
+};
+
 export type DestinoTransferenciaDto = {
     fila_id: string;
     fila_nome: string;
@@ -303,10 +312,6 @@ export type EntradaTransferenciaAtendimentoDto = {
     fila_destino_id: string;
     usuario_destino_id?: string;
     confirmacao_explicita: true;
-};
-
-export type OperacaoConfirmadaDto = {
-    situacao: 'CONFIRMADA';
 };
 
 export type DisponibilidadePropriaDto = {
@@ -329,6 +334,7 @@ export type ContextoOperacionalDto = {
     versao_atribuicao: number;
     pode_resgatar: boolean;
     pode_transferir: boolean;
+    pode_adicionar_nota: boolean;
 };
 
 export type EntradaResgateAtendimentoDto = {
@@ -1460,6 +1466,25 @@ export type AlterarAcessoUsuarioAdministracaoResponses = {
 
 export type AlterarAcessoUsuarioAdministracaoResponse = AlterarAcessoUsuarioAdministracaoResponses[keyof AlterarAcessoUsuarioAdministracaoResponses];
 
+export type AdicionarNotaInternaMobileData = {
+    body: EntradaNotaInternaDto;
+    headers: {
+        'x-segredo-dispositivo': string;
+        'x-dispositivo-id': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/mobile/atendimentos/{atendimentoId}/notas-internas';
+};
+
+export type AdicionarNotaInternaMobileResponses = {
+    200: OperacaoConfirmadaDto;
+};
+
+export type AdicionarNotaInternaMobileResponse = AdicionarNotaInternaMobileResponses[keyof AdicionarNotaInternaMobileResponses];
+
 export type ListarDestinosTransferenciaMobileData = {
     body?: never;
     headers: {
@@ -1825,6 +1850,24 @@ export type AlterarContextoContatoMobileResponses = {
 };
 
 export type AlterarContextoContatoMobileResponse = AlterarContextoContatoMobileResponses[keyof AlterarContextoContatoMobileResponses];
+
+export type AdicionarNotaInternaWebData = {
+    body: EntradaNotaInternaDto;
+    headers: {
+        'x-csrf-token': string;
+    };
+    path: {
+        atendimentoId: string;
+    };
+    query?: never;
+    url: '/api/v1/web/atendimentos/{atendimentoId}/notas-internas';
+};
+
+export type AdicionarNotaInternaWebResponses = {
+    200: OperacaoConfirmadaDto;
+};
+
+export type AdicionarNotaInternaWebResponse = AdicionarNotaInternaWebResponses[keyof AdicionarNotaInternaWebResponses];
 
 export type ListarDestinosTransferenciaWebData = {
     body?: never;

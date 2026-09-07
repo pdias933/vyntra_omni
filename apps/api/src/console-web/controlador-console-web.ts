@@ -18,6 +18,7 @@ import { ServicoTimelineWeb } from './servico-timeline-web.js';
 import { ServicoComposerWeb } from './servico-composer-web.js';
 import { ParseUUIDPipe } from '@nestjs/common';
 import { ServicoOperacaoAtendimentos } from '../operacao-atendimentos/servico-operacao-atendimentos.js';
+import { EntradaNotaInternaDto } from '../operacao-atendimentos/dto-operacao-atendimentos.js';
 import { DestinoTransferenciaDto, DisponibilidadePropriaDto, EntradaDisponibilidadePropriaDto, EntradaTransferenciaAtendimentoDto } from '../operacao-atendimentos/dto-operacao-atendimentos.js';
 import { ContextoOperacionalDto, EntradaResgateAtendimentoDto, OperacaoConfirmadaDto } from '../operacao-atendimentos/dto-operacao-atendimentos.js';
 
@@ -34,6 +35,23 @@ export class ControladorConsoleWeb {
     @Inject(ServicoContatoAcoesWeb) private readonly contatoAcoes: ServicoContatoAcoesWeb,
     @Inject(ServicoOperacaoAtendimentos) private readonly operacao: ServicoOperacaoAtendimentos,
   ) {}
+
+  @Post('atendimentos/:atendimentoId/notas-internas')
+  @ApiCookieAuth('sessaoWeb')
+  @ApiHeader({ name: NOME_HEADER_CSRF_WEB, required: true })
+  @ApiBody({ type: EntradaNotaInternaDto })
+  @ApiOperation({ operationId: 'adicionarNotaInternaWeb', summary: 'Registra nota privada sem envio ao canal externo' })
+  @ApiOkResponse({ type: OperacaoConfirmadaDto })
+  public async adicionarNota(
+    @Param('atendimentoId', new ParseUUIDPipe()) atendimentoId: string,
+    @Body() entrada: EntradaNotaInternaDto,
+    @Headers('cookie') cookies: string | undefined,
+    @Headers(NOME_HEADER_CSRF_WEB) csrf: string | undefined,
+    @Headers('origin') origem: string | undefined,
+  ): Promise<OperacaoConfirmadaDto> {
+    await this.executarEscrita(cookies, csrf, origem, (sessao, tx) => this.operacao.adicionarNota(sessao, atendimentoId, entrada.chave_idempotencia, entrada.texto, tx));
+    return new OperacaoConfirmadaDto();
+  }
 
   @Get('atendimentos/:atendimentoId/destinos-transferencia')
   @ApiCookieAuth('sessaoWeb')

@@ -1,5 +1,6 @@
 import type { ServicoAutenticacaoAplicativo } from '../autenticacao/servico-autenticacao-aplicativo';
 import type { EntradaResgateAtendimentoDto } from '@vyntra/api-client';
+import type { EntradaNotaInternaDto } from '@vyntra/api-client';
 import type { EntradaTransferenciaAtendimentoDto, EntradaDisponibilidadePropriaDto } from '@vyntra/api-client';
 import {
   AdaptadorAtendimentosHttp,
@@ -8,6 +9,9 @@ import {
 import type { AcaoErpMobile } from './modelo-atendimento-mobile';
 
 export class ServicoAtendimentosMobile {
+  public adicionarNota(atendimentoId: string, entrada: EntradaNotaInternaDto) {
+    return this.executar((credenciais) => this.adaptador.adicionarNota(credenciais, atendimentoId, entrada));
+  }
   private sessaoTentativas?: string;
   private readonly tentativasTransferencia = new Map<string, EntradaTransferenciaAtendimentoDto>();
   public observarMudancas(observar: () => void) { return this.autenticacao.replica.observarMudancas(observar); }

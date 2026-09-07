@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Equals, IsIn, IsInt, IsOptional, IsUUID, Min } from 'class-validator';
+import { Equals, IsIn, IsInt, IsOptional, IsString, IsUUID, MaxLength, Min, MinLength } from 'class-validator';
 
 import type { ContextoOperacional, DestinoTransferencia } from './servico-operacao-atendimentos.js';
 
@@ -17,6 +17,7 @@ export class ContextoOperacionalDto {
   @ApiProperty() public readonly versao_atribuicao: number;
   @ApiProperty() public readonly pode_resgatar: boolean;
   @ApiProperty() public readonly pode_transferir: boolean;
+  @ApiProperty() public readonly pode_adicionar_nota: boolean;
 
   public constructor(contexto: ContextoOperacional) {
     this.atendimento_id = contexto.atendimentoId;
@@ -27,11 +28,17 @@ export class ContextoOperacionalDto {
     this.versao_atribuicao = contexto.versaoAtribuicao;
     this.pode_resgatar = contexto.podeResgatar;
     this.pode_transferir = contexto.podeTransferir;
+    this.pode_adicionar_nota = contexto.podeAdicionarNota;
   }
 }
 
 export class OperacaoConfirmadaDto {
   @ApiProperty({ enum: ['CONFIRMADA'] }) public readonly situacao = 'CONFIRMADA';
+}
+
+export class EntradaNotaInternaDto {
+  @ApiProperty({ format: 'uuid' }) @IsUUID() public chave_idempotencia!: string;
+  @ApiProperty({ minLength: 1, maxLength: 4000 }) @IsString() @MinLength(1) @MaxLength(4000) public texto!: string;
 }
 
 export class EntradaTransferenciaAtendimentoDto extends EntradaResgateAtendimentoDto {

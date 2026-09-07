@@ -601,6 +601,7 @@ export function ComposerMobile({
       </View>
 
       <FolhaAcoesSistemaMobile
+        repositorio={repositorio}
         acessoOffline={acessoOffline}
         aoAbrirDetalhes={aoAbrirDetalhes}
         aoFechar={() => definirAcoesAbertas(false)}

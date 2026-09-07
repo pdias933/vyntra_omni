@@ -7,6 +7,8 @@ import { ModuloOperacaoAtendimentos } from '../dist/operacao-atendimentos/modulo
 import { ServicoOperacaoAtendimentos } from '../dist/operacao-atendimentos/servico-operacao-atendimentos.js';
 import { ServicoHistoricoAtribuicao } from '../dist/historico-atribuicao/servico-historico-atribuicao.js';
 import { ServicoPrisma } from '../dist/persistencia/servico-prisma.js';
+import { ServicoAutorizacao } from '../dist/autorizacao/servico-autorizacao.js';
+import { ServicoTimelineWeb } from '../dist/console-web/servico-timeline-web.js';
 
 if (process.env.AMBIENTE_APLICACAO !== 'staging' || process.env.DADOS_PERMITIDOS !== 'sinteticos_ou_sanitizados' || process.env.VYNTRA_ACEITE_RESGATE !== 'SOMENTE_DADOS_SINTETICOS') {
   throw new Error('ACEITE_POSTGRESQL_NAO_AUTORIZADO');
@@ -18,6 +20,7 @@ try {
   const cliente = await prisma.obterCliente();
   const servico = app.get(ServicoOperacaoAtendimentos);
   const historico = app.get(ServicoHistoricoAtribuicao);
+  const timeline = new ServicoTimelineWeb(prisma, app.get(ServicoAutorizacao));
   const ids = Object.fromEntries(['perfil', 'fila', 'contato', 'conversa', 'conta', 'atendimento', 'usuarioA', 'usuarioB'].map((chave) => [chave, randomUUID()]));
   const nome = `ACEITE_PR125_${ids.atendimento}`;
   const agora = new Date();
@@ -70,11 +73,22 @@ try {
   assert.ok(destinos.some((destino) => destino.usuarioId === destinatario.usuarioId && destino.filaId === ids.fila));
   await assert.rejects(executar((tx) => servico.transferir(remetente, ids.atendimento, randomUUID(), 1, ids.fila, destinatario.usuarioId, tx)), conflito);
   const chaveTransferencia = randomUUID();
+  etapa = 'NOTA_INTERNA';
+  const chaveNota = randomUUID();
+  const textoNota = 'Anotação sintética privada PR127 — não enviar ao cliente.';
+  await Promise.all([1, 2].map(() => executar((tx) => servico.adicionarNota(remetente, ids.atendimento, chaveNota, textoNota, tx))));
+  assert.equal(await cliente.notaInterna.count({ where: { atendimentoId: ids.atendimento } }), 1);
+  assert.equal(await cliente.eventoDominio.count({ where: { atendimentoId: ids.atendimento, tipo: 'NOTA_INTERNA_ADICIONADA' } }), 1);
+  assert.equal(await cliente.registroAuditoria.count({ where: { atendimentoId: ids.atendimento, tipoEvento: 'NOTA_INTERNA_ADICIONADA' } }), 1);
+  assert.equal(await cliente.mensagem.count({ where: { atendimentoId: ids.atendimento } }), 0);
+  await assert.rejects(executar((tx) => servico.adicionarNota(remetente, ids.atendimento, chaveNota, textoNota + ' diferente', tx)), (erro) => erro.getResponse?.().codigo === 'CHAVE_IDEMPOTENCIA_REUTILIZADA');
+  assert.ok((await timeline.obter(remetente, ids.atendimento)).itens.some((item) => item.tipo === 'NOTA_INTERNA' && item.texto === textoNota));
   etapa = 'TRANSFERENCIA_DIRETA';
   await Promise.all([1, 2].map(() => executar((tx) => servico.transferir(remetente, ids.atendimento, chaveTransferencia, 2, ids.fila, destinatario.usuarioId, tx))));
   assert.equal((await cliente.atendimento.findUniqueOrThrow({ where: { id: ids.atendimento } })).usuarioResponsavelId, destinatario.usuarioId);
   assert.equal(await cliente.eventoDominio.count({ where: { atendimentoId: ids.atendimento, tipo: 'ATENDIMENTO_TRANSFERIDO_PARA_USUARIO' } }), 1);
   assert.equal(await cliente.registroAuditoria.count({ where: { atendimentoId: ids.atendimento, tipoEvento: 'ATENDIMENTO_TRANSFERIDO_PARA_USUARIO' } }), 1);
+  assert.ok((await timeline.obter(destinatario, ids.atendimento)).itens.some((item) => item.tipo === 'NOTA_INTERNA' && item.texto === textoNota));
   await assert.rejects(executar((tx) => servico.transferir(remetente, ids.atendimento, chaveTransferencia, 3, ids.fila, destinatario.usuarioId, tx)), (erro) => erro.getResponse?.().codigo === 'CHAVE_IDEMPOTENCIA_REUTILIZADA');
   const filaDestino = randomUUID();
   etapa = 'TRANSFERENCIA_FILA';
@@ -88,6 +102,24 @@ try {
   await executar((tx) => servico.transferir(destinatario, ids.atendimento, chaveFila, 3, filaDestino, undefined, tx));
   await executar((tx) => servico.transferir(destinatario, ids.atendimento, chaveFila, 3, filaDestino, undefined, tx));
   const transferido = await cliente.atendimento.findUniqueOrThrow({ where: { id: ids.atendimento } });
+  etapa = 'PRIVACIDADE_NOTA_APOS_TRANSFERENCIA';
+  const perfilSemNotas = randomUUID();
+  const usuarioSemNotas = randomUUID();
+  await executar(async (tx) => {
+    await tx.perfilAcesso.create({ data: { id: perfilSemNotas, nome: 'Sem notas sintético PR127', nomeNormalizado: 'sem-notas-' + perfilSemNotas, papelBase: 'ATENDENTE' } });
+    await tx.permissaoPerfil.create({ data: { perfilId: perfilSemNotas, codigo: 'VISUALIZAR_NOTA_INTERNA', efeito: 'NEGAR' } });
+    await tx.usuario.create({ data: { id: usuarioSemNotas, perfilId: perfilSemNotas, nomeExibicao: 'Operador sem notas PR127' } });
+    await tx.acessoUsuarioFila.create({ data: { usuarioId: usuarioSemNotas, filaId: filaDestino } });
+    await tx.acessoUsuarioFila.create({ data: { usuarioId: usuarioSemNotas, filaId: ids.fila } });
+  });
+  const sessaoSemNotas = { ...remetente, usuarioId: usuarioSemNotas, sessaoId: randomUUID() };
+  const paginaSemNotas = await timeline.obter(sessaoSemNotas, ids.atendimento);
+  assert.equal(paginaSemNotas.itens.some((item) => item.tipo === 'NOTA_INTERNA'), false);
+  assert.equal(JSON.stringify(paginaSemNotas).includes(textoNota), false);
+  // Acesso só à nova fila também não libera a nota escrita na fila de origem.
+  await cliente.acessoUsuarioFila.update({ where: { usuarioId_filaId: { usuarioId: destinatario.usuarioId, filaId: ids.fila } }, data: { estado: 'REVOGADO', revogadoEm: new Date() } });
+  assert.equal((await timeline.obter(destinatario, ids.atendimento)).itens.some((item) => item.tipo === 'NOTA_INTERNA'), false);
+  console.log(JSON.stringify({ aceite: 'PR127_POSTGRESQL', aprovado: true, notaUnica: true, privacidade: true, semMensagemCanal: true, atendimentoId: ids.atendimento }));
   assert.equal(transferido.estado, 'AGUARDANDO');
   assert.equal(transferido.usuarioResponsavelId, null);
   assert.equal(transferido.versaoAtribuicao, 4);

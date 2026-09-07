@@ -1,5 +1,7 @@
 import {
   alterarContextoContatoMobile,
+  adicionarNotaInternaMobile,
+  type EntradaNotaInternaDto,
   listarDestinosTransferenciaMobile,
   transferirAtendimentoMobile,
   consultarDisponibilidadePropriaMobile,
@@ -101,6 +103,9 @@ function opcoesAutenticadas(credenciais: CredenciaisSincronizacaoAplicativo) {
 client.setConfig({ baseUrl: CONFIGURACAO_APLICATIVO.servidor });
 
 export class AdaptadorAtendimentosHttp {
+  public async adicionarNota(credenciais: CredenciaisSincronizacaoAplicativo, atendimentoId: string, entrada: EntradaNotaInternaDto) {
+    return exigirDado(await adicionarNotaInternaMobile({ ...opcoesAutenticadas(credenciais), path: { atendimentoId }, body: entrada }));
+  }
   public async destinosTransferencia(credenciais: CredenciaisSincronizacaoAplicativo, atendimentoId: string) {
     return exigirDado(await listarDestinosTransferenciaMobile({ ...opcoesAutenticadas(credenciais), path: { atendimentoId } }));
   }

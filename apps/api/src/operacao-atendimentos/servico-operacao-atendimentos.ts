@@ -16,6 +16,7 @@ import { ServicoDisponibilidade } from '../disponibilidade/servico-disponibilida
 import { ErroConflitoDisponibilidade } from '../disponibilidade/erros-disponibilidade.js';
 import type { EstadoDisponibilidadeUsuario } from '../disponibilidade/modelo-disponibilidade.js';
 import { ServicoEventoDominio } from '../eventos/servico-evento-dominio.js';
+import { ServicoNotasInternas } from '../notas-internas/servico-notas-internas.js';
 
 export interface DestinoTransferencia {
   readonly filaId: string;
@@ -33,6 +34,7 @@ export interface ContextoOperacional {
   readonly versaoAtribuicao: number;
   readonly podeResgatar: boolean;
   readonly podeTransferir: boolean;
+  readonly podeAdicionarNota: boolean;
 }
 
 @Injectable()
@@ -44,10 +46,22 @@ export class ServicoOperacaoAtendimentos {
     @Inject(ServicoIdempotencia) private readonly idempotencia: ServicoIdempotencia,
     @Inject(ServicoDisponibilidade) private readonly disponibilidade: ServicoDisponibilidade,
     @Inject(ServicoEventoDominio) private readonly eventos: ServicoEventoDominio,
+    @Inject(ServicoNotasInternas) private readonly notas: ServicoNotasInternas,
   ) {}
 
   public consultar(sessao: ContextoSessaoAutorizacao, atendimentoId: string): Promise<ContextoOperacional> {
     return this.prisma.executarTransacao((transacao) => this.contexto(sessao, atendimentoId, transacao));
+  }
+
+  public async adicionarNota(sessao: ContextoSessaoAutorizacao, atendimentoId: string, chave: string, texto: string, tx: TransacaoPrisma): Promise<void> {
+    await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${`autoridade-saida:${atendimentoId}`}, 0))`);
+    const atual = await this.contexto(sessao, atendimentoId, tx);
+    if (!atual.podeAdicionarNota) throw new ErroPermissaoNegada();
+    const rota = await tx.atendimento.findFirst({ where: { id: atendimentoId, filaAtualId: atual.filaId }, select: { conversaId: true } });
+    if (rota === null) throw new ErroPermissaoNegada();
+    await this.executarIdempotente(sessao, atendimentoId, chave, 'ADICIONAR_NOTA_INTERNA', [texto], tx, async () => {
+      await this.notas.adicionar(sessao, rota.conversaId, atendimentoId, atual.filaId, texto, tx);
+    });
   }
 
   public async resgatar(
@@ -213,7 +227,14 @@ export class ServicoOperacaoAtendimentos {
         podeTransferir = true;
       } catch (erro) { if (!(erro instanceof ErroPermissaoNegada)) throw erro; }
     }
-    return { atendimentoId, estado: atendimento.estado, filaId, responsavelId: atendimento.usuarioResponsavelId, podeTransferir,
+    let podeAdicionarNota = false;
+    if (['AGUARDANDO', 'EM_ATENDIMENTO'].includes(atendimento.estado)) {
+      try {
+        await this.autorizacao.autorizar({ sessao, filaId, permissao: 'ADICIONAR_NOTA_INTERNA', recurso: { id: atendimentoId, tipo: 'ATENDIMENTO' } }, async () => ({ acessivel: true, estadoPermiteAcao: true }), transacao);
+        podeAdicionarNota = true;
+      } catch (erro) { if (!(erro instanceof ErroPermissaoNegada)) throw erro; }
+    }
+    return { atendimentoId, estado: atendimento.estado, filaId, responsavelId: atendimento.usuarioResponsavelId, podeTransferir, podeAdicionarNota,
       responsavelNome: atendimento.usuarioResponsavel?.nomeExibicao ?? null, versaoAtribuicao: atendimento.versaoAtribuicao, podeResgatar };
   }
 }

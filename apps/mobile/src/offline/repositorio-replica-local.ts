@@ -383,6 +383,39 @@ export class RepositorioReplicaLocal {
     return linha?.texto ?? '';
   }
 
+  public async obterRascunhoNota(atendimentoId: string): Promise<{ texto: string; chave: string | null }> {
+    if (!UUID.test(atendimentoId)) throw new Error('RASCUNHO_NOTA_INVALIDO');
+    const banco = await this.abrir();
+    const linha = await banco.getFirstAsync<{ texto: string; chave: string | null }>(
+      `SELECT n.texto, n.chave FROM rascunho_nota n
+       JOIN atendimento a ON a.id = n.atendimento_id AND a.fila_id = n.fila_id
+       WHERE n.atendimento_id = ?
+       AND EXISTS (SELECT 1 FROM permissao WHERE codigo = 'ADICIONAR_NOTA_INTERNA')
+       AND EXISTS (SELECT 1 FROM estado_replica WHERE precisa_ressincronizar = 0)`, atendimentoId,
+    );
+    return linha ?? { texto: '', chave: null };
+  }
+
+  public async salvarRascunhoNota(atendimentoId: string, texto: string, chave: string | null = null): Promise<void> {
+    if (!UUID.test(atendimentoId) || texto.length > 4_000 || texto.includes('\u0000') || (chave !== null && !UUID.test(chave))) throw new Error('RASCUNHO_NOTA_INVALIDO');
+    const banco = await this.abrir();
+    if (texto.length === 0) {
+      await banco.runAsync('DELETE FROM rascunho_nota WHERE atendimento_id = ?', atendimentoId);
+      return;
+    }
+    // O rascunho não participa da fila de saída; a chave é só recibo para tentativa explícita.
+    const resultado = await banco.runAsync(
+      `INSERT INTO rascunho_nota (atendimento_id, conversa_id, fila_id, texto, chave, atualizado_em)
+       SELECT id, conversa_id, fila_id, ?, ?, ? FROM atendimento
+       WHERE id = ? AND EXISTS (SELECT 1 FROM permissao WHERE codigo = 'ADICIONAR_NOTA_INTERNA')
+       AND EXISTS (SELECT 1 FROM estado_replica WHERE precisa_ressincronizar = 0)
+       ON CONFLICT(atendimento_id) DO UPDATE SET texto = excluded.texto, chave = excluded.chave,
+       atualizado_em = excluded.atualizado_em WHERE rascunho_nota.fila_id = excluded.fila_id`,
+      texto, chave, new Date().toISOString(), atendimentoId,
+    );
+    if (resultado.changes !== 1) throw new Error('RASCUNHO_NOTA_FORA_ESCOPO');
+  }
+
   public async salvarRascunho(conversaId: string, texto: string): Promise<void> {
     if (!UUID.test(conversaId) || texto.length > 4_096 || texto.includes('\u0000')) {
       throw new Error('RASCUNHO_INVALIDO');
@@ -952,6 +985,13 @@ export class RepositorioReplicaLocal {
     transacao: SQLite.SQLiteDatabase,
     snapshot: SnapshotMobileValidado,
   ): Promise<void> {
+    if (!snapshot.permissoes.includes('ADICIONAR_NOTA_INTERNA')) await transacao.execAsync('DELETE FROM rascunho_nota;');
+    else await transacao.execAsync(`
+      DELETE FROM rascunho_nota WHERE NOT EXISTS (
+        SELECT 1 FROM atendimento a WHERE a.id = rascunho_nota.atendimento_id
+        AND a.fila_id = rascunho_nota.fila_id
+      );
+    `);
     if (snapshot.permissoes.includes('ENVIAR_MENSAGEM')) {
       await transacao.execAsync(`
         DELETE FROM pendencia_saida_texto
@@ -1006,6 +1046,7 @@ export class RepositorioReplicaLocal {
     const banco = await this.abrir();
     await banco.withExclusiveTransactionAsync(async (transacao) => {
       await transacao.execAsync(`
+        DELETE FROM rascunho_nota;
         DELETE FROM pendencia_saida_texto;
         DELETE FROM rascunho;
         DELETE FROM resumo_atendimento;
@@ -1064,7 +1105,7 @@ export class RepositorioReplicaLocal {
       'PRAGMA user_version',
     );
     let atual = versao?.user_version;
-    if (atual !== 0 && atual !== 1 && atual !== 2 && atual !== 3 && atual !== 4) {
+    if (atual !== 0 && atual !== 1 && atual !== 2 && atual !== 3 && atual !== 4 && atual !== 5) {
       throw new Error('VERSAO_REPLICA_LOCAL_INCOMPATIVEL');
     }
     if (atual === 0) {
@@ -1276,6 +1317,22 @@ export class RepositorioReplicaLocal {
             NOT NULL DEFAULT '[]';
           UPDATE estado_replica SET precisa_ressincronizar = 1;
           PRAGMA user_version = 4;
+        `);
+      });
+      atual = 4;
+    }
+    if (atual === 4) {
+      await banco.withExclusiveTransactionAsync(async (transacao) => {
+        await transacao.execAsync(`
+          CREATE TABLE rascunho_nota (
+            atendimento_id TEXT PRIMARY KEY,
+            conversa_id TEXT NOT NULL,
+            fila_id TEXT NOT NULL,
+            texto TEXT NOT NULL CHECK (length(texto) BETWEEN 1 AND 4000),
+            chave TEXT,
+            atualizado_em TEXT NOT NULL
+          );
+          PRAGMA user_version = 5;
         `);
       });
     }
