@@ -93,9 +93,14 @@ export class ServicoOperacaoAtendimentos {
     return this.prisma.executarTransacao(async (tx) => {
       const atual = await this.contexto(sessao, atendimentoId, tx);
       if (!atual.podeTransferir) throw new ErroPermissaoNegada();
+      const autoridade = await this.autorizacao.autorizar({ sessao, filaId: atual.filaId, permissao: 'TRANSFERIR_ATENDIMENTO', recurso: { id: atendimentoId, tipo: 'ATENDIMENTO' } }, async () => ({ acessivel: true, estadoPermiteAcao: true }), tx);
       const resultado: DestinoTransferencia[] = [];
       // IDs de roteamento primeiro; nomes apenas depois da autorização.
-      const filas = await tx.fila.findMany({ where: { estado: 'ATIVA' }, select: { id: true }, orderBy: { id: 'asc' }, take: 100 });
+      const filas = await tx.fila.findMany({
+        where: { estado: 'ATIVA', ...(autoridade.papelBase === 'ADMINISTRADOR' ? {} : { acessosUsuarios: { some: { usuarioId: sessao.usuarioId, estado: 'ATIVO' } } }) },
+        select: { id: true }, orderBy: { id: 'asc' }, take: 101,
+      });
+      if (filas.length > 100) throw new ExcecaoHttpCanonica(409, 'LIMITE_DESTINOS_TRANSFERENCIA', 'Há muitos destinos. É necessário restringir as filas antes de transferir.');
       for (const fila of filas) {
         try {
           await this.autorizacao.autorizar({ sessao, filaId: fila.id, permissao: 'TRANSFERIR_ATENDIMENTO', recurso: { id: fila.id, tipo: 'FILA' } }, async () => ({ acessivel: true, estadoPermiteAcao: true }), tx);
@@ -105,8 +110,9 @@ export class ServicoOperacaoAtendimentos {
         const usuarios = await tx.usuario.findMany({
           where: { estado: 'ATIVO', disponibilidade: { estado: 'DISPONIVEL' },
             OR: [{ acessosFila: { some: { filaId: fila.id, estado: 'ATIVO' } } }, { perfil: { papelBase: 'ADMINISTRADOR', estado: 'ATIVO' } }] },
-          select: { id: true }, orderBy: { id: 'asc' }, take: 100,
+          select: { id: true }, orderBy: { id: 'asc' }, take: 101,
         });
+        if (usuarios.length > 100) throw new ExcecaoHttpCanonica(409, 'LIMITE_DESTINOS_TRANSFERENCIA', 'Há muitos destinatários. É necessário restringir a seleção antes de transferir.');
         for (const usuario of usuarios) {
           if (fila.id === atual.filaId && usuario.id === atual.responsavelId) continue;
           try { await this.autorizacao.autorizarUsuario({ usuarioId: usuario.id, filaId: fila.id, permissao: 'RECEBER_TRANSFERENCIA' }, tx); }

@@ -835,9 +835,9 @@ Lote autorizado em 6 de setembro de 2026. Somente dados sintéticos, sem ativar 
 | 125 | Contexto operacional e resgate web/mobile | `xhigh` | Em andamento; branch publicada | SDK e clientes ligados; aceite HTTP integrado pendente | Tipos, lint, suíte, disputa PostgreSQL e regressão visual Chromium/WebKit aprovados; aceite funcional UI pendente | Pendente, cumulativo na 128 | Pendente iPhone/Android |
 | 126 | Disponibilidade própria e transferência | `xhigh` | Implementada; aceite integrado pendente | SDK e ambos os clientes ligados | Tipos, lint, suíte e PostgreSQL aprovados; UI/HTTP pendente | Pendente, cumulativo na 128 | Pendente iPhone/Android |
 | 127 | Notas internas e rascunho SQLCipher | `high` | Implementada; aceite integrado pendente | SDK, editores e migração local ligados | Tipos, lint, suíte, SQLite e privacidade PostgreSQL aprovados; UI/HTTP pendente | Pendente, cumulativo na 128 | Pendente iPhone/Android |
-| 128 | Aceite integrado, build nativa e publicação | `xhigh` | Pendente | Pendente | Pendente | Pendente; preservar release anterior | Pendente iPhone/Android |
+| 128 | Aceite integrado, build nativa e publicação | `xhigh` | Em andamento | HTTP real aprovado; UI publicada em preparação | PostgreSQL, HTTP, SQLite, UI com fixtures e visual aprovados | Pendente; preservar release anterior | Pendente iPhone/Android; CocoaPods bloqueia build iOS |
 
-Evidências incrementais: [PR125](docs/operacoes/PR-125.md), [PR126](docs/operacoes/PR-126.md), [PR127](docs/operacoes/PR-127.md). Nenhuma PR deste lote está declarada concluída.
+Evidências incrementais: [PR125](docs/operacoes/PR-125.md), [PR126](docs/operacoes/PR-126.md), [PR127](docs/operacoes/PR-127.md), [PR128](docs/operacoes/PR-128.md). Nenhuma PR deste lote está declarada concluída.
 
 ### PR124A — ajuste visual e responsividade
 
