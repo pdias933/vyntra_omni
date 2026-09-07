@@ -10,7 +10,7 @@ Data: 7 de setembro de 2026. Estado: EM ANDAMENTO. Effort: `xhigh`.
 | iOS | `xcodebuild` Debug para aparelho: `BUILD SUCCEEDED`; assinatura Apple Development da equipe UP100 existente verificada. |
 | Instalação iPhone | Instalação e lançamento por `devicectl` aprovados; usuário confirmou abertura do login. |
 | Pareamento iPhone | Duas conclusões HTTP 200 após confirmação web; app falhou na preparação da réplica local. Correção implementada, repetição física pendente. |
-| Instalação Android | Samsung detectado no USB; ainda não aparece no ADB. Depuração/autorização no aparelho pendente. |
+| Instalação Android | Samsung SM-S948B, Android 16/API 36: depuração autorizada pelo usuário, `adb install -r` com `Success`, atividade iniciada com `Status: ok` e processo ativo. Aparelho bloqueado na captura; login visual ainda não confirmado. |
 | Lote operacional físico | Resgate → nota → transferência entre operadores, rede/revogação, SQLCipher/cofre e acessibilidade ainda pendentes. |
 | Servidor | Nenhum novo deploy. Staging permanece `pr-128a-df35243`, com releases anteriores preservadas. Nenhuma promoção a produção ou ativação Meta/MK/piloto. |
 
@@ -52,6 +52,8 @@ node scripts/executar-expo.mjs start --dev-client --lan --port 8081
 
 O Metro foi reiniciado com limpeza de cache depois da correção SQLCipher. Reabrir/recarregar o app baixa o código corrigido; os binários Debug abaixo não contêm esse código embarcado.
 
+No Samsung autorizado foi configurado `adb reverse tcp:8081 tcp:8081` para o Metro pelo USB, e a atividade recebeu o endereço `vyntraomni://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081`. O vínculo USB desta execução depende do cabo e do Mac. Nenhuma credencial foi preenchida nem bloqueio do aparelho contornado.
+
 ## Artefatos locais
 
 - Android: `apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk`, aproximadamente 262 MiB. SHA-256 `ef1c25c26f9f948d055fc0761d050e7ea990d6c62b52c4ac0669676a80b54781`.
@@ -83,4 +85,6 @@ node --test tests/abertura-replica-mobile.test.mjs tests/rascunho-nota-mobile.te
 
 Banco novo, persistência/reabertura, arquivo cifrado, chave errada e adulteração de byte foram aprovados. O teste no Mac não substitui iOS/Android físicos. Portões `pnpm test` (484 API por cache + 371 raiz), tipos, lint, contratos e `pnpm build` com exportações das duas plataformas passaram após a correção.
 
-Próximos passos: confirmar novo pareamento no iPhone com o código recarregado; habilitar/autorizar depuração do Samsung, instalar e testar; depois executar o lote operacional sintético em ambos. Não marcar PR125–128 ou aceite físico de aparência como concluídos apenas por abrir login. Vínculo de cliente e encerramento continuam fora deste lote.
+Uma tentativa posterior na web falhou por autenticação não recente: confirmação 401 com QR ainda válido, sessão ativa autenticada cerca de 18 minutos antes. A confirmação exige login de menos de 10 minutos. A mensagem genérica da web não distingue esse caso; sair/entrar novamente e gerar outro QR é o procedimento atual. Nenhum limite foi relaxado.
+
+Próximos passos: confirmar novo pareamento no iPhone com o código recarregado e login web recente; desbloquear o Samsung e confirmar login/pareamento; depois executar o lote operacional sintético em ambos. Não marcar PR125–128 ou aceite físico de aparência como concluídos apenas por abrir login. Vínculo de cliente e encerramento continuam fora deste lote.
