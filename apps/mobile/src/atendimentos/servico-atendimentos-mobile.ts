@@ -14,16 +14,46 @@ export class ServicoAtendimentosMobile {
   }
   private sessaoTentativas?: string;
   private readonly tentativasTransferencia = new Map<string, EntradaTransferenciaAtendimentoDto>();
-  public observarMudancas(observar: () => void) { return this.autenticacao.replica.observarMudancas(observar); }
+  private readonly tentativasResgate = new Map<string, EntradaResgateAtendimentoDto>();
+  private readonly observadores = new Set<() => void>();
+  public observarMudancas(observar: () => void) {
+    this.observadores.add(observar);
+    const remover = this.autenticacao.replica.observarMudancas(observar);
+    return () => { remover(); this.observadores.delete(observar); };
+  }
+  private avisarTentativas() { for (const observar of this.observadores) observar(); }
   public async obterTentativaTransferencia(atendimentoId: string) {
     const { credencial } = await this.autenticacao.obterCredenciaisSincronizacao();
     if (this.sessaoTentativas !== credencial.sessaoId) {
       this.tentativasTransferencia.clear();
+      this.tentativasResgate.clear();
       this.sessaoTentativas = credencial.sessaoId;
     }
     return this.tentativasTransferencia.get(atendimentoId);
   }
   public limparTentativaTransferencia(atendimentoId: string) { this.tentativasTransferencia.delete(atendimentoId); }
+  public async obterTentativaResgate(atendimentoId: string) {
+    await this.obterTentativaTransferencia(atendimentoId);
+    return this.tentativasResgate.get(atendimentoId);
+  }
+  public async listarTentativasOperacionais() {
+    await this.obterTentativaTransferencia('');
+    return [
+      ...[...this.tentativasTransferencia.keys()].map((atendimentoId) => ({ atendimentoId, tipo: 'TRANSFERENCIA' as const })),
+      ...[...this.tentativasResgate.keys()].map((atendimentoId) => ({ atendimentoId, tipo: 'RESGATE' as const })),
+    ];
+  }
+  public async repetirTentativaOperacional(atendimentoId: string, tipo: 'RESGATE' | 'TRANSFERENCIA') {
+    await this.obterTentativaTransferencia(atendimentoId);
+    if (tipo === 'RESGATE') {
+      const entrada = this.tentativasResgate.get(atendimentoId);
+      if (entrada === undefined) throw new Error('TENTATIVA_INDISPONIVEL');
+      return this.resgatar(atendimentoId, entrada);
+    }
+    const entrada = this.tentativasTransferencia.get(atendimentoId);
+    if (entrada === undefined) throw new Error('TENTATIVA_INDISPONIVEL');
+    return this.transferir(atendimentoId, entrada);
+  }
   public destinosTransferencia(atendimentoId: string) {
     return this.executar((credenciais) => this.adaptador.destinosTransferencia(credenciais, atendimentoId));
   }
@@ -38,7 +68,7 @@ export class ServicoAtendimentosMobile {
     } catch (erro) {
       if (erro instanceof ErroAtendimentoMobile && [401, 403, 409].includes(erro.statusHttp ?? 0)) this.limparTentativaTransferencia(atendimentoId);
       throw erro;
-    }
+    } finally { this.avisarTentativas(); }
   }
   public consultarDisponibilidade() {
     return this.executar((credenciais) => this.adaptador.consultarDisponibilidade(credenciais));
@@ -50,8 +80,18 @@ export class ServicoAtendimentosMobile {
     return this.executar((credenciais) => this.adaptador.consultarOperacao(credenciais, atendimentoId));
   }
 
-  public resgatar(atendimentoId: string, entrada: EntradaResgateAtendimentoDto) {
-    return this.executar((credenciais) => this.adaptador.resgatar(credenciais, atendimentoId, entrada));
+  public async resgatar(atendimentoId: string, entrada: EntradaResgateAtendimentoDto) {
+    const anterior = await this.obterTentativaResgate(atendimentoId);
+    if (anterior !== undefined && JSON.stringify(anterior) !== JSON.stringify(entrada)) throw new Error('TENTATIVA_RESGATE_PENDENTE');
+    this.tentativasResgate.set(atendimentoId, entrada);
+    try {
+      const resultado = await this.executar((credenciais) => this.adaptador.resgatar(credenciais, atendimentoId, entrada));
+      if (resultado.situacao === 'CONFIRMADA') this.tentativasResgate.delete(atendimentoId);
+      return resultado;
+    } catch (erro) {
+      if (erro instanceof ErroAtendimentoMobile && [400, 401, 403, 409].includes(erro.statusHttp ?? 0)) this.tentativasResgate.delete(atendimentoId);
+      throw erro;
+    } finally { this.avisarTentativas(); }
   }
   public constructor(
     private readonly autenticacao: ServicoAutenticacaoAplicativo,

@@ -123,7 +123,7 @@ export function ShellWeb() {
     const eventos = new EventSource('/api/v1/sincronizacao/eventos', {
       withCredentials: true,
     });
-    eventos.onmessage = (evento) => {
+    const aoReceberEvento = (evento: MessageEvent<string>) => {
       try {
         const dados: unknown = JSON.parse(evento.data as string);
         if (
@@ -139,7 +139,11 @@ export function ShellWeb() {
         // Evento inválido é descartado; a recuperação ocorre pelo cursor do SSE.
       }
     };
-    return () => eventos.close();
+    eventos.addEventListener('evento', aoReceberEvento);
+    return () => {
+      eventos.removeEventListener('evento', aoReceberEvento);
+      eventos.close();
+    };
   }, [autenticar, estado]);
 
   useEffect(() => {

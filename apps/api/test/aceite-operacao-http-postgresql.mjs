@@ -84,6 +84,7 @@ try {
   assert.equal((await requisitar('mobile', a, rota + '/notas-internas', nota)).corpo.situacao, 'CONFIRMADA');
   assert.equal((await requisitar('mobile', a, rota + '/notas-internas', nota)).corpo.situacao, 'CONFIRMADA');
   assert.equal((await requisitar('web', a, rota + '/notas-internas', { chave_idempotencia: randomUUID(), texto: 'a'.repeat(4001) })).status, 400);
+  assert.equal((await requisitar('web', a, rota + '/notas-internas', { chave_idempotencia: randomUUID(), texto: '   ' })).status, 400);
   etapa = 'TRANSFERENCIA_HTTP';
   assert.equal((await requisitar('mobile', b, '/perfil/disponibilidade', { chave_idempotencia: randomUUID(), estado: 'DISPONIVEL', versao_esperada: 0 })).corpo.situacao, 'CONFIRMADA');
   const destinos = await requisitar('web', a, rota + '/destinos-transferencia');

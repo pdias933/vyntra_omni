@@ -30,8 +30,8 @@ export function ResgateAtendimentoMobile({ atendimentoId, acessoOffline, reposit
       const atual = ++revisao;
       if (acessoOffline) { definirContexto(undefined); return; }
       try {
-        const resultado = await servico.consultarOperacao(atendimentoId);
-        if (ativo && atual === revisao) definirContexto(resultado);
+        const [resultado, pendente] = await Promise.all([servico.consultarOperacao(atendimentoId), servico.obterTentativaResgate(atendimentoId)]);
+        if (ativo && atual === revisao) { definirContexto(resultado); tentativa.current = pendente; definirRepeticao(pendente !== undefined); }
       } catch {
         if (ativo && atual === revisao) definirContexto(undefined);
       }
@@ -53,8 +53,8 @@ export function ResgateAtendimentoMobile({ atendimentoId, acessoOffline, reposit
       tentativa.current = undefined;
       definirRepeticao(false);
       definirAviso('Atendimento resgatado.');
-      definirContexto(await servico.consultarOperacao(atendimentoId));
-      await aoConfirmar();
+      try { definirContexto(await servico.consultarOperacao(atendimentoId)); await aoConfirmar(); }
+      catch { definirContexto(undefined); }
     } catch (erro) {
       if (erro instanceof ErroAtendimentoMobile && erro.statusHttp === 409) {
         tentativa.current = undefined;

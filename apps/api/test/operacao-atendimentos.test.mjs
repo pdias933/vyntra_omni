@@ -21,7 +21,7 @@ function cenario() {
     atendimento: {
       findUnique: async () => ({ filaAtualId: filaId }),
       count: async () => 1,
-      findFirst: async () => ({ conversaId, estado: efeito ? 'EM_ATENDIMENTO' : 'AGUARDANDO', usuarioResponsavelId: efeito ? sessao.usuarioId : null, versaoAtribuicao: efeito + 1, usuarioResponsavel: efeito ? { nomeExibicao: 'Operador sintético' } : null }),
+      findFirst: async () => ({ conversaId, modo: 'FILA_HUMANA', estado: efeito ? 'EM_ATENDIMENTO' : 'AGUARDANDO', usuarioResponsavelId: efeito ? sessao.usuarioId : null, versaoAtribuicao: efeito + 1, usuarioResponsavel: efeito ? { nomeExibicao: 'Operador sintético' } : null }),
     },
   };
   const autorizacao = { autorizar: async (entrada, verificar, tx) => {

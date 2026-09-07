@@ -54,7 +54,10 @@ export function TransferenciaAtendimentoWeb({ atendimentoId, visivel, aoFechar, 
         window.dispatchEvent(new Event('vyntra:evento'));
       } else definirAviso('Sem confirmação. Tente novamente com a mesma seleção.');
     } catch { definirAviso('Sem confirmação. Tente novamente com a mesma seleção.'); }
-    finally { definirOcupado(false); emVoo.current = false; }
+    finally {
+      definirOcupado(false); emVoo.current = false;
+      window.dispatchEvent(new Event('vyntra:transferencia-sem-confirmacao'));
+    }
   }
   if (!visivel) return null;
   return <aside className="painel-conversa" aria-label="Transferir atendimento">

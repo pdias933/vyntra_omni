@@ -18,6 +18,8 @@ test('shell reage à invalidação de permissões pelo SSE e possui rotas deskto
   const shell = await ler('apps/web/src/web/ShellWeb.tsx');
   assert.match(shell, /new EventSource\('\/api\/v1\/sincronizacao\/eventos'/);
   assert.match(shell, /PERMISSOES_ALTERADAS/);
+  assert.match(shell, /addEventListener\('evento', aoReceberEvento\)/);
+  assert.match(shell, /removeEventListener\('evento', aoReceberEvento\)/);
   assert.match(shell, /window\.history\.pushState/);
   assert.match(shell, /\/administracao\/usuarios/);
   assert.match(shell, /\/administracao\/operacao/);

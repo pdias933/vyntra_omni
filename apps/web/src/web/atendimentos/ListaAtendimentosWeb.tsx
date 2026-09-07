@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import { CabecalhoPagina } from '../ShellWeb';
 import { ConversaWeb } from './ConversaWeb';
 import type { RascunhoNotaWeb } from './NotaInternaWeb';
+import { TransferenciasSemConfirmacaoWeb } from './TransferenciasSemConfirmacaoWeb';
 
 type Filtro =
   | 'EM_AUTOMACAO'
@@ -119,6 +120,7 @@ export function ListaAtendimentosWeb() {
           ))}
         </div>
 
+        <TransferenciasSemConfirmacaoWeb tentativas={tentativasTransferencia} />
         <div className="lista-atendimentos__corpo" aria-live="polite">
           {estado === 'CARREGANDO' && <SkeletonLista />}
           {estado === 'ERRO' && (

@@ -29,7 +29,8 @@ export function DisponibilidadePropriaWeb() {
       const resposta = await definirDisponibilidadePropriaWeb({ body: entrada, headers: { 'x-csrf-token': obterCsrf() } });
       if (resposta.data?.situacao === 'CONFIRMADA') {
         definirPendente(undefined); definirAviso('Disponibilidade confirmada.');
-        definirAtual((await consultarDisponibilidadePropriaWeb()).data);
+        try { definirAtual((await consultarDisponibilidadePropriaWeb()).data); }
+        catch { definirAtual(undefined); }
       } else if (resposta.response?.status === 409) {
         definirPendente(undefined); definirAviso('A disponibilidade mudou. Confira antes de alterar.');
         definirAtual((await consultarDisponibilidadePropriaWeb()).data);

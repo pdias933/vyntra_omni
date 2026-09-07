@@ -28,6 +28,7 @@ import { TelaListaAtendimentos } from '../telas/TelaListaAtendimentos';
 import { TelaNotificacoesMobile } from '../telas/TelaNotificacoesMobile';
 import { TelaConversaMobile } from '../telas/TelaConversaMobile';
 import { DisponibilidadePropriaMobile } from '../componentes/DisponibilidadePropriaMobile';
+import { TentativasOperacionaisMobile } from '../componentes/TentativasOperacionaisMobile';
 import { TelaDetalhesContatoMobile } from '../telas/TelaDetalhesContatoMobile';
 import { TelaDiagnosticoMobile } from '../telas/TelaDiagnosticoMobile';
 import { ESPACOS, RAIOS } from '../tema';
@@ -191,6 +192,7 @@ function Perfil({
       </View>
       <ScrollView contentContainerStyle={estilos.perfilConteudo}>
         <DisponibilidadePropriaMobile servico={servicoAtendimentos} conectado={conectado} />
+        <TentativasOperacionaisMobile servico={servicoAtendimentos} conectado={conectado} />
         <SeletorAparencia />
         {sessao.dispositivoSubstituido && (
           <View accessibilityLiveRegion="polite" style={estilos.avisoSubstituicao}>

@@ -17,7 +17,7 @@ try {
     const u = new URL(route.request().url()), path = u.pathname;
     const resposta = (dados, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(dados) });
     if (path.endsWith('/autenticacao/web/sessao')) return resposta({ sessao_id: randomUUID(), usuario_id: operador, nome_exibicao: 'Operador sintético', expira_em: '2099-01-01' });
-    if (path.endsWith('/sincronizacao/eventos')) return route.fulfill({ status: 200, contentType: 'text/event-stream', body: ': conectado\n\n' });
+    if (path.endsWith('/sincronizacao/eventos')) return route.fulfill({ status: 200, contentType: 'text/event-stream', body: 'event: evento\nid: 1\ndata: {"tipo":"ATENDIMENTO_RESGATADO","sequenciaEvento":"1"}\n\n' });
     if (path.endsWith('/web/atendimentos')) return resposta({ itens: (u.searchParams.get('filtro') === 'MEUS' && responsavel !== operador) ? [] : [{ ...item, estado: responsavel ? 'EM_ATENDIMENTO' : 'AGUARDANDO' }] });
     if (path.endsWith('/operacao')) return resposta({ atendimento_id: id, estado: responsavel ? 'EM_ATENDIMENTO' : 'AGUARDANDO', fila_id: fila, responsavel_id: responsavel, responsavel_nome: responsavel === null ? null : 'Operador sintético', versao_atribuicao: versao, pode_resgatar: responsavel === null, pode_transferir: true, pode_adicionar_nota: true });
     if (path.endsWith('/resgatar')) { responsavel = operador; versao = 2; return resposta({ situacao: 'CONFIRMADA' }); }
@@ -39,12 +39,18 @@ try {
     return resposta({ codigo: 'INDISPONIVEL_TESTE' }, 503);
   });
   const pagina = await contexto.newPage(), erros = [];
+  await pagina.addInitScript(() => {
+    window.eventosOperacionaisRecebidos = 0;
+    window.addEventListener('vyntra:evento', () => { window.eventosOperacionaisRecebidos += 1; });
+  });
   async function abrirAcoes() {
     await pagina.getByLabel('Mais ações da conversa', { exact: true }).click();
     await pagina.locator('.menu-conversa').getByRole('button', { name: 'Ações do sistema', exact: true }).click();
   }
   pagina.on('pageerror', (erro) => erros.push(erro.message));
   await pagina.goto(endereco.origin);
+  // Usa EventSource do navegador e o formato nomeado publicado pelo servidor.
+  await pagina.waitForFunction(() => window.eventosOperacionaisRecebidos > 0);
   await pagina.getByRole('tab', { name: 'Pendentes', exact: true }).click();
   await pagina.locator('.cartao-atendimento').click();
   await pagina.getByRole('button', { name: 'Resgatar atendimento', exact: true }).click();
@@ -70,11 +76,9 @@ try {
   await pagina.getByRole('button', { name: 'Confirmar transferência' }).click();
   await pagina.getByText('Sem confirmação. Tente novamente com a mesma seleção.').waitFor();
   await pagina.evaluate(() => window.dispatchEvent(new Event('vyntra:evento')));
-  await pagina.getByRole('tab', { name: 'Não lidos', exact: true }).click();
-  await pagina.locator('.cartao-atendimento').click();
-  await abrirAcoes();
-  await pagina.getByRole('button', { name: 'Transferir atendimento', exact: true }).click();
-  await pagina.getByRole('button', { name: 'Tentar transferência novamente' }).click();
+  await pagina.locator('.cartao-atendimento').waitFor({ state: 'hidden' });
+  await pagina.getByRole('button', { name: 'Verificar transferência pendente', exact: true }).click();
+  await pagina.getByText('Transferência confirmada.', { exact: true }).waitFor();
   await pagina.getByRole('complementary', { name: 'Transferir atendimento' }).waitFor({ state: 'hidden' });
   assert.equal(chavesTransferencia.length, 2); assert.equal(chavesTransferencia[0], chavesTransferencia[1]);
   assert.deepEqual(erros, []);

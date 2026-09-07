@@ -17,6 +17,7 @@ import { ErroConflitoDisponibilidade } from '../disponibilidade/erros-disponibil
 import type { EstadoDisponibilidadeUsuario } from '../disponibilidade/modelo-disponibilidade.js';
 import { ServicoEventoDominio } from '../eventos/servico-evento-dominio.js';
 import { ServicoNotasInternas } from '../notas-internas/servico-notas-internas.js';
+import { ErroNotaInternaInvalida } from '../notas-internas/erros-nota-interna.js';
 
 export interface DestinoTransferencia {
   readonly filaId: string;
@@ -60,7 +61,11 @@ export class ServicoOperacaoAtendimentos {
     const rota = await tx.atendimento.findFirst({ where: { id: atendimentoId, filaAtualId: atual.filaId }, select: { conversaId: true } });
     if (rota === null) throw new ErroPermissaoNegada();
     await this.executarIdempotente(sessao, atendimentoId, chave, 'ADICIONAR_NOTA_INTERNA', [texto], tx, async () => {
-      await this.notas.adicionar(sessao, rota.conversaId, atendimentoId, atual.filaId, texto, tx);
+      try { await this.notas.adicionar(sessao, rota.conversaId, atendimentoId, atual.filaId, texto, tx); }
+      catch (erro) {
+        if (erro instanceof ErroNotaInternaInvalida) throw new ExcecaoHttpCanonica(400, 'NOTA_INTERNA_INVALIDA', 'Informe uma nota válida com até 4.000 caracteres.');
+        throw erro;
+      }
     });
   }
 
@@ -213,12 +218,12 @@ export class ServicoOperacaoAtendimentos {
       estadoPermiteAcao: true,
     }), transacao);
     const atendimento = await transacao.atendimento.findFirst({ where: { id: atendimentoId, filaAtualId: filaId }, select: {
-      estado: true, usuarioResponsavelId: true, versaoAtribuicao: true,
+      estado: true, modo: true, usuarioResponsavelId: true, versaoAtribuicao: true,
       usuarioResponsavel: { select: { nomeExibicao: true } },
     } });
     if (atendimento === null) throw new ErroPermissaoNegada();
     let podeResgatar = false;
-    if (atendimento.estado === 'AGUARDANDO' && atendimento.usuarioResponsavelId === null) {
+    if (atendimento.estado === 'AGUARDANDO' && atendimento.modo === 'FILA_HUMANA' && atendimento.usuarioResponsavelId === null) {
       try {
         await this.autorizacao.autorizar({ filaId, permissao: 'RESGATAR_ATENDIMENTO', recurso: { id: atendimentoId, tipo: 'ATENDIMENTO' }, sessao }, async () => ({ acessivel: true, estadoPermiteAcao: true }), transacao);
         podeResgatar = true;
