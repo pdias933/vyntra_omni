@@ -700,6 +700,8 @@ Monitorar apenas códigos agregados de autenticação e pareamento. Falha de bio
 
 O procedimento detalhado, os estados locais, a custódia da sessão e as evidências de staging ficam em [docs/operacoes/PR-097.md](docs/operacoes/PR-097.md).
 
+Builds locais iOS/Android de 7 de setembro e diagnóstico do primeiro pareamento físico: [PR128 — builds](docs/operacoes/PR-128-BUILDS.md). As builds Debug dependem do Metro; instalação USB não significa distribuição autônoma. Não tratar erro local posterior a HTTP 200 no pareamento como credencial inválida nem repetir automaticamente a conclusão de uso único.
+
 ## 36. Operação da política de versão mobile da PR 098
 
 Não há migration, imagem de servidor ou binário de loja publicado por esta PR. A build mobile deve declarar `EXPO_PUBLIC_VERSAO_APLICATIVO` igual à versão distribuída. Antes de elevar a mínima, cadastrar mensagem curta e URL HTTPS no host oficial da loja da plataforma, revisar a prévia e confirmar com a revisão esperada. Fazer rollout da nova build e observar adoção antes de bloquear versões antigas, salvo correção crítica de segurança.

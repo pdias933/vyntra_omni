@@ -797,6 +797,7 @@ A caracterização somente de leitura da PR 117 não satisfaz o portão de produ
 ## 31. Réplica e autorização offline da PR 099
 
 - o banco local usa SQLCipher e chave aleatória de 256 bits custodiada no SecureStore com acesso restrito ao aparelho; a chave não entra no SQLite, configuração pública, log ou telemetria;
+- a abertura exige versão SQLCipher 4 reconhecida, HMAC ativo, zero erros em `cipher_integrity_check` e resultado estrutural único `ok` em `integrity_check`; SQLite comum com pragmas ignorados não é aceito. Qualquer falha fecha a conexão sem fallback ou descarte automático;
 - a API assina somente snapshots completos autenticados por sessão mobile; cookie web nunca recebe autorização offline;
 - Ed25519 usa chave privada exclusiva por ambiente montada como segredo e chave pública allowlisted na build; identificador desconhecido falha fechado;
 - o envelope assinado possui versão e campos fechados, vinculando sessão, usuário, dispositivo, hash da instalação, sequência base, versão de permissões, filas, escopos, emissão e validade;

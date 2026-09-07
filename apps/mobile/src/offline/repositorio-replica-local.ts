@@ -1086,18 +1086,45 @@ export class RepositorioReplicaLocal {
       throw new Error('CHAVE_REPLICA_LOCAL_INVALIDA');
     }
     const banco = await SQLite.openDatabaseAsync(NOME_BANCO);
-    await banco.execAsync(`PRAGMA key = "x'${chave}'"`);
-    await banco.execAsync('PRAGMA cipher_memory_security = ON');
-    const integridade = await banco.getFirstAsync<Record<string, string>>(
-      'PRAGMA cipher_integrity_check',
-    );
-    if (integridade === null || !Object.values(integridade).includes('ok')) {
+    try {
+      await banco.execAsync(`PRAGMA key = "x'${chave}'"`);
+      // SQLite comum ignora pragmas desconhecidos. Ausência de erros, sozinha,
+      // não comprova que a build possui cifra e autenticação de páginas.
+      const versaoCifra = await banco.getFirstAsync<{ cipher_version: string }>(
+        'PRAGMA cipher_version',
+      );
+      const autenticacaoPaginas = await banco.getFirstAsync<{ cipher_use_hmac: string }>(
+        'PRAGMA cipher_use_hmac',
+      );
+      if (
+        typeof versaoCifra?.cipher_version !== 'string' ||
+        !/^4\.[0-9]+\.[0-9]+(?:\s|$)/u.test(versaoCifra.cipher_version) ||
+        autenticacaoPaginas?.cipher_use_hmac !== '1'
+      ) {
+        throw new Error('PROTECAO_REPLICA_LOCAL_INDISPONIVEL');
+      }
+      await banco.execAsync('PRAGMA cipher_memory_security = ON');
+      // SQLCipher retorna uma linha por erro, e nenhuma quando íntegro.
+      // O "ok" pertence ao integrity_check estrutural do SQLite.
+      const errosCifra = await banco.getAllAsync<Record<string, string>>(
+        'PRAGMA cipher_integrity_check',
+      );
+      if (errosCifra.length !== 0) {
+        throw new Error('INTEGRIDADE_REPLICA_LOCAL_INVALIDA');
+      }
+      const integridade = await banco.getAllAsync<{ integrity_check: string }>(
+        'PRAGMA integrity_check',
+      );
+      if (integridade.length !== 1 || integridade[0]?.integrity_check !== 'ok') {
+        throw new Error('INTEGRIDADE_REPLICA_LOCAL_INVALIDA');
+      }
+      await banco.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
+      await this.migrar(banco);
+      return banco;
+    } catch (erro) {
       await banco.closeAsync();
-      throw new Error('INTEGRIDADE_REPLICA_LOCAL_INVALIDA');
+      throw erro;
     }
-    await banco.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
-    await this.migrar(banco);
-    return banco;
   }
 
   private async migrar(banco: SQLite.SQLiteDatabase): Promise<void> {
