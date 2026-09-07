@@ -88,3 +88,13 @@ Banco novo, persistência/reabertura, arquivo cifrado, chave errada e adulteraç
 Uma tentativa posterior na web falhou por autenticação não recente: confirmação 401 com QR ainda válido, sessão ativa autenticada cerca de 18 minutos antes. A confirmação exige login de menos de 10 minutos. A mensagem genérica da web não distingue esse caso; sair/entrar novamente e gerar outro QR é o procedimento atual. Nenhum limite foi relaxado.
 
 Próximos passos: confirmar novo pareamento no iPhone com o código recarregado e login web recente; desbloquear o Samsung e confirmar login/pareamento; depois executar o lote operacional sintético em ambos. Não marcar PR125–128 ou aceite físico de aparência como concluídos apenas por abrir login. Vínculo de cliente e encerramento continuam fora deste lote.
+
+## Segunda falha local — conexão transacional
+
+Depois de renovar o login web, houve confirmação 204 e conclusão mobile 200, mas o usuário relatou novamente falha no app. A inspeção da versão instalada de `expo-sqlite` mostrou que `withExclusiveTransactionAsync` cria `Transaction` com `useNewConnection: true`, inicia `BEGIN` e não reaplica `PRAGMA key`. A chave e as chaves estrangeiras configuradas na conexão principal não são herdadas.
+
+O ensaio SQLCipher real reproduziu a recusa de leitura em conexão nova sem chave, mesmo com a conexão principal cifrada e aberta. A correção centraliza todas as transações da réplica em `executarTransacaoProtegida`: abre outra conexão, aplica chave do cofre e verificações, habilita chaves estrangeiras, inicia `BEGIN IMMEDIATE`, executa somente o callback nessa conexão, confirma ou reverte e sempre fecha. Não foi trocado por transação compartilhada, removida cifra ou feita alteração no protocolo de autenticação.
+
+O teste nativo agora extrai as cinco migrations literais diretamente do método `migrar` e as executa com a biblioteca SQLCipher 4.7.0 do Expo e chaves estrangeiras ativas. Versão final 5, tabela de notas, verificação referencial, commit e rollback aprovados. Quinze testes da abertura/conexão cobrem também falha em início/escrita/commit, fechamento e operação recusada sem proteção. A suíte de SQL/rascunhos permanece separada do ensaio criptográfico.
+
+Tipos, lint, contratos, suíte completa (484 API por cache e 376 raiz), builds API/web e exportações iOS/Android aprovados. A correção precisa ser recarregada do Metro no iPhone; execução física bem-sucedida continua pendente. Nenhum novo deploy, segredo, dependência ou migration de servidor.

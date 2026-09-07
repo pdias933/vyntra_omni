@@ -29,13 +29,39 @@ static sqlite3 *abrir(const char *arquivo, const char *chave) {
 }
 
 int main(int argc, char **argv) {
-  exigir(argc == 2);
+  exigir(argc == 3);
   sqlite3 *banco = abrir(argv[1], "chave-apenas-sintetica");
   exigir(verificar(banco, "PRAGMA cipher_version", "4.7.0 community"));
   exigir(verificar(banco, "PRAGMA cipher_use_hmac", "1"));
   exigir(verificar(banco, "PRAGMA cipher_integrity_check", NULL));
   exigir(verificar(banco, "PRAGMA integrity_check", "ok"));
   exigir(exsqlite3_exec(banco, "CREATE TABLE ensaio (texto TEXT); INSERT INTO ensaio VALUES ('sintetico');", NULL, NULL, NULL) == SQLITE_OK);
+  sqlite3 *transacao = NULL;
+  exigir(exsqlite3_open(argv[1], &transacao) == SQLITE_OK);
+  exigir(exsqlite3_exec(transacao, "BEGIN", NULL, NULL, NULL) == SQLITE_OK);
+  exigir(!verificar(transacao, "SELECT count(*) FROM ensaio", "1"));
+  exigir(exsqlite3_exec(transacao, "ROLLBACK", NULL, NULL, NULL) == SQLITE_OK);
+  exigir(exsqlite3_close(transacao) == SQLITE_OK);
+  transacao = abrir(argv[1], "chave-apenas-sintetica");
+  exigir(exsqlite3_exec(transacao, "PRAGMA foreign_keys = ON; BEGIN IMMEDIATE; INSERT INTO ensaio VALUES ('reverter'); ROLLBACK;", NULL, NULL, NULL) == SQLITE_OK);
+  exigir(verificar(transacao, "SELECT count(*) FROM ensaio", "1"));
+  exigir(verificar(transacao, "PRAGMA foreign_keys", "1"));
+  exigir(exsqlite3_exec(transacao, "BEGIN IMMEDIATE; INSERT INTO ensaio VALUES ('confirmar'); COMMIT;", NULL, NULL, NULL) == SQLITE_OK);
+  exigir(verificar(banco, "SELECT count(*) FROM ensaio", "2"));
+  FILE *migracoes = fopen(argv[2], "rb");
+  exigir(migracoes != NULL && fseek(migracoes, 0, SEEK_END) == 0);
+  long tamanho = ftell(migracoes);
+  exigir(tamanho > 0 && tamanho < 65536 && fseek(migracoes, 0, SEEK_SET) == 0);
+  char *sql = malloc((size_t)tamanho + 1);
+  exigir(sql != NULL && fread(sql, 1, (size_t)tamanho, migracoes) == (size_t)tamanho);
+  sql[tamanho] = 0;
+  exigir(fclose(migracoes) == 0);
+  exigir(exsqlite3_exec(transacao, sql, NULL, NULL, NULL) == SQLITE_OK);
+  free(sql);
+  exigir(verificar(transacao, "PRAGMA user_version", "5"));
+  exigir(verificar(transacao, "SELECT count(*) FROM rascunho_nota", "0"));
+  exigir(verificar(transacao, "PRAGMA foreign_key_check", NULL));
+  exigir(exsqlite3_close(transacao) == SQLITE_OK);
   exigir(exsqlite3_close(banco) == SQLITE_OK);
   banco = abrir(argv[1], "chave-apenas-sintetica");
   exigir(verificar(banco, "PRAGMA cipher_integrity_check", NULL));
@@ -57,6 +83,6 @@ int main(int argc, char **argv) {
   banco = abrir(argv[1], "chave-apenas-sintetica");
   exigir(!verificar(banco, "PRAGMA cipher_integrity_check", NULL));
   exigir(exsqlite3_close(banco) == SQLITE_OK);
-  puts("SQLCipher 4.7.0: banco novo, reabertura, cifra em disco, chave incorreta e adulteração aprovados.");
+  puts("SQLCipher 4.7.0: banco novo, conexao sem chave recusada, transacao cifrada com commit/rollback, migrations reais v0-v5, reabertura, chave incorreta e adulteracao aprovados.");
   return 0;
 }

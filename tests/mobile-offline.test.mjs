@@ -16,7 +16,8 @@ test('réplica mobile usa SQLCipher com chave exclusiva no cofre nativo', async 
   assert.match(manifesto, /"useSQLCipher": true/);
   assert.match(repositorio, /PRAGMA key/);
   assert.match(repositorio, /PRAGMA cipher_integrity_check/);
-  assert.match(repositorio, /withExclusiveTransactionAsync/);
+  assert.match(repositorio, /executarTransacaoProtegida/);
+  assert.match(repositorio, /BEGIN IMMEDIATE/);
   assert.match(cofre, /SecureStore/);
   assert.match(cofre, /getRandomBytesAsync\(32\)/);
   assert.ok(!repositorio.includes('AsyncStorage'));

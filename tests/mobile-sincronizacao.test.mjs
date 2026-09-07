@@ -14,7 +14,7 @@ test('snapshot mobile é validado e aplicado com cursor na mesma transação', a
   assert.match(modelo, /chavesExatas/);
   assert.match(modelo, /LIMITE_SNAPSHOT_CARACTERES/);
   assert.match(repositorio, /public async aplicarSnapshot/);
-  assert.match(repositorio, /withExclusiveTransactionAsync/);
+  assert.match(repositorio, /executarTransacaoProtegida/);
   assert.ok(
     repositorio.indexOf('DELETE FROM evento_sincronizacao') <
       repositorio.indexOf('INSERT INTO estado_replica'),

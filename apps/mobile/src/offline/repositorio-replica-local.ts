@@ -463,9 +463,9 @@ export class RepositorioReplicaLocal {
     ) {
       throw new Error('PENDENCIA_SAIDA_TEXTO_INVALIDA');
     }
-    const banco = await this.abrir();
+    await this.abrir();
     let criada: PendenciaSaidaTextoLocal | undefined;
-    await banco.withExclusiveTransactionAsync(async (transacao) => {
+    await this.executarTransacaoProtegida(async (transacao) => {
       const observacao = await transacao.getFirstAsync<{
         readonly janela_expira_em: string | null;
         readonly sequencia_evento: string;
@@ -607,9 +607,9 @@ export class RepositorioReplicaLocal {
 
   public async editarPendenciaComoRascunho(id: string): Promise<string> {
     if (!UUID.test(id)) throw new Error('PENDENCIA_SAIDA_TEXTO_INVALIDA');
-    const banco = await this.abrir();
+    await this.abrir();
     let texto = '';
-    await banco.withExclusiveTransactionAsync(async (transacao) => {
+    await this.executarTransacaoProtegida(async (transacao) => {
       const pendencia = await transacao.getFirstAsync<{
         readonly conversa_id: string;
         readonly texto: string;
@@ -733,8 +733,8 @@ export class RepositorioReplicaLocal {
     snapshot: SnapshotMobileValidado,
     limparDadosForaDoEscopo = false,
   ): Promise<void> {
-    const banco = await this.abrir();
-    await banco.withExclusiveTransactionAsync(async (transacao) => {
+    await this.abrir();
+    await this.executarTransacaoProtegida(async (transacao) => {
       await transacao.execAsync(`
         DELETE FROM evento_sincronizacao;
         DELETE FROM resumo_atendimento;
@@ -901,8 +901,8 @@ export class RepositorioReplicaLocal {
     eventos: readonly EventoSincronizacaoMobile[],
     sequenciaFinal: string,
   ): Promise<void> {
-    const banco = await this.abrir();
-    await banco.withExclusiveTransactionAsync(async (transacao) => {
+    await this.abrir();
+    await this.executarTransacaoProtegida(async (transacao) => {
       const estado = await transacao.getFirstAsync<{
         precisa_ressincronizar: number;
         sequencia_evento: string;
@@ -1043,8 +1043,8 @@ export class RepositorioReplicaLocal {
   }
 
   public async limparReplicaAutenticada(): Promise<void> {
-    const banco = await this.abrir();
-    await banco.withExclusiveTransactionAsync(async (transacao) => {
+    await this.abrir();
+    await this.executarTransacaoProtegida(async (transacao) => {
       await transacao.execAsync(`
         DELETE FROM rascunho_nota;
         DELETE FROM pendencia_saida_texto;
@@ -1081,11 +1081,43 @@ export class RepositorioReplicaLocal {
   }
 
   private async abrirProtegido(): Promise<SQLite.SQLiteDatabase> {
+    const banco = await this.abrirConexaoProtegida();
+    try {
+      await this.migrar(banco);
+      return banco;
+    } catch (erro) {
+      await banco.closeAsync();
+      throw erro;
+    }
+  }
+
+  private async executarTransacaoProtegida(
+    executar: (transacao: SQLite.SQLiteDatabase) => Promise<void>,
+  ): Promise<void> {
+    // O helper exclusivo do Expo cria outra conexão sem herdar PRAGMA key.
+    // Inicialize cifra e chaves estrangeiras ANTES de começar a transação.
+    const transacao = await this.abrirConexaoProtegida();
+    let iniciada = false;
+    try {
+      await transacao.execAsync('BEGIN IMMEDIATE');
+      iniciada = true;
+      await executar(transacao);
+      await transacao.execAsync('COMMIT');
+      iniciada = false;
+    } catch (erro) {
+      if (iniciada) await transacao.execAsync('ROLLBACK');
+      throw erro;
+    } finally {
+      await transacao.closeAsync();
+    }
+  }
+
+  private async abrirConexaoProtegida(): Promise<SQLite.SQLiteDatabase> {
     const chave = await this.cofre.obterOuCriarChaveBanco();
     if (!CHAVE_HEXADECIMAL.test(chave)) {
       throw new Error('CHAVE_REPLICA_LOCAL_INVALIDA');
     }
-    const banco = await SQLite.openDatabaseAsync(NOME_BANCO);
+    const banco = await SQLite.openDatabaseAsync(NOME_BANCO, { useNewConnection: true });
     try {
       await banco.execAsync(`PRAGMA key = "x'${chave}'"`);
       // SQLite comum ignora pragmas desconhecidos. Ausência de erros, sozinha,
@@ -1119,7 +1151,6 @@ export class RepositorioReplicaLocal {
         throw new Error('INTEGRIDADE_REPLICA_LOCAL_INVALIDA');
       }
       await banco.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
-      await this.migrar(banco);
       return banco;
     } catch (erro) {
       await banco.closeAsync();
@@ -1136,7 +1167,7 @@ export class RepositorioReplicaLocal {
       throw new Error('VERSAO_REPLICA_LOCAL_INCOMPATIVEL');
     }
     if (atual === 0) {
-      await banco.withExclusiveTransactionAsync(async (transacao) => {
+      await this.executarTransacaoProtegida(async (transacao) => {
         await transacao.execAsync(`
         CREATE TABLE estado_replica (
           id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -1226,7 +1257,7 @@ export class RepositorioReplicaLocal {
       atual = 1;
     }
     if (atual === 1) {
-      await banco.withExclusiveTransactionAsync(async (transacao) => {
+      await this.executarTransacaoProtegida(async (transacao) => {
         await transacao.execAsync(`
           ALTER TABLE estado_replica ADD COLUMN precisa_ressincronizar INTEGER
             NOT NULL DEFAULT 0 CHECK (precisa_ressincronizar IN (0, 1));
@@ -1292,7 +1323,7 @@ export class RepositorioReplicaLocal {
       atual = 2;
     }
     if (atual === 2) {
-      await banco.withExclusiveTransactionAsync(async (transacao) => {
+      await this.executarTransacaoProtegida(async (transacao) => {
         await transacao.execAsync(`
           CREATE TABLE resumo_atendimento (
             atendimento_id TEXT PRIMARY KEY REFERENCES atendimento(id) ON DELETE CASCADE,
@@ -1326,7 +1357,7 @@ export class RepositorioReplicaLocal {
       atual = 3;
     }
     if (atual === 3) {
-      await banco.withExclusiveTransactionAsync(async (transacao) => {
+      await this.executarTransacaoProtegida(async (transacao) => {
         await transacao.execAsync(`
           ALTER TABLE atendimento ADD COLUMN versao_contexto INTEGER
             NOT NULL DEFAULT 0 CHECK (versao_contexto >= 0);
@@ -1349,7 +1380,7 @@ export class RepositorioReplicaLocal {
       atual = 4;
     }
     if (atual === 4) {
-      await banco.withExclusiveTransactionAsync(async (transacao) => {
+      await this.executarTransacaoProtegida(async (transacao) => {
         await transacao.execAsync(`
           CREATE TABLE rascunho_nota (
             atendimento_id TEXT PRIMARY KEY,

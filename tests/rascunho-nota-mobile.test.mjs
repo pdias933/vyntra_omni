@@ -29,6 +29,7 @@ async function cenario() {
   };
   const repo = new modulo.exports.RepositorioReplicaLocal();
   repo.banco = Promise.resolve(adapter);
+  repo.executarTransacaoProtegida = (executar) => adapter.withExclusiveTransactionAsync(executar);
   await repo.migrar(adapter);
   const id = randomUUID(), conversa = randomUUID(), fila = randomUUID();
   banco.prepare('INSERT INTO fila VALUES (?, ?)').run(fila, 'Fila sintética');
